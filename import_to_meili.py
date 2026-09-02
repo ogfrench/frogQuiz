@@ -23,7 +23,9 @@ async def __main__():
     client = meilisearch.Client(settings.meilisearch_url)
     client.delete_index(settings.meilisearch_index)
     client.create_index(settings.meilisearch_index)
-    client.index(settings.meilisearch_index).add_documents(meili_data)
+    # ponytail: Meilisearch rejects an empty document list, so skip the upload when there is nothing to index
+    if meili_data:
+        client.index(settings.meilisearch_index).add_documents(meili_data)
     client.index(settings.meilisearch_index).update_settings({"sortableAttributes": ["created_at"]})
 
 

@@ -16,6 +16,7 @@ RUN pip install -r requirements.txt && \
 
 COPY frogquiz/ /app/frogquiz/
 COPY image_cleanup.py /app/image_cleanup.py
+COPY import_to_meili.py /app/import_to_meili.py
 COPY alembic.ini /app/
 COPY migrations/ /app/migrations/
 COPY *start.sh /app/
