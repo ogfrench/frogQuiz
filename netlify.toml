@@ -17,16 +17,17 @@ NODE_VERSION = "24"
 # Set both in the Netlify UI (Site settings > Environment variables).
 
 # REST traffic is proxied so cookies stay first-party.
-# Replace api.example.com with your backend host.
+# Backend lives on the Oracle Always Free VM; sslip.io gives it a hostname
+# so Caddy can hold a Let's Encrypt certificate without buying a domain.
 [[redirects]]
 from = "/api/*"
-to = "https://api.example.com/api/:splat"
+to = "https://134-98-158-173.sslip.io/api/:splat"
 status = 200
 force = true
 
 [[redirects]]
 from = "/openapi.json"
-to = "https://api.example.com/openapi.json"
+to = "https://134-98-158-173.sslip.io/openapi.json"
 status = 200
 force = true
 

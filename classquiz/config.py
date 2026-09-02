@@ -7,7 +7,7 @@ from functools import lru_cache
 
 from redis import asyncio as redis_lib
 import redis as redis_base_lib
-from pydantic import RedisDsn, PostgresDsn, BaseModel
+from pydantic import field_validator, RedisDsn, PostgresDsn, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import meilisearch as MeiliSearch
 from arq import create_pool
@@ -66,7 +66,15 @@ class Settings(BaseSettings):
     registration_disabled: bool = False
     # Origins allowed to call the API / socket.io cross-site (e.g. a Netlify-hosted frontend).
     # Empty means same-origin only, which is what the bundled Caddy setup uses.
+    # Accepts a JSON list or a plain comma-separated string.
     cors_origins: list[str] = []
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _split_cors_origins(cls, v):
+        if isinstance(v, str) and not v.strip().startswith("["):
+            return [origin.strip().rstrip("/") for origin in v.split(",") if origin.strip()]
+        return v
 
     # storage_backend
     storage_backend: str  # either "local" or "s3"

@@ -4,4 +4,4 @@
 [flake8]
 max-line-length = 120
 extend-ignore = E203
-exclude = ./migrations/versions/,
+exclude = ./migrations/versions/,./frontend/node_modules/,./frontend/.svelte-kit/,
