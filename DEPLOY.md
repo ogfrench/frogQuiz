@@ -73,6 +73,30 @@ the images are all multi-arch. Signup needs a card for verification (not charged
 capacity is often unavailable in busy regions -- retry or pick another region. If that
 fails, a Hetzner CX22 is about EUR 4/month and takes ten minutes.
 
+### Oracle Cloud Always Free, step by step
+
+1. Create the instance: Compute > Instances > Create.
+   - Image: **Ubuntu 24.04**. Shape: **VM.Standard.A1.Flex**, 4 OCPUs / 24 GB (the whole
+     Always Free ARM allowance). Region: **eu-frankfurt-1**, next to the Neon project.
+   - Paste your public SSH key.
+   - Show advanced options > Cloud-init script: paste `deploy/oracle-cloud-init.yaml`.
+   - "Out of capacity" is the usual failure. Retry, or try another availability domain.
+2. Open the ports: Networking > Virtual Cloud Networks > your VCN > the public subnet >
+   its security list > Add ingress rules. Source `0.0.0.0/0`, TCP, destination ports 80
+   and 443. The cloud-init script has already opened them in the instance firewall.
+3. Point DNS at the instance's public IP (an A record for e.g. `api.yourdomain.com`), then
+   set `SITE_ADDRESS` to that name so Caddy can issue a certificate.
+4. SSH in and configure:
+
+```bash
+ssh ubuntu@<public-ip>
+cd /opt/frogquiz
+cp .env.example .env && nano .env      # SECRET_KEY, SITE_ADDRESS, ROOT_ADDRESS, mail, CORS_ORIGINS
+# using Neon: add DB_URL_OVERRIDE=<neon uri>, then
+docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d   api worker redis meilisearch proxy
+docker compose logs -f api
+```
+
 ### Deploying to any Linux VM
 
 ```bash

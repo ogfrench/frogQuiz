@@ -1,0 +1,31 @@
+#cloud-config
+# SPDX-FileCopyrightText: 2026 ogfrench
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# Paste into "Show advanced options > Cloud-init script" when creating an Oracle
+# Cloud Always Free instance (Ubuntu 24.04, VM.Standard.A1.Flex).
+# It installs Docker, opens 80/443 in the instance firewall and clones the repo.
+# Secrets are NOT set here -- write /opt/frogquiz/.env after first boot.
+
+package_update: true
+packages:
+  - git
+  - curl
+  - ca-certificates
+  - iptables-persistent
+
+runcmd:
+  # Docker engine + compose plugin
+  - curl -fsSL https://get.docker.com | sh
+  - usermod -aG docker ubuntu
+
+  # Oracle's Ubuntu images REJECT everything but SSH in iptables. Open the web ports.
+  # (The VCN security list must allow them too -- that part is done in the console.)
+  - iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+  - iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+  - netfilter-persistent save
+
+  # Switch --branch to master once the deployment PR is merged.
+  - git clone --branch deploy/netlify-frontend-and-hardening https://github.com/ogfrench/frogQuiz /opt/frogquiz
+  - chown -R ubuntu:ubuntu /opt/frogquiz
