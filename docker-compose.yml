@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-version: "3"
-
 services:
   frontend:
     restart: always
@@ -17,7 +15,11 @@ services:
       REDIS_URL: redis://redis:6379/0?decode_responses=True
       API_URL: http://api:80
   api:
+    # Uses the published image when it exists, builds from source otherwise.
     image: ghcr.io/ogfrench/frogquiz-backend:master
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: &restart always
     depends_on: &depends
       - db
@@ -96,6 +98,9 @@ services:
       - data:/var/lib/postgresql/data
   proxy:
     image: ghcr.io/ogfrench/frogquiz-caddy:master
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
     restart: always
     environment:
       # A bare domain (quiz.example.com) makes Caddy fetch a Let's Encrypt cert.
@@ -116,6 +121,9 @@ services:
       - meilisearch-data:/data.ms
   worker:
     image: ghcr.io/ogfrench/frogquiz-backend:master
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment: *env_vars
     depends_on: *depends
     restart: *restart
