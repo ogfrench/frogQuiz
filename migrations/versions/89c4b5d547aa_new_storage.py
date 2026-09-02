@@ -85,7 +85,7 @@ def upgrade() -> None:
     )
 
     ## DON'T INCLUDE HOST IN IMAGE URLS
-    from classquiz.config import settings
+    from frogquiz.config import settings
 
     settings = settings()
     conn = op.get_bind()
@@ -139,7 +139,7 @@ def downgrade() -> None:
     op.drop_column("storage_items", "thumbhash")
 
     ## DON'T INCLUDE HOST IN IMAGE URLS
-    from classquiz.config import settings
+    from frogquiz.config import settings
 
     settings = settings()
     conn = op.get_bind()

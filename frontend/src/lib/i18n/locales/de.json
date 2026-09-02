@@ -2,24 +2,24 @@
     "index_page": {
         "meta": {
             "title": "Home",
-            "description": "ClassQuiz ist eine interaktive Quiz-App für Schüler*innen, welche quelloffen und kostenlos ist"
+            "description": "frogQuiz ist eine interaktive Quiz-App für Schüler*innen, welche quelloffen und kostenlos ist"
         },
         "features_description": {
-            "1": "ClassQuiz ist eine Quiz-Platform, welche das erstellen und managen von Quizzes erlaubt.",
+            "1": "frogQuiz ist eine Quiz-Platform, welche das erstellen und managen von Quizzes erlaubt.",
             "2": "Das Hauptfeature ist die Kahoot!-Importfunktion, mit der man Quizzes von Kahoot! importieren kann.",
             "3": "Der einfach zu benutzende Editor ist ein Highlight, genauso wie die Export-Funktion um Quiz-Ergebnisse als Excel-Dateien herunterzuladen."
         },
         "slogan": "Die quelloffene Quiz-Platform!",
-        "stats": "Es gibt jetzt schon {{user_count}} Benutzer und {{quiz_count}} Quizzes auf ClassQuiz.",
+        "stats": "Es gibt jetzt schon {{user_count}} Benutzer und {{quiz_count}} Quizzes auf frogQuiz.",
         "see_what_true_and_false": "Sieh, was richtig oder falsch war",
         "see_how_many_true_and_false": "Sieh, wie viele richtig oder falsch lagen",
         "create_or_import": "Erstellen oder Importieren",
         "see_all_quizzes": "Sieh all deine Quizze",
         "students_site": "Seite der Schüler*innen",
         "teachers_site": "Seite der Lehrer*innen",
-        "no_tracking_content": "Andere tracken dich und senden diese Informationen an Dritte, aber ClassQuiz nicht.",
+        "no_tracking_content": "Andere tracken dich und senden diese Informationen an Dritte, aber frogQuiz nicht.",
         "quiz_results_downloadable_content": "Quiz-Ergebnisse können einfach in Form einer Excel-Tabelle heruntergeladen werden (Wusste gar nicht, dass andere dies nicht können)",
-        "multilingual_content": "ClassQuiz ist jetzt schon komplett in Englisch, Deutsch, Türkisch, Französisch, norwegischem Bokmål und Italienisch verfügbar, wobei es auch teilweise in Indonesisch und Katalanisch verfügbar ist.",
+        "multilingual_content": "frogQuiz ist jetzt schon komplett in Englisch, Deutsch, Türkisch, Französisch, norwegischem Bokmål und Italienisch verfügbar, wobei es auch teilweise in Indonesisch und Katalanisch verfügbar ist.",
         "no_tracking": "Kein Tracking",
         "self_hostable": "Self-hostbar",
         "german_server": "Deutscher Server",
@@ -31,7 +31,7 @@
         "get_a_quiz": "1. Bekomme ein Quiz",
         "create_a_quiz_from_scratch": "Erstelle ein Quiz mit dem Editor, welches Bilder und mehr beinhalten kann",
         "find_or_explore": "Finde (oder erkunde) Quiz von anderen oder importiert von anderen",
-        "import_quiz_from_kahoot_and_edit": "Importiere Quiz von Kahoot! und bearbeite sie auf ClassQuiz",
+        "import_quiz_from_kahoot_and_edit": "Importiere Quiz von Kahoot! und bearbeite sie auf frogQuiz",
         "play_quiz": "2. Spiele das Quiz",
         "select_answer": "Wähle die Antwort",
         "choose_answer_wisely": "Wähle die Antwort mit Bedacht",
@@ -39,19 +39,19 @@
         "check_if_chosen_wisely": "Überprüfe, ob deine Antwort richtig war",
         "list_winners": "Gewinner auflisten",
         "get_ranking_and_winners": "Die Rangliste einsehen und sehen, wer gewonnen hat",
-        "why_classquiz": "Warum ClassQuiz?",
-        "self_hostable_content": "ClassQuiz kann einfach selber gehostet werden, sodass die Daten alle in deiner Hand sind!",
-        "user_friendly_content": "ClassQuiz probiert so benutzerfreundlich zu sein, sodass es für jeden einfach zu benutzen ist.",
-        "completely_free_content": "ClassQuiz ist für den Benutzer komplett kostenlos und ohne irgendwelche kostenpflichtigen Abonnements oder nervige Weiterleitungen auf Upgrade-Seiten, obwohl eine Spende trotzdem erwünscht ist.",
+        "why_frogquiz": "Warum frogQuiz?",
+        "self_hostable_content": "frogQuiz kann einfach selber gehostet werden, sodass die Daten alle in deiner Hand sind!",
+        "user_friendly_content": "frogQuiz probiert so benutzerfreundlich zu sein, sodass es für jeden einfach zu benutzen ist.",
+        "completely_free_content": "frogQuiz ist für den Benutzer komplett kostenlos und ohne irgendwelche kostenpflichtigen Abonnements oder nervige Weiterleitungen auf Upgrade-Seiten, obwohl eine Spende trotzdem erwünscht ist.",
         "dark_mode_content": "Eines der wichtigsten Features, die eine Webseite haben kann!",
-        "german_server_content": "ClassQuiz' Server stehen in Deutschland und werden von netcup betrieben.",
-        "community_driven_content": "ClassQuiz hängt von der Community ab, die ClassQuiz mit Spenden, Feature-Requests, Übersetzungen und mehr versorgt! Du kannst auch ein Teil der ClassQuiz-Community werden!",
-        "download_quizzes_content": "Quiz können als einzelne Datei heruntergeladen werden und jederzeit importiert werden. Das ermöglicht dir, einfach Quiz auf andere Instanzen von ClassQuiz umzuziehen.",
+        "german_server_content": "frogQuiz' Server stehen in Deutschland und werden von netcup betrieben.",
+        "community_driven_content": "frogQuiz hängt von der Community ab, die frogQuiz mit Spenden, Feature-Requests, Übersetzungen und mehr versorgt! Du kannst auch ein Teil der frogQuiz-Community werden!",
+        "download_quizzes_content": "Quiz können als einzelne Datei heruntergeladen werden und jederzeit importiert werden. Das ermöglicht dir, einfach Quiz auf andere Instanzen von frogQuiz umzuziehen.",
         "community_driven": "Von der Community betrieben",
         "download_quizzes": "Quiz herunterladen",
-        "how_does_classquiz_work": "Wie funktioniert ClassQuiz überhaupt?",
+        "how_does_frogquiz_work": "Wie funktioniert frogQuiz überhaupt?",
         "no_player_limit": "Kein Spieler-Limit",
-        "no_player_limit_content": "ClassQuiz hat kein künstliches Spieler-Limit. In der Theorie, 1000+ Spielerinnen und Spieler könnten ein Quiz gleichzeitig spielen, in der Praxis ist es aber nur für 300 Spielerinnen und Spieler pro Quiz getestet."
+        "no_player_limit_content": "frogQuiz hat kein künstliches Spieler-Limit. In der Theorie, 1000+ Spielerinnen und Spieler könnten ein Quiz gleichzeitig spielen, in der Praxis ist es aber nur für 300 Spielerinnen und Spieler pro Quiz getestet."
     },
     "overview_page": {
         "created_at": "Erstellt am",
@@ -269,10 +269,10 @@
         "a_kahoot_quiz": "Ein Kahoot!-Quiz",
         "url_should_look_like_this": "Die URL sollte vie folgt aussehen: https://create.kahoot.it/details/...",
         "side_import_kahoot": "Auf dieser Seite kannst du Quiz von Kahoot! importieren.",
-        "classquiz_quiz": "Ein ClassQuiz-Quiz",
+        "frogquiz_quiz": "Ein frogQuiz-Quiz",
         "upload_file_ending": "Lade die Datei, die auf .cqa oder auf .xlsx endet, hoch",
-        "this_side_classquiz": "Auf dieser Seite kannst du Quiz importieren, die von ClassQuiz exportiert wurden.",
-        "this_side_classquiz_excel": "Du kannst auch Exceldateien hochladen, wenn du die folgende Vorlage ausgefüllt hast.",
+        "this_side_frogquiz": "Auf dieser Seite kannst du Quiz importieren, die von frogQuiz exportiert wurden.",
+        "this_side_frogquiz_excel": "Du kannst auch Exceldateien hochladen, wenn du die folgende Vorlage ausgefüllt hast.",
         "download_template_here": "Lade die Vorlage herunter"
     },
     "password_reset_page": {
@@ -327,7 +327,7 @@
     },
     "footer": {
         "more_details_here": "Mehr Details hier",
-        "donate": "Wenn ClassQuiz hilfreich ist, würde eine {{donate_link}} helfen.",
+        "donate": "Wenn frogQuiz hilfreich ist, würde eine {{donate_link}} helfen.",
         "self_ads": "Gemacht mit ❤️ von {{mawoka_link}} und mit der Hilfe von {{others_link}}."
     },
     "error_page": {

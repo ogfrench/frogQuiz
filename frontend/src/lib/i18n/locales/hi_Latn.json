@@ -2,10 +2,10 @@
     "index_page": {
         "slogan": "Open-source prashnotri manch!",
         "meta": {
-            "description": "ClassQuiz ek aisa prashnotri app hai jiske dwara vidyarthi interactive roop se seekh sakte hain, jo open source aur nishulk hai",
+            "description": "frogQuiz ek aisa prashnotri app hai jiske dwara vidyarthi interactive roop se seekh sakte hain, jo open source aur nishulk hai",
             "title": "Home"
         },
-        "stats": "ClassQuiz par pehle se {{user_count}} users aur {{quiz_count}} prashnotriyan upasthit hain.",
+        "stats": "frogQuiz par pehle se {{user_count}} users aur {{quiz_count}} prashnotriyan upasthit hain.",
         "see_what_true_and_false": "Dekhen kya sahi tha aur kya galat tha",
         "see_how_many_true_and_false": "Dekhen kitne sahi aur kitne galat the",
         "create_or_import": "Create ya Import",

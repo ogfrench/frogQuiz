@@ -3,9 +3,9 @@
         "slogan": "D'Oppene Quellecode Quiz-Plattform!",
         "meta": {
             "title": "Doheemmenü",
-            "description": "ClassQuiz ass eng Quiz-App fir interaktiv fir Studenten ze léieren, déi Oppene Quellecode ass a fräi ze benotzen"
+            "description": "frogQuiz ass eng Quiz-App fir interaktiv fir Studenten ze léieren, déi Oppene Quellecode ass a fräi ze benotzen"
         },
-        "stats": "Et gi scho {{user count}} Benotzer an {{quiz_count}} Quizzen um ClassQuiz.",
+        "stats": "Et gi scho {{user count}} Benotzer an {{quiz_count}} Quizzen um frogQuiz.",
         "see_how_many_true_and_false": "Kuckt wéi vill richteg oder falsch waren",
         "create_or_import": "Erschafen oder Importéieren",
         "teachers_site": "De Site vum Enseignant",
@@ -30,7 +30,7 @@
         "see_all_quizzes": "Gesinn all Är Quizzen",
         "find_or_explore": "Fannt (oder entdeckt) Quizze gemaach oder importéiert vun anere Leit",
         "list_winners": "Lëscht Gewënner",
-        "why_classquiz": "Firwat ClassQuiz?"
+        "why_frogquiz": "Firwat frogQuiz?"
     },
     "words": {
         "quiztivity": "Quiztivitéit"

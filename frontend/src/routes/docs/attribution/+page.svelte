@@ -5,8 +5,8 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <svelte:head>
-	<title>ClassQuiz/docs - Attribution</title>
-	<meta name="description" content="People who helped making with ClassQuiz." />
+	<title>frogQuiz/docs - Attribution</title>
+	<meta name="description" content="People who helped making with frogQuiz." />
 </svelte:head>
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
@@ -28,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 	</ul>
 	<h2>Translators</h2>
 	<p>
-		People who translated ClassQuiz on <a href="https://translate.mawoka.eu/engage/classquiz/"
+		People who translated frogQuiz on <a href="https://translate.mawoka.eu/engage/frogquiz/"
 			>Weblate</a
 		> or directly.
 	</p>
@@ -66,7 +66,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	<h1>Rules</h1>
 	<p>
-		If you are listed once here, you're a part of ClassQuiz, forever! <br />
+		If you are listed once here, you're a part of frogQuiz, forever! <br />
 		You can also be listed in more categories.
 	</p>
 </article>

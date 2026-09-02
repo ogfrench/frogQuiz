@@ -78,7 +78,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz - Register</title>
+	<title>frogQuiz - Register</title>
 </svelte:head>
 <div class="flex items-center justify-center min-h-screen px-4">
 	<div>
@@ -87,7 +87,7 @@ SPDX-License-Identifier: MPL-2.0
 		>
 			<div class="px-6 py-4">
 				<h2 class="text-3xl font-bold text-center text-gray-700 dark:text-white">
-					ClassQuiz
+					frogQuiz
 				</h2>
 
 				<h3 class="mt-1 text-xl font-medium text-center text-gray-600 dark:text-gray-200">

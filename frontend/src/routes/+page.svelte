@@ -54,7 +54,7 @@ SPDX-License-Identifier: MPL-2.0
 	let selected_create_thing = $state(SelectedCreateThing.Create);
 	let selected_play_thing = $state(SelectedPlayThing.Select);
 
-	const classquiz_reasons = [
+	const frogquiz_reasons = [
 		{
 			headline: $t('index_page.no_player_limit'),
 			content: $t('index_page.no_player_limit_content')
@@ -100,46 +100,46 @@ SPDX-License-Identifier: MPL-2.0
 			content: $t('index_page.community_driven_content')
 		}
 	];
-	let selected_classquiz_reason = $state(0);
+	let selected_frogquiz_reason = $state(0);
 </script>
 
 <svelte:head>
-	<title>ClassQuiz - {$t('index_page.meta.title')}</title>
+	<title>frogQuiz - {$t('index_page.meta.title')}</title>
 	<meta name="description" content={$t('index_page.meta.description')} />
-	<title>ClassQuiz - Home</title>
+	<title>frogQuiz - Home</title>
 	<meta
 		name="description"
-		content="ClassQuiz is a quiz-application like KAHOOT!, but open-source. You can create quizzes and play them remotely with other people."
+		content="frogQuiz is a quiz-application like KAHOOT!, but open-source. You can create quizzes and play them remotely with other people."
 	/>
 
 	<meta property="og:url" content="https://classquiz.de/" />
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="ClassQuiz - {$t('index_page.meta.title')}" />
+	<meta property="og:title" content="frogQuiz - {$t('index_page.meta.title')}" />
 	<meta
 		property="og:description"
-		content="ClassQuiz is a quiz-application like KAHOOT!, but open-source. You can create quizzes and play them remotely with other people."
+		content="frogQuiz is a quiz-application like KAHOOT!, but open-source. You can create quizzes and play them remotely with other people."
 	/>
 	<meta property="og:image" content={JpgOpenGraph} />
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta property="twitter:domain" content="classquiz.de" />
 	<meta property="twitter:url" content="https://classquiz.de/" />
-	<meta name="twitter:title" content="ClassQuiz - {$t('index_page.meta.title')}" />
+	<meta name="twitter:title" content="frogQuiz - {$t('index_page.meta.title')}" />
 	<meta
 		name="twitter:description"
-		content="ClassQuiz is a quiz-application like KAHOOT!, but open-source. You can create quizzes and play them remotely with other people."
+		content="frogQuiz is a quiz-application like KAHOOT!, but open-source. You can create quizzes and play them remotely with other people."
 	/>
 	<meta name="twitter:image" content={WebPOpenGraph} />
 </svelte:head>
 <div class="min-h-screen flex flex-col">
 	<section class="pb-40">
 		<div class="pt-12 text-center">
-			<h1 class="sm:text-8xl text-6xl mt-6 marck-script">ClassQuiz</h1>
+			<h1 class="sm:text-8xl text-6xl mt-6 marck-script">frogQuiz</h1>
 			<p class="text-xl mt-4">{$t('index_page.slogan')}</p>
 		</div>
 	</section>
 	<section>
-		<h2 class="text-center text-5xl mb-6">{$t('index_page.how_does_classquiz_work')}</h2>
+		<h2 class="text-center text-5xl mb-6">{$t('index_page.how_does_frogquiz_work')}</h2>
 
 		<div class="flex justify-center w-full">
 			<h3 class="text-center text-3xl rounded-t-lg bg-white/40 py-2 px-6">
@@ -407,7 +407,7 @@ SPDX-License-Identifier: MPL-2.0
 	<section class="mt-24">
 		<div class="flex justify-center w-full">
 			<h2 class="text-center text-3xl rounded-t-lg bg-white/40 py-2 px-6">
-				{$t('index_page.why_classquiz')}
+				{$t('index_page.why_frogquiz')}
 			</h2>
 		</div>
 
@@ -417,26 +417,26 @@ SPDX-License-Identifier: MPL-2.0
 			<div>
 				<div class="p-12 rounded-lg flex justify-center items-center h-full">
 					<p class="dark:text-black">
-						{classquiz_reasons[selected_classquiz_reason].content}
+						{frogquiz_reasons[selected_frogquiz_reason].content}
 					</p>
 				</div>
 			</div>
 			<div
-				class="lg:border-l lg:border-l-black lg:border-t-0 border-t border-t-black flex lg:flex-col flex-row stretch overflow-x-auto why-classquiz"
+				class="lg:border-l lg:border-l-black lg:border-t-0 border-t border-t-black flex lg:flex-col flex-row stretch overflow-x-auto why-frogquiz"
 			>
-				{#each classquiz_reasons as reason, index}
+				{#each frogquiz_reasons as reason, index}
 					<div
 						class="m-2 rounded-lg p-2 bg-white/40 transition-all cursor-pointer lg:h-full"
 						role="button"
 						tabindex="0"
 						onclick={() => {
-							selected_classquiz_reason = index;
+							selected_frogquiz_reason = index;
 						}}
 						onkeyup={() => {
-							selected_classquiz_reason = index;
+							selected_frogquiz_reason = index;
 						}}
-						class:shadow-2xl={selected_classquiz_reason === index}
-						class:opacity-70={selected_classquiz_reason !== index}
+						class:shadow-2xl={selected_frogquiz_reason === index}
+						class:opacity-70={selected_frogquiz_reason !== index}
 					>
 						<h5 class="text-xl dark:text-black">{reason.headline}</h5>
 					</div>
@@ -456,23 +456,23 @@ SPDX-License-Identifier: MPL-2.0
 <Footer />
 
 <style>
-	.why-classquiz::-webkit-scrollbar {
+	.why-frogquiz::-webkit-scrollbar {
 		height: 0.8rem;
 		margin-bottom: 5rem;
 	}
 
-	.why-classquiz::-webkit-scrollbar-track {
+	.why-frogquiz::-webkit-scrollbar-track {
 		box-shadow: inset 0 0 10px 10px transparent;
 		border: solid 3px transparent;
 	}
 
-	.why-classquiz::-webkit-scrollbar-thumb {
+	.why-frogquiz::-webkit-scrollbar-thumb {
 		box-shadow: inset 0 0 10px 10px #374151;
 		border: solid 3px transparent;
 		border-radius: 15px;
 	}
 
-	.why-classquiz::-webkit-scrollbar-thumb:hover {
+	.why-frogquiz::-webkit-scrollbar-thumb:hover {
 		box-shadow: inset 0 0 10px 10px #555;
 		border: solid 3px transparent;
 	}

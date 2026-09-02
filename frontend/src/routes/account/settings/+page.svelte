@@ -141,7 +141,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz - Settings</title>
+	<title>frogQuiz - Settings</title>
 </svelte:head>
 
 {#await getUser()}
@@ -173,7 +173,7 @@ SPDX-License-Identifier: MPL-2.0
 						<BrownButton href="/account/settings/security"
 							>{$t('settings_page.security_settings')}
 						</BrownButton>
-						<BrownButton href="/account/controllers">ClassQuizController</BrownButton>
+						<BrownButton href="/account/controllers">frogQuizController</BrownButton>
 						<BrownButton href="/user/{user.id}">Public profile page</BrownButton>
 					</div>
 				</div>

@@ -15,10 +15,10 @@ SPDX-License-Identifier: MPL-2.0
 </script>-->
 
 <svelte:head>
-	<title>ClassQuiz/docs - Terms of Service</title>
+	<title>frogQuiz/docs - Terms of Service</title>
 	<meta
 		name="description"
-		content="The terms of service of ClassQuiz, the open-source quiz-application"
+		content="The terms of service of frogQuiz, the open-source quiz-application"
 	/>
 </svelte:head>
 
@@ -41,7 +41,7 @@ SPDX-License-Identifier: MPL-2.0
 		</li>
 	</ul>
 
-	<h2>What doesn't belong on ClassQuiz</h2>
+	<h2>What doesn't belong on frogQuiz</h2>
 	<p>
 		The owner may delete, change and modify any quiz. Quizzes with any pornography, illegal
 		content or propaganda <b>have to be reported</b> and will be reviewed and deleted, if it's
@@ -55,16 +55,16 @@ SPDX-License-Identifier: MPL-2.0
 	<p>
 		The admin is allowed to publish <b>ANY</b> data provided by the user, although the admin
 		doesn't want to do it. The admin can also delete <b>ANY</b> content, whether it's against any
-		rule or not. ClassQuiz also doesn't provide any (uptime)-guarantee, so ClassQuiz could be shut
+		rule or not. frogQuiz also doesn't provide any (uptime)-guarantee, so frogQuiz could be shut
 		down without any warning and without any ability for the user to get their data. The admin may
 		publish any data provided by the user anywhere and share it with anyone.
 	</p>
 	<h2>The rights of the user</h2>
 	<p>
 		You can request the deletion of your data at any time by writing an email to
-		deleteme@mawoka.eu. Please include the email you registered with on ClassQuiz, and, if
+		deleteme@mawoka.eu. Please include the email you registered with on frogQuiz, and, if
 		possible, a prove that you are the owner of the account, by, eg., writing the email with the
-		email-address which is associated with your ClassQuiz-account.
+		email-address which is associated with your frogQuiz-account.
 	</p>
 
 	<h2>Final Words</h2>

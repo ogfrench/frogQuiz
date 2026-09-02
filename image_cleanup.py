@@ -4,8 +4,8 @@
 
 import asyncio
 
-from classquiz.config import settings, redis, storage
-from classquiz.storage.errors import DeletionFailedError
+from frogquiz.config import settings, redis, storage
+from frogquiz.storage.errors import DeletionFailedError
 
 settings = settings()
 

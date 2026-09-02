@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
 
 SPDX-License-Identifier: MPL-2.0
 -->
-Welcome to the ClassQuiz community
+Welcome to the frogQuiz community
 
 Grant and indulge critique constructively, within desired privacy.
 Settle disputes within these confines.

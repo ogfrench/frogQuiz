@@ -14,7 +14,7 @@ RUN apt update && \
 RUN pip install -r requirements.txt && \
     apt remove -y jq gcc
 
-COPY classquiz/ /app/classquiz/
+COPY frogquiz/ /app/frogquiz/
 COPY image_cleanup.py /app/image_cleanup.py
 COPY alembic.ini /app/
 COPY migrations/ /app/migrations/
@@ -25,5 +25,5 @@ COPY gunicorn_conf.py /app/
 EXPOSE 80
 ENV PYTHONPATH=/app
 RUN chmod +x start.sh
-ENV APP_MODULE=classquiz:app
+ENV APP_MODULE=frogquiz:app
 CMD ["./start.sh"]

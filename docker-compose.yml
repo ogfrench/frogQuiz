@@ -26,7 +26,7 @@ services:
       - redis
 
     environment: &env_vars # --- DON'T CHANGE FROM HERE ---
-      DB_URL: "postgresql://postgres:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/classquiz" # DON'T CHANGE
+      DB_URL: "postgresql://postgres:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/frogquiz" # DON'T CHANGE
       REDIS: "redis://redis:6379/0?decode_responses=True" # DON'T CHANGE
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env, e.g. openssl rand -hex 32}
       MAX_WORKERS: "1" # Very important and DON'T CHANGE
@@ -93,7 +93,7 @@ services:
       retries: 5
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: "classquiz"
+      POSTGRES_DB: "frogquiz"
     volumes:
       - data:/var/lib/postgresql/data
   proxy:
@@ -127,7 +127,7 @@ services:
     environment: *env_vars
     depends_on: *depends
     restart: *restart
-    command: arq classquiz.worker.WorkerSettings
+    command: arq frogquiz.worker.WorkerSettings
 
 volumes:
   data:

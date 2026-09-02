@@ -101,7 +101,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz - Import</title>
+	<title>frogQuiz - Import</title>
 </svelte:head>
 
 <div class="flex items-center justify-center h-full px-4">
@@ -185,7 +185,7 @@ SPDX-License-Identifier: MPL-2.0
 					</form>
 					<form onsubmit={file_submit}>
 						<div class="w-full mt-4 border-l-2 border-gray-600 h-full flex flex-col">
-							<h2 class="text-center text-2xl">{$t('import_page.classquiz_quiz')}</h2>
+							<h2 class="text-center text-2xl">{$t('import_page.frogquiz_quiz')}</h2>
 							<div class="dark:bg-gray-800 bg-white p-4 rounded-lg">
 								<div class="relative bg-inherit w-full">
 									<input
@@ -201,14 +201,14 @@ SPDX-License-Identifier: MPL-2.0
 									<p class="text-sm">{$t('import_page.upload_file_ending')}</p>
 								</div>
 								<p class="mt-2">
-									{$t('import_page.this_side_classquiz')}
+									{$t('import_page.this_side_frogquiz')}
 									<br />
-									{$t('import_page.this_side_classquiz_excel')}
+									{$t('import_page.this_side_frogquiz_excel')}
 								</p>
 								<a
 									class="text-sm underline font-bold text-blue-500 dark:text-blue-400"
 									download
-									href="https://blog.web.garage.realux.mawoka.eu/classquiz/ClassQuizImportTemplate.xlsx"
+									href="https://blog.web.garage.realux.mawoka.eu/frogquiz/frogQuizImportTemplate.xlsx"
 									>{$t('import_page.download_template_here')}</a
 								>
 							</div>

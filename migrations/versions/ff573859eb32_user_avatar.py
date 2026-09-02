@@ -17,10 +17,10 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import user
 
-from classquiz.helpers.avatar import gzipped_user_avatar
+from frogquiz.helpers.avatar import gzipped_user_avatar
 import ormar
-from classquiz.db.models import User
-from classquiz.db import metadata, database
+from frogquiz.db.models import User
+from frogquiz.db import metadata, database
 
 # revision identifiers, used by Alembic.
 revision = "ff573859eb32"

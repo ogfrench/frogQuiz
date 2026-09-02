@@ -33,7 +33,7 @@ else:
         web_concurrency = min(web_concurrency, use_max_workers)
 accesslog_var = os.getenv("ACCESS_LOG", "-")
 use_accesslog = accesslog_var or None
-proc_name = os.getenv("PROC_NAME", "classquiz_api")
+proc_name = os.getenv("PROC_NAME", "frogquiz_api")
 errorlog_var = os.getenv("ERROR_LOG", "-")
 use_errorlog = errorlog_var or None
 graceful_timeout_str = os.getenv("GRACEFUL_TIMEOUT", "120")

@@ -5,16 +5,16 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <svelte:head>
-	<title>ClassQuiz/docs - Import from Kahoot</title>
+	<title>frogQuiz/docs - Import from Kahoot</title>
 	<meta
 		name="description"
-		content="How to import quizzes from KAHOOT! into ClassQuiz, the open-source quiz-application,  easily"
+		content="How to import quizzes from KAHOOT! into frogQuiz, the open-source quiz-application,  easily"
 	/>
 </svelte:head>
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
 >
-	<h1>Import Quizzes from Kahoot into ClassQuiz</h1>
+	<h1>Import Quizzes from Kahoot into frogQuiz</h1>
 
 	<p>
 		All in all, this procedure is pretty simple, so just go to <a

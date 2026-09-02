@@ -50,7 +50,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz - Reset your Password</title>
+	<title>frogQuiz - Reset your Password</title>
 </svelte:head>
 
 <div class="flex items-center justify-center h-full px-4">
@@ -60,7 +60,7 @@ SPDX-License-Identifier: MPL-2.0
 		>
 			<div class="px-6 py-4">
 				<h2 class="text-3xl font-bold text-center text-gray-700 dark:text-white">
-					ClassQuiz
+					frogQuiz
 				</h2>
 
 				<!--

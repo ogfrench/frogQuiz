@@ -4,19 +4,19 @@ SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
 SPDX-License-Identifier: MPL-2.0
 -->
 
-<a href="https://github.com/mawoka-myblock/ClassQuiz/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/mawoka-myblock/classquiz?style=for-the-badge"></a>
-<a href="https://github.com/mawoka-myblock/ClassQuiz/graphs/contributors"><img alt="GitHub contributors" src="https://img.shields.io/github/contributors/mawoka-myblock/classquiz?color=green&style=for-the-badge"></a>
-<a href="https://github.com/mawoka-myblock/ClassQuiz/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/mawoka-myblock/classquiz?style=for-the-badge"></a>
-<a href="https://github.com/mawoka-myblock/ClassQuiz/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc"><img alt="GitHub issues" src="https://img.shields.io/github/issues/mawoka-myblock/classquiz?style=for-the-badge"></a>
-<a href="https://github.com/mawoka-myblock/ClassQuiz/blob/master/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/mawoka-myblock/classquiz?style=for-the-badge"></a>
-<img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/mawoka-myblock/classquiz?style=for-the-badge">
+<a href="https://github.com/mawoka-myblock/ClassQuiz/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/mawoka-myblock/ClassQuiz?style=for-the-badge"></a>
+<a href="https://github.com/mawoka-myblock/ClassQuiz/graphs/contributors"><img alt="GitHub contributors" src="https://img.shields.io/github/contributors/mawoka-myblock/ClassQuiz?color=green&style=for-the-badge"></a>
+<a href="https://github.com/mawoka-myblock/ClassQuiz/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/mawoka-myblock/ClassQuiz?style=for-the-badge"></a>
+<a href="https://github.com/mawoka-myblock/ClassQuiz/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc"><img alt="GitHub issues" src="https://img.shields.io/github/issues/mawoka-myblock/ClassQuiz?style=for-the-badge"></a>
+<a href="https://github.com/mawoka-myblock/ClassQuiz/blob/master/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/mawoka-myblock/ClassQuiz?style=for-the-badge"></a>
+<img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/mawoka-myblock/ClassQuiz?style=for-the-badge">
 [![DeepSource](https://deepsource.io/gh/mawoka-myblock/ClassQuiz.svg/?label=active+issues&show_trend=true&token=5-2Na9HN-2CXcGkHjah_Rk09&style=for-the-badge)](https://deepsource.io/gh/mawoka-myblock/ClassQuiz/)
 <img alt="Snky badge" src="https://img.shields.io/badge/Snyk-Check-success?style=for-the-badge">
 [![codecov](https://codecov.io/gh/mawoka-myblock/ClassQuiz/branch/master/graph/badge.svg?token=7CHK2A0AMO)](https://codecov.io/gh/mawoka-myblock/ClassQuiz)
 
 <div align='center'>
-    <h2 align='center'>ClassQuiz</h2>
-    <img src='logo.png' alt='ClassQuiz Logo' height='100px' width='100px'>
+    <h2 align='center'>frogQuiz</h2>
+    <img src='logo.png' alt='frogQuiz Logo' height='100px' width='100px'>
     <p align='center'>
         The open-source quiz-platform!
         <br/>
@@ -29,14 +29,14 @@ SPDX-License-Identifier: MPL-2.0
         ·
         <a href='https://classquiz.de/docs/self-host'>Self-Hosting</a>
         ·
-        <a href='https://matrix.to/#/#classquiz:matrix.org'>Matrix Space</a>
+        <a href='https://matrix.to/#/#frogquiz:matrix.org'>Matrix Space</a>
     </p>
 </div>
 
 
-## About ClassQuiz
+## About frogQuiz
 
-ClassQuiz is a quiz app to learn interactively for students,
+frogQuiz is a quiz app to learn interactively for students,
 but open-source which is very important if it is a product for educational
 purposes.
 You can create quizzes and play them remotely with other people.
@@ -51,7 +51,7 @@ on your location.
 
 ## Help/Community
 
-Join our [Matrix Space](https://matrix.to/#/#classquiz:matrix.org) using [element](https://app.element.io)!
+Join our [Matrix Space](https://matrix.to/#/#frogquiz:matrix.org) using [element](https://app.element.io)!
 
 ## Donating
 
@@ -69,11 +69,11 @@ See https://classquiz.de/docs/develop
 
 ## Translation
 
-ClassQuiz uses [hosted Weblate](https://hosted.weblate.org/engage/classquiz/)
+frogQuiz uses [hosted Weblate](https://hosted.weblate.org/engage/frogquiz/)
 
 
-<a href="https://hosted.weblate.org/engage/classquiz/">
-<img src="https://hosted.weblate.org/widgets/classquiz/-/frontend/multi-auto.svg" alt="Übersetzungsstatus" />
+<a href="https://hosted.weblate.org/engage/frogquiz/">
+<img src="https://hosted.weblate.org/widgets/frogquiz/-/frontend/multi-auto.svg" alt="Übersetzungsstatus" />
 </a>
 
 ## Docs
@@ -85,7 +85,7 @@ The docs are online at https://classquiz.de/docs
 Since this repo is a monorepo, the frontend is located in
 the [`frontend/`](https://github.com/mawoka-myblock/ClassQuiz/tree/master/frontend)-directory.
 The backend-project (Pipfile) is in the root, but all the code is located in
-the [`classquiz/`](https://github.com/mawoka-myblock/ClassQuiz/tree/master/frontend)-folder.
+the [`frogquiz/`](https://github.com/mawoka-myblock/ClassQuiz/tree/master/frontend)-folder.
 
 #### Tech-Stack
 

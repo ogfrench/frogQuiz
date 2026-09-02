@@ -89,8 +89,8 @@ SPDX-License-Identifier: MPL-2.0
 			<section class="mt-auto">
 				<p class="mt-6 mx-auto max-w-[70%] text-sm dark:text-gray-200 text-center">
 					Since there's still some space left down here, I guess that I take this
-					opportunity to thank You for using ClassQuiz! Have a great day and continue
-					using ClassQuiz ;)
+					opportunity to thank You for using frogQuiz! Have a great day and continue
+					using frogQuiz ;)
 				</p>
 			</section>
 		</div>

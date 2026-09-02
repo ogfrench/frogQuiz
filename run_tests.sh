@@ -5,7 +5,7 @@
 CONTAINER_BIN=podman
 
 run_tests() {
-  pipenv run coverage run -m pytest -s -v --asyncio-mode=strict classquiz/tests
+  pipenv run coverage run -m pytest -s -v --asyncio-mode=strict frogquiz/tests
 }
 
 stop() {
@@ -25,14 +25,14 @@ case $1 in
 +) init ;;
 -) stop ;;
 a)
-  $CONTAINER_BIN volume rm classquiz_db
+  $CONTAINER_BIN volume rm frogquiz_db
   init
   run_tests
   stop
   ;;
 prepare)
   stop
-  $CONTAINER_BIN volume rm classquiz_db
+  $CONTAINER_BIN volume rm frogquiz_db
   init
   ;;
 *)

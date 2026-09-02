@@ -16,4 +16,4 @@ A clear and concise description of the improvement you're asking for.
 **Additional context**
 Add any other context about the problem here.
 
-Thanks for contributing to ClassQuiz!
+Thanks for contributing to frogQuiz!

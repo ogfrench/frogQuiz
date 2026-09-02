@@ -4,8 +4,8 @@
 
 
 from logging.config import fileConfig
-from classquiz.db.models import metadata
-from classquiz.config import settings
+from frogquiz.db.models import metadata
+from frogquiz.config import settings
 from sqlalchemy import create_engine
 
 from alembic import context

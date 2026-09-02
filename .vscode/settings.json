@@ -8,8 +8,8 @@
             "previewLimit": 50,
             "server": "localhost",
             "driver": "PostgreSQL",
-            "connectString": "postgresql://postgres:mysecretpassword@localhost:5432/classquiz",
-            "name": "ClassQuiz"
+            "connectString": "postgresql://postgres:mysecretpassword@localhost:5432/frogquiz",
+            "name": "frogQuiz"
         }
     ]
 }

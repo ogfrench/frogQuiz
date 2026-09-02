@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 version = 1
-test_patterns = ["classquiz/tests/**", "test_*.py"]
+test_patterns = ["frogquiz/tests/**", "test_*.py"]
 
 
 [[analyzers]]

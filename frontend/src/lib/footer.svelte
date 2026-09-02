@@ -16,7 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 		<p class="col-start-3 col-end-11 text-center w-full">
 			{@html $t('footer.self_ads', {
 				mawoka_link:
-					'<a href="https://mawoka.eu?utm_source=ClassQuiz&utm_medium=footer" target="_blank" class="underline text-blue-300 hover:text-blue-500 transition">Mawoka</a>',
+					'<a href="https://mawoka.eu?utm_source=frogQuiz&utm_medium=footer" target="_blank" class="underline text-blue-300 hover:text-blue-500 transition">Mawoka</a>',
 				others_link: `<a href='/docs/attribution' class='underline text-blue-300 hover:text-blue-500 transition'>${$t(
 					'words.other',
 					{ count: 2 }
@@ -69,10 +69,10 @@ SPDX-License-Identifier: MPL-2.0
 				/>
 			</svg>
 			<a
-				href="https://fosstodon.org/@classquiz"
+				href="https://fosstodon.org/@frogquiz"
 				rel="me"
 				class="underline text-blue-300 hover:text-blue-500 transition"
-				>@classquiz@fosstodon.org</a
+				>@frogquiz@fosstodon.org</a
 			> for updates!
 		</p>
 	</div>

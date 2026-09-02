@@ -14,17 +14,17 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz/docs - Self-Host</title>
+	<title>frogQuiz/docs - Self-Host</title>
 	<meta
 		name="description"
-		content="How to self-host ClassQuiz, the open-source quiz-application"
+		content="How to self-host frogQuiz, the open-source quiz-application"
 	/>
 </svelte:head>
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
 >
 	<h1>Self-Hosting</h1>
-	<p>Since ClassQuiz is open-source, it can also be self-hosted.</p>
+	<p>Since frogQuiz is open-source, it can also be self-hosted.</p>
 
 	<h2>Warning</h2>
 	<p>
@@ -93,7 +93,7 @@ SPDX-License-Identifier: MPL-2.0
 		You'll have to set up a storage provider for some pictures (these getting imported from
 		Kahoot!). For now, you can use <a href="https://min.io/" target="_blank">Minio (S3)</a> or
 		the local filesystem. Please not that I'd recommend Minio for larger instances, since it can
-		be scaled and the media doesn't have to streamed through the (comparatively) slow ClassQuiz
+		be scaled and the media doesn't have to streamed through the (comparatively) slow frogQuiz
 		server. Now, that you've decided on a storage backend, you can set the
 		<code>STORAGE_BACKEND</code>-environment-variable to either <code>s3</code> or
 		<code>local</code>. If you ask yourself what happened with deta, I've decided to remove it,
@@ -104,7 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 		...you'll also have to set the <code>S3_ACCESS_KEY</code>, <code>S3_SECRET_KEY</code> and
 		the
 		<code>S3_BASE_URL</code>. The <code>S3_BUCKET_NAME</code> can also be set, but defaults to
-		<code>classquiz</code>.
+		<code>frogquiz</code>.
 	</p>
 	<h4>If you chose the local filesystem...</h4>
 	<p>
@@ -127,7 +127,7 @@ SPDX-License-Identifier: MPL-2.0
 		> and create a new project and select it. Then, go to the "OAuth consent screen" and set it up.
 		Next, go to the "Credentials"-tab and click on "Create Credentials" and create a new "OAuth Client
 		ID". This ID should be from the application-type "Web application". Afterwards, add a new "Authorised
-		JavaScript origin", which is just the base-domain (with https) of your ClassQuiz-installation.
+		JavaScript origin", which is just the base-domain (with https) of your frogQuiz-installation.
 		Then, add a new "Authorised redirect URI". This URI will have the following scheme:
 	</p>
 	<pre><code>https://[BASE_URL]/api/v1/users/oauth/google/auth</code></pre>
@@ -164,6 +164,6 @@ SPDX-License-Identifier: MPL-2.0
 		></pre>
 	<p>Now build and deploy:</p>
 	<pre><code>docker compose build && docker compose up -d</code></pre>
-	<p><b>ClassQuiz needs HTTPS/SSL to work properly!</b></p>
+	<p><b>frogQuiz needs HTTPS/SSL to work properly!</b></p>
 	<p><b>Enjoy! ❤️</b></p>
 </article>

@@ -67,6 +67,6 @@ python_version = "3.13"
 
 [scripts]
 format = "black ."
-lint = "flake8 classquiz"
-test = "coverage run -m pytest --lf -v --asyncio-mode=strict classquiz/tests"
-worker = "arq classquiz.worker.WorkerSettings"
+lint = "flake8 frogquiz"
+test = "coverage run -m pytest --lf -v --asyncio-mode=strict frogquiz/tests"
+worker = "arq frogquiz.worker.WorkerSettings"

@@ -12,7 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const testimotionals = [
 		{
-			quote: `#ClassQuiz: An open source quiz platform (like Kahoot!) made by @Mawoka
+			quote: `#frogQuiz: An open source quiz platform (like Kahoot!) made by @Mawoka
  and written mostly in #svelte and #python.
 I like it and would use it for my house parties next time!`,
 			name: 'Deekshith Allamaneni',

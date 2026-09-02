@@ -53,7 +53,7 @@ SPDX-License-Identifier: MPL-2.0
 			<a
 				href="/"
 				class="font-black tracking-tight text-xl lg:text-2xl text-black marck-script link-hover px-3 lg:px-5"
-				>ClassQuiz</a
+				>frogQuiz</a
 			>
 			<a class="btn-nav border-2 rounded-sm" href="/play">{$t('words.play')}</a>
 			<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
@@ -171,7 +171,7 @@ SPDX-License-Identifier: MPL-2.0
 			<a
 				href="/"
 				class="font-black tracking-tight text-xl lg:text-2xl text-black marck-script link-hover px-3 lg:px-5"
-				>ClassQuiz</a
+				>frogQuiz</a
 			>
 			<a class="btn-nav flex" href="/play">{$t('words.play')}</a>
 

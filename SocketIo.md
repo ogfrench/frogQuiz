@@ -48,7 +48,7 @@ return (example):
   "quiz_id": "26058ee8-6c6f-41e0-9d3d-70c82e38d9de",
   "questions": [
     {
-      "question": "Is ClassQuiz cool?",
+      "question": "Is frogQuiz cool?",
       "answers": [
         {
           "right": true,

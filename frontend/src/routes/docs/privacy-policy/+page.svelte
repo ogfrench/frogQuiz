@@ -15,10 +15,10 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz/docs - Privacy policy</title>
+	<title>frogQuiz/docs - Privacy policy</title>
 	<meta
 		name="description"
-		content="How to self-host ClassQuiz, the open-source quiz-application"
+		content="How to self-host frogQuiz, the open-source quiz-application"
 	/>
 </svelte:head>
 
@@ -75,7 +75,7 @@ SPDX-License-Identifier: MPL-2.0
 		This site uses a self-hosted GlitchTip (sentry) instance for error-logging. An opt-out is
 		not available at the moment. This website also uses
 		<a href="https://plausible.io/">Plausible</a> to log usage-data, but this is also running on
-		the same server as ClassQuiz itself.
+		the same server as frogQuiz itself.
 	</p>
 	<h3>Third-Parties</h3>
 	<p>

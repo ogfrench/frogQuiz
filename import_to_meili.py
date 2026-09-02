@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import meilisearch
-from classquiz.db import database
-from classquiz.db.models import Quiz
-from classquiz.helpers import get_meili_data
-from classquiz.config import settings
+from frogquiz.db import database
+from frogquiz.db.models import Quiz
+from frogquiz.helpers import get_meili_data
+from frogquiz.config import settings
 from asyncio import run
 
 settings = settings()

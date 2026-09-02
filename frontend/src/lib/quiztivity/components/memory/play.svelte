@@ -96,7 +96,7 @@ SPDX-License-Identifier: MPL-2.0
 				{:else}
 					<img
 						src="/android-chrome-512x512.png"
-						alt="ClassQuiz logo"
+						alt="frogQuiz logo"
 						class="m-4 opacity-50 hover:opacity-80 transition-all"
 					/>
 				{/if}

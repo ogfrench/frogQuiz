@@ -5,7 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 ---
 name: Feature request
-about: Make a clear demand for improving ClassQuiz 💪
+about: Make a clear demand for improving frogQuiz 💪
 
 ---
 
@@ -19,4 +19,4 @@ If applicable, add screenshots to help explain your feature.
 **Additional context**
 Add any other context about the problem here.
 
-Thanks for contributing to ClassQuiz!
+Thanks for contributing to frogQuiz!

@@ -18,7 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		const el = document.createElement('a');
 		el.setAttribute('href', `data:text/plain;charset=utf-8,${backup_code}`);
-		el.setAttribute('download', 'ClassQuiz-Backup-Code.txt');
+		el.setAttribute('download', 'frogQuiz-Backup-Code.txt');
 		el.style.display = 'none';
 		document.body.appendChild(el);
 		el.click();

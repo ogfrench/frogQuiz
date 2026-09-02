@@ -12,7 +12,7 @@ on:
   push:
     branches: [master]
     paths:
-      - "classquiz/**"
+      - "frogquiz/**"
       - ".github/workflows/build_backend.yml"
 #  pull_request:
 

@@ -205,9 +205,9 @@ SPDX-License-Identifier: MPL-2.0
 						target="_blank"
 						use:tippy={{
 							content:
-								'ClassQuizControllers are small physical devices to play ClassQuiz. Click to learn more.'
+								'frogQuizControllers are small physical devices to play frogQuiz. Click to learn more.'
 						}}
-						class="decoration-dashed underline cursor-help">ClassQuizControllers</a
+						class="decoration-dashed underline cursor-help">frogQuizControllers</a
 					>
 					are {cqcs_enabled ? 'enabled' : 'disabled'}</span
 				>

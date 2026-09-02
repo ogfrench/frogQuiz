@@ -105,14 +105,14 @@
     "index_page": {
         "meta": {
             "title": "Início",
-            "description": "ClassQuiz é uma aplicação de quiz para aprender de forma interativa para os estudantes, de código aberto e de utilização gratuita"
+            "description": "frogQuiz é uma aplicação de quiz para aprender de forma interativa para os estudantes, de código aberto e de utilização gratuita"
         },
         "features_description": {
-            "1": "ClassQuiz é uma plataforma de quiz que permite criar e gerir quizzes.",
+            "1": "frogQuiz é uma plataforma de quiz que permite criar e gerir quizzes.",
             "2": "A principal funcionalidade é uma função de importação Kahoot! que permite importar questionários Kahoot!",
             "3": "O editor e a função de exportação Excel dos resultados quiz são pontos de destaque deste programa."
         },
-        "stats": "Existem já {{user_count}} utilizadores e {{quiz_count}} questionários no ClassQuiz.",
+        "stats": "Existem já {{user_count}} utilizadores e {{quiz_count}} questionários no frogQuiz.",
         "see_what_true_and_false": "Veja o que estava certo ou errado",
         "see_how_many_true_and_false": "Veja quantos estavam certos ou errados",
         "create_or_import": "Criar ou importar",
@@ -130,7 +130,7 @@
         "get_a_quiz": "1. Obter um quiz",
         "create_a_quiz_from_scratch": "Criar um quiz do zero com o editor, incluir imagens e mais",
         "find_or_explore": "Pesquisar (ou explorar) quizzes criados ou importados por outros",
-        "import_quiz_from_kahoot_and_edit": "Importar um quiz Kahoot! e editá-lo em ClassQuiz",
+        "import_quiz_from_kahoot_and_edit": "Importar um quiz Kahoot! e editá-lo em frogQuiz",
         "play_quiz": "2. Preencher o quiz",
         "select_answer": "Selecionar a resposta",
         "choose_answer_wisely": "Escolha a resposta cuidadosamente",
@@ -138,23 +138,23 @@
         "check_if_chosen_wisely": "Verifique, se escolheu bem",
         "list_winners": "Listar vencedores",
         "get_ranking_and_winners": "Obter classificação final e ver os vencedores",
-        "why_classquiz": "Porquê ClassQuiz?",
-        "self_hostable_content": "ClassQuiz pode facilmente ser auto-alojado, para que os dados fiquem sob o seu controlo!",
-        "user_friendly_content": "ClassQuiz está desenhado para ser simples e fácil de usar para todos.",
+        "why_frogquiz": "Porquê frogQuiz?",
+        "self_hostable_content": "frogQuiz pode facilmente ser auto-alojado, para que os dados fiquem sob o seu controlo!",
+        "user_friendly_content": "frogQuiz está desenhado para ser simples e fácil de usar para todos.",
         "quiz_results_downloadable_content": "Os resultados dos questionários podem ser facilmente exportados para Excel. (Não sabia que os outro não o podiam fazer)",
-        "multilingual_content": "ClassQuiz está traduzido para inglês, francês, alemão, italiano, norueguês bokmål, turco e parcialmente traduzido em indonésio e catalão.",
+        "multilingual_content": "frogQuiz está traduzido para inglês, francês, alemão, italiano, norueguês bokmål, turco e parcialmente traduzido em indonésio e catalão.",
         "dark_mode_content": "Uma das funcionalidade mais importantes que um site pode ter!",
         "download_quizzes": "Descarregar questionários",
         "community_driven": "Guiado pela comunidade",
-        "community_driven_content": "ClassQuiz depende da sua comunidade para o financiamento, testes, solicitação de funções, traduções e mais! Podes também fazer parte da comunidade ativa ClassQuiz!",
+        "community_driven_content": "frogQuiz depende da sua comunidade para o financiamento, testes, solicitação de funções, traduções e mais! Podes também fazer parte da comunidade ativa frogQuiz!",
         "slogan": "A plataforma de quiz de código-aberto!",
-        "no_tracking_content": "Outros gravam as suas informações e partilham com terceiros, mas ClassQuiz não.",
-        "completely_free_content": "ClassQuiz é gratuito para o utilizador, sem planos pagos nem redirecionamentos irritantes para versões paga. Donativos são bem-vindos.",
-        "german_server_content": "Os servidores de ClassQuiz encontram-se na Alemanha e estão alojados com netcup.",
-        "download_quizzes_content": "Os questionários podem em qualquer altura, ser descarregados como um ficheiro único. Isto permite fácil migração para outras instâncias ClassQuiz.",
-        "how_does_classquiz_work": "Como é que o ClassQuiz funciona?",
+        "no_tracking_content": "Outros gravam as suas informações e partilham com terceiros, mas frogQuiz não.",
+        "completely_free_content": "frogQuiz é gratuito para o utilizador, sem planos pagos nem redirecionamentos irritantes para versões paga. Donativos são bem-vindos.",
+        "german_server_content": "Os servidores de frogQuiz encontram-se na Alemanha e estão alojados com netcup.",
+        "download_quizzes_content": "Os questionários podem em qualquer altura, ser descarregados como um ficheiro único. Isto permite fácil migração para outras instâncias frogQuiz.",
+        "how_does_frogquiz_work": "Como é que o frogQuiz funciona?",
         "no_player_limit": "Sem limite de jogadores",
-        "no_player_limit_content": "ClassQuiz não restringe artificialmente o número de jogadores. Teoricamente, mais que 1000 jogadores podem participar do mesmo quiz e já foi testado com até 300 jogadores por quiz."
+        "no_player_limit_content": "frogQuiz não restringe artificialmente o número de jogadores. Teoricamente, mais que 1000 jogadores podem participar do mesmo quiz e já foi testado com até 300 jogadores por quiz."
     },
     "overview_page": {
         "created_at": "Criado em",
@@ -413,11 +413,11 @@
         "view_on_kahoot": "Ver no original"
     },
     "import_page": {
-        "this_side_classquiz_excel": "Também pode enviar ficheiros excel, se tiver preenchido o modelo a seguir. Se um quiz com o título já existir, será anexado às perguntas do quiz existente.",
+        "this_side_frogquiz_excel": "Também pode enviar ficheiros excel, se tiver preenchido o modelo a seguir. Se um quiz com o título já existir, será anexado às perguntas do quiz existente.",
         "visit_docs": "Visite a documentação",
         "download_template_here": "Descarregar o modelo",
-        "classquiz_quiz": "Um quiz do ClassQuiz",
-        "this_side_classquiz": "Neste canto consegue importar questionários que foram exportados do ClassQuiz.",
+        "frogquiz_quiz": "Um quiz do frogQuiz",
+        "this_side_frogquiz": "Neste canto consegue importar questionários que foram exportados do frogQuiz.",
         "a_kahoot_quiz": "Um Kahoot!-Quiz",
         "side_import_kahoot": "Neste canto consegue importar quizzes que estão no Kahoot!.",
         "url_should_look_like_this": "A URL deve estar assim: https://create.kahoot.it/details/...",
