@@ -30,7 +30,10 @@ jobs:
         with:
           python-version: "3.13"
           cache: 'pipenv'
-      - run: pipenv install --dev
+      # "sync" installs Pipfile.lock exactly, like the Docker image does.
+      # "install" re-resolves and pulls an ormar that no longer depends on
+      # "databases", which frogquiz/db/__init__.py imports directly.
+      - run: pipenv sync --dev
       - name: Prepare tests
         run: |
           cp .env.ci .env
