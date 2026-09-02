@@ -23,14 +23,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	// if token expires, do a request to get a new one and set the response-cookies on the response
 	if (Date.now() >= jwt.exp * 1000) {
+		// A backend that is down (restart, deploy) must not turn every page into a
+		// 500 -- fall through to the token we already have and let the API say no.
 		const res = await fetch(`${API_BASE}/api/v1/users/check`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
 				Cookie: event.request.headers.get('cookie') || ''
 			}
-		});
-		if (res.ok) {
+		}).catch(() => null);
+		if (res?.ok) {
 			event.locals.email = await res.text();
 			const resp = await resolve(event);
 			try {

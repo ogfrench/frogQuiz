@@ -50,7 +50,7 @@ SPDX-License-Identifier: MPL-2.0
 									>{new Date(result.timestamp).toLocaleString()}</td
 								>
 								<td class="border-r dark:border-gray-500 p-1 border-gray-300"
-									>{Object.keys(result.player_scores).length}</td
+									>{result.player_count}</td
 								>
 								<td class:p-1={result.note}>
 									{#if result.note}
