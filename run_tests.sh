@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-CONTAINER_BIN=podman
+CONTAINER_BIN=${CONTAINER_BIN:-podman}
 
 run_tests() {
   pipenv run coverage run -m pytest -s -v --asyncio-mode=strict frogquiz/tests
@@ -28,7 +28,10 @@ a)
   $CONTAINER_BIN volume rm frogquiz_db
   init
   run_tests
+  # Keep the test exit code: "stop" would otherwise mask a failing suite
+  rc=$?
   stop
+  exit $rc
   ;;
 prepare)
   stop

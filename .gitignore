@@ -8,6 +8,7 @@ node_modules/
 .svelte-kit/
 .env*
 !.env.example
+!.env.ci
 *.db
 *.rdb
 survey.json
