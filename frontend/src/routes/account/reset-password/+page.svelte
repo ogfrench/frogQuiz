@@ -17,22 +17,28 @@ SPDX-License-Identifier: MPL-2.0
 	const submit = async (e: Event) => {
 		e.preventDefault();
 		isSubmitting = true;
-		const res = await fetch('/api/v1/users/forgot-password', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				email: email
-			})
-		});
-		if (res.status === 200) {
-			alert('Email was sent! Please check your inbox.');
-			return;
-		} else if (res.status === 404) {
-			alert('user not found!');
+		try {
+			const res = await fetch('/api/v1/users/forgot-password', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email: email
+				})
+			});
+			if (res.ok) {
+				alert('Email was sent! Please check your inbox.');
+			} else if (res.status === 404) {
+				alert('user not found!');
+			} else {
+				alert('An error occurred while sending the email. Please try again.');
+			}
+		} catch {
+			alert('An error occurred while sending the email. Please try again.');
+		} finally {
+			isSubmitting = false;
 		}
-		isSubmitting = false;
 	};
 
 	let email = $state('');

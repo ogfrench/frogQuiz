@@ -48,24 +48,33 @@ SPDX-License-Identifier: MPL-2.0
 		validate: validateSchema(registerSchema),
 		extend: [reporter()],
 		onSubmit: async (values) => {
-			const res = await fetch('/api/v1/users/create', {
-				method: 'post',
-				body: JSON.stringify({
-					email: values.email,
-					password: values.password1,
-					username: values.username
-				}),
-				headers: {
-					'Content-Type': 'application/json'
+			try {
+				const res = await fetch('/api/v1/users/create', {
+					method: 'post',
+					body: JSON.stringify({
+						email: values.email,
+						password: values.password1,
+						username: values.username
+					}),
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				});
+				if (res.status === 200) {
+					const data = await res.json();
+					if (data.verified) {
+						responseData.data = '200_verified';
+					} else {
+						responseData.data = '200';
+					}
+				} else if (res.status === 409) {
+					responseData.data = '409';
+				} else if (res.status === 400) {
+					responseData.data = '400';
+				} else {
+					responseData.data = 'error';
 				}
-			});
-			if (res.status === 200) {
-				responseData.data = '200';
-			} else if (res.status === 409) {
-				responseData.data = '409';
-			} else if (res.status === 400) {
-				responseData.data = '400';
-			} else {
+			} catch {
 				responseData.data = 'error';
 			}
 			responseData.open = true;
@@ -324,7 +333,7 @@ SPDX-License-Identifier: MPL-2.0
 								Account already exists!
 							{:else if responseData.data === 'error'}
 								Unexpected error!
-							{:else if responseData.data === '200'}
+							{:else if responseData.data === '200' || responseData.data === '200_verified'}
 								Sign up successfully!
 							{:else if responseData.data === '400'}
 								Wrong email!
@@ -334,7 +343,9 @@ SPDX-License-Identifier: MPL-2.0
 						</h3>
 						<div class="mt-2">
 							<p class="text-sm text-gray-500">
-								{#if responseData.data === '200'}
+								{#if responseData.data === '200_verified'}
+									You signed up successfully!
+								{:else if responseData.data === '200'}
 									<!-- TODO: Add translation -->
 									You signed up successfully! Please check your mailbox to confirm
 									your email address!
@@ -357,7 +368,7 @@ SPDX-License-Identifier: MPL-2.0
 					type="button"
 					onclick={() => {
 						responseData.open = false;
-						if (responseData.data === '200') {
+						if (responseData.data === '200' || responseData.data === '200_verified') {
 							window.location.assign('/');
 						} else {
 							window.location.reload();

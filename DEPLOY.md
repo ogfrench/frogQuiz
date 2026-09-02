@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2026 ogfrench
+SPDX-FileCopyrightText: 2026 François & Gonçalo
 
 SPDX-License-Identifier: MPL-2.0
 -->

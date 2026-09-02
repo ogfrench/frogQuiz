@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
-SPDX-FileCopyrightText: 2026 ogfrench
+SPDX-FileCopyrightText: 2026 François & Gonçalo
 
 SPDX-License-Identifier: MPL-2.0
 -->
