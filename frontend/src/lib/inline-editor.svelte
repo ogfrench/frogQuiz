@@ -7,18 +7,8 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { run } from 'svelte/legacy';
 
-	import {
-		BalloonEditor,
-		Essentials,
-		Autoformat,
-		Bold,
-		Italic,
-		Paragraph,
-		TextTransformation,
-		Superscript,
-		Subscript,
-		Strikethrough
-	} from 'ckeditor5';
+	// ckeditor5 touches `document` while its modules initialise, which crashes any
+	// server-side render. It is only ever used in onMount, so load it there.
 	import 'ckeditor5/ckeditor5.css';
 
 	const triggerChange = () => {
@@ -39,7 +29,20 @@ SPDX-License-Identifier: MPL-2.0
 		text = text.replace('<p>', '').replace('</p>', '');
 	});
 	let editor;
-	onMount(() => {
+	onMount(async () => {
+		const {
+			BalloonEditor,
+			Essentials,
+			Autoformat,
+			Bold,
+			Italic,
+			Paragraph,
+			TextTransformation,
+			Superscript,
+			Subscript,
+			Strikethrough
+		} = await import('ckeditor5');
+
 		class Editor extends BalloonEditor {
 			static builtinPlugins = [
 				Essentials,
