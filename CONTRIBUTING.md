@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 # Contribute to frogQuiz
 
 For the development-setup, please check out the
-docs: [https://classquiz.de/docs/develop](https://classquiz.de/docs/develop)
+docs: [https://frogquiz.xyz/docs/develop](https://frogquiz.xyz/docs/develop)
 
 ## Coding guidelines
 - _Try_ to use type hints (python) and TypeScript everwhere possible (for python `foo() -> dict` is better than nothing)

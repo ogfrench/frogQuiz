@@ -13,9 +13,9 @@ body:
       required: true
   - type: dropdown
     attributes:
-      label: Did the issue occur at classquiz.de, or on a self-hosted instance?
+      label: Did the issue occur at frogquiz.xyz, or on a self-hosted instance?
       options:
-        - On classquiz.de
+        - On frogquiz.xyz
         - On a self-hosted instance
     validations:
       required: true

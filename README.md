@@ -17,12 +17,12 @@ SPDX-License-Identifier: MPL-2.0
     <p align='center'>
         The open-source quiz-platform!
         <br/>
-        <a href='https://frogquizxyz.netlify.app/'><strong>Visit the website »</strong></a>
+        <a href='https://frogquiz.xyz/'><strong>Visit the website »</strong></a>
         <br />
         <br />
-        <a href='https://frogquizxyz.netlify.app/docs'>Docs</a>
+        <a href='https://frogquiz.xyz/docs'>Docs</a>
         ·
-        <a href='https://frogquizxyz.netlify.app/account/register'>Register</a>
+        <a href='https://frogquiz.xyz/account/register'>Register</a>
         ·
         <a href='DEPLOY.md'>Deploying</a>
         ·
@@ -44,7 +44,7 @@ Marlon W (Mawoka). See [Credits](#credits) below.
 
 ## Try it
 
-The frontend is at [frogquizxyz.netlify.app](https://frogquizxyz.netlify.app).
+The frontend is at [frogquiz.xyz](https://frogquiz.xyz).
 It is hosted on Netlify, and it talks to a backend running on a separate
 container host, because socket.io cannot go through Netlify's proxy.
 
