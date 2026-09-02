@@ -23,7 +23,7 @@ SPDX-License-Identifier: MPL-2.0
 			target="_blank">create.kahoot.it/discover</a
 		>, find the quiz you want to import, click on it and copy the URL into your clipboard. Then
 		go to
-		<a href="https://classquiz.de/import" rel="nofollow" target="_blank">classquiz.de/import</a>
+		<a href="https://frogquiz.xyz/import" rel="nofollow" target="_blank">frogquiz.xyz/import</a>
 		and paste the url into the text field.
 	</p>
 

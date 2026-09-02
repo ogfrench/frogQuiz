@@ -65,7 +65,7 @@ SPDX-License-Identifier: MPL-2.0
 				<a
 					target="_blank"
 					class="btn-nav flex items-center gap-1"
-					href="https://github.com/mawoka-myblock/ClassQuiz"
+					href="https://github.com/ogfrench/frogQuiz"
 					>GitHub
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -103,9 +103,6 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 
 			<div class="fit-content flex items-center justify-center gap-2">
-				<BrownButton href="https://mawoka.eu/donate" target="_blank"
-					>{$t('navbar.donate')} <span class="">❤️</span></BrownButton
-				>
 				<div class="lg:flex items-center justify-center">
 					{#if darkMode}
 						<button
@@ -332,11 +329,7 @@ SPDX-License-Identifier: MPL-2.0
 					>
 				{/if}
 
-				<div class="fit-content flex items-center justify-center my-2">
-					<BrownButton href="https://mawoka.eu/donate" target="_blank"
-						>{$t('navbar.donate')} <span class="">❤️</span></BrownButton
-					>
-				</div>
+
 			</div>
 		{/if}
 	</div>

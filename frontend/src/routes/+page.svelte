@@ -112,7 +112,7 @@ SPDX-License-Identifier: MPL-2.0
 		content="frogQuiz is a quiz-application like KAHOOT!, but open-source. You can create quizzes and play them remotely with other people."
 	/>
 
-	<meta property="og:url" content="https://classquiz.de/" />
+	<meta property="og:url" content="https://frogquiz.xyz/" />
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="frogQuiz - {$t('index_page.meta.title')}" />
 	<meta
@@ -122,8 +122,8 @@ SPDX-License-Identifier: MPL-2.0
 	<meta property="og:image" content={JpgOpenGraph} />
 
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta property="twitter:domain" content="classquiz.de" />
-	<meta property="twitter:url" content="https://classquiz.de/" />
+	<meta property="twitter:domain" content="frogquiz.xyz" />
+	<meta property="twitter:url" content="https://frogquiz.xyz/" />
 	<meta name="twitter:title" content="frogQuiz - {$t('index_page.meta.title')}" />
 	<meta
 		name="twitter:description"
