@@ -10,9 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 <a href="https://github.com/mawoka-myblock/ClassQuiz/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc"><img alt="GitHub issues" src="https://img.shields.io/github/issues/mawoka-myblock/ClassQuiz?style=for-the-badge"></a>
 <a href="https://github.com/mawoka-myblock/ClassQuiz/blob/master/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/mawoka-myblock/ClassQuiz?style=for-the-badge"></a>
 <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/mawoka-myblock/ClassQuiz?style=for-the-badge">
-[![DeepSource](https://deepsource.io/gh/mawoka-myblock/ClassQuiz.svg/?label=active+issues&show_trend=true&token=5-2Na9HN-2CXcGkHjah_Rk09&style=for-the-badge)](https://deepsource.io/gh/mawoka-myblock/ClassQuiz/)
 <img alt="Snky badge" src="https://img.shields.io/badge/Snyk-Check-success?style=for-the-badge">
-[![codecov](https://codecov.io/gh/mawoka-myblock/ClassQuiz/branch/master/graph/badge.svg?token=7CHK2A0AMO)](https://codecov.io/gh/mawoka-myblock/ClassQuiz)
 
 <div align='center'>
     <h2 align='center'>frogQuiz</h2>
