@@ -54,6 +54,25 @@ are unaffected.
 Trade-off: this splits the deployment across two providers and puts the socket on a
 different origin than the page. Option A is cheaper and has fewer moving parts.
 
+## Managed Postgres (Neon)
+
+The `db` container can be swapped for Neon when the app host has no persistent disk.
+Verified working: `alembic upgrade head` and the running API both accept a Neon URI with
+`?sslmode=require` -- psycopg2 and asyncpg each parse it without changes.
+
+```bash
+# point api + worker at Neon, keep the rest of the stack local
+export DB_URL_OVERRIDE="postgresql://USER:PASSWORD@HOST.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d
+```
+
+For a real deployment, put the same URI in `DB_URL` and drop the `db` service and its
+`depends_on` entries. Pick a Neon region next to the app host -- every query crosses the
+network, so a Frankfurt app with a US database pays the round trip on each one.
+
+Neon does not replace the rest: Redis, Meilisearch, the API and the arq worker still need
+a host that runs long-lived containers.
+
 ## Python version
 
 The Docker image and `Pipfile.lock` are both on Python 3.13. Bumping means changing

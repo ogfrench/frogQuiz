@@ -1,0 +1,9 @@
+# Local-only override: run api/worker against Neon instead of the db container.
+# docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d
+services:
+  api:
+    environment:
+      DB_URL: ${DB_URL_OVERRIDE:?set DB_URL_OVERRIDE to the Neon connection string}
+  worker:
+    environment:
+      DB_URL: ${DB_URL_OVERRIDE:?set DB_URL_OVERRIDE to the Neon connection string}
