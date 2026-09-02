@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "NODE_ENV=production vite build",
+		"build": "svelte-kit sync && NODE_ENV=production vite build",
 		"package": "vite package",
 		"preview": "vite preview",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
