@@ -123,6 +123,9 @@ SPDX-License-Identifier: MPL-2.0
 	onMount(() => {
 		if (auto_connect) {
 			connect();
+			// A reconnect gets a new sid, which the server doesn't know as the admin
+			// of this game, so re-register or no player event ever arrives again.
+			socket.on('connect', connect);
 		}
 		tinykeys(window, {
 			Enter: next_action,
@@ -136,6 +139,7 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('registered_as_admin', (data) => {
 		game_state.quiz_data = JSON.parse(data['game']);
 		console.log(game_state.quiz_data);
+		game_state.players = data['players'] ?? [];
 		success = true;
 	});
 	socket.on('player_joined', (int_data) => {

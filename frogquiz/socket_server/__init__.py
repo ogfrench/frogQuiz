@@ -233,13 +233,31 @@ async def register_as_admin(sid: str, data: dict):
         return
     game_pin = data.game_pin
     game_id = data.game_id
-    if await redis.get(f"game_session:{game_pin}") is not None:
-        await sio.emit("already_registered_as_admin", room=sid)
-        return
-    await GameSession(admin=sid, game_id=game_id, answers=[]).save(game_pin)
+    old_session = await redis.get(f"game_session:{game_pin}")
+    if old_session is None:
+        await GameSession(admin=sid, game_id=game_id, answers=[]).save(game_pin)
+    else:
+        # Socket.io hands out a new sid on every reconnect, so the host asks to
+        # register again. Hand the game back instead of locking it out -- only a
+        # different game_id is somebody else trying to take the game over.
+        existing_session = GameSession.model_validate_json(old_session)
+        if existing_session.game_id != game_id:
+            await sio.emit("already_registered_as_admin", room=sid)
+            return
+        existing_session.admin = sid
+        await existing_session.save(game_pin)
+    players = [
+        json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")
+    ]
     await sio.emit(
         "registered_as_admin",
-        {"game_id": game_id, "game": await redis.get(f"game:{game_pin}")},
+        {
+            "game_id": game_id,
+            "game": await redis.get(f"game:{game_pin}"),
+            # The host rebuilds its player list from this, so a reconnect doesn't
+            # lose everyone who joined while it was away.
+            "players": players,
+        },
         room=sid,
     )
     session = {"game_pin": game_pin, "admin": True, "remote": False}
