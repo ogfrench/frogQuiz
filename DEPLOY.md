@@ -54,6 +54,47 @@ are unaffected.
 Trade-off: this splits the deployment across two providers and puts the socket on a
 different origin than the page. Option A is cheaper and has fewer moving parts.
 
+## Free hosting
+
+The stack needs always-on containers, WebSockets and a disk for Meilisearch, which rules
+out most free tiers: Railway and Fly have no free plan for persistent services, and
+Render's free web services sleep after inactivity, which drops live game sockets.
+
+What is actually free:
+
+| Piece | Free option | Limit |
+| --- | --- | --- |
+| Frontend | Netlify | 100 GB bandwidth/month |
+| Postgres | Neon | 0.5 GB storage, autosuspend |
+| API + worker + Redis + Meilisearch | Oracle Cloud Always Free VM | 4 ARM cores / 24 GB RAM, no time limit |
+
+Oracle's Always Free ARM instance runs this whole compose stack with room to spare, and
+the images are all multi-arch. Signup needs a card for verification (not charged) and ARM
+capacity is often unavailable in busy regions -- retry or pick another region. If that
+fails, a Hetzner CX22 is about EUR 4/month and takes ten minutes.
+
+### Deploying to any Linux VM
+
+```bash
+# on the VM (Ubuntu 24.04)
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER && newgrp docker
+
+git clone https://github.com/ogfrench/frogQuiz && cd frogQuiz
+cp .env.example .env && nano .env          # SECRET_KEY, SITE_ADDRESS, ROOT_ADDRESS, mail
+docker compose up -d                       # builds the images on first run
+
+# with Neon instead of the local db container:
+#   put the Neon URI in DB_URL_OVERRIDE in .env, then
+#   docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d #     api worker redis meilisearch proxy
+```
+
+Open ports 80 and 443 in the provider's firewall as well as the OS one -- Oracle's
+security list blocks them by default, and Caddy cannot get a certificate without 80.
+
+Keep `MAX_WORKERS: "1"`. The socket.io server holds per-game state in one process; a
+second gunicorn worker or a second API replica breaks live games.
+
 ## Managed Postgres (Neon)
 
 The `db` container can be swapped for Neon when the app host has no persistent disk.
