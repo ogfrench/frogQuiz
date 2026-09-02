@@ -103,6 +103,8 @@ app.include_router(remote.router, tags=["remote"], prefix="/api/v1/remote", incl
 app.include_router(login.router, tags=["auth"], prefix="/api/v1/login", include_in_schema=True)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+
+
 class ApiOnlyCORSMiddleware(CORSMiddleware):
     """CORS for the REST API only.
 
