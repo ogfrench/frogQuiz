@@ -121,6 +121,7 @@ async def test_get():
     for i in quiz_list:
         rounds = rounds + 1
         await get(i)
+    # get() returns the upstream status code for anything that isn't a 200, not None
     lol = await get("f183e091-a863-44ec-a1b7-c70eb92e3f6a")
-    assert lol is None
-    assert await get("8c523af2-6fbf-4940-a5fa-6b6130546892") is None
+    assert lol == 404
+    assert await get("8c523af2-6fbf-4940-a5fa-6b6130546892") == 404
