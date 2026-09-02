@@ -44,7 +44,27 @@ from classquiz.socket_server.export_helpers import save_quiz_to_storage
 from classquiz.socket_server.session import get_session, save_session
 
 settings = settings()
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=settings.cors_origins)
+
+
+def cors_allowed_origin(origin: str, environ: dict | None = None) -> bool:
+    """Allow the configured cross-site origins plus whatever origin serves this API.
+
+    engineio treats a list as the complete allowlist, so a configured list would
+    otherwise reject the API's own frontend: browsers send Origin on same-origin
+    POSTs, and every socket.io POST would come back as 400.
+    """
+    if origin in settings.cors_origins:
+        return True
+    if not environ:
+        return False
+    scheme = environ.get("HTTP_X_FORWARDED_PROTO", environ.get("wsgi.url_scheme", "http"))
+    host = environ.get("HTTP_X_FORWARDED_HOST", environ.get("HTTP_HOST", ""))
+    scheme = scheme.split(",")[0].strip()
+    host = host.split(",")[0].strip()
+    return bool(host) and origin == f"{scheme}://{host}"
+
+
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=cors_allowed_origin)
 
 
 def get_fernet_key() -> bytes:
