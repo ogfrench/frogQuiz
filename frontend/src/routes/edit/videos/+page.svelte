@@ -48,7 +48,6 @@ SPDX-License-Identifier: MPL-2.0
 	let status: Status = $state(Status.Idle);
 
 	let file_size_in_mi: undefined | number = $state(undefined);
-	let original_file_size_in_mi: undefined | number = undefined;
 	let file_data: undefined | Blob = undefined;
 
 	const compress_video = async () => {
@@ -58,7 +57,6 @@ SPDX-License-Identifier: MPL-2.0
 		status = Status.Compressing;
 		const ffmpeg = new FFmpeg();
 		const file = file_input.files[0];
-		original_file_size_in_mi = file.size / 1_048_576;
 		ffmpeg.on('log', ({ message }) => {
 			const speed_match = message.match(speed_extraction_regex);
 			stats.speed = speed_match ? parseFloat(speed_match[1]) : 0;

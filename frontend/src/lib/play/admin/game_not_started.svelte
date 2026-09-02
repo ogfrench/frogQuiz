@@ -29,7 +29,6 @@ SPDX-License-Identifier: MPL-2.0
 
 	let fullscreen_open = $state(false);
 	const { t } = getLocalization();
-	let play_music = $state(false);
 
 	if (cqc_code === 'null') {
 		cqc_code = null;
@@ -37,7 +36,6 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <div class="w-full h-full">
-	<!-- <AudioPlayer bind:play={play_music} /> -->
 	<div class="grid grid-cols-3 pt-12">
 		<!--mt-12 -->
 		<div class="flex justify-center">

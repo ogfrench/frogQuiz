@@ -116,7 +116,7 @@ SPDX-License-Identifier: MPL-2.0
 	{#if question.type === QuizQuestionType.ABCD}
 		{#if show_results}
 			<div>
-				{#each question.answers as answer, i}
+				{#each question.answers as answer}
 					<button
 						disabled
 						class:bg-green-500={question.answers[i].right}
@@ -130,7 +130,7 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{:else}
 			<div>
-				{#each question.answers as answer, i}
+				{#each question.answers as answer}
 					<button
 						disabled={selected_answer !== undefined || timer_res === '0'}
 						type="button"
@@ -197,7 +197,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/await}
 		{/if}
 	{:else if question.type === QuizQuestionType.VOTING}
-		{#each question.answers as answer, i}
+		{#each question.answers as answer}
 			<button
 				type="button"
 				disabled={selected_answer !== undefined || timer_res === '0'}
@@ -221,7 +221,7 @@ SPDX-License-Identifier: MPL-2.0
 		{/await}
 	{:else if question.type === QuizQuestionType.TEXT}
 		{#if timer_res === '0'}
-			{#each question.answers as answer, i}
+			{#each question.answers as answer}
 				<div
 					class="p-2 rounded-lg flex justify-center w-full transition bg-gray-200 my-5 text-black"
 				>
@@ -324,7 +324,7 @@ SPDX-License-Identifier: MPL-2.0
 	{:else if question.type === QuizQuestionType.CHECK}
 		{#if show_results}
 			<div>
-				{#each question.answers as answer, i}
+				{#each question.answers as answer}
 					<button
 						type="button"
 						disabled
@@ -337,7 +337,7 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{:else}
 			<div>
-				{#each question.answers as answer, i}
+				{#each question.answers as answer}
 					<button
 						type="button"
 						disabled={selected_answer !== undefined || timer_res === '0'}

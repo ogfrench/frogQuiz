@@ -5,7 +5,7 @@ import type { PageLoad } from './$types';
 
 export const load = (async ({ fetch, url }) => {
 	const page = url.searchParams.get('page') ?? '1';
-	const all = Boolean(url.searchParams.get('all')) ?? false;
+	const all = Boolean(url.searchParams.get('all'));
 	const resp = await fetch(
 		`/api/v1/moderation/quizzes?page=${page}&all=${all ? 'true' : 'false'}`
 	);

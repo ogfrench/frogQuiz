@@ -31,7 +31,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	// let data_by_username = {};
 
-	const group_username_by_score = (new_d: any[]): object => {
+	const group_username_by_score = (_new_d: any[]): object => {
 		let ret_data = {};
 		for (const i of new_data) {
 			ret_data[i.username] = i.score;

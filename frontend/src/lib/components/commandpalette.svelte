@@ -194,7 +194,7 @@ This should be okay, right?
 		selected -= 1;
 	};
 
-	const on_enter = (e: KeyboardEvent) => {
+	const on_enter = (_e: KeyboardEvent) => {
 		if (selected === null) {
 			return;
 		}

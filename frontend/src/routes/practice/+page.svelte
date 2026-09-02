@@ -30,7 +30,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {#await get_quiz()}
 	<Spinner />
-{:then q}
+{:then}
 	<div class="h-full overflow-hidden">
 		{#if selected_question === -1}
 			<TitleScreen bind:data={quiz} />

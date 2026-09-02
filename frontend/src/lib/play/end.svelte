@@ -82,7 +82,7 @@ SPDX-License-Identifier: MPL-2.0
 			data_available = false;
 		}
 	};
-	let winners = getWinnersSorted();
+	getWinnersSorted();
 </script>
 
 <div>

@@ -5,7 +5,6 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Question } from '$lib/quiz_types';
 	import { getLocalization } from '$lib/i18n';
 
 	const { t } = getLocalization();

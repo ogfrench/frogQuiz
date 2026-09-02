@@ -20,6 +20,8 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		open = true;
 		Cookies.set('commandpalette_notice', 'shown', {
+			// setDate returns a timestamp, so no Date instance survives to be reactive
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			expires: new Date().setDate(new Date().getDate() + 30)
 		});
 	});

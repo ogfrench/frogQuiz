@@ -10,7 +10,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import SomeAdminScreen from '$lib/admin.svelte';
 	import GameNotStarted from '$lib/play/admin/game_not_started.svelte';
-	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import FinalResults from '$lib/play/admin/final_results.svelte';
 	import GrayButton from '$lib/components/buttons/gray.svelte';
@@ -99,7 +98,6 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { data }: Props = $props();
-	let game_mode = $state();
 	let { auto_connect, game_token } = $state(data);
 	const game_pin = data.game_pin;
 	let errorMessage = $state('');
@@ -116,9 +114,6 @@ SPDX-License-Identifier: MPL-2.0
 			game_pin: game_pin,
 			game_id: game_token
 		});
-		const res = await fetch(`/api/v1/quiz/play/check_captcha/${game_pin}`);
-		const json = await res.json();
-		game_mode = json.game_mode;
 	};
 	onMount(() => {
 		if (auto_connect) {
@@ -132,10 +127,6 @@ SPDX-License-Identifier: MPL-2.0
 			Space: next_action
 		});
 	});
-	socket.on('session_id', (d) => {
-		const session_id = d.session_id;
-	});
-
 	socket.on('registered_as_admin', (data) => {
 		game_state.quiz_data = JSON.parse(data['game']);
 		console.log(game_state.quiz_data);
@@ -197,14 +188,6 @@ SPDX-License-Identifier: MPL-2.0
 	const save_quiz = () => {
 		socket.emit('save_quiz');
 	};
-
-	let darkMode = false;
-	if (browser) {
-		darkMode =
-			localStorage.theme === 'dark' ||
-			(!('theme' in localStorage) &&
-				window.matchMedia('(prefers-color-scheme: dark)').matches);
-	}
 
 	let bg_color = $derived(
 		game_state.quiz_data ? game_state.quiz_data.background_color : undefined

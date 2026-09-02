@@ -257,7 +257,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 			{#if game_data.questions[selected_question].type === QuizQuestionType.ABCD || game_data.questions[selected_question].type === QuizQuestionType.VOTING}
 				<div class="grid grid-cols-2 gap-2 w-full p-4">
-					{#each game_data.questions[selected_question].answers as answer, i}
+					{#each game_data.questions[selected_question].answers as answer}
 						<div
 							class="rounded-lg h-fit flex"
 							style="background-color: {answer.color ?? '#B45309'}"

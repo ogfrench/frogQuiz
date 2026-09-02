@@ -16,11 +16,9 @@ SPDX-License-Identifier: MPL-2.0
 	import Fuse from 'fuse.js';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import type { PageData } from './$types';
-	import { fly } from 'svelte/transition';
 	import StartGamePopup from '$lib/dashboard/start_game.svelte';
 	import Analytics from './Analytics.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
-	import { createTippy } from 'svelte-tippy';
 	import { onMount } from 'svelte';
 
 	interface Props {
@@ -39,12 +37,6 @@ SPDX-License-Identifier: MPL-2.0
 	let items_to_show = $state([]);
 	let all_items: Array<any> = $state();
 	let fuse;
-	const tippy = createTippy({
-		arrow: true,
-		animation: 'perspective-subtle',
-		placement: 'bottom'
-	});
-
 	let id_to_position_map = {};
 
 	const getData = async (): Promise<{ items: Array<QuizData>; fuse: Fuse<any> }> => {
@@ -101,7 +93,6 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		window.location.reload();
 	};
-	let create_button_clicked = $state(false);
 
 	let analytics_quiz_selected: undefined | QuizData = $state(undefined);
 </script>
@@ -130,23 +121,6 @@ SPDX-License-Identifier: MPL-2.0
                     Primary
                 </button>-->
 			<div class="w-full grid lg:grid-cols-4 gap-2 grid-cols-2 px-4">
-				<!-- {#if create_button_clicked}
-					<div
-						class="flex gap-2"
-						transition:fly|global={{ y: 10 }}
-						use:tippy={{ content: 'Unsure? Choose "Quiz".' }}
-					>
-						<BrownButton href="/create">{$t('words.quiz')}</BrownButton>
-						<BrownButton href="/quiztivity/create">{$t('words.quiztivity')}</BrownButton
-						>
-					</div>
-				{:else}
-					<BrownButton
-						onclick={() => {
-							create_button_clicked = true;
-						}}>{$t('words.create')}</BrownButton
-					>
-				{/if} -->
 				<BrownButton href="/create">{$t('dashboard.create_quiz')}</BrownButton>
 				<BrownButton href="/import">{$t('words.import')}</BrownButton>
 				<BrownButton href="/results">{$t('words.results')}</BrownButton>

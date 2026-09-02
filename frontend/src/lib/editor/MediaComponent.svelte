@@ -67,7 +67,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {#await media}
 	<img src={thumbhash_data} class={`${css_classes} ${added_thumbhash_classes}`} />
-{:then data}
+{:then}
 	{#if type === 'img'}
 		<img
 			in:fade|global={{ duration: 300 }}

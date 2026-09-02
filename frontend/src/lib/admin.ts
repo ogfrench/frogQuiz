@@ -10,7 +10,7 @@ export const get_question_title = (q_number: number, quiz_data: QuizData): strin
 	}
 	try {
 		return quiz_data.questions[q_number].question;
-	} catch (e) {
+	} catch {
 		return '';
 	}
 };

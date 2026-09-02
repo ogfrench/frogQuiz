@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 	let { data } = $props();
-	let { token: string } = data;
+	let { token }: { token: string } = data;
 	let isSubmitting = $state(false);
 	interface PasswordData {
 		password1: string;

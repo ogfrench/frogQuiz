@@ -71,7 +71,7 @@ SPDX-License-Identifier: MPL-2.0
 {/if}
 {#if quiz_data.questions[selected_question].type === QuizQuestionType.ABCD || quiz_data.questions[selected_question].type === QuizQuestionType.VOTING || quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
 	<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-2 w-full p-4">
-		{#each quiz_data.questions[selected_question].answers as answer, i}
+		{#each quiz_data.questions[selected_question].answers as answer}
 			<div
 				class="rounded-lg h-fit flex border-2 border-black"
 				style="background-color: {answer.color ?? default_colors[i]};"
@@ -97,7 +97,7 @@ SPDX-License-Identifier: MPL-2.0
 {:else if quiz_data.questions[selected_question].type === QuizQuestionType.TEXT}
 	{#if timer_res === '0'}
 		<div class="grid grid-cols-2 gap-2 w-full p-4">
-			{#each quiz_data.questions[selected_question].answers as answer, i}
+			{#each quiz_data.questions[selected_question].answers as answer}
 				<div class="rounded-lg h-fit flex bg-[#B07156]">
 					<span class="text-center text-2xl px-2 py-4 w-full text-black"
 						>{answer.answer}</span

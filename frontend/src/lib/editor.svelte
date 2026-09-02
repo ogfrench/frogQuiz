@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { dataSchema } from '$lib/yupSchemas';
-	import type { EditorData, Question } from './quiz_types';
+	import type { EditorData } from './quiz_types';
 	import Sidebar from '$lib/editor/sidebar.svelte';
 	import SettingsCard from '$lib/editor/settings-card.svelte';
 	import QuizCard from '$lib/editor/card.svelte';

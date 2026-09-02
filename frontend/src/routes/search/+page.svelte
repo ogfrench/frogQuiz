@@ -27,6 +27,8 @@ SPDX-License-Identifier: MPL-2.0
 			resp_data_temp = resp_data_temp.replaceAll('<em>', '<mark>');
 			resp_data_temp = resp_data_temp.replaceAll('</em>', '</mark>');
 			resp_data = JSON.parse(resp_data_temp);
+			// local, read back on the next line, never held as reactive state
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			const url = new URLSearchParams(window.location.search);
 			url.set('q', search_term);
 			history.pushState(null, null, '?' + url.toString());

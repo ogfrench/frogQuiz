@@ -34,7 +34,6 @@ SPDX-License-Identifier: MPL-2.0
 		newPasswordConfirm: ''
 	});
 
-	let locationData;
 	let this_session = $state();
 
 	let passwordChangeDataValid = $derived(

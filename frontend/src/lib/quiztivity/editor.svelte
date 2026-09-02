@@ -26,6 +26,8 @@ SPDX-License-Identifier: MPL-2.0
 		saving: boolean;
 	}
 
+	// saving is bound by both call sites with bind:saving, so the prop has to stay
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { data = $bindable(), saving }: Props = $props();
 
 	let selected_slide = $state(null);

@@ -32,7 +32,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="w-full h-full">
 	<div class="grid grid-cols-2 w-full h-full gap-4">
-		{#each files as file, i}
+		{#each files as _file}
 			<div class="w-full h-full flex"></div>
 		{/each}
 	</div>
