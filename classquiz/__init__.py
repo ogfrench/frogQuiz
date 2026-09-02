@@ -103,9 +103,22 @@ app.include_router(remote.router, tags=["remote"], prefix="/api/v1/remote", incl
 app.include_router(login.router, tags=["auth"], prefix="/api/v1/login", include_in_schema=True)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+class ApiOnlyCORSMiddleware(CORSMiddleware):
+    """CORS for the REST API only.
+
+    socket.io sets its own CORS headers, and two Access-Control-Allow-Origin
+    headers on one response make browsers reject it outright.
+    """
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["path"].startswith("/socket.io"):
+            return await self.app(scope, receive, send)
+        return await super().__call__(scope, receive, send)
+
+
 if settings.cors_origins:
     app.add_middleware(
-        CORSMiddleware,
+        ApiOnlyCORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
