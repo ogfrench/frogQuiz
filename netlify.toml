@@ -12,9 +12,11 @@ publish = "build"
 
 [build.environment]
 NODE_VERSION = "24"
-# API_URL: internal backend base URL used by hooks.server.ts (SSR token refresh).
-# VITE_API_ORIGIN: public backend origin used by the browser for socket.io.
-# Set both in the Netlify UI (Site settings > Environment variables).
+# Public backend origin. Baked into the client bundle for socket.io (which cannot
+# go through Netlify's proxy) and used by the SSR code as its API base URL.
+# Not a secret -- it is visible in the shipped JavaScript either way.
+VITE_API_ORIGIN = "https://134-98-158-173.sslip.io"
+API_URL = "https://134-98-158-173.sslip.io"
 
 # REST traffic is proxied so cookies stay first-party.
 # Backend lives on the Oracle Always Free VM; sslip.io gives it a hostname

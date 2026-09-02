@@ -7,7 +7,9 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { quiz_id } = params;
-	const res = await fetch(`${process.env.API_URL}/api/v1/quiz/get/public/${quiz_id}`);
+	const res = await fetch(
+		`${process.env.API_URL ?? import.meta.env.VITE_API_ORIGIN}/api/v1/quiz/get/public/${quiz_id}`
+	);
 	const { email } = await parent();
 	if (res.status === 404 || res.status === 400) {
 		error(404);
