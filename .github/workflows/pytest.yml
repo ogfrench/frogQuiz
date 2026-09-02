@@ -8,6 +8,8 @@ on:
   push:
     paths:
       - "classquiz/**"
+  # NOTE: enable on pull_request once a base64 .env is stored as the DOTENV
+  # repository secret -- the test job cannot start without it.
   workflow_dispatch:
 
 jobs:

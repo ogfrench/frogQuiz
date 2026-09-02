@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     pixabay_api_key: str | None = None
     mods: list[str] = []
     registration_disabled: bool = False
+    # Origins allowed to call the API / socket.io cross-site (e.g. a Netlify-hosted frontend).
+    # Empty means same-origin only, which is what the bundled Caddy setup uses.
+    cors_origins: list[str] = []
 
     # storage_backend
     storage_backend: str  # either "local" or "s3"

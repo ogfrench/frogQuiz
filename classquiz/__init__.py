@@ -6,6 +6,7 @@ import sentry_sdk
 from fastapi import FastAPI, Request
 from sentry_sdk.integrations.redis import RedisIntegration
 from socketio import ASGIApp
+from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from classquiz.config import settings
@@ -102,6 +103,14 @@ app.include_router(remote.router, tags=["remote"], prefix="/api/v1/remote", incl
 app.include_router(login.router, tags=["auth"], prefix="/api/v1/login", include_in_schema=True)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+if settings.cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 app.include_router(users.router, tags=["users"], prefix="/api/v1/users", include_in_schema=True)
 app.include_router(quiz.router, tags=["quiz"], prefix="/api/v1/quiz", include_in_schema=True)
 app.include_router(utils.router, tags=["utils"], prefix="/api/v1/utils", include_in_schema=True)
