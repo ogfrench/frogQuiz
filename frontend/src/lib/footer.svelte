@@ -7,7 +7,7 @@
 		<LanguageToggle />
 	</div>
 	<p>
-		Made with ❤️ by François & Gonçalo.
+		Designed with ❤️ by François & Gonçalo.
 		<br />
 		<a
 			href="https://github.com/ogfrench/frogQuiz"
