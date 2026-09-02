@@ -59,7 +59,7 @@ router.include_router(oauth.router, tags=["users", "oauth"], prefix="/oauth")
     response_model=User,
     response_model_include={"id": ..., "verified": ..., "email": ...},
 )
-async def create_user(user: RouteUser, background_task: BackgroundTasks) -> User | JSONResponse:
+async def create_user(user: RouteUser) -> User | JSONResponse:
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
     user: User = User(
@@ -87,7 +87,7 @@ async def create_user(user: RouteUser, background_task: BackgroundTasks) -> User
         user.verified = True
         await user.update()
     else:
-        background_task.add_task(send_register_email, user)
+        await send_register_email(user)
     await redis.delete("global_user_count")
     return user
 
@@ -175,10 +175,10 @@ class ForgotPassword(BaseModel):
 
 
 @router.post("/forgot-password")
-async def forgotten_password(forgot_password: ForgotPassword, background_task: BackgroundTasks):
+async def forgotten_password(forgot_password: ForgotPassword):
     user = await User.objects.filter(email=forgot_password.email, verified=True).get_or_none()
     if user is not None:
-        background_task.add_task(send_forgotten_password_email, email=user.email)
+        await send_forgotten_password_email(email=user.email)
     return {"message": "Password reset email sent"}
 
 
