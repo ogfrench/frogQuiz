@@ -7,6 +7,10 @@
 # Cloud Always Free instance (Ubuntu 24.04, VM.Standard.A1.Flex).
 # It installs Docker, opens 80/443 in the instance firewall and clones the repo.
 # Secrets are NOT set here -- write /opt/frogquiz/.env after first boot.
+#
+# IMPORTANT: assign the public IP when the instance is CREATED. cloud-init runs
+# before an IP added afterwards exists, so every download here would time out and
+# the instance would come up with nothing installed.
 
 package_update: true
 packages:
@@ -16,6 +20,10 @@ packages:
   - iptables-persistent
 
 runcmd:
+  # GitHub answers git's upload-pack POST with 401 over HTTP/2 on these images,
+  # which surfaces as "could not read Username for https://github.com".
+  - git config --system http.version HTTP/1.1
+
   # Docker engine + compose plugin
   - curl -fsSL https://get.docker.com | sh
   - usermod -aG docker ubuntu
@@ -27,5 +35,6 @@ runcmd:
   - netfilter-persistent save
 
   # Switch --branch to master once the deployment PR is merged.
-  - git clone --branch deploy/netlify-frontend-and-hardening https://github.com/ogfrench/frogQuiz /opt/frogquiz
-  - chown -R ubuntu:ubuntu /opt/frogquiz
+  - mkdir -p /opt/frogquiz
+  - chown ubuntu:ubuntu /opt/frogquiz
+  - su - ubuntu -c "git clone https://github.com/ogfrench/frogQuiz /opt/frogquiz"

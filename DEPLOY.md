@@ -84,7 +84,10 @@ fails, a Hetzner CX22 is about EUR 4/month and takes ten minutes.
 2. Open the ports: Networking > Virtual Cloud Networks > your VCN > the public subnet >
    its security list > Add ingress rules. Source `0.0.0.0/0`, TCP, destination ports 80
    and 443. The cloud-init script has already opened them in the instance firewall.
-3. Point DNS at the instance's public IP (an A record for e.g. `api.yourdomain.com`), then
+3. No domain? Use sslip.io: it resolves `134-98-158-173.sslip.io` to `134.98.158.173`,
+   and Let's Encrypt issues certificates for it, so `SITE_ADDRESS` can be
+   `<dashed-ip>.sslip.io` and Caddy gets real HTTPS with nothing to buy. Otherwise
+   point DNS at the instance's public IP (an A record for e.g. `api.yourdomain.com`), then
    set `SITE_ADDRESS` to that name so Caddy can issue a certificate.
 4. SSH in and configure:
 
@@ -115,6 +118,10 @@ docker compose up -d                       # builds the images on first run
 
 Open ports 80 and 443 in the provider's firewall as well as the OS one -- Oracle's
 security list blocks them by default, and Caddy cannot get a certificate without 80.
+
+When the frontend is hosted elsewhere, `CORS_ORIGINS` must list its origin. The
+API's own origin is always allowed on top of that, so a browser can talk to the
+UI that the API itself serves as well as the remote one.
 
 Keep `MAX_WORKERS: "1"`. The socket.io server holds per-game state in one process; a
 second gunicorn worker or a second API replica breaks live games.
