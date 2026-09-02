@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 ogfrench
+#
+# SPDX-License-Identifier: MPL-2.0
+
+# Netlify hosts the SvelteKit frontend only. The backend (FastAPI + socket.io),
+# Postgres, Redis, Meilisearch and the arq worker need a container host -- see DEPLOY.md.
+
+[build]
+base = "frontend"
+command = "pnpm run build"
+publish = "build"
+
+[build.environment]
+NODE_VERSION = "24"
+# API_URL: internal backend base URL used by hooks.server.ts (SSR token refresh).
+# VITE_API_ORIGIN: public backend origin used by the browser for socket.io.
+# Set both in the Netlify UI (Site settings > Environment variables).
+
+# REST traffic is proxied so cookies stay first-party.
+# Backend lives on the Oracle Always Free VM; sslip.io gives it a hostname
+# so Caddy can hold a Let's Encrypt certificate without buying a domain.
+[[redirects]]
+from = "/api/*"
+to = "https://134-98-158-173.sslip.io/api/:splat"
+status = 200
+force = true
+
+[[redirects]]
+from = "/openapi.json"
+to = "https://134-98-158-173.sslip.io/openapi.json"
+status = 200
+force = true
+
+# NOTE: /socket.io/* is deliberately NOT proxied -- Netlify does not support
+# WebSockets. The browser connects straight to VITE_API_ORIGIN instead, which
+# requires CORS_ORIGINS on the backend to list this site's URL.

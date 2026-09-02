@@ -124,3 +124,7 @@ This repository is licensed under the [Mozilla Public License 2.0](https://www.m
 please review the license to understand your rights and obligations.[^1]
 
 [^1]: I added this note, since people are stealing my software and changing it without providing the source-code.
+
+## Deployment
+
+See [DEPLOY.md](DEPLOY.md). Netlify can host the frontend; the backend needs a container host.

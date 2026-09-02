@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-version: "3"
-
 services:
   frontend:
     restart: always
@@ -17,30 +15,37 @@ services:
       REDIS_URL: redis://redis:6379/0?decode_responses=True
       API_URL: http://api:80
   api:
-    image: ghcr.io/mawoka-myblock/classquiz-backend:master
+    # Uses the published image when it exists, builds from source otherwise.
+    image: ghcr.io/ogfrench/frogquiz-backend:master
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: &restart always
     depends_on: &depends
       - db
       - redis
 
     environment: &env_vars # --- DON'T CHANGE FROM HERE ---
-      DB_URL: "postgresql://postgres:classquiz@db:5432/classquiz" # DON'T CHANGE
+      DB_URL: "postgresql://postgres:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/classquiz" # DON'T CHANGE
       REDIS: "redis://redis:6379/0?decode_responses=True" # DON'T CHANGE
-      SECRET_KEY: "TOP_SECRET" # Don't change it manually, use the one-liner provided in the documentation
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env, e.g. openssl rand -hex 32}
       MAX_WORKERS: "1" # Very important and DON'T CHANGE
       ACCESS_TOKEN_EXPIRE_MINUTES: 30 # DON'T CHANGE
       MEILISEARCH_URL: "http://meilisearch:7700" # DON'T CHANGE
       # -- DON'T CHANGE TILL HERE ---
 
       # --- GENERAL CONFIG ---
-      ROOT_ADDRESS: "https://classquiz.de" # CHANGE IT (without a "/" at the end)
+      ROOT_ADDRESS: ${ROOT_ADDRESS:?public URL without a trailing "/"}
+      # JSON list of origins allowed to call the API cross-site, e.g. ["https://frogquiz.netlify.app"].
+      # Only needed when the frontend is hosted elsewhere (e.g. Netlify) -- see DEPLOY.md.
+      CORS_ORIGINS: ${CORS_ORIGINS:-[]}
 
       # --- MAIL CONFIG ---
-      MAIL_PORT: "587"
-      MAIL_ADDRESS: "email@email@email.email"
-      MAIL_PASSWORD: "PASSWORT"
-      MAIL_USERNAME: "email@email@email.email"
-      MAIL_SERVER: "smtp.email.email"
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_ADDRESS: ${MAIL_ADDRESS:?}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?}
+      MAIL_USERNAME: ${MAIL_USERNAME:?}
+      MAIL_SERVER: ${MAIL_SERVER:?}
       SKIP_EMAIL_VERIFICATION: "True" # Does the user have to confirm its email by clicking a link?
 
       # --- EXTERNAL API CONFIG ---
@@ -87,15 +92,26 @@ services:
       timeout: 5s
       retries: 5
     environment:
-      POSTGRES_PASSWORD: "classquiz"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: "classquiz"
     volumes:
       - data:/var/lib/postgresql/data
   proxy:
-    image: ghcr.io/mawoka-myblock/classquiz-caddy:master
+    image: ghcr.io/ogfrench/frogquiz-caddy:master
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
     restart: always
+    environment:
+      # A bare domain (quiz.example.com) makes Caddy fetch a Let's Encrypt cert.
+      # Keep the default :80 for local runs (http://localhost).
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     ports:
-      - "8000:8080" # The 8000 can be changed.
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
   meilisearch:
     image: getmeili/meilisearch:v0.28.0
     restart: always
@@ -104,7 +120,10 @@ services:
     volumes:
       - meilisearch-data:/data.ms
   worker:
-    image: ghcr.io/mawoka-myblock/classquiz-backend:master
+    image: ghcr.io/ogfrench/frogquiz-backend:master
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment: *env_vars
     depends_on: *depends
     restart: *restart
@@ -113,3 +132,5 @@ services:
 volumes:
   data:
   meilisearch-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,15 @@
+# Local-only override: run api/worker against an external Postgres (Neon) instead
+# of the db container, which is then not started at all.
+# docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d
+services:
+  db:
+    # Never starts unless explicitly asked for: docker compose --profile localdb up db
+    profiles: ["localdb"]
+  api:
+    depends_on: !override [redis]
+    environment:
+      DB_URL: ${DB_URL_OVERRIDE:?set DB_URL_OVERRIDE to the Neon connection string}
+  worker:
+    depends_on: !override [redis]
+    environment:
+      DB_URL: ${DB_URL_OVERRIDE:?set DB_URL_OVERRIDE to the Neon connection string}

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-import adapter from '@sveltejs/adapter-node';
+import adapter_node from '@sveltejs/adapter-node';
+import adapter_netlify from '@sveltejs/adapter-netlify';
 import preprocess from 'svelte-preprocess';
 import { mdsvex } from 'mdsvex';
 
@@ -19,10 +20,13 @@ const config = {
 	extensions: ['.svelte', '.svx'],
 
 	kit: {
-		adapter: adapter({
-			out: 'build',
-			precompress: true
-		})
+		// Netlify sets NETLIFY=true during builds; everywhere else (Docker) keeps adapter-node.
+		adapter: process.env.NETLIFY
+			? adapter_netlify()
+			: adapter_node({
+					out: 'build',
+					precompress: true
+				})
 		// +++ SOON OBSOLETE +++
 		/*
 		vite: {

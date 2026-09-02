@@ -39,19 +39,21 @@ class User(ormar.Model):
     The user model in the database
     """
 
-    id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4())
+    id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4)
     email: str = ormar.String(unique=True, max_length=100)
     username: str = ormar.String(unique=True, max_length=100)
     password: Optional[str] = ormar.String(max_length=100, nullable=True)
     verified: bool = ormar.Boolean(default=False)
     verify_key: str = ormar.String(unique=True, max_length=100, nullable=True)
-    created_at: datetime = ormar.DateTime(default=datetime.now())
+    created_at: datetime = ormar.DateTime(default=datetime.now)
     auth_type: UserAuthTypes = ormar.Enum(enum_class=UserAuthTypes, default=UserAuthTypes.LOCAL)
     google_uid: Optional[str] = ormar.String(unique=True, max_length=255, nullable=True)
     avatar: bytes = ormar.LargeBinary(max_length=25000, represent_as_base64_str=True)
     github_user_id: int | None = ormar.Integer(nullable=True)
     require_password: bool = ormar.Boolean(default=True, nullable=False)
-    backup_code: str = ormar.String(max_length=64, min_length=64, nullable=False, default=os.urandom(32).hex())
+    backup_code: str = ormar.String(
+        max_length=64, min_length=64, nullable=False, default=lambda: os.urandom(32).hex()
+    )
     totp_secret: str = ormar.String(max_length=32, min_length=32, nullable=True, default=None)
     storage_used: int = ormar.BigInteger(nullable=False, default=0, minimum=0)
 
@@ -94,13 +96,13 @@ class UserSession(ormar.Model):
     The user session model for user-sessions
     """
 
-    id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4())
+    id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4)
     user: Optional[User] = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
     session_key: str = ormar.String(unique=True, max_length=64)
-    created_at: datetime = ormar.DateTime(default=datetime.now())
+    created_at: datetime = ormar.DateTime(default=datetime.now)
     ip_address: str = ormar.String(max_length=100, nullable=True)
     user_agent: str = ormar.String(max_length=255, nullable=True)
-    last_seen: datetime = ormar.DateTime(default=datetime.now())
+    last_seen: datetime = ormar.DateTime(default=datetime.now)
 
     ormar_config = ormar.OrmarConfig(
         tablename="user_sessions",
@@ -181,12 +183,12 @@ class QuizInput(BaseModel):
 
 
 class Quiz(ormar.Model):
-    id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4(), nullable=False, unique=True)
+    id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4, nullable=False, unique=True)
     public: bool = ormar.Boolean(default=False)
     title: str = ormar.Text()
     description: str = ormar.Text(nullable=True)
-    created_at: datetime = ormar.DateTime(default=datetime.now())
-    updated_at: datetime = ormar.DateTime(default=datetime.now())
+    created_at: datetime = ormar.DateTime(default=datetime.now)
+    updated_at: datetime = ormar.DateTime(default=datetime.now)
     user_id: uuid.UUID = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
     questions: Json[list[QuizQuestion]] = ormar.JSON(nullable=False)
     imported_from_kahoot: Optional[bool] = ormar.Boolean(default=False, nullable=True)
@@ -208,7 +210,7 @@ class Quiz(ormar.Model):
 
 
 class InstanceData(ormar.Model):
-    instance_id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4(), nullable=False, unique=True)
+    instance_id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4, nullable=False, unique=True)
 
     ormar_config = ormar.OrmarConfig(
         tablename="instance_data",
@@ -367,7 +369,7 @@ class GameResults(ormar.Model):
     id: uuid.UUID = ormar.UUID(primary_key=True)
     quiz: uuid.UUID | Quiz = ormar.ForeignKey(Quiz, ondelete=ReferentialAction.CASCADE)
     user: uuid.UUID | User = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
-    timestamp: datetime = ormar.DateTime(default=datetime.now(), nullable=False)
+    timestamp: datetime = ormar.DateTime(default=datetime.now, nullable=False)
     player_count: int = ormar.Integer(nullable=False, default=0)
     note: str | None = ormar.Text(nullable=True)
     answers: Json[list[AnswerData]] = ormar.JSON(True)
@@ -444,7 +446,7 @@ class PublicQuizTivityShare(BaseModel):
 
 class StorageItem(ormar.Model):
     id: uuid.UUID = ormar.UUID(primary_key=True)
-    uploaded_at: datetime = ormar.DateTime(nullable=False, default=datetime.now())
+    uploaded_at: datetime = ormar.DateTime(nullable=False, default=datetime.now)
     mime_type: str = ormar.Text(nullable=False)
     hash: bytes | None = ormar.LargeBinary(nullable=True, min_length=16, max_length=16)
     user: User | None = ormar.ForeignKey(User, ondelete=ReferentialAction.SET_NULL)
