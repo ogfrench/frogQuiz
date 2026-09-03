@@ -7,7 +7,6 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import Spinner from '$lib/Spinner.svelte';
 	import { browser } from '$app/environment';
-	import { startRegistration } from '@simplewebauthn/browser';
 	import TotpSetup from './totp_setup.svelte';
 	import BackupCodes from './backup_codes.svelte';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
@@ -16,7 +15,6 @@ SPDX-License-Identifier: MPL-2.0
 	const { t } = getLocalization();
 
 	let user_data: object | undefined = $state();
-	let security_keys: Array<{ id: number }> | undefined = $state();
 	let totp_activated: boolean | undefined = $state();
 	let totp_data = $state();
 	let backup_code = $state();
@@ -24,8 +22,6 @@ SPDX-License-Identifier: MPL-2.0
 	const get_data = async () => {
 		const res1 = await fetch('/api/v1/users/me');
 		user_data = await res1.json();
-		const res2 = await fetch('/api/v1/users/webauthn/list');
-		security_keys = await res2.json();
 		const res3 = await fetch('/api/v1/users/2fa/totp');
 		totp_activated = (await res3.json()).activated;
 	};
@@ -49,58 +45,6 @@ SPDX-License-Identifier: MPL-2.0
 
 	const require_password = (): string | null => {
 		return prompt('Please enter your password to continue');
-	};
-
-	const add_security_key = async () => {
-		const pw = require_password();
-		if (!pw) return;
-		const res1 = await fetch('/api/v1/users/webauthn/add_key_init', {
-			method: 'POST',
-			body: JSON.stringify({ password: pw }),
-			headers: { 'Content-Type': 'application/json' }
-		});
-		if (res1.status === 401) {
-			alert('Password probably wrong');
-			return;
-		}
-		if (!res1.ok) {
-			throw Error('Response not ok');
-		}
-		let attResp;
-		const resp_data = await res1.json();
-		// eslint-disable-next-line no-useless-catch
-		try {
-			resp_data.authenticatorSelection.authenticatorAttachment = 'cross-platform';
-			for (let i = 0; i++; i < resp_data.excludeCredentials.length) {
-				resp_data.excludeCredentials[i].transports = undefined;
-			}
-			attResp = await startRegistration({ optionsJSON: resp_data });
-		} catch (e) {
-			throw e;
-		}
-		await fetch('/api/v1/users/webauthn/add_key', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(attResp)
-		});
-		data = get_data();
-	};
-
-	const remove_security_key = async (key_id: number) => {
-		const pw = require_password();
-		if (!pw) return;
-		const res = await fetch(`/api/v1/users/webauthn/key/${key_id}`, {
-			method: 'DELETE',
-			body: JSON.stringify({ password: pw }),
-			headers: { 'Content-Type': 'application/json' }
-		});
-		if (res.status === 401) {
-			alert('Password probably wrong');
-			return;
-		}
-		data = get_data();
 	};
 
 	const disable_totp = async () => {
@@ -226,38 +170,7 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			</div>
 		</div>
-		<div class="grid grid-cols-2 h-full">
-			<div class="h-full w-full flex flex-col border-r-2 border-black">
-				<h2 class="text-center text-2xl">{$t('security_settings.webauthn')}</h2>
-				<div class="flex justify-center">
-					{#if security_keys.length > 0}
-						<p>{$t('security_settings.webauthn_available')}</p>
-					{:else}
-						<p>{$t('security_settings.webauthn_unavailable')}</p>
-					{/if}
-				</div>
-				<div class="flex justify-center">
-					<div class="m-auto">
-						<BrownButton onclick={add_security_key}
-							>{$t('security_settings.add_security_key')}</BrownButton
-						>
-					</div>
-				</div>
-				<div class="flex justify-center">
-					<ul class="list-disc block">
-						{#each security_keys as key, i}
-							<li>
-								<button
-									onclick={() => {
-										remove_security_key(key.id);
-									}}
-									class="hover:line-through transition">{i + 1}</button
-								>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			</div>
+		<div class="grid grid-cols-1 h-full">
 			<div class="h-full w-full flex flex-col">
 				<h2 class="text-center text-2xl">{$t('security_settings.totp')}</h2>
 				<div class="flex justify-center">

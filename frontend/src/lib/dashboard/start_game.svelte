@@ -178,42 +178,6 @@ SPDX-License-Identifier: MPL-2.0
 			/>
 		</div>
 		<div class="flex justify-center w-full my-auto">
-			<label for="cqc-toggle" class="inline-flex relative items-center cursor-pointer">
-				<input
-					type="checkbox"
-					bind:checked={cqcs_enabled}
-					id="cqc-toggle"
-					class="sr-only peer"
-				/>
-				<span
-					class="w-14 h-7 bg-gray-200 rounded-full
-					peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300
-					dark:peer-focus:ring-blue-800 dark:bg-gray-700
-					peer-checked:bg-blue-600
-					relative
-					after:content-['']
-					after:absolute after:top-0.5 after:start-[4px]
-					after:bg-white after:border-gray-300 after:border
-					after:rounded-full after:h-6 after:w-6
-					after:transition-all
-					peer-checked:after:translate-x-full
-					rtl:peer-checked:after:-translate-x-full"
-				></span>
-				<span class="ms-3 text-sm font-medium text-gray-900"
-					><a
-						href="/controller"
-						target="_blank"
-						use:tippy={{
-							content:
-								'frogQuizControllers are small physical devices to play frogQuiz. Click to learn more.'
-						}}
-						class="decoration-dashed underline cursor-help">frogQuizControllers</a
-					>
-					are {cqcs_enabled ? 'enabled' : 'disabled'}</span
-				>
-			</label>
-		</div>
-		<div class="flex justify-center w-full my-auto">
 			<label
 				for="randomized-answers-toggle"
 				class="inline-flex relative items-center cursor-pointer"

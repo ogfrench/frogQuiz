@@ -51,9 +51,7 @@ class User(ormar.Model):
     avatar: bytes = ormar.LargeBinary(max_length=25000, represent_as_base64_str=True)
     github_user_id: int | None = ormar.Integer(nullable=True)
     require_password: bool = ormar.Boolean(default=True, nullable=False)
-    backup_code: str = ormar.String(
-        max_length=64, min_length=64, nullable=False, default=lambda: os.urandom(32).hex()
-    )
+    backup_code: str = ormar.String(max_length=64, min_length=64, nullable=False, default=lambda: os.urandom(32).hex())
     totp_secret: str = ormar.String(max_length=32, min_length=32, nullable=True, default=None)
     storage_used: int = ormar.BigInteger(nullable=False, default=0, minimum=0)
 

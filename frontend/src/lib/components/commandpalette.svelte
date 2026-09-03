@@ -54,14 +54,6 @@ This should be okay, right?
 			action: (args) => window.location.assign(`/import?url=${args?.[0] ?? ''}`)
 		},
 		{
-			id: 3,
-			title: 'Create Quiztivity',
-			description: 'Opens the editor for quiztivities',
-			command: 'newquiztivity',
-			args: ['title'],
-			action: (args) => window.location.assign(`/quiztivity/create?title=${args.join(' ')}`)
-		},
-		{
 			id: 4,
 			title: 'View Results',
 			description: 'Opens the Results viewer',

@@ -6,18 +6,16 @@
 # pull the Node.js Docker image
 FROM node:24-trixie AS builder
 ENV CI=true
-ENV API_URL=https://mawoka.eu
-#Ah, I've noticed that!!!
+# Default points at the internal docker-compose service name, not an external host, so a build
+# run without an explicit override never silently talks to someone else's server.
+ENV API_URL=http://api:80
 ENV REDIS_URL=redis://localhost:6379
-# This Mapbox-token is restricted to the following urls: classquiz.de, classquiz.mawoka.eu, test.com
-ENV VITE_HCAPTCHA=ee81b2a1-acf3-4d20-b2a4-a7ea94c7eba5
-# Hacaptcha secret ES_e0f8139cb5ad467d892e8d73a020cd2b
-# ENV VITE_SENTRY=https://75cb4ef1be624d8f81bbaf864b722f8a@glitch.mawoka.eu/2
+# Set your own hCaptcha site key here (or via build arg) if you enable captcha protection.
+#ENV VITE_HCAPTCHA=
 #ENV VITE_GOOGLE_AUTH_ENABLED=true
 #ENV VITE_GITHUB_AUTH_ENABLED=true
 ENV VITE_CAPTCHA_ENABLED=false
 #ENV VITE_REGISTRATION_DISABLED=True
-#ENV VITE_PLAUSIBLE_DATA_URL=
 # change working directory
 WORKDIR /usr/src/app
 

@@ -10,8 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Footer from '$lib/footer.svelte';
 	import WebPOpenGraph from '$lib/assets/landing/opengraph-home.webp';
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
-	import Newsletter from '$lib/landing/newsletter.svelte';
-	import { fly, fade } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 
 	import FindScreenshot from '$lib/assets/landing_new/find.webp';
 	import ImportScreenshot from '$lib/assets/landing_new/import.webp';
@@ -19,17 +18,10 @@ SPDX-License-Identifier: MPL-2.0
 	import SelectScreenshot from '$lib/assets/landing_new/select.webp';
 	import ResultScreenshot from '$lib/assets/landing_new/result.webp';
 	import WinnersScreenshot from '$lib/assets/landing_new/winners.webp';
-	import { onMount } from 'svelte';
 
 	const { t } = getLocalization();
 
 	navbarVisible.visible = true;
-
-	let newsletterModalOpen: boolean = $state();
-	onMount(() => {
-		const ls = localStorage.getItem('newsletter');
-		newsletterModalOpen = ls === null;
-	});
 
 	// eslint-disable-next-line no-unused-vars
 	enum SelectedCreateThing {
@@ -445,14 +437,6 @@ SPDX-License-Identifier: MPL-2.0
 		</div>
 	</section>
 </div>
-{#if newsletterModalOpen}
-	<div
-		class="fixed bottom-8 right-5 bg-white rounded-lg h-fit w-11/12 ml-5 lg:w-2/12 z-50 p-2 dark:bg-gray-700"
-		transition:fly|global
-	>
-		<Newsletter bind:open={newsletterModalOpen} />
-	</div>
-{/if}
 <Footer />
 
 <style>
