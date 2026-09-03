@@ -246,9 +246,7 @@ async def register_as_admin(sid: str, data: dict):
             return
         existing_session.admin = sid
         await existing_session.save(game_pin)
-    players = [
-        json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")
-    ]
+    players = [json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")]
     await sio.emit(
         "registered_as_admin",
         {

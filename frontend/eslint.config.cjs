@@ -15,13 +15,7 @@ module.exports = defineConfig([
 	svelte.configs.recommended,
 	// Generated output. Linting it produces thousands of errors nobody can act on,
 	// and it is absent from a fresh CI checkout, so local runs disagreed with CI.
-	globalIgnores([
-		'**/*.cjs',
-		'src/app.html',
-		'build/**',
-		'.netlify/**',
-		'.svelte-kit/**'
-	]),
+	globalIgnores(['**/*.cjs', 'src/app.html', 'build/**', '.netlify/**', '.svelte-kit/**']),
 	{
 		languageOptions: {
 			sourceType: 'module',
