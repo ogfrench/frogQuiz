@@ -8,11 +8,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { socket } from '$lib/socket';
 	import { onDestroy, onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import * as Sentry from '@sentry/browser';
 	import { getLocalization } from '$lib/i18n';
 	import Cookies from 'js-cookie';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
-	import { hcaptcha_site_key, recaptcha_key, sentry_dsn } from '$lib/config';
+	import { hcaptcha_site_key, recaptcha_key } from '$lib/config';
 
 	const { t } = getLocalization();
 
@@ -144,9 +143,7 @@ SPDX-License-Identifier: MPL-2.0
 						custom_field: custom_field ? custom_field_value : undefined
 					});
 				} catch (e) {
-					if (sentry_dsn !== null) {
-						Sentry.captureException(e);
-					}
+					console.error(e);
 					/*					alertModal.set({
                         open: true,
                         body: "The captcha failed, which is normal, but most of the time it's fixed by reloading!",

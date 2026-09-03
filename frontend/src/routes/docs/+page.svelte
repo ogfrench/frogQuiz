@@ -17,16 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	<h2>Index</h2>
 	<ul>
 		<li>
-			<a href="/docs/roadmap">Roadmap</a>
-		</li>
-		<li>
 			<a href="/docs/import-from-kahoot">Import from Kahoot</a>
-		</li>
-		<li>
-			<a href="/docs/self-host">Self-hosting</a>
-		</li>
-		<li>
-			<a href="/docs/develop">Development-Setup</a>
 		</li>
 		<li>
 			<a href="/docs/features">Features</a>

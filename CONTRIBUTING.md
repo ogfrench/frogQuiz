@@ -36,12 +36,11 @@ Just do so.
 
 ## Found a bug
 
-If it is a security-related bug, please contact me at [mawoka.eu/contact](https://mawoka.eu/contact). If not, just open
+If it is a security-related bug, please contact the FrogQuiz maintainers internally rather than opening a public issue.
+<!-- TODO: replace with your team's actual contact channel --> If not, just open
 an issue here on GitHub.
 
 
 ## Want to translate?
 
-Go to [Weblate](https://hosted.weblate.org/projects/frogquiz/).
-If the language isn't available, please open
-an issue here, so I'll be able to add it.
+This fork doesn't currently use an external translation platform; open an issue here if a locale needs adding or updating.

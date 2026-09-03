@@ -16,7 +16,6 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '$lib/Spinner.svelte';
 	import GrayButton from '$lib/components/buttons/gray.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
-	import RatingComponent from '$lib/view_quiz/RatingComponent.svelte';
 	import { page } from '$app/state';
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
@@ -104,7 +103,6 @@ SPDX-License-Identifier: MPL-2.0
 		<ImportedOrNot imported={quiz.imported_from_kahoot} />
 	</div>
 	<div class="flex justify-center mb-2 flex-row gap-2">
-		<RatingComponent bind:quiz />
 		{#if mod_view}
 			<ModComponent autoReturn={auto_return} quiz_id={quiz.id} />
 		{/if}
@@ -227,14 +225,6 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 				{/if}
 			</div>
-		</div>
-		<div class="flex justify-center">
-			<a
-				href="mailto:report@mawoka.eu?subject=Report quiz {quiz.id}"
-				class="text-sm underline"
-			>
-				{$t('words.report')}
-			</a>
 		</div>
 	</div>
 

@@ -9,7 +9,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { DateTime } from 'luxon';
 	import { UAParser } from 'ua-parser-js';
 	import Spinner from '$lib/Spinner.svelte';
-	import { onMount } from 'svelte';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 
 	const { t } = getLocalization();
@@ -80,33 +79,9 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 
-	onMount(() => {
-		api_keys = get_api_keys();
-	});
-
-	const get_api_keys = async (): Promise<Array<string>> => {
-		const res = await fetch('/api/v1/users/api_keys');
-		const api_keys_temp = await res.json();
-		console.log(api_keys_temp);
-		return api_keys_temp;
-	};
-
-	let api_keys = $state();
-
-	const add_api_key = async () => {
-		await fetch('/api/v1/users/api_keys', { method: 'POST' });
-		api_keys = get_api_keys();
-	};
 	const formatDate = (date: string): string => {
 		const dt = DateTime.fromISO(date);
 		return dt.toLocaleString(DateTime.DATETIME_MED);
-	};
-
-	const delete_api_key = async (key: string) => {
-		if (confirm('Do you really want to delete this API-Key?')) {
-			await fetch(`/api/v1/users/api_keys?api_key=${key}`, { method: 'DELETE' });
-			api_keys = get_api_keys();
-		}
 	};
 
 	const getSessions = async () => {
@@ -172,7 +147,6 @@ SPDX-License-Identifier: MPL-2.0
 						<BrownButton href="/account/settings/security"
 							>{$t('settings_page.security_settings')}
 						</BrownButton>
-						<BrownButton href="/account/controllers">frogQuizController</BrownButton>
 						<BrownButton href="/user/{user.id}">Public profile page</BrownButton>
 					</div>
 				</div>
@@ -206,30 +180,6 @@ SPDX-License-Identifier: MPL-2.0
 						</BrownButton>
 					</div>
 				</form>
-				<div>
-					<div class="w-fit">
-						<BrownButton onclick={add_api_key}
-							>{$t('settings_page.add_api_key')}</BrownButton
-						>
-					</div>
-					{#await api_keys}
-						<Spinner />
-					{:then keys}
-						{#each keys as key}
-							<div>
-								{key.key}
-								<div class="inline-block">
-									<BrownButton
-										onclick={() => {
-											delete_api_key(key.key);
-										}}
-										>{$t('words.delete')}
-									</BrownButton>
-								</div>
-							</div>
-						{/each}
-					{/await}
-				</div>
 			</div>
 		</div>
 	</div>
