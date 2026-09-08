@@ -4,6 +4,12 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Set up shadcn-svelte 1.6.1 as the redesign component system: added `frontend/components.json` (style `vega`, base colour `zinc`, theme `green`, Lucide icons, Inter), the `cn` helper at `$lib/utils.ts`, and the first components (button, input, label, card, badge, separator) under `$lib/components/ui/`.
+- Applied the shadcn design tokens and canonical base layer to `app.css`, replacing the pale-green `#d6edc9` page ground with `--background`; the existing SPDX header, tippy imports, `@config` link and legacy `@utility` blocks were preserved.
+- Rebuilt the login page on shadcn-svelte Card/Input/Label/Button as the reference page for the redesign, replacing the hand-rolled floating-label input with a real `Label` + `Input` pair.
+- Fixed the horizontal scrollbar present on every page: the navbar and footer used `w-screen` (`100vw`), which includes the vertical scrollbar's width and so overflowed by ~15px.
+- Migrated the navbar chrome off hardcoded colours (`bg-white/70`, `text-black`, `btn-nav`'s `text-gray-600`) onto theme tokens, so it no longer renders as a white bar with an invisible wordmark in dark mode.
+- Pinned pnpm 10 for the frontend (the repo's lockfile is v9; pnpm 12 wanted to rewrite it).
 - Fixed the light/dark theme toggle, which had silently done nothing since the Tailwind v4 upgrade: `tailwind.config.cjs` (holding `darkMode: 'class'`) was no longer being loaded, so all 319 `dark:` utilities compiled against the OS `prefers-color-scheme` setting instead of the `.dark` class the app actually toggles. Re-linked the config from `app.css` with `@config`.
 - Fixed the brand green, lost in the same regression: `green-600` had reverted to stock Tailwind green instead of `#009444` across the 15 places it is used.
 - Added a pre-paint theme script to `app.html` so dark mode no longer flashes light on load, now that the theme depends on a class set by JS rather than a media query.

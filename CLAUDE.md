@@ -6,7 +6,23 @@ Internal Kahoot-style quiz tool, forked from the open-source **ClassQuiz** proje
 
 - **Scope**: internal tool for now. Don't over-invest in things only public/multi-tenant products need (billing, heavy scalability, public docs) unless asked — but don't actively break the ability to widen scope later either.
 - **Stack** (inherited from ClassQuiz, see repo root for details): FastAPI + python-socketio backend (`frogquiz/`), SvelteKit 2/Svelte 5 + TypeScript frontend (`frontend/`), Postgres, Redis, Meilisearch, Alembic migrations.
-- **Redesign direction**: moving to a frog-themed visual identity, planned to be built with **shadcn-svelte**, connected via an MCP server. Not set up yet — when this work starts, check what's actually in the repo before assuming shadcn/MCP config exists.
+- **Redesign direction**: moving to a frog-themed visual identity built with **shadcn-svelte** (see below). In progress — the foundation and the login reference page are done, the remaining routes are not.
+
+## Redesign: shadcn-svelte
+
+Config lives in `frontend/components.json`: style `vega`, base colour `zinc`, theme `green` (this is what makes `--primary` the frog green), Lucide icons, Inter. Components land in `frontend/src/lib/components/ui/`, the `cn` helper in `frontend/src/lib/utils.ts`.
+
+- **Adding components**: `node ./node_modules/shadcn-svelte/dist/index.mjs add <name> -y -o` from `frontend/`. The `-y -o` flags matter — without them the CLI opens a TUI that cannot be driven from a piped stdin, and it will hang.
+- **There is no shadcn-svelte MCP server.** The `shadcn-svelte` CLI has no `mcp` command, and the generic shadcn (React) MCP cannot read this registry: it requests an index at `/registry/registry.json` (shadcn-svelte serves `index.json`), and its item schema requires `files[].path` where shadcn-svelte emits `target`. Don't re-litigate this — use the CLI. For docs and usage examples, the Context7 MCP covers shadcn-svelte.
+- **Reproducing the config**: preset code `bJNGQT2` encodes all of the above. `node ./node_modules/shadcn-svelte/dist/index.mjs apply --preset bJNGQT2 -y` re-applies tokens and font to `app.css`. Presets are generated with `encodePreset` from `shadcn-svelte/dist/preset/index.mjs` if the choices need to change.
+- **`app.css` is merged, not owned.** The CLI preserved the SPDX header, the tippy imports, the `@config '../tailwind.config.cjs'` line (which still supplies the `green-600` brand override) and the legacy `@utility` blocks. Re-running `apply` keeps them; don't hand-replace the file.
+- **The canonical base layer is live** — `body` takes `bg-background` and `*` takes `border-border`. Unmigrated routes therefore sit on the token background rather than the old `#d6edc9` green. That was a deliberate call: a grep found zero bare `border` classes, so the only visible effect is the page ground the redesign was replacing anyway.
+- **Node toolchain**: pnpm 10 (lockfile is v9). pnpm is not on PATH by default; it is at `%APPDATA%
+pm`. The `build` script uses `NODE_ENV=production vite build`, POSIX syntax that fails under cmd.exe — run builds from a POSIX shell.
+
+## Frontend verification
+
+Changes to UI should be checked in a browser, not assumed. The dev server binds IPv6-only, so use `http://localhost:3000`, not `127.0.0.1`. Worth asserting on each check, since all three have regressed before: `document.documentElement.classList.contains('dark')` (proves the class toggle works rather than the OS media query), `scrollWidth > clientWidth` (the `w-screen`/`100vw` overflow), and `getComputedStyle(document.body).backgroundColor` (proves tokens are applied).
 
 ## Feature triage (internal-tool lens)
 

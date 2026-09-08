@@ -2,7 +2,7 @@
 	import LanguageToggle from './language-toggle.svelte';
 </script>
 
-<footer class="text-center text-white border-black w-screen bg-gray-700 py-4 flex flex-col items-center">
+<footer class="text-center text-white border-black w-full bg-gray-700 py-4 flex flex-col items-center">
 	<div class="mb-4">
 		<LanguageToggle />
 	</div>

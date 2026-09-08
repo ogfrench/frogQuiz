@@ -46,13 +46,13 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<nav class="w-screen px-4 lg:px-10 py-2 fixed backdrop-blur-2xl bg-white/70 shadow-md z-30 top-0">
+<nav class="inset-x-0 px-4 lg:px-10 py-2 fixed backdrop-blur-2xl bg-background/70 border-b border-border shadow-sm z-30 top-0">
 	<!-- Desktop navbar -->
 	<div class="hidden lg:flex lg:items-center lg:flex-row lg:justify-between">
 		<div class="lg:flex lg:items-center lg:flex-row gap-1">
 			<a
 				href="/"
-				class="font-black tracking-tight text-xl lg:text-2xl text-black marck-script link-hover px-3 lg:px-5"
+				class="font-black tracking-tight text-xl lg:text-2xl text-foreground marck-script link-hover px-3 lg:px-5"
 				>frogQuiz</a
 			>
 			<a class="btn-nav border-2 rounded-sm" href="/play">{$t('words.play')}</a>
@@ -114,7 +114,7 @@ SPDX-License-Identifier: MPL-2.0
 						>
 							<!-- Heroicons: sun -->
 							<svg
-								class="w-6 h-6 text-black"
+								class="w-6 h-6 text-foreground"
 								fill="none"
 								aria-label="Sun-Icon"
 								stroke="currentColor"
@@ -167,7 +167,7 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="flex items-center justify-between">
 			<a
 				href="/"
-				class="font-black tracking-tight text-xl lg:text-2xl text-black marck-script link-hover px-3 lg:px-5"
+				class="font-black tracking-tight text-xl lg:text-2xl text-foreground marck-script link-hover px-3 lg:px-5"
 				>frogQuiz</a
 			>
 			<a class="btn-nav flex" href="/play">{$t('words.play')}</a>
@@ -186,7 +186,7 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<!-- Heroicons: sun -->
 						<svg
-							class="w-6 h-6 text-black"
+							class="w-6 h-6 text-foreground"
 							fill="none"
 							aria-label="Sun-Icon"
 							stroke="currentColor"
