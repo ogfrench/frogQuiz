@@ -63,7 +63,10 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	const confirmUnload = (event: Event) => {
-		if (preventReload) {
+		// Only warn once the player has actually joined a game. Previously this was
+		// armed from page load, so the browser prompted "Changes you made may not be
+		// saved" on every navigation away from an untouched join screen.
+		if (preventReload && game_pin !== '' && username !== '') {
 			event.preventDefault();
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
@@ -95,8 +98,6 @@ SPDX-License-Identifier: MPL-2.0
 	// Socket-events
 	socket.on('joined_game', (data) => {
 		gameData = data;
-		// eslint-disable-next-line no-undef
-		plausible('Joined Game', { props: { game_id: gameData.game_id } });
 		Cookies.set('joined_game', JSON.stringify({ sid: socket.id, username, game_pin }), {
 			expires: 3600
 		});

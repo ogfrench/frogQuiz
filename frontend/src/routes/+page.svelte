@@ -60,16 +60,8 @@ SPDX-License-Identifier: MPL-2.0
 			content: $t('index_page.self_hostable_content')
 		},
 		{
-			headline: $t('index_page.german_server'),
-			content: $t('index_page.german_server_content')
-		},
-		{
 			headline: $t('index_page.user_friendly'),
 			content: $t('index_page.user_friendly_content')
-		},
-		{
-			headline: $t('index_page.completely_free'),
-			content: $t('index_page.completely_free_content')
 		},
 		{
 			headline: $t('index_page.quiz_results_downloadable'),
@@ -86,10 +78,6 @@ SPDX-License-Identifier: MPL-2.0
 		{
 			headline: $t('index_page.download_quizzes'),
 			content: $t('index_page.download_quizzes_content')
-		},
-		{
-			headline: $t('index_page.community_driven'),
-			content: $t('index_page.community_driven_content')
 		}
 	];
 	let selected_frogquiz_reason = $state(0);

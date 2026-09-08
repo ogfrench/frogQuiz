@@ -4,6 +4,16 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Replaced the error pages with a branded shadcn card (status, plain-language message, Home / Try again). They previously rendered a cat meme fetched from `http.cat` on every error, which was both off-brand and a third-party request telling an outside service that our users had hit an error.
+- Rewrote the landing page copy for an internal tool, and dropped three claims that are simply untrue for our deployment: "German Server" (hosted by netcup), "Community-driven" (funded by its community) and "Completely Cost Free" (no paid plans, donations appreciated).
+- Fixed the registration form showing every field outlined in red on first load: the check was `$errors.field !== null`, and the pristine value is `undefined`, so the error styling was always on.
+- Fixed the "Changes you made may not be saved" browser prompt firing on every navigation away from `/play`, even from an untouched join screen — it is now armed only once a player has actually joined a game.
+- Removed the last live `plausible()` calls (game join, game start, hashcash) and the shim in `app.html` that was swallowing them. Plausible itself was removed in PR #5; the calls would otherwise throw against an undefined global.
+- Fixed three wrong flags in the language picker: English showed 🇺🇲 (US Minor Outlying Islands), Hebrew showed 🇯🇵 (Japan) and Traditional Chinese showed 🇨🇳. Language names now use endonyms throughout.
+- Pointed the shared brown/gray buttons at the shadcn Button, which moves 30 call sites off the hardcoded `#B07156` brown in one step without touching them.
+- Moved the page ground onto the `--background` token, removing the hardcoded `#d6edc9` / `#4e6e58` greens from the root layout.
+- Tokenised the footer, the language select and the game-PIN inputs, which were hardcoded to colours that were invisible in dark mode.
+- Swapped the shadcn theme from green back to neutral zinc, so `--primary` is near-black rather than the brand green.
 - Set up shadcn-svelte 1.6.1 as the redesign component system: added `frontend/components.json` (style `vega`, base colour `zinc`, theme `green`, Lucide icons, Inter), the `cn` helper at `$lib/utils.ts`, and the first components (button, input, label, card, badge, separator) under `$lib/components/ui/`.
 - Applied the shadcn design tokens and canonical base layer to `app.css`, replacing the pale-green `#d6edc9` page ground with `--background`; the existing SPDX header, tippy imports, `@config` link and legacy `@utility` blocks were preserved.
 - Rebuilt the login page on shadcn-svelte Card/Input/Label/Button as the reference page for the redesign, replacing the hand-rolled floating-label input with a real `Label` + `Input` pair.
