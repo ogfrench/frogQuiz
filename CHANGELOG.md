@@ -4,6 +4,15 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Replaced the Marck Script cursive wordmark with a proper lockup: a rainbow-gradient mark plus "frogQuiz" set in Inter (`lib/components/Wordmark.svelte`). The `.marck-script` class is kept for its 14 call sites but no longer loads a script face.
+- Replaced every hand-inlined Heroicons SVG in the navbar and landing page with Lucide icons. Several had `stroke="#000000"` hardcoded and were invisible in dark mode.
+- Rebuilt the front page around what people actually come to it for: entering a game PIN. The marketing sections ("1. Get a quiz", "2. Play the quiz", "Why frogQuiz?") were upstream's public-site pitch and are gone; the page went from 316 lines to 95.
+- Removed the landing page's screenshots, which showed a ClassQuiz-era UI that no longer exists.
+- Quietened the landing icon chips (they were saturated `bg-lime-500`/`bg-emerald-300` squares) and fixed the type hierarchy so large headings carry less weight, not more.
+- Raised the base radius to 0.875rem and added breathing room and layered shadow depth.
+- Fixed a stray vertical rule on the landing cards, left over from a two-column layout that had been collapsed to one.
+- Fixed the home page having two `<title>` tags, and meta descriptions still pitching frogQuiz as "like KAHOOT!, but open-source".
+- Documented in `CLAUDE.md` what a full removal of Explore or Search would actually involve, including the Meilisearch write paths in quiz create/edit/import. Nothing was removed — both are kept.
 - Replaced the error pages with a branded shadcn card (status, plain-language message, Home / Try again). They previously rendered a cat meme fetched from `http.cat` on every error, which was both off-brand and a third-party request telling an outside service that our users had hit an error.
 - Rewrote the landing page copy for an internal tool, and dropped three claims that are simply untrue for our deployment: "German Server" (hosted by netcup), "Community-driven" (funded by its community) and "Completely Cost Free" (no paid plans, donations appreciated).
 - Fixed the registration form showing every field outlined in red on first load: the check was `$errors.field !== null`, and the pristine value is `undefined`, so the error styling was always on.

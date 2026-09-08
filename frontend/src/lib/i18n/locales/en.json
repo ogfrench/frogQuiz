@@ -46,7 +46,10 @@
         "how_does_frogquiz_work": "How does frogQuiz even work?",
         "no_player_limit": "No player limit",
         "no_player_limit_content": "frogQuiz doesn't impose an artificial player limit — it's been tested with up to 300 players in one quiz.",
-        "import_quiz_from_kahoot_and_edit": "Import quizzes from Kahoot! and edit them in frogQuiz"
+        "import_quiz_from_kahoot_and_edit": "Import quizzes from Kahoot! and edit them in frogQuiz",
+        "join_prompt": "Enter the PIN from the host’s screen.",
+        "hosting": "Running the quiz?",
+        "host_cta": "Go to your quizzes"
     },
     "overview_page": {
         "created_at": "Created at",
@@ -197,7 +200,8 @@
         "info": "Info",
         "player": "Player",
         "home": "Home",
-        "try_again": "Try again"
+        "try_again": "Try again",
+        "join": "Join"
     },
     "editor": {
         "time_in_seconds": "Time in seconds",

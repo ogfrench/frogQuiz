@@ -15,3 +15,6 @@ survey.json
 .coverage
 export_deta.py
 target/
+
+# Playwright MCP scratch output
+.playwright-mcp/

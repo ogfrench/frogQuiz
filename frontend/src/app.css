@@ -19,8 +19,10 @@ SPDX-License-Identifier: MPL-2.0
 @plugin "@tailwindcss/typography";
 @tailwind utilities;
 
+/* Was the Marck Script cursive. Kept as a class so the 14 call sites don't all
+   need touching, but it is now the Inter display treatment: tight, not cursive. */
 .marck-script {
-	font-family: 'Marck Script';
+	@apply font-semibold tracking-[-0.03em];
 }
 
 .link-hover {
@@ -48,6 +50,17 @@ SPDX-License-Identifier: MPL-2.0
 
 	html {
 		@apply bg-background text-foreground font-sans;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+	body {
+		@apply leading-relaxed;
+	}
+	/* Inter's default tracking is loose at display sizes. */
+	h1,
+	h2,
+	h3 {
+		@apply tracking-[-0.02em];
 	}
 }
 
@@ -63,7 +76,7 @@ SPDX-License-Identifier: MPL-2.0
 	@apply px-4 py-2 leading-5 text-black dark:text-white transition-colors duration-200 transform bg-gray-50 dark:bg-gray-700 rounded-sm text-center hover:bg-gray-300 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-600;
 }
 @utility btn-nav {
-	@apply text-lg font-medium px-3 text-muted-foreground hover:text-primary py-1.5 transition-all duration-300;
+	@apply text-muted-foreground hover:text-foreground hover:bg-muted rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
 }
 /*
 ---break---
@@ -92,7 +105,7 @@ SPDX-License-Identifier: MPL-2.0
 	--chart-3: oklch(0.439 0 0);
 	--chart-4: oklch(0.371 0 0);
 	--chart-5: oklch(0.269 0 0);
-	--radius: 0.625rem;
+	--radius: 0.875rem;
 	--sidebar: oklch(0.985 0 0);
 	--sidebar-foreground: oklch(0.141 0.005 285.823);
 	--sidebar-primary: oklch(0.21 0.006 285.885);
