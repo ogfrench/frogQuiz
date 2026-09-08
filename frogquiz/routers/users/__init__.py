@@ -11,7 +11,6 @@ import ormar
 import pydantic
 from email_validator import validate_email, EmailNotValidError
 from fastapi import APIRouter, Response, HTTPException, Request, Depends
-from fastapi.background import BackgroundTasks
 from fastapi.responses import JSONResponse, RedirectResponse, PlainTextResponse
 
 
