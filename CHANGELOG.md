@@ -4,6 +4,9 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Fixed the light/dark theme toggle, which had silently done nothing since the Tailwind v4 upgrade: `tailwind.config.cjs` (holding `darkMode: 'class'`) was no longer being loaded, so all 319 `dark:` utilities compiled against the OS `prefers-color-scheme` setting instead of the `.dark` class the app actually toggles. Re-linked the config from `app.css` with `@config`.
+- Fixed the brand green, lost in the same regression: `green-600` had reverted to stock Tailwind green instead of `#009444` across the 15 places it is used.
+- Added a pre-paint theme script to `app.html` so dark mode no longer flashes light on load, now that the theme depends on a class set by JS rather than a media query.
 - Created `CLAUDE.md` with project scope, feature triage policy, licensing rules, and collaboration workflow.
 - Created this changelog and wired automatic logging into `CLAUDE.md`.
 - Fixed mobile nav GitHub link, which still pointed at the upstream ClassQuiz repo.
