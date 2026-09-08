@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-import sentry_sdk
 from fastapi import FastAPI, Request
-from sentry_sdk.integrations.redis import RedisIntegration
 from socketio import ASGIApp
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -40,22 +38,8 @@ from frogquiz.socket_server import sio
 from frogquiz.helpers import meilisearch_init
 
 settings = settings()
-if settings.sentry_dsn:
-    sentry_sdk.init(dsn=settings.sentry_dsn, integrations=[RedisIntegration()])
 app = FastAPI(redoc_url="", docs_url="/api/docs")
 app.state.database = database
-
-
-@app.middleware("http")
-async def sentry_exception(request: Request, call_next):
-    try:
-        response = await call_next(request)
-        return response
-    except Exception as e:
-        with sentry_sdk.push_scope() as scope:
-            scope.set_context("request", request)
-            sentry_sdk.capture_exception(e)
-        raise e
 
 
 @app.on_event("startup")

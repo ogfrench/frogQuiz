@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Removed Sentry entirely. The backend still imported `sentry_sdk`, initialised it whenever a DSN was configured, and ran an HTTP middleware that attached the full request (URL and headers) to every captured exception before shipping it. It was dormant only because no DSN happened to be set. Gone from `frogquiz/__init__.py`, the `sentry_dsn` setting, the `sentry-sdk` dependency, `VITE_SENTRY`, and the self-host docs.
+- Corrected the privacy policy, which claimed frogQuiz used a GlitchTip instance for error logging and Plausible for usage data. Neither is true: there is now no analytics and nothing is reported to a third party.
 - Replaced the Marck Script cursive wordmark with a proper lockup: a rainbow-gradient mark plus "frogQuiz" set in Inter (`lib/components/Wordmark.svelte`). The `.marck-script` class is kept for its 14 call sites but no longer loads a script face.
 - Replaced every hand-inlined Heroicons SVG in the navbar and landing page with Lucide icons. Several had `stroke="#000000"` hardcoded and were invisible in dark mode.
 - Rebuilt the front page around what people actually come to it for: entering a game PIN. The marketing sections ("1. Get a quiz", "2. Play the quiz", "Why frogQuiz?") were upstream's public-site pitch and are gone; the page went from 316 lines to 95.

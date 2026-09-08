@@ -46,7 +46,6 @@ SPDX-License-Identifier: MPL-2.0
 	<h3>3rd-Parties</h3>
 	<h4>Optional</h4>
 	<ul>
-		<li><a href="https://sentry.io">Sentry (Error-Logging)</a></li>
 		<li>
 			<a href="https://console.cloud.google.com/apis/dashboard"
 				>Google-Credentials (Sign-In)</a
@@ -76,7 +75,6 @@ SPDX-License-Identifier: MPL-2.0
 			<code>VITE_CAPTCHA_ENABLED</code>: Set it to <code>true</code>, if the captcha should be
 			available
 		</li>
-		<li><code>VITE_SENTRY</code>: A Sentry-DSN for Sentry (optional)</li>
 		<li>
 			<code>VITE_GOOGLE_AUTH_ENABLED</code>: Set it to <code>true</code>, if Google-Auth is
 			set up. Otherwise, leave it unset.
