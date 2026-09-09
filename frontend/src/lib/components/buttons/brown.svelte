@@ -1,10 +1,15 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	// Was a hardcoded #B07156 brown inherited from upstream. Now the shadcn
+	// primary button; the prop API is unchanged so all call sites still work.
+	import { Button } from '$lib/components/ui/button/index.js';
+
 	interface Props {
 		disabled?: boolean;
 		flex?: boolean;
@@ -17,6 +22,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	let {
 		disabled = false,
+		// ponytail: `flex` is a no-op now — the shadcn button is already a centred
+		// flex row. Kept so the 25 existing call sites don't need touching.
 		flex = false,
 		href = undefined,
 		target = '_self',
@@ -27,29 +34,11 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 {#if href}
-	<a
-		{href}
-		{target}
-		{disabled}
-		class:opacity-50={disabled}
-		class:cursor-not-allowed={disabled}
-		class:pointer-events-none={disabled}
-		class="text-black hover:bg-bg-[#B07156]/80 w-full px-4 py-2 leading-5 transition-all duration-200 transform bg-[#B07156] rounded-sm text-center outline-hidden hover:cursor-pointer"
-		{onclick}
-		class:flex
-		class:justify-center={flex}
-	>
+	<Button {href} {target} {disabled} {onclick} class="w-full">
 		{@render children?.()}
-	</a>
+	</Button>
 {:else}
-	<button
-		{disabled}
-		{type}
-		class="text-black hover:cursor-pointer hover:opacity-80 w-full px-4 py-2 leading-5 transition-all duration-200 transform bg-[#B07156] rounded-sm text-center focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 outline-hidden"
-		{onclick}
-		class:flex
-		class:justify-center={flex}
-	>
+	<Button {type} {disabled} {onclick} class="w-full">
 		{@render children?.()}
-	</button>
+	</Button>
 {/if}

@@ -117,9 +117,8 @@ SPDX-License-Identifier: MPL-2.0
 									type="email"
 									class="w-full peer bg-transparent h-10 rounded-lg text-gray-700 dark:text-white placeholder-transparent ring-2 px-2 ring-gray-500 focus:ring-sky-600 focus:outline-hidden focus:border-rose-600"
 									placeholder={$t('words.email')}
-									class:ring-red-700={$errors.email !== null}
-									class:ring-green-600={$touched.email === true &&
-										$errors.email === null}
+									class:ring-destructive={!!$errors.email}
+									class:ring-primary={$touched.email && !$errors.email}
 								/>
 								<label
 									for="email"
@@ -137,9 +136,8 @@ SPDX-License-Identifier: MPL-2.0
 									type="text"
 									class="w-full peer bg-transparent h-10 rounded-lg text-gray-700 dark:text-white placeholder-transparent ring-2 px-2 ring-gray-500 focus:ring-sky-600 focus:outline-hidden focus:border-rose-600"
 									placeholder={$t('words.username')}
-									class:ring-red-700={$errors.username !== null}
-									class:ring-green-600={$touched.username === true &&
-										$errors.username === null}
+									class:ring-destructive={!!$errors.username}
+									class:ring-primary={$touched.username && !$errors.username}
 								/>
 								<label
 									for="username"
@@ -155,9 +153,8 @@ SPDX-License-Identifier: MPL-2.0
 									id="password1"
 									name="password1"
 									type="password"
-									class:ring-red-700={$errors.password1 !== null}
-									class:ring-green-600={$touched.password1 === true &&
-										$errors.password1 === null}
+									class:ring-destructive={!!$errors.password1}
+									class:ring-primary={$touched.password1 && !$errors.password1}
 									class="w-full peer bg-transparent h-10 rounded-lg text-gray-700 dark:text-white placeholder-transparent ring-2 px-2 ring-gray-500 focus:ring-sky-600 focus:outline-hidden focus:border-rose-600"
 									placeholder={$t('words.password')}
 								/>
@@ -177,9 +174,8 @@ SPDX-License-Identifier: MPL-2.0
 									type="password"
 									class="w-full peer bg-transparent h-10 rounded-lg text-gray-700 dark:text-white placeholder-transparent ring-2 px-2 ring-gray-500 focus:ring-sky-600 focus:outline-hidden focus:border-rose-600"
 									placeholder={$t('words.password')}
-									class:ring-red-700={$errors.password2 !== null}
-									class:ring-green-600={$touched.password2 === true &&
-										$errors.password2 === null}
+									class:ring-destructive={!!$errors.password2}
+									class:ring-primary={$touched.password2 && !$errors.password2}
 								/>
 								<label
 									for="password2"
@@ -191,9 +187,8 @@ SPDX-License-Identifier: MPL-2.0
 						</div>
 						<div
 							class="ring-1 ring-gray-500 focus:outline-hidden rounded-lg m-4 py-2"
-							class:ring-red-700={$errors.privacy_accept !== null}
-							class:ring-green-600={$touched.privacy_accept === true &&
-								$errors.privacy_accept === null}
+							class:ring-destructive={!!$errors.privacy_accept}
+							class:ring-primary={$touched.privacy_accept && !$errors.privacy_accept}
 						>
 							<!--						<div class='flex items-center justify-between mt-4 w-full'>-->
 							<input type="checkbox" name="privacy_accept" class="ml-3" />
@@ -205,9 +200,8 @@ SPDX-License-Identifier: MPL-2.0
 						</div>
 						<div
 							class="ring-1 ring-gray-500 focus:outline-hidden rounded-lg m-4 py-2"
-							class:ring-red-700={$errors.tos_accept !== null}
-							class:ring-green-600={$touched.tos_accept === true &&
-								$errors.tos_accept === null}
+							class:ring-destructive={!!$errors.tos_accept}
+							class:ring-primary={$touched.tos_accept && !$errors.tos_accept}
 						>
 							<!--						<div class='flex items-center justify-between mt-4 w-full'>-->
 							<input type="checkbox" name="tos_accept" class="ml-3" />

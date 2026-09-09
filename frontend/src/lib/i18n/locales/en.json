@@ -1,8 +1,8 @@
 {
     "index_page": {
-        "slogan": "The open-source quiz-platform!",
+        "slogan": "Quizzes for the team.",
         "meta": {
-            "description": "frogQuiz is a quiz app to learn interactively for students, which is open source and free to use",
+            "description": "frogQuiz is an internal quiz tool for running interactive quizzes with your team.",
             "title": "Home"
         },
         "stats": "There are already {{user_count}} users and {{quiz_count}} quizzes on frogQuiz.",
@@ -31,22 +31,25 @@
         "list_winners": "List winners",
         "get_ranking_and_winners": "Get the ranking and see who won",
         "why_frogquiz": "Why frogQuiz?",
-        "no_tracking_content": "Others track you and sends that info to third-parties, but frogQuiz doesn't.",
-        "self_hostable_content": "frogQuiz can easily be self-hosted, so the data is only in your control!",
-        "user_friendly_content": "frogQuiz aims to be simple, so it is can be used by everyone.",
+        "no_tracking_content": "frogQuiz doesn't track players or send anything to third parties.",
+        "self_hostable_content": "frogQuiz runs on our own infrastructure, so quiz data stays with us.",
+        "user_friendly_content": "frogQuiz aims to be simple enough that nobody needs training to run a quiz.",
         "completely_free_content": "frogQuiz is completely cost free (for the user), without any paid plans or annoying redirects to the upgrade-page. Donations are highly appreciated.",
-        "quiz_results_downloadable_content": "Quiz-results can be easily exported into an Excel-spreadsheet. (Didn't know others couldn't do that)",
-        "multilingual_content": "frogQuiz is available in English, French, German, Italian, Norwegian Bokmål, Turkish, and partly Indonesian and Catalan.",
-        "dark_mode_content": "One of the most important features a website can have!",
+        "quiz_results_downloadable_content": "Quiz results export straight to an Excel spreadsheet.",
+        "multilingual_content": "frogQuiz is available in a range of languages, switchable from the footer.",
+        "dark_mode_content": "Light and dark themes, following your system setting by default.",
         "german_server_content": "frogQuiz's servers are located in Germany and hosted by netcup.",
         "download_quizzes": "Download Quizzes",
-        "download_quizzes_content": "Quizzes can be downloaded as one file and imported at any time. This also lets you move your quizzes to other frogQuiz instances.",
+        "download_quizzes_content": "Quizzes download as a single file and can be re-imported at any time, including into another frogQuiz instance.",
         "community_driven": "Community-driven",
         "community_driven_content": "frogQuiz depends on its community for funding, testing ideas, feature requests, translations and more! You can also be a part of the frogQuiz-community!",
         "how_does_frogquiz_work": "How does frogQuiz even work?",
         "no_player_limit": "No player limit",
-        "no_player_limit_content": "frogQuiz doesn't have an artificial player limit. In theory, 1000+ players could play the same quiz, but it's tested with up to 300 players per quiz.",
-        "import_quiz_from_kahoot_and_edit": "Import quizzes from Kahoot! and edit them in frogQuiz"
+        "no_player_limit_content": "frogQuiz doesn't impose an artificial player limit — it's been tested with up to 300 players in one quiz.",
+        "import_quiz_from_kahoot_and_edit": "Import quizzes from Kahoot! and edit them in frogQuiz",
+        "join_prompt": "Enter the PIN from the host’s screen.",
+        "hosting": "Running the quiz?",
+        "host_cta": "Go to your quizzes"
     },
     "overview_page": {
         "created_at": "Created at",
@@ -195,7 +198,10 @@
         "dislike_plural": "Dislikes",
         "play_plural": "Plays",
         "info": "Info",
-        "player": "Player"
+        "player": "Player",
+        "home": "Home",
+        "try_again": "Try again",
+        "join": "Join"
     },
     "editor": {
         "time_in_seconds": "Time in seconds",
@@ -319,8 +325,9 @@
         "donate": "If you find this useful, please consider {{donate_link}}."
     },
     "error_page": {
-        "404_text": "The page you were looking for is gone or never even existed. Who knows?",
-        "unknown_error_text": "That shouldn't happen. It's probably my fault, not yours, but maybe you have a magical power to break stuff..."
+        "404_text": "The page you were looking for doesn't exist, or has been moved.",
+        "unknown_error_text": "Something went wrong on our end. Try again — if it keeps happening, let the team know.",
+        "quiz_404_text": "That quiz doesn't exist, or is no longer shared."
     },
     "uploader": {
         "add_image": "Add Media",

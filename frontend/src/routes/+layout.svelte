@@ -13,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { initLocalizationContext } from '$lib/i18n';
 	import { browser } from '$app/environment';
 	import CommandPalette from '$lib/components/commandpalette.svelte';
+	import AmbientBackground from '$lib/components/AmbientBackground.svelte';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -41,6 +42,8 @@ SPDX-License-Identifier: MPL-2.0
 	initLocalizationContext(start_language);
 </script>
 
+<AmbientBackground />
+
 {#if navbarVisible.visible}
 	<Navbar />
 	<div class="pt-16">
@@ -51,29 +54,9 @@ SPDX-License-Identifier: MPL-2.0
 <CommandPalette />
 
 <style lang="scss">
-	:global(html:not(.dark)) {
-		// height: 100%;
-		// width: 100%;
-
-		// bg-gradient-to-r from-[#009444] via-[#39b54a] to-[#8dc63f]
-		//background: linear-gradient(to right, #009444, #39b54a, #8dc63f) repeat-y;
-		background-color: #d6edc9;
-		background-size: cover;
-		/*background: linear-gradient(-225deg, #231557 0%, #44107A 29%, #FF1361 67%, #FFF800 100%); */
-		/*background: linear-gradient(-225deg, #22E1FF 0%, #1D8FE1 48%, #625EB1 100%); */
-		color: black;
-
-		// background-size: 400% 400%;
-
-		//animation: background_animation 5s ease infinite;
-	}
-
+	// The page ground now comes from the shadcn `--background` token, applied to
+	// `html` in app.css. The old #d6edc9 / #4e6e58 greens lived here.
 	:global(html.dark) {
-		//background-color: #0f2702;
-		background-color: #4e6e58;
-		background-size: cover;
-		color: white;
-
 		:global(#pips-slider) {
 			--pip: white;
 			--pip-active: white;

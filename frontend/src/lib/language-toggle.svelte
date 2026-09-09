@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -25,7 +26,7 @@ SPDX-License-Identifier: MPL-2.0
 			{
 				code: 'en',
 				name: 'English',
-				flag: '🇺🇲'
+				flag: '🇬🇧'
 			},
 			{
 				code: 'tr',
@@ -64,8 +65,8 @@ SPDX-License-Identifier: MPL-2.0
 			},
 			{
 				code: 'zh_Hant',
-				name: 'Chinese (traditional)',
-				flag: '🇨🇳'
+				name: '繁體中文',
+				flag: '🇹🇼'
 			},
 			{
 				code: 'pl',
@@ -100,22 +101,22 @@ SPDX-License-Identifier: MPL-2.0
 			{
 				code: 'ta',
 				flag: '🇮🇳',
-				name: 'Tamil'
+				name: 'தமிழ்'
 			},
 			{
 				code: 'pt_BR',
 				flag: '🇧🇷',
-				name: 'Brazil'
+				name: 'Português (Brasil)'
 			},
 			{
 				code: 'ja',
 				flag: '🇯🇵',
-				name: 'Japan'
+				name: '日本語'
 			},
 			{
 				code: 'he',
-				flag: '🇯🇵',
-				name: 'Hebrew'
+				flag: '🇮🇱',
+				name: 'עברית'
 			},
 			{
 				code: 'prs',
@@ -151,7 +152,7 @@ SPDX-License-Identifier: MPL-2.0
 		onchange={() => {
 			set_language(selected_language);
 		}}
-		class="p-2 rounded-lg bg-gray-800 focus:ring-2 ring-blue-600 text-white"
+		class="border-input bg-background text-foreground focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
 		aria-label="Language-Selector"
 	>
 		{#each languages as lang}

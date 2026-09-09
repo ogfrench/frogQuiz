@@ -72,10 +72,12 @@ SPDX-License-Identifier: MPL-2.0
 
 	<h2>Tracking</h2>
 	<p>
-		This site uses a self-hosted GlitchTip (sentry) instance for error-logging. An opt-out is
-		not available at the moment. This website also uses
-		<a href="https://plausible.io/">Plausible</a> to log usage-data, but this is also running on
-		the same server as frogQuiz itself.
+		frogQuiz does not use analytics. No usage data is collected, and nothing is sent to an
+		analytics provider.
+	</p>
+	<p>
+		Errors are logged on the server only. No error reports, stack traces or request details are
+		sent to any third party.
 	</p>
 	<h3>Third-Parties</h3>
 	<p>

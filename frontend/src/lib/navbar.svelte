@@ -1,19 +1,25 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import '@fontsource/marck-script/index.css';
 	import { getLocalization } from '$lib/i18n';
 	import { signedIn, pathname } from '$lib/stores';
 	import { createTippy } from 'svelte-tippy';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { browser } from '$app/environment';
 	import { beforeNavigate } from '$app/navigation';
-	import { draw, slide } from 'svelte/transition';
+	import { slide } from 'svelte/transition';
 	import { registration_disabled } from './config';
+	import Wordmark from '$lib/components/Wordmark.svelte';
+	import Sun from '@lucide/svelte/icons/sun';
+	import Moon from '@lucide/svelte/icons/moon';
+	import Menu from '@lucide/svelte/icons/menu';
+	import X from '@lucide/svelte/icons/x';
+	import ExternalLink from '@lucide/svelte/icons/external-link';
 
 	const tippy = createTippy({
 		arrow: true,
@@ -46,16 +52,20 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<nav class="w-screen px-4 lg:px-10 py-2 fixed backdrop-blur-2xl bg-white/70 shadow-md z-30 top-0">
+<nav
+	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 border-b px-5 py-3 backdrop-blur-xl lg:px-8"
+>
 	<!-- Desktop navbar -->
 	<div class="hidden lg:flex lg:items-center lg:flex-row lg:justify-between">
 		<div class="lg:flex lg:items-center lg:flex-row gap-1">
 			<a
 				href="/"
-				class="font-black tracking-tight text-xl lg:text-2xl text-black marck-script link-hover px-3 lg:px-5"
-				>frogQuiz</a
+				class="text-foreground hover:opacity-80 mr-2 flex items-center text-lg transition-opacity"
+				aria-label="frogQuiz home"
 			>
-			<a class="btn-nav border-2 rounded-sm" href="/play">{$t('words.play')}</a>
+				<Wordmark />
+			</a>
+			<a class="btn-nav border-border bg-muted/60 text-foreground border" href="/play">{$t('words.play')}</a>
 			<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
 			<a class="btn-nav" href="/search">{$t('words.search')}</a>
 			{#if $signedIn}
@@ -67,26 +77,7 @@ SPDX-License-Identifier: MPL-2.0
 					class="btn-nav flex items-center gap-1"
 					href="https://github.com/ogfrench/frogQuiz"
 					>GitHub
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="17"
-						height="17"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="lucide lucide-external-link"
-						><path
-							d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-						/><polyline points="15 3 21 3 21 9" /><line
-							x1="10"
-							x2="21"
-							y1="14"
-							y2="3"
-						/></svg
-					>
+					<ExternalLink class="size-4" aria-hidden="true" />
 				</a>
 			{/if}
 		</div>
@@ -112,23 +103,7 @@ SPDX-License-Identifier: MPL-2.0
 							use:tippy={{ content: 'Switch light mode on' }}
 							aria-label="Activate light mode"
 						>
-							<!-- Heroicons: sun -->
-							<svg
-								class="w-6 h-6 text-black"
-								fill="none"
-								aria-label="Sun-Icon"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									stroke="currentColor"
-									d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-								/>
-							</svg>
+							<Sun class="size-5" aria-hidden="true" />
 						</button>
 					{:else}
 						<button
@@ -138,22 +113,7 @@ SPDX-License-Identifier: MPL-2.0
 							aria-label="Activate darkmode"
 							use:tippy={{ content: 'Switch dark mode on' }}
 						>
-							<!-- Heroicons: moon -->
-							<svg
-								aria-label="Moon-Icon"
-								class="w-6 h-6"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-								/>
-							</svg>
+							<Moon class="size-5" aria-hidden="true" />
 						</button>
 					{/if}
 				</div>
@@ -167,9 +127,11 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="flex items-center justify-between">
 			<a
 				href="/"
-				class="font-black tracking-tight text-xl lg:text-2xl text-black marck-script link-hover px-3 lg:px-5"
-				>frogQuiz</a
+				class="text-foreground hover:opacity-80 mr-2 flex items-center text-lg transition-opacity"
+				aria-label="frogQuiz home"
 			>
+				<Wordmark />
+			</a>
 			<a class="btn-nav flex" href="/play">{$t('words.play')}</a>
 
 			<!-- Dark/Light mode toggle + Open/Close menu -->
@@ -184,23 +146,7 @@ SPDX-License-Identifier: MPL-2.0
 						use:tippy={{ content: 'Switch light mode on' }}
 						aria-label="Activate light mode"
 					>
-						<!-- Heroicons: sun -->
-						<svg
-							class="w-6 h-6 text-black"
-							fill="none"
-							aria-label="Sun-Icon"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								stroke="currentColor"
-								d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-							/>
-						</svg>
+						<Sun class="size-5" aria-hidden="true" />
 					</button>
 				{:else}
 					<!-- Moon icon -->
@@ -212,22 +158,7 @@ SPDX-License-Identifier: MPL-2.0
 						aria-label="Activate darkmode"
 						use:tippy={{ content: 'Switch dark mode on' }}
 					>
-						<!-- Heroicons: moon -->
-						<svg
-							aria-label="Moon-Icon"
-							class="w-6 h-6"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-							/>
-						</svg>
+						<Moon class="size-5" aria-hidden="true" />
 					</button>
 				{/if}
 
@@ -238,19 +169,7 @@ SPDX-License-Identifier: MPL-2.0
 						onclick={toggleMenu}
 						aria-label="Open navbar"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="#000000"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M3 6h18M3 12h18M3 18h18" />
-						</svg>
+						<Menu class="size-6" aria-hidden="true" />
 					</button>
 				{:else}
 					<button
@@ -259,21 +178,7 @@ SPDX-License-Identifier: MPL-2.0
 						onclick={toggleMenu}
 						aria-label="Close navbar"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="#000000"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path in:draw|global={{ duration: 300 }} d="M18 6 6 18" /><path
-								in:draw|global={{ duration: 300 }}
-								d="m6 6 12 12"
-							/></svg
-						>
+						<X class="size-6" aria-hidden="true" />
 					</button>
 				{/if}
 			</div>
@@ -283,7 +188,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if !menuIsClosed}
 			<div class="flex flex-col" transition:slide|global={{ duration: 400 }}>
 				<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
-				<a class="btn-nav" href="/search">{$t('words.search')}</a>
+			<a class="btn-nav" href="/search">{$t('words.search')}</a>
 				{#if $signedIn}
 					<a class="btn-nav" href="/dashboard">{$t('words.dashboard')}</a>
 				{:else}
@@ -293,26 +198,7 @@ SPDX-License-Identifier: MPL-2.0
 						class="btn-nav flex items-center gap-1"
 						href="https://github.com/ogfrench/frogQuiz"
 						>GitHub
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="17"
-							height="17"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="lucide lucide-external-link"
-							><path
-								d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-							/><polyline points="15 3 21 3 21 9" /><line
-								x1="10"
-								x2="21"
-								y1="14"
-								y2="3"
-							/></svg
-						>
+						<ExternalLink class="size-4" aria-hidden="true" />
 					</a>
 				{/if}
 
