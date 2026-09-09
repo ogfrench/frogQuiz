@@ -43,9 +43,12 @@ SPDX-License-Identifier: MPL-2.0
 		@apply border-border outline-ring/50;
 	}
 
+	/* `html` carries the page ground so it propagates to the canvas. `body` stays
+	   transparent, or its background would paint over the fixed ambient layer:
+	   negative z-index elements sit above the root background but below the
+	   background of any descendant block. */
 	body {
-
-		@apply bg-background text-foreground;
+		@apply text-foreground bg-transparent;
 	}
 
 	html {

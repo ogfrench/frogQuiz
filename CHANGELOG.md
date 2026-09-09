@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Added the ambient background layer (`lib/components/AmbientBackground.svelte`): the brand rainbow as small, heavily blurred smudges scattered towards the page edges, which is how frogConvert actually spends that palette. Mounted once in the root layout.
+- Made `body` transparent so that layer is visible. `html` keeps the `--background` token, so the page ground is unchanged; a `body` background would have painted over any negative-z-index element.
 - Fixed `backend_lint`, which has been failing on master since b478a50: making email sending synchronous left `BackgroundTasks` imported but unused in `frogquiz/routers/users/__init__.py`, and flake8 treats F401 as a build stopper.
 - Removed Sentry entirely. The backend still imported `sentry_sdk`, initialised it whenever a DSN was configured, and ran an HTTP middleware that attached the full request (URL and headers) to every captured exception before shipping it. It was dormant only because no DSN happened to be set. Gone from `frogquiz/__init__.py`, the `sentry_dsn` setting, the `sentry-sdk` dependency, `VITE_SENTRY`, and the self-host docs.
 - Corrected the privacy policy, which claimed frogQuiz used a GlitchTip instance for error logging and Plausible for usage data. Neither is true: there is now no analytics and nothing is reported to a third party.
