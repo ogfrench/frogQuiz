@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Pinned `@lucide/svelte` to 1.42.0 and `bits-ui` to 2.19.0. The Docker build runs pnpm 11.6, which enforces a 24-hour minimum release age on lockfile entries; both packages had been published the day before and failed `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`. Pinned exactly rather than with a caret, since a range would resolve straight back to the fresh release, and the policy itself was left alone — it is there to catch compromised packages that get yanked quickly.
 - Added the ambient background layer (`lib/components/AmbientBackground.svelte`): the brand rainbow as small, heavily blurred smudges scattered towards the page edges, which is how frogConvert actually spends that palette. Mounted once in the root layout.
 - Made `body` transparent so that layer is visible. `html` keeps the `--background` token, so the page ground is unchanged; a `body` background would have painted over any negative-z-index element.
 - Fixed `backend_lint`, which has been failing on master since b478a50: making email sending synchronous left `BackgroundTasks` imported but unused in `frogquiz/routers/users/__init__.py`, and flake8 treats F401 as a build stopper.
