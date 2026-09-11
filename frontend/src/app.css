@@ -1,16 +1,168 @@
 /*
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 FrogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 */
 
 @import 'tippy.js/animations/perspective-subtle.css';
 @import 'tippy.js/dist/tippy.css';
-/* Write your global styles here, in PostCSS syntax */
+@import '@fontsource-variable/inter';
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Legacy v3 config: carries `darkMode: 'class'` and the #009444 brand green.
+   Tailwind v4 does not pick it up on its own. */
 @config '../tailwind.config.cjs';
 @plugin "@tailwindcss/typography";
-@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   Design tokens, ported from the frogConvert design system so the two products
+   read as one brand. Values converted hex -> OKLCH.
+   --------------------------------------------------------------------------- */
+
+:root {
+	--background: oklch(100% 0 0);
+	--foreground: oklch(14.479% 0 0);
+	--card: oklch(99.405% 0 0);
+	--card-foreground: oklch(14.479% 0 0);
+	--popover: oklch(100% 0 0);
+	--popover-foreground: oklch(14.479% 0 0);
+	--primary: oklch(14.479% 0 0);
+	--primary-foreground: oklch(98.51% 0 0);
+	--secondary: oklch(96.743% 0.0013 286.38);
+	--secondary-foreground: oklch(21.033% 0.0059 285.89);
+	--muted: oklch(96.743% 0.0013 286.38);
+	--muted-foreground: oklch(48.939% 0.0174 285.74);
+	--accent: oklch(91.973% 0.004 286.32);
+	--accent-foreground: oklch(21.033% 0.0059 285.89);
+	--destructive: oklch(63.683% 0.2078 25.33);
+	--destructive-foreground: oklch(98.51% 0 0);
+	--warning: oklch(76.859% 0.1647 70.08);
+	--warning-foreground: oklch(14.479% 0 0);
+	--success: oklch(77.388% 0.1476 148.57);
+	--success-foreground: oklch(14.479% 0 0);
+	--border: oklch(91.973% 0.004 286.32);
+	--input: oklch(91.973% 0.004 286.32);
+	--ring: oklch(77.388% 0.1476 148.57);
+
+	/* frogConvert's frog green, kept as its own token so accent and brand can
+	   diverge without one dragging the other. */
+	--frog: oklch(77.388% 0.1476 148.57);
+	--frog-foreground: oklch(14.479% 0 0);
+
+	/* Answer / chart series, taken from the frogConvert brand rainbow. */
+	--chart-1: oklch(71.161% 0.1812 22.84);
+	--chart-2: oklch(82.083% 0.1486 72.1);
+	--chart-3: oklch(89.254% 0.1667 94.55);
+	--chart-4: oklch(77.388% 0.1476 148.57);
+	--chart-5: oklch(77.255% 0.1268 231.11);
+	--chart-6: oklch(65.771% 0.1905 292.12);
+	--chart-7: oklch(72.345% 0.1854 1.78);
+
+	/* Single source of truth for the brand gradient: selected state and
+	   focus-visible ring both draw from it. */
+	--rainbow-gradient: conic-gradient(
+		from 0deg,
+		#ff6b6b,
+		#ffb347,
+		#ffd93d,
+		#6bcf7f,
+		#4fc3f7,
+		#9775fa,
+		#ff6b9d,
+		#ff6b6b
+	);
+
+	/* Base radius. The tiers below are what components actually use: controls
+	   stay tighter than surfaces, so buttons don't read as pills. */
+	--radius: 1rem;
+
+	color-scheme: light;
+}
+
+.dark {
+	--background: oklch(14.479% 0 0);
+	--foreground: oklch(98.51% 0 0);
+	--card: oklch(19.125% 0 0);
+	--card-foreground: oklch(98.51% 0 0);
+	--popover: oklch(19.125% 0 0);
+	--popover-foreground: oklch(98.51% 0 0);
+	--primary: oklch(98.51% 0 0);
+	--primary-foreground: oklch(14.479% 0 0);
+	--secondary: oklch(27.394% 0.0055 286.03);
+	--secondary-foreground: oklch(98.51% 0 0);
+	--muted: oklch(27.394% 0.0055 286.03);
+	--muted-foreground: oklch(71.181% 0.0129 286.07);
+	--accent: oklch(37.032% 0.0119 285.81);
+	--accent-foreground: oklch(98.51% 0 0);
+	--destructive: oklch(57.71% 0.2152 27.33);
+	--destructive-foreground: oklch(98.51% 0 0);
+	--warning: oklch(83.686% 0.1644 84.43);
+	--warning-foreground: oklch(14.479% 0 0);
+	--success: oklch(77.388% 0.1476 148.57);
+	--success-foreground: oklch(14.479% 0 0);
+	--border: oklch(27.394% 0.0055 286.03);
+	--input: oklch(27.394% 0.0055 286.03);
+	--ring: oklch(77.388% 0.1476 148.57);
+
+	--frog: oklch(77.388% 0.1476 148.57);
+	--frog-foreground: oklch(14.479% 0 0);
+
+	color-scheme: dark;
+}
+
+@theme inline {
+	--font-sans:
+		'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+		sans-serif;
+	--font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Cascadia Code', monospace;
+
+	/* Tiered radii. Controls tighter, surfaces wider — see --radius above. */
+	--radius-sm: calc(var(--radius) - 6px);
+	--radius-md: calc(var(--radius) - 4px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 8px);
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-frog: var(--frog);
+	--color-frog-foreground: var(--frog-foreground);
+
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-chart-6: var(--chart-6);
+	--color-chart-7: var(--chart-7);
+}
+
+/* ---------------------------------------------------------------------------
+   Legacy styles, still used by routes not yet migrated. These go as each
+   route moves over; nothing new should reach for them.
+   --------------------------------------------------------------------------- */
 
 .marck-script {
 	font-family: 'Marck Script';
@@ -23,6 +175,7 @@ SPDX-License-Identifier: MPL-2.0
 .link-hover:hover {
 	color: #4e6e58;
 }
+
 @layer base {
 	button:not(:disabled),
 	[role='button']:not(:disabled) {
@@ -41,6 +194,7 @@ SPDX-License-Identifier: MPL-2.0
 @utility action-button {
 	@apply px-4 py-2 leading-5 text-black dark:text-white transition-colors duration-200 transform bg-gray-50 dark:bg-gray-700 rounded-sm text-center hover:bg-gray-300 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-600;
 }
+
 @utility btn-nav {
 	@apply text-lg font-medium px-3 text-gray-600 hover:text-green-600 py-1.5 transition-all duration-300;
 }
