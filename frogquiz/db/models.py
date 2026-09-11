@@ -15,6 +15,7 @@ import ormar
 from ormar import ReferentialAction
 from pydantic import (
     BaseModel,
+    Field,
     Json,
     field_validator,
     ConfigDict,
@@ -313,7 +314,7 @@ class GameSession(BaseModel):
 
 class UpdatePassword(BaseModel):
     old_password: str
-    new_password: str
+    new_password: str = Field(min_length=8, max_length=100)
 
 
 class AnswerData(BaseModel):

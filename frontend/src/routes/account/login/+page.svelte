@@ -14,10 +14,8 @@ SPDX-License-Identifier: MPL-2.0
 	import StartWindow from './start_window.svelte';
 	import SelectMethod from './select_method.svelte';
 	import PasswordComponent from './password_component.svelte';
-	import WebauthnComponent from './webauthn_component.svelte';
 	import BackupComponent from './backup_component.svelte';
 	import TotpComponent from './totp_component.svelte';
-	import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
 	import * as Card from '$lib/components/ui/card/index.js';
 
 	navbarVisible.visible = true;
@@ -53,7 +51,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const check_auto = (stp: number) => {
 		if (stp === 1) {
-			if (!browserSupportsWebAuthn()) {
+			{
 				for (let i = 0; i < session_data.step_1.length; i++) {
 					if (session_data.step_1[i] === 'PASSKEY') {
 						session_data.step_1.splice(i, 1);
@@ -66,7 +64,7 @@ SPDX-License-Identifier: MPL-2.0
 			}
 		}
 		if (stp === 2) {
-			if (!browserSupportsWebAuthn()) {
+			{
 				for (let i = 0; i < session_data.step_2.length; i++) {
 					if (session_data.step_2[i] === 'PASSKEY') {
 						session_data.step_2.splice(i, 1);
@@ -105,11 +103,6 @@ SPDX-License-Identifier: MPL-2.0
 			<!--			<p>PasswordWindow</p>-->
 			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
 				<PasswordComponent {session_data} bind:done bind:step bind:selected_method />
-			</div>
-		{:else if selected_method === 'PASSKEY'}
-			<!--			<p>WebauthnWindow</p>-->
-			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
-				<WebauthnComponent {session_data} bind:done bind:step bind:selected_method />
 			</div>
 		{:else if selected_method === 'BACKUP'}
 			<!--			<p>BackupWindow</p>-->

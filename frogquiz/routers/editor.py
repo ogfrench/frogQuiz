@@ -80,11 +80,15 @@ async def init_editor(edit: bool, quiz_id: Optional[UUID] = None, user: User = D
 
 
 @router.post("/finish")
-async def finish_edit(edit_id: str, quiz_input: QuizInput):
+async def finish_edit(edit_id: str, quiz_input: QuizInput, user: User = Depends(get_current_user)):
     session_data = await redis.get(f"edit_session:{edit_id}")
     if session_data is None:
         raise HTTPException(status_code=401, detail="Edit ID not found!")
     session_data = EditSessionData.model_validate_json(session_data)
+    # The edit id alone is not a credential: it is 32 bits and lives for an hour.
+    # Without this check, knowing it was enough to write a quiz into its owner's account.
+    if session_data.user_id != user.id:
+        raise HTTPException(status_code=403, detail="This edit session belongs to another user")
     quiz_input.title = bleach.clean(quiz_input.title, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True)
     quiz_input.description = bleach.clean(quiz_input.description, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True)
     if quiz_input.background_color is not None:

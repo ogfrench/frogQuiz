@@ -66,7 +66,8 @@ example_quiz = {
     ],
 }
 test_user_email = "sth@byom.de"
-test_user_password = "test"
+# Must satisfy the registration minimum enforced in RouteUser.
+test_user_password = "test-password"
 
 example_quiztivity = {
     "title": "Some test Quiztivity",

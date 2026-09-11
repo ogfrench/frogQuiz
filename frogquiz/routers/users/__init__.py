@@ -20,11 +20,14 @@ import base64
 
 from frogquiz.auth import (
     get_password_hash,
+    hash_session_key,
+    revoke_token,
     verify_password,
     get_current_user,
 )
 from frogquiz.cache import clear_cache_for_account
 from frogquiz.config import redis, settings, meilisearch
+from frogquiz.helpers.ratelimit import rate_limit
 import uuid
 import bleach
 from pydantic import BaseModel
@@ -41,7 +44,9 @@ router.include_router(twofa.router, prefix="/2fa")
 
 class RouteUser(pydantic.BaseModel):
     username: str
-    password: str
+    # Mirrors the rule the register form enforces; without it the API accepted
+    # a one-character password.
+    password: str = pydantic.Field(min_length=8, max_length=100)
     email: str
 
 
@@ -58,7 +63,8 @@ router.include_router(oauth.router, tags=["users", "oauth"], prefix="/oauth")
     response_model=User,
     response_model_include={"id": ..., "verified": ..., "email": ...},
 )
-async def create_user(user: RouteUser) -> User | JSONResponse:
+async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
+    await rate_limit(request, "register", limit=10, window_seconds=3600)
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
     user: User = User(
@@ -68,7 +74,9 @@ async def create_user(user: RouteUser) -> User | JSONResponse:
         created_at=datetime.now(),
     )
     try:
-        validate_email(user.email)
+        # Deliverability is a live DNS/MX lookup, so it needs outbound DNS at signup
+        # and rejects internal-only mail domains. On by default; see the setting.
+        validate_email(user.email, check_deliverability=settings.validate_email_deliverability)
     except EmailNotValidError as e:
         raise HTTPException(status_code=400, detail=str(e))
     user.verify_key = str(os.urandom(16).hex())
@@ -95,7 +103,12 @@ async def create_user(user: RouteUser) -> User | JSONResponse:
 async def logout(request: Request, response: Response):
     remember_token = request.cookies.get("rememberme_token")
     if remember_token is not None:
-        await UserSession.objects.filter(session_key=remember_token).delete()
+        await UserSession.objects.filter(session_key=hash_session_key(remember_token)).delete()
+    # Clearing the cookie only affects this browser; dropping the Redis entry is
+    # what actually ends the session for a token that has already been copied.
+    access_token = request.cookies.get("access_token")
+    if access_token is not None:
+        await revoke_token(access_token.removeprefix("Bearer "))
     response.delete_cookie("access_token")
     response.delete_cookie("expiry")
     response.delete_cookie("rememberme")
@@ -228,7 +241,7 @@ async def delete_session(session_id: uuid.UUID, user: User = Depends(get_current
 async def get_session(request: Request, user: User = Depends(get_current_user)):
     try:
         session = await UserSession.objects.filter(
-            user=user, session_key=request.cookies.get("rememberme_token")
+            user=user, session_key=hash_session_key(request.cookies.get("rememberme_token") or "")
         ).first()
         return session
     except ormar.NoMatch:
