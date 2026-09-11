@@ -4,6 +4,9 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Rebuilt the player answer tiles: rounded, with gloss and floor shading so they read as pressable, a staggered entrance, hover and press response, and a clear picked state where the chosen tile lifts and the others recede. The hard black borders are gone.
+- Gave the answer buttons real accessible names. They previously announced as "Icon" because the shape image's alt text was the button's only content; they now announce the answer.
+- **Filled the blank screen after answering.** Once every player had answered the timer stopped, the tiles unmounted and nothing replaced them, so the phone went empty with no confirmation the answer had registered. Added an "Answer locked in / waiting for everyone else" state, with the strings added to all 34 locale files.
 - **Fixed the host screen crashing during every question.** `play/admin/question.svelte` iterated answers with `{#each ... as answer}` but referenced an index `i` four times inside the loop, throwing `ReferenceError: i is not defined` on render. The projector screen silently fell back to the quiz title, so nobody in the room could read the question or the answer options for the whole round. One missing index binding.
 - Marked the answer shape images decorative (`alt=""`) so screen readers announce the answer text rather than "icon".
 - Pinned `@lucide/svelte` to 1.42.0 and `bits-ui` to 2.19.0. The Docker build runs pnpm 11.6, which enforces a 24-hour minimum release age on lockfile entries; both packages had been published the day before and failed `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`. Pinned exactly rather than with a caret, since a range would resolve straight back to the fresh release, and the policy itself was left alone — it is there to catch compromised packages that get yanked quickly.

@@ -1,470 +1,472 @@
 {
-    "result_page": {
-        "correct_answer_plural": "",
-        "player_score": "",
-        "correct_answer": "",
-        "time_taken": "",
-        "player_name": "",
-        "average_score": "",
-        "custom_field": ""
+  "result_page": {
+    "correct_answer_plural": "",
+    "player_score": "",
+    "correct_answer": "",
+    "time_taken": "",
+    "player_name": "",
+    "average_score": "",
+    "custom_field": ""
+  },
+  "register_page": {
+    "create_account": "Vytvořit účet",
+    "greeting": "Těší mě, že vás poznávám!",
+    "forgot_password?": "Zapomenuté heslo?",
+    "already_have_account?": "Již máte účet?"
+  },
+  "words": {
+    "delete": "Smazat",
+    "import": "Importovat",
+    "public": "Veřejný",
+    "upload": "Nahrát",
+    "player_plural": "Hráči",
+    "next": "Další",
+    "totp": "Časově omezené jednorázové heslo",
+    "score": "Skóre",
+    "analytics": "Analýza",
+    "no": "Ne",
+    "speed": "Rychlost",
+    "play": "Hrát",
+    "email": "E-mailová adresa",
+    "backup_code": "Záložní kód",
+    "question": "Otázka",
+    "files_library": "Knihovna souborů",
+    "check_choice": "Zaškrtávací odpověď",
+    "start": "Start",
+    "voting": "Hlasování",
+    "pin": "PIN",
+    "point": "Bod",
+    "docs": "Dokumenty",
+    "description": "Popisek",
+    "settings": "Nastavení",
+    "features": "Vlastnosti",
+    "other": "ostatní",
+    "title": "Název",
+    "text": "Text",
+    "register": "Registrovat",
+    "username": "Uživatelské jméno",
+    "practice": "Procvičovat",
+    "find": "Najít",
+    "private": "Soukromý",
+    "answer_plural": "Odpovědi",
+    "version": "Verze",
+    "update": "Aktualizovat",
+    "download": "Stáhnout",
+    "slide": "Snímek",
+    "repeat_password": "Opakujte heslo",
+    "kick": "Vyhodit",
+    "url": "URL",
+    "explore": "Prozkoumat",
+    "close": "Zavřít",
+    "error": "Chyba",
+    "play_plural": "",
+    "rating": "Hodnocení",
+    "video": "Video",
+    "browser": "Prohlížeč",
+    "stats": "Statistiky",
+    "password": "Heslo",
+    "donating": "darování",
+    "save": "Uložit",
+    "note": "Poznámka",
+    "order": "Objednat",
+    "dislike_plural": "Disliky",
+    "multiple_choice": "Více možností odpovědí",
+    "info": "Informace",
+    "question_plural": "Otázky",
+    "results": "Výsledky",
+    "view_plural": "Zobrazení",
+    "yes": "Ano",
+    "point_plural": "Body",
+    "continue": "Pokračovat",
+    "game_pin": "Herní PIN",
+    "like": "Like",
+    "dislike": "Dislike",
+    "search": "Vyhledat",
+    "progress": "Pokrok",
+    "select": "Vybrat",
+    "screenshot": "Snímek obrazovky",
+    "correct": "Správně",
+    "like_plural": "Liky",
+    "screenshot_plural": "Snímky obrazovky",
+    "view": "Zobrazit",
+    "name": "Jméno",
+    "answer": "Odpověď",
+    "other_plural": "ostatní",
+    "count": "Počet",
+    "login": "Přihlásit se",
+    "create": "Vytvořit",
+    "report": "Nahlásit",
+    "quiztivity": "",
+    "library": "Knihovna",
+    "finish": "Dokončit",
+    "normal": "Normální",
+    "selected": "Vybrané",
+    "result": "Výsledek",
+    "unknown": "Neznámý",
+    "dashboard": "Nástěnka",
+    "back": "Zpět",
+    "edit": "Upravit",
+    "overview": "Přehled",
+    "image": "Obrázek",
+    "result_plural": "Výsledky",
+    "submit": "Potvrdit",
+    "never": "Nikdy",
+    "connect": "Připojit",
+    "quiz": "Kvíz",
+    "range": "Rozsah",
+    "logout": "Odhlásit se",
+    "player": "Hráč",
+    "answer_locked_in": "Answer locked in",
+    "waiting_for_results": "Waiting for everyone else…"
+  },
+  "edit_page": {
+    "success_update_body": "",
+    "success_update_title": "Kvíz aktualizován."
+  },
+  "index_page": {
+    "quiz_results_downloadable": "Quiz-Výsledky si můžete stáhnout",
+    "slogan": "Open-source kvízová platforma!",
+    "completely_free": "Zcela zdarma",
+    "how_does_frogquiz_work": "Jak vlastně frogQuiz funguje?",
+    "select_answer": "Vyberte odpověď",
+    "user_friendly": "Uživatelsky přátelské",
+    "no_tracking": "",
+    "find_or_explore": "Najděte (nebo prozkoumejte) kvízy vytvořené nebo importované jinými lidmi",
+    "completely_free_content": "frogQuiz je zcela zdarma (pro uživatele), bez placených plánů nebo otravných přesměrování na stránku pro upgrade. Moc si vážíme vašich darů.",
+    "stats": "V frogQuizu je momentálně {{user_count}} uživatelů a {{quiz_count}} kvízů.",
+    "see_how_many_true_and_false": "Podívejte se, kolik z nich mělo pravdu nebo se mýlilo",
+    "download_quizzes": "Stáhnout kvízy",
+    "dark_mode_content": "Jedna z nejdůležitějších funkcí, které může webová stránka mít!",
+    "multilingual": "",
+    "community_driven_content": "frogQuiz se spoléhá na svou komunitu, pokud jde o financování, nápady na testování, požadavky na funkce, překlady a další! I vy se můžete stát součástí komunity frogQuiz!",
+    "get_a_quiz": "",
+    "quiz_results_downloadable_content": "Výsledky kvízů lze snadno exportovat do excelovské tabulky. (Nevěděl jsem, že to ostatní neumí.)",
+    "view_results": "Zobrazit výsledky",
+    "choose_answer_wisely": "Vyberte svou odpověď moudře",
+    "self_hostable_content": "frogQuiz lze snadno hostovat sami, takže data máte pod vlastní kontrolou!",
+    "german_server_content": "Servery frogQuiz se nacházejí v Německu a hostuje je společnost netcup.",
+    "get_ranking_and_winners": "",
+    "meta": {
+      "description": "frogQuiz je kvízová aplikace podobná aplikaci Kahoot! pro studenty, která má otevřený zdrojový kód a je zdarma.",
+      "title": "Domů"
     },
-    "register_page": {
-        "create_account": "Vytvořit účet",
-        "greeting": "Těší mě, že vás poznávám!",
-        "forgot_password?": "Zapomenuté heslo?",
-        "already_have_account?": "Již máte účet?"
-    },
-    "words": {
-        "delete": "Smazat",
-        "import": "Importovat",
-        "public": "Veřejný",
-        "upload": "Nahrát",
-        "player_plural": "Hráči",
-        "next": "Další",
-        "totp": "Časově omezené jednorázové heslo",
-        "score": "Skóre",
-        "analytics": "Analýza",
-        "no": "Ne",
-        "speed": "Rychlost",
-        "play": "Hrát",
-        "email": "E-mailová adresa",
-        "backup_code": "Záložní kód",
-        "question": "Otázka",
-        "files_library": "Knihovna souborů",
-        "check_choice": "Zaškrtávací odpověď",
-        "start": "Start",
-        "voting": "Hlasování",
-        "pin": "PIN",
-        "point": "Bod",
-        "docs": "Dokumenty",
-        "description": "Popisek",
-        "settings": "Nastavení",
-        "features": "Vlastnosti",
-        "other": "ostatní",
-        "title": "Název",
-        "text": "Text",
-        "register": "Registrovat",
-        "username": "Uživatelské jméno",
-        "practice": "Procvičovat",
-        "find": "Najít",
-        "private": "Soukromý",
-        "answer_plural": "Odpovědi",
-        "version": "Verze",
-        "update": "Aktualizovat",
-        "download": "Stáhnout",
-        "slide": "Snímek",
-        "repeat_password": "Opakujte heslo",
-        "kick": "Vyhodit",
-        "url": "URL",
-        "explore": "Prozkoumat",
-        "close": "Zavřít",
-        "error": "Chyba",
-        "play_plural": "",
-        "rating": "Hodnocení",
-        "video": "Video",
-        "browser": "Prohlížeč",
-        "stats": "Statistiky",
-        "password": "Heslo",
-        "donating": "darování",
-        "save": "Uložit",
-        "note": "Poznámka",
-        "order": "Objednat",
-        "dislike_plural": "Disliky",
-        "multiple_choice": "Více možností odpovědí",
-        "info": "Informace",
-        "question_plural": "Otázky",
-        "results": "Výsledky",
-        "view_plural": "Zobrazení",
-        "yes": "Ano",
-        "point_plural": "Body",
-        "continue": "Pokračovat",
-        "game_pin": "Herní PIN",
-        "like": "Like",
-        "dislike": "Dislike",
-        "search": "Vyhledat",
-        "progress": "Pokrok",
-        "select": "Vybrat",
-        "screenshot": "Snímek obrazovky",
-        "correct": "Správně",
-        "like_plural": "Liky",
-        "screenshot_plural": "Snímky obrazovky",
-        "view": "Zobrazit",
-        "name": "Jméno",
-        "answer": "Odpověď",
-        "other_plural": "ostatní",
-        "count": "Počet",
-        "login": "Přihlásit se",
-        "create": "Vytvořit",
-        "report": "Nahlásit",
-        "quiztivity": "",
-        "library": "Knihovna",
-        "finish": "Dokončit",
-        "normal": "Normální",
-        "selected": "Vybrané",
-        "result": "Výsledek",
-        "unknown": "Neznámý",
-        "dashboard": "Nástěnka",
-        "back": "Zpět",
-        "edit": "Upravit",
-        "overview": "Přehled",
-        "image": "Obrázek",
-        "result_plural": "Výsledky",
-        "submit": "Potvrdit",
-        "never": "Nikdy",
-        "connect": "Připojit",
-        "quiz": "Kvíz",
-        "range": "Rozsah",
-        "logout": "Odhlásit se",
-        "player": "Hráč"
-    },
-    "edit_page": {
-        "success_update_body": "",
-        "success_update_title": "Kvíz aktualizován."
-    },
-    "index_page": {
-        "quiz_results_downloadable": "Quiz-Výsledky si můžete stáhnout",
-        "slogan": "Open-source kvízová platforma!",
-        "completely_free": "Zcela zdarma",
-        "how_does_frogquiz_work": "Jak vlastně frogQuiz funguje?",
-        "select_answer": "Vyberte odpověď",
-        "user_friendly": "Uživatelsky přátelské",
-        "no_tracking": "",
-        "find_or_explore": "Najděte (nebo prozkoumejte) kvízy vytvořené nebo importované jinými lidmi",
-        "completely_free_content": "frogQuiz je zcela zdarma (pro uživatele), bez placených plánů nebo otravných přesměrování na stránku pro upgrade. Moc si vážíme vašich darů.",
-        "stats": "V frogQuizu je momentálně {{user_count}} uživatelů a {{quiz_count}} kvízů.",
-        "see_how_many_true_and_false": "Podívejte se, kolik z nich mělo pravdu nebo se mýlilo",
-        "download_quizzes": "Stáhnout kvízy",
-        "dark_mode_content": "Jedna z nejdůležitějších funkcí, které může webová stránka mít!",
-        "multilingual": "",
-        "community_driven_content": "frogQuiz se spoléhá na svou komunitu, pokud jde o financování, nápady na testování, požadavky na funkce, překlady a další! I vy se můžete stát součástí komunity frogQuiz!",
-        "get_a_quiz": "",
-        "quiz_results_downloadable_content": "Výsledky kvízů lze snadno exportovat do excelovské tabulky. (Nevěděl jsem, že to ostatní neumí.)",
-        "view_results": "Zobrazit výsledky",
-        "choose_answer_wisely": "Vyberte svou odpověď moudře",
-        "self_hostable_content": "frogQuiz lze snadno hostovat sami, takže data máte pod vlastní kontrolou!",
-        "german_server_content": "Servery frogQuiz se nacházejí v Německu a hostuje je společnost netcup.",
-        "get_ranking_and_winners": "",
-        "meta": {
-            "description": "frogQuiz je kvízová aplikace podobná aplikaci Kahoot! pro studenty, která má otevřený zdrojový kód a je zdarma.",
-            "title": "Domů"
-        },
-        "list_winners": "Seznam vítězů",
-        "students_site": "",
-        "self_hostable": "",
-        "see_what_true_and_false": "Podívejte se, co bylo správné nebo špatné",
-        "german_server": "Německý server",
-        "create_a_quiz_from_scratch": "Vytvořte kvíz od nuly za pomocí editoru a přidejte obrázky a další",
-        "teachers_site": "",
-        "check_if_chosen_wisely": "Zkontrolujte, zda jste si vybrali moudře",
-        "user_friendly_content": "frogQuiz si klade za cíl být jednoduchý, aby ho mohl používat každý.",
-        "create_or_import": "Vytvořit nebo importovat",
-        "no_tracking_content": "Jiní vás sledují a odesílají tyto informace třetím stranám, ale frogQuiz ne.",
-        "multilingual_content": "frogQuiz je k dispozici v angličtině, francouzštině, němčině, italštině, norštině (bokmål), turečtině a částečně indonéštině a katalánštině.",
-        "dark_mode": "Tmavý režim",
-        "why_frogquiz": "Proč frogQuiz?",
-        "community_driven": "Řízené komunitou",
-        "play_quiz": "2. Zahrajte si kvíz",
-        "see_all_quizzes": "Zobrazit vaše kvízy",
-        "download_quizzes_content": "Kvízy lze stáhnout jako jeden soubor a kdykoli importovat. To vám také umožní přesunout kvízy do jiných instancí frogQuiz.",
-        "no_player_limit": "Žádný limit hráčů",
-        "no_player_limit_content": "frogQuiz nemá žádný umělý limit pro počet hráčů. Teoreticky by stejný kvíz mohlo hrát více než 1000 hráčů, ale byl testován až s 300 hráči na kvíz.",
-        "import_quiz_from_kahoot_and_edit": "Importujte kvízy z Kahoot! a upravujte je v frogQuiz"
-    },
-    "admin_page": {
-        "stop_time_and_solutions": "",
-        "already_registered_as_admin": "",
-        "no_answers": "",
-        "start_by_showing_first_question": "",
-        "request_export_results": "",
-        "time_left": "",
-        "show_next_question": "",
-        "stop_time": "",
-        "show_results": "",
-        "save_results": "",
-        "enter_answer_into_field": "",
-        "get_results_and_stop_time": "",
-        "start_game": "",
-        "answers_submitted": "",
-        "download_export_results": "",
-        "next_question": "",
-        "get_results": "",
-        "get_final_results": ""
-    },
-    "play_page": {
-        "2nd_place": "",
-        "join_description": "",
-        "1st_place": "",
-        "points_added": "",
-        "final_result_rank": "",
-        "your_score": "",
-        "end_sentence": "",
-        "with_out_of": "",
-        "3rd place": "",
-        "join_by_entering_code": ""
-    },
-    "file_dashboard": {
-        "unset": "",
-        "filename_word": "",
-        "imported": "",
-        "filename": "",
-        "missing": "",
-        "delete_image": "",
-        "size": "",
-        "storage_usage": "",
-        "alt_text": "",
-        "edit_details": "",
-        "uploaded": "",
-        "not_available": "",
-        "caption": "",
-        "edit_the_image": ""
-    },
-    "avatar_settings": {
-        "accessories_type": "",
-        "go_back": "",
-        "hair_color": "",
-        "clothe_graphic_type": "",
-        "facial_hair_type": "",
-        "facial_hair_color": "",
-        "skin_color": "",
-        "clothe_color": "",
-        "thats_you": "",
-        "start_over": "",
-        "clothe_type": "",
-        "mouth_type": "",
-        "top_type": "",
-        "eyebrow_type": "",
-        "hat_color": ""
-    },
-    "overview_page": {
-        "question_count": "Počet otázek",
-        "created_at": "Vytvořeno v",
-        "no_quizzes": "Klikněte na tlačítko „Vytvořit“ nebo importujte kvíz a začněte."
-    },
-    "settings_page": {
-        "change_avatar": "",
-        "change_password_submit": "",
-        "security_settings": "",
-        "delete_this_session": "",
-        "old_password": "",
-        "check_location": "",
-        "last_seen": "",
-        "this_session?": "",
-        "repeat_password": "",
-        "new_password": "",
-        "add_api_key": ""
-    },
-    "footer": {
-        "donate": "",
-        "more_details_here": "",
-        "self_ads": ""
-    },
-    "quiztivity": {
-        "editor": {
-            "add_new": "",
-            "move_left": "",
-            "shares": {
-                "never_expires": "",
-                "expires_on": "",
-                "add_new_share": ""
-            },
-            "title_placeholder": "",
-            "delete": "",
-            "open_shares_menu": "",
-            "select_page_type": "",
-            "move_right": ""
-        },
-        "share_expired": "",
-        "play": {
-            "memory": {
-                "try_count": ""
-            }
-        },
-        "memory": {
-            "editor": {
-                "add_card": "",
-                "add_pair": "",
-                "upload_image": ""
-            }
-        }
-    },
-    "results_page": {
-        "no_results_so_far": "",
-        "quiz_title": "",
-        "player_count": "",
-        "date_played": "",
-        "general_overview": {
-            "sentence": ""
-        }
-    },
-    "security_settings": {
-        "get_backup_code": "",
-        "enable_totp": "",
-        "disable_totp": "",
-        "totp_setup": {
-            "enter_as_secret_if_no_see_code": "",
-            "scan_to_set_up": "",
-            "totp_setup": "",
-            "do_not_forget_backup_code": ""
-        },
-        "backup_code": "",
-        "2fa_deactivated": "",
-        "backup_codes": {
-            "download_code": "",
-            "your_backup_code": "",
-            "save_somewhere_save": ""
-        },
-        "totp": "",
-        "totp_unavailable": "",
-        "2fa_activated": "",
-        "webauthn": "",
-        "add_security_key": "",
-        "activate_2fa": "",
-        "webauthn_unavailable": "",
-        "totp_available": "",
-        "webauthn_available": ""
-    },
+    "list_winners": "Seznam vítězů",
+    "students_site": "",
+    "self_hostable": "",
+    "see_what_true_and_false": "Podívejte se, co bylo správné nebo špatné",
+    "german_server": "Německý server",
+    "create_a_quiz_from_scratch": "Vytvořte kvíz od nuly za pomocí editoru a přidejte obrázky a další",
+    "teachers_site": "",
+    "check_if_chosen_wisely": "Zkontrolujte, zda jste si vybrali moudře",
+    "user_friendly_content": "frogQuiz si klade za cíl být jednoduchý, aby ho mohl používat každý.",
+    "create_or_import": "Vytvořit nebo importovat",
+    "no_tracking_content": "Jiní vás sledují a odesílají tyto informace třetím stranám, ale frogQuiz ne.",
+    "multilingual_content": "frogQuiz je k dispozici v angličtině, francouzštině, němčině, italštině, norštině (bokmål), turečtině a částečně indonéštině a katalánštině.",
+    "dark_mode": "Tmavý režim",
+    "why_frogquiz": "Proč frogQuiz?",
+    "community_driven": "Řízené komunitou",
+    "play_quiz": "2. Zahrajte si kvíz",
+    "see_all_quizzes": "Zobrazit vaše kvízy",
+    "download_quizzes_content": "Kvízy lze stáhnout jako jeden soubor a kdykoli importovat. To vám také umožní přesunout kvízy do jiných instancí frogQuiz.",
+    "no_player_limit": "Žádný limit hráčů",
+    "no_player_limit_content": "frogQuiz nemá žádný umělý limit pro počet hráčů. Teoreticky by stejný kvíz mohlo hrát více než 1000 hráčů, ale byl testován až s 300 hráči na kvíz.",
+    "import_quiz_from_kahoot_and_edit": "Importujte kvízy z Kahoot! a upravujte je v frogQuiz"
+  },
+  "admin_page": {
+    "stop_time_and_solutions": "",
+    "already_registered_as_admin": "",
+    "no_answers": "",
+    "start_by_showing_first_question": "",
+    "request_export_results": "",
+    "time_left": "",
+    "show_next_question": "",
+    "stop_time": "",
+    "show_results": "",
+    "save_results": "",
+    "enter_answer_into_field": "",
+    "get_results_and_stop_time": "",
+    "start_game": "",
+    "answers_submitted": "",
+    "download_export_results": "",
+    "next_question": "",
+    "get_results": "",
+    "get_final_results": ""
+  },
+  "play_page": {
+    "2nd_place": "",
+    "join_description": "",
+    "1st_place": "",
+    "points_added": "",
+    "final_result_rank": "",
+    "your_score": "",
+    "end_sentence": "",
+    "with_out_of": "",
+    "3rd place": "",
+    "join_by_entering_code": ""
+  },
+  "file_dashboard": {
+    "unset": "",
+    "filename_word": "",
+    "imported": "",
+    "filename": "",
+    "missing": "",
+    "delete_image": "",
+    "size": "",
+    "storage_usage": "",
+    "alt_text": "",
+    "edit_details": "",
+    "uploaded": "",
+    "not_available": "",
+    "caption": "",
+    "edit_the_image": ""
+  },
+  "avatar_settings": {
+    "accessories_type": "",
+    "go_back": "",
+    "hair_color": "",
+    "clothe_graphic_type": "",
+    "facial_hair_type": "",
+    "facial_hair_color": "",
+    "skin_color": "",
+    "clothe_color": "",
+    "thats_you": "",
+    "start_over": "",
+    "clothe_type": "",
+    "mouth_type": "",
+    "top_type": "",
+    "eyebrow_type": "",
+    "hat_color": ""
+  },
+  "overview_page": {
+    "question_count": "Počet otázek",
+    "created_at": "Vytvořeno v",
+    "no_quizzes": "Klikněte na tlačítko „Vytvořit“ nebo importujte kvíz a začněte."
+  },
+  "settings_page": {
+    "change_avatar": "",
+    "change_password_submit": "",
+    "security_settings": "",
+    "delete_this_session": "",
+    "old_password": "",
+    "check_location": "",
+    "last_seen": "",
+    "this_session?": "",
+    "repeat_password": "",
+    "new_password": "",
+    "add_api_key": ""
+  },
+  "footer": {
+    "donate": "",
+    "more_details_here": "",
+    "self_ads": ""
+  },
+  "quiztivity": {
     "editor": {
-        "delete_answer": "Vymazat odpověď",
-        "check_choice_description": "Pro získání bodů je nutné vybrat všechny správné odpovědi",
-        "text_description": "Hráči mohou zadávat text",
-        "order_description": "Odpovědi lze seřadit ve správném pořadí",
-        "add_new_answer": "Přidat odpověď",
-        "slide": {
-            "headline": "Nadpis",
-            "headline_description": "Tučný text pro titulky",
-            "rectangle": "Obdélník",
-            "rectangle_description": "Jen obdélník",
-            "text": "Text",
-            "text_description": "Menší delší text"
-        },
-        "voting_description": "Odpovědi nepřidávají žádné body",
-        "not_all_links_imgur_links": "Ne všechny odkazy jsou odkazy z Imguru!",
-        "delete_question": "Vymazat otázku",
-        "range_description": "",
-        "empty": "Prázdný...",
-        "right_or_true?": "",
-        "abcd_description": "Lze vybrat pouze jednu odpověď",
-        "time_in_seconds": "Čas v sekundách",
-        "add_new_question": "Přidat novou otázku",
-        "bg_image": "Obrázek na pozadí",
-        "no_title": "Bez názvu..."
+      "add_new": "",
+      "move_left": "",
+      "shares": {
+        "never_expires": "",
+        "expires_on": "",
+        "add_new_share": ""
+      },
+      "title_placeholder": "",
+      "delete": "",
+      "open_shares_menu": "",
+      "select_page_type": "",
+      "move_right": ""
     },
-    "controllers": {
-        "last_seen": "",
-        "cancel_update": "",
-        "add_new_controller": "",
-        "player_name": "",
-        "controller_name": "",
-        "already_latest_version": "",
-        "update_from_to": "",
-        "first_seen": "",
-        "version_overview": ""
+    "share_expired": "",
+    "play": {
+      "memory": {
+        "try_count": ""
+      }
     },
-    "view_quiz_page": {
-        "made_by": "",
-        "view_on_kahoot": ""
-    },
-    "import_page": {
-        "this_side_frogquiz_excel": "",
-        "visit_docs": "",
-        "download_template_here": "",
-        "frogquiz_quiz": "",
-        "this_side_frogquiz": "",
-        "a_kahoot_quiz": "",
-        "side_import_kahoot": "",
-        "url_should_look_like_this": "",
-        "need_help": "",
-        "upload_file_ending": ""
-    },
-    "start_game": {
-        "old_school_mode_description": "",
-        "old_school_mode": "",
-        "start_game": "",
-        "captcha_message": "",
-        "normal_mode_description": ""
-    },
-    "login_page": {
-        "use_backup_code": "Použijte záložní kód",
-        "email_or_username": "Email nebo uživatelské jméno",
-        "already_have_account": "Nemáte účet?",
-        "modal": {
-            "error": {
-                "description": {
-                    "unexpected": "Došlo k té staré dobré neočekávané chybě!",
-                    "wrong_creds": "Prosím, ujistěte se, že vaše heslo a e-mailová adresa jsou správné."
-                },
-                "wrong_creds": "Špatný email nebo heslo.",
-                "unexpected": "Neočekávaná chyba!"
-            },
-            "success": {
-                "success": "Přihlášen.",
-                "description": {
-                    "success": "Přihlášen.",
-                    "success_check_mail": "Zkontrolujte si prosím svou e-mailovou schránku, kde najdete e-mail s odkazem, který vás kliknutím přihlásí."
-                },
-                "success_check_mail": "Přihlášen. Zkontrolujte vaši emailovou schránku."
-            }
-        },
-        "login_or_create_account": "Přihlásit se nebo vytvořit účet",
-        "welcome_back": "Vítejte zpět."
-    },
-    "password_reset_page": {
-        "reset_password": ""
-    },
-    "video_uploader": {
-        "time_remaining": "",
-        "time_elapsed": ""
-    },
-    "explore_page": {
-        "imported_by": "",
-        "made_by": ""
-    },
-    "create_page": {
-        "success": {
-            "title": "Kvíz vytvořen.",
-            "body": "Nechť hra započne."
-        }
-    },
-    "error_page": {
-        "unknown_error_text": "",
-        "404_text": ""
-    },
-    "uploader": {
-        "images_by_pixabay": "",
-        "upload_video_popup_notice": "",
-        "add_image": "",
-        "select_upload_type": "",
-        "upload_a_video": "",
-        "next_page": "",
-        "visit_pixabay": "",
-        "previous_page": "",
-        "search_english_only": "",
-        "upload_video": ""
-    },
-    "search_page": {
-        "nothing_here": "",
-        "at_least_3_characters": ""
-    },
-    "dashboard": {
-        "commandpalette_notice": "",
-        "views_n_plays": "",
-        "search_for_own_quizzes": "",
-        "info_analytics": ""
-    },
-    "navbar": {
-        "donate": ""
-    },
-    "editor_page": {
-        "add_an_answer": "",
-        "right_click_to_delete": ""
-    },
-    "public_user_page": {
-        "no_original_quizzes": "",
-        "joined_on": ""
-    },
-    "components": {
-        "popover": {
-            "copied_to_clipboard": ""
-        }
+    "memory": {
+      "editor": {
+        "add_card": "",
+        "add_pair": "",
+        "upload_image": ""
+      }
     }
+  },
+  "results_page": {
+    "no_results_so_far": "",
+    "quiz_title": "",
+    "player_count": "",
+    "date_played": "",
+    "general_overview": {
+      "sentence": ""
+    }
+  },
+  "security_settings": {
+    "get_backup_code": "",
+    "enable_totp": "",
+    "disable_totp": "",
+    "totp_setup": {
+      "enter_as_secret_if_no_see_code": "",
+      "scan_to_set_up": "",
+      "totp_setup": "",
+      "do_not_forget_backup_code": ""
+    },
+    "backup_code": "",
+    "2fa_deactivated": "",
+    "backup_codes": {
+      "download_code": "",
+      "your_backup_code": "",
+      "save_somewhere_save": ""
+    },
+    "totp": "",
+    "totp_unavailable": "",
+    "2fa_activated": "",
+    "webauthn": "",
+    "add_security_key": "",
+    "activate_2fa": "",
+    "webauthn_unavailable": "",
+    "totp_available": "",
+    "webauthn_available": ""
+  },
+  "editor": {
+    "delete_answer": "Vymazat odpověď",
+    "check_choice_description": "Pro získání bodů je nutné vybrat všechny správné odpovědi",
+    "text_description": "Hráči mohou zadávat text",
+    "order_description": "Odpovědi lze seřadit ve správném pořadí",
+    "add_new_answer": "Přidat odpověď",
+    "slide": {
+      "headline": "Nadpis",
+      "headline_description": "Tučný text pro titulky",
+      "rectangle": "Obdélník",
+      "rectangle_description": "Jen obdélník",
+      "text": "Text",
+      "text_description": "Menší delší text"
+    },
+    "voting_description": "Odpovědi nepřidávají žádné body",
+    "not_all_links_imgur_links": "Ne všechny odkazy jsou odkazy z Imguru!",
+    "delete_question": "Vymazat otázku",
+    "range_description": "",
+    "empty": "Prázdný...",
+    "right_or_true?": "",
+    "abcd_description": "Lze vybrat pouze jednu odpověď",
+    "time_in_seconds": "Čas v sekundách",
+    "add_new_question": "Přidat novou otázku",
+    "bg_image": "Obrázek na pozadí",
+    "no_title": "Bez názvu..."
+  },
+  "controllers": {
+    "last_seen": "",
+    "cancel_update": "",
+    "add_new_controller": "",
+    "player_name": "",
+    "controller_name": "",
+    "already_latest_version": "",
+    "update_from_to": "",
+    "first_seen": "",
+    "version_overview": ""
+  },
+  "view_quiz_page": {
+    "made_by": "",
+    "view_on_kahoot": ""
+  },
+  "import_page": {
+    "this_side_frogquiz_excel": "",
+    "visit_docs": "",
+    "download_template_here": "",
+    "frogquiz_quiz": "",
+    "this_side_frogquiz": "",
+    "a_kahoot_quiz": "",
+    "side_import_kahoot": "",
+    "url_should_look_like_this": "",
+    "need_help": "",
+    "upload_file_ending": ""
+  },
+  "start_game": {
+    "old_school_mode_description": "",
+    "old_school_mode": "",
+    "start_game": "",
+    "captcha_message": "",
+    "normal_mode_description": ""
+  },
+  "login_page": {
+    "use_backup_code": "Použijte záložní kód",
+    "email_or_username": "Email nebo uživatelské jméno",
+    "already_have_account": "Nemáte účet?",
+    "modal": {
+      "error": {
+        "description": {
+          "unexpected": "Došlo k té staré dobré neočekávané chybě!",
+          "wrong_creds": "Prosím, ujistěte se, že vaše heslo a e-mailová adresa jsou správné."
+        },
+        "wrong_creds": "Špatný email nebo heslo.",
+        "unexpected": "Neočekávaná chyba!"
+      },
+      "success": {
+        "success": "Přihlášen.",
+        "description": {
+          "success": "Přihlášen.",
+          "success_check_mail": "Zkontrolujte si prosím svou e-mailovou schránku, kde najdete e-mail s odkazem, který vás kliknutím přihlásí."
+        },
+        "success_check_mail": "Přihlášen. Zkontrolujte vaši emailovou schránku."
+      }
+    },
+    "login_or_create_account": "Přihlásit se nebo vytvořit účet",
+    "welcome_back": "Vítejte zpět."
+  },
+  "password_reset_page": {
+    "reset_password": ""
+  },
+  "video_uploader": {
+    "time_remaining": "",
+    "time_elapsed": ""
+  },
+  "explore_page": {
+    "imported_by": "",
+    "made_by": ""
+  },
+  "create_page": {
+    "success": {
+      "title": "Kvíz vytvořen.",
+      "body": "Nechť hra započne."
+    }
+  },
+  "error_page": {
+    "unknown_error_text": "",
+    "404_text": ""
+  },
+  "uploader": {
+    "images_by_pixabay": "",
+    "upload_video_popup_notice": "",
+    "add_image": "",
+    "select_upload_type": "",
+    "upload_a_video": "",
+    "next_page": "",
+    "visit_pixabay": "",
+    "previous_page": "",
+    "search_english_only": "",
+    "upload_video": ""
+  },
+  "search_page": {
+    "nothing_here": "",
+    "at_least_3_characters": ""
+  },
+  "dashboard": {
+    "commandpalette_notice": "",
+    "views_n_plays": "",
+    "search_for_own_quizzes": "",
+    "info_analytics": ""
+  },
+  "navbar": {
+    "donate": ""
+  },
+  "editor_page": {
+    "add_an_answer": "",
+    "right_click_to_delete": ""
+  },
+  "public_user_page": {
+    "no_original_quizzes": "",
+    "joined_on": ""
+  },
+  "components": {
+    "popover": {
+      "copied_to_clipboard": ""
+    }
+  }
 }

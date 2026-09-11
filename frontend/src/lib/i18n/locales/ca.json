@@ -1,494 +1,496 @@
 {
-    "words": {
-        "pin": "PIN",
-        "question": "Qüestió",
-        "answer": "Resposta",
-        "stats": "Estadístiques",
-        "email": "Adreça de correu electrònica",
-        "username": "Nom d'usuari",
-        "password": "Contrasenya",
-        "edit": "Edita",
-        "delete": "Esborra",
-        "start": "Comença",
-        "create": "Crea",
-        "import": "Importa",
-        "logout": "Tanca la sessió",
-        "title": "Títol",
-        "url": "URL",
-        "connect": "Connecta",
-        "close": "Tanca",
-        "save": "Desa",
-        "description": "Descripció",
-        "image": "Imatge",
-        "settings": "Paràmetres",
-        "explore": "Explora",
-        "search": "Cerca",
-        "screenshot": "Captura de pantalla",
-        "screenshot_plural": "Captures de pantalla",
-        "features": "Funcionalitats",
-        "login": "Inicia sessió",
-        "public": "Publica",
-        "submit": "Envia",
-        "kick": "Expulsa",
-        "register": "Registra",
-        "docs": "Documentació",
-        "report": "Informa",
-        "browser": "Navegador",
-        "view": "Visualització",
-        "overview": "Resum",
-        "play": "Joc",
-        "repeat_password": "Repetiu la contrasenya",
-        "upload": "Pujar",
-        "player_plural": "Jugadors",
-        "next": "Següent",
-        "totp": "Totp (contrasenya d'un ús basada en el temps)",
-        "score": "Puntuació",
-        "analytics": "Estadístiques",
-        "no": "no",
-        "speed": "Velocitat",
-        "backup_code": "Codi de recuperació",
-        "files_library": "Biblioteca de fitxers",
-        "check_choice": "Comprova l'elecció",
-        "voting": "Votar",
-        "point": "Punt",
-        "other": "altre",
-        "text": "Text",
-        "practice": "Practica",
-        "find": "Troba",
-        "private": "Privat",
-        "answer_plural": "Respostes",
-        "version": "Versió",
-        "update": "Actualitza",
-        "download": "Baixa",
-        "slide": "Diapositiva",
-        "error": "Error",
-        "play_plural": "Jugades",
-        "rating": "Puntuació",
-        "video": "Vídeo",
-        "donating": "donacions",
-        "note": "Nota",
-        "order": "Ordre",
-        "dislike_plural": "No m'agraden",
-        "multiple_choice": "Elecció múltiple",
-        "info": "Informació",
-        "question_plural": "Preguntes",
-        "results": "Resultats",
-        "view_plural": "Visualitzacions",
-        "yes": "Sí",
-        "point_plural": "Punts",
-        "continue": "Continua",
-        "like": "M'agrada",
-        "dislike": "No m'agrada",
-        "progress": "Progrés",
-        "select": "Selecciona",
-        "correct": "Correcte",
-        "like_plural": "M'agraden",
-        "name": "Nom",
-        "other_plural": "altres",
-        "count": "Nombre",
-        "quiztivity": "Quiztivitat",
-        "library": "Biblioteca",
-        "finish": "Finalitza",
-        "normal": "Normal",
-        "selected": "Seleccionades",
-        "result": "Resultat",
-        "unknown": "Desconegut",
-        "dashboard": "Tauler principal",
-        "back": "Enrere",
-        "result_plural": "Resultats",
-        "never": "Mai",
-        "quiz": "Qüestionari",
-        "range": "Interval",
-        "game_pin": "PIN de la partida",
-        "player": "Jugador"
-    },
-    "login_page": {
-        "already_have_account": "No teniu cap compte?",
-        "welcome_back": "Ben tornat.",
-        "modal": {
-            "success": {
-                "success": "Connectat.",
-                "description": {
-                    "success": "Heu iniciat sessió.",
-                    "success_check_mail": "Reviseu la bústia de correu electrònic per trobar-hi un correu electrònic amb un enllaç que podeu clicar per a iniciar sessió."
-                },
-                "success_check_mail": "Heu iniciat sessió. Verifiqueu la bústia de correu electrònic."
-            },
-            "error": {
-                "description": {
-                    "wrong_creds": "Assegureu-vos que la contrasenya i l'adreça del correu electrònic són correctes!",
-                    "unexpected": "S'ha produït el vell i bo error inesperat!"
-                },
-                "wrong_creds": "Adreça de correu electrònic o contrasenya incorrecta.",
-                "unexpected": "Error no esperat!"
-            }
+  "words": {
+    "pin": "PIN",
+    "question": "Qüestió",
+    "answer": "Resposta",
+    "stats": "Estadístiques",
+    "email": "Adreça de correu electrònica",
+    "username": "Nom d'usuari",
+    "password": "Contrasenya",
+    "edit": "Edita",
+    "delete": "Esborra",
+    "start": "Comença",
+    "create": "Crea",
+    "import": "Importa",
+    "logout": "Tanca la sessió",
+    "title": "Títol",
+    "url": "URL",
+    "connect": "Connecta",
+    "close": "Tanca",
+    "save": "Desa",
+    "description": "Descripció",
+    "image": "Imatge",
+    "settings": "Paràmetres",
+    "explore": "Explora",
+    "search": "Cerca",
+    "screenshot": "Captura de pantalla",
+    "screenshot_plural": "Captures de pantalla",
+    "features": "Funcionalitats",
+    "login": "Inicia sessió",
+    "public": "Publica",
+    "submit": "Envia",
+    "kick": "Expulsa",
+    "register": "Registra",
+    "docs": "Documentació",
+    "report": "Informa",
+    "browser": "Navegador",
+    "view": "Visualització",
+    "overview": "Resum",
+    "play": "Joc",
+    "repeat_password": "Repetiu la contrasenya",
+    "upload": "Pujar",
+    "player_plural": "Jugadors",
+    "next": "Següent",
+    "totp": "Totp (contrasenya d'un ús basada en el temps)",
+    "score": "Puntuació",
+    "analytics": "Estadístiques",
+    "no": "no",
+    "speed": "Velocitat",
+    "backup_code": "Codi de recuperació",
+    "files_library": "Biblioteca de fitxers",
+    "check_choice": "Comprova l'elecció",
+    "voting": "Votar",
+    "point": "Punt",
+    "other": "altre",
+    "text": "Text",
+    "practice": "Practica",
+    "find": "Troba",
+    "private": "Privat",
+    "answer_plural": "Respostes",
+    "version": "Versió",
+    "update": "Actualitza",
+    "download": "Baixa",
+    "slide": "Diapositiva",
+    "error": "Error",
+    "play_plural": "Jugades",
+    "rating": "Puntuació",
+    "video": "Vídeo",
+    "donating": "donacions",
+    "note": "Nota",
+    "order": "Ordre",
+    "dislike_plural": "No m'agraden",
+    "multiple_choice": "Elecció múltiple",
+    "info": "Informació",
+    "question_plural": "Preguntes",
+    "results": "Resultats",
+    "view_plural": "Visualitzacions",
+    "yes": "Sí",
+    "point_plural": "Punts",
+    "continue": "Continua",
+    "like": "M'agrada",
+    "dislike": "No m'agrada",
+    "progress": "Progrés",
+    "select": "Selecciona",
+    "correct": "Correcte",
+    "like_plural": "M'agraden",
+    "name": "Nom",
+    "other_plural": "altres",
+    "count": "Nombre",
+    "quiztivity": "Quiztivitat",
+    "library": "Biblioteca",
+    "finish": "Finalitza",
+    "normal": "Normal",
+    "selected": "Seleccionades",
+    "result": "Resultat",
+    "unknown": "Desconegut",
+    "dashboard": "Tauler principal",
+    "back": "Enrere",
+    "result_plural": "Resultats",
+    "never": "Mai",
+    "quiz": "Qüestionari",
+    "range": "Interval",
+    "game_pin": "PIN de la partida",
+    "player": "Jugador",
+    "answer_locked_in": "Answer locked in",
+    "waiting_for_results": "Waiting for everyone else…"
+  },
+  "login_page": {
+    "already_have_account": "No teniu cap compte?",
+    "welcome_back": "Ben tornat.",
+    "modal": {
+      "success": {
+        "success": "Connectat.",
+        "description": {
+          "success": "Heu iniciat sessió.",
+          "success_check_mail": "Reviseu la bústia de correu electrònic per trobar-hi un correu electrònic amb un enllaç que podeu clicar per a iniciar sessió."
         },
-        "login_or_create_account": "Inicia sessió o crea un compte",
-        "use_backup_code": "Utilitza un codi de recuperació",
-        "email_or_username": "Correu electrònic o nom d'usuari"
-    },
-    "admin_page": {
-        "get_results_and_stop_time": "Obtén els resultats i atura el temps",
-        "start_game": "Comença el joc",
-        "time_left": "Temps romanent",
-        "export_results": "Exporta els resultats",
-        "already_registered_as_admin": "Ja hi ha un administrador registrat per a aquest joc.",
-        "get_results": "Obtén els resultats",
-        "get_final_results": "Obtén els resultats finals",
-        "stop_time_and_solutions": "Atura el rellotge i mostra les solucions",
-        "no_answers": "Sense respostes!",
-        "request_export_results": "Demanar la descàrrega dels resultats",
-        "show_next_question": "Mostra la pregunta següent",
-        "stop_time": "Atura el temps",
-        "show_results": "Mostra els resultats",
-        "save_results": "Desa els resultats",
-        "enter_answer_into_field": "Escriu la teva resposta al camp d'entrada!",
-        "answers_submitted": "{{answer_count}} respostes enviades",
-        "download_export_results": "Descarrega els resultats",
-        "next_question": "Pregunta següent ({{question}})",
-        "start_by_showing_first_question": "Comença mostrant la primera pregunta."
-    },
-    "index_page": {
-        "meta": {
-            "title": "Inici",
-            "description": "frogQuiz és una aplicació de qüestionaris per a estudiants per aprendre interactivament, de codi obert i d'ús gratuït"
+        "success_check_mail": "Heu iniciat sessió. Verifiqueu la bústia de correu electrònic."
+      },
+      "error": {
+        "description": {
+          "wrong_creds": "Assegureu-vos que la contrasenya i l'adreça del correu electrònic són correctes!",
+          "unexpected": "S'ha produït el vell i bo error inesperat!"
         },
-        "features_description": {
-            "1": "frogQuiz és una plataforma de preguntes i respostes que us permet crear i gestionar qüestionaris.",
-            "2": "La principal característica és una funció d'importació de KAHOOT! que us permet d'importar qüestionaris de KAHOOT!"
-        },
-        "stats": "Ja hi ha {{user_count}} usuaris i {{quiz_count}} qüestionaris a frogQuiz.",
-        "slogan": "La plataforma de qüestionaris de codi obert!",
-        "quiz_results_downloadable": "Els resultats dels qüestionaris es poden descarregar",
-        "how_does_frogquiz_work": "Com funciona frogQuiz?",
-        "select_answer": "Selecciona la resposta",
-        "user_friendly": "D'ús amigable",
-        "no_tracking": "Sense seguiment",
-        "find_or_explore": "Cerca (o explora) qüestionaris fets o importats per altres persones",
-        "see_how_many_true_and_false": "Mostra quants l'han encertat o s'han equivocat",
-        "download_quizzes": "Descarregar qüestionaris",
-        "dark_mode_content": "Una de les funcions més importants que pot tenir un lloc web!",
-        "multilingual": "Multilingüe",
-        "community_driven_content": "frogQuiz depèn de la seva comunitat pel finançament, prova d'idees, demanar noves funcions, traduccions i més! Tu també pots formar part de la comunitat frogQuiz!",
-        "get_a_quiz": "1. Obté un qüestionari",
-        "quiz_results_downloadable_content": "Els resultats dels qüestionaris es poden exportar fàcilment a un full de càlcul d'Excel. (No sabia que d'altres no podien)",
-        "view_results": "Mostra els resultats",
-        "choose_answer_wisely": "Escull bé la teva resposta",
-        "self_hostable_content": "frogQuiz es pot autoallotjar fàcilment, de manera que les dades queden totalment sota el vostre control!",
-        "german_server_content": "Els servidors de frogQuiz estan a Alemanya, i s'allotgen amb Netcup.",
-        "get_ranking_and_winners": "Obté la classificació i mira qui ha guanyat",
-        "list_winners": "Mostra qui ha guanyat",
-        "students_site": "Portal d'estudiants",
-        "self_hostable": "Autoallotjable",
-        "see_what_true_and_false": "Mostra què era correcte o incorrecte",
-        "german_server": "Servidor a Alemanya",
-        "create_a_quiz_from_scratch": "Crea un qüestionari des de zero amb l'editor, incloent-hi imatges i més coses",
-        "teachers_site": "Portal de docents",
-        "check_if_chosen_wisely": "Comprova si has escollit bé",
-        "create_or_import": "Crea o importa",
-        "dark_mode": "Mode fosc",
-        "why_frogquiz": "Per què frogQuiz?",
-        "community_driven": "Impulsat per la comunitat",
-        "play_quiz": "2. Resol el qüestionari",
-        "see_all_quizzes": "Mostra tots els teus qüestionaris",
-        "completely_free": "Completament gratuït",
-        "completely_free_content": "frogQuiz és completament gratuït (per a l'usuari), sense cap pla de pagament o redireccions molestes a pàgines d'actualitzacions. Les donacions són molt apreciades.",
-        "user_friendly_content": "frogQuiz pretén ser senzill, per tal de poder ser emprat per tothom.",
-        "no_tracking_content": "Altres aplicacions registren el que feu i envien aquesta informació a terceres parts. frogQuiz no ho fa.",
-        "multilingual_content": "frogQuiz està disponible en anglès, francès, alemany, noruec bokmål, turc, i parcialment en indonesi i català.",
-        "download_quizzes_content": "Els qüestionaris es poden descarregar com un sol fitxer i importar-se en qualsevol moment. Això també et permet moure els teus qüestionaris a d'altres instàncies de frogQuiz.",
-        "no_player_limit": "Sense límit de jugadors",
-        "no_player_limit_content": "frogQuiz no té un límit artificial de jugadors. En teoria, més de 1.000 jugadors podrien jugar al mateix qüestionari, però s'ha provat amb un màxim de 300 jugadors per qüestionari.",
-        "import_quiz_from_kahoot_and_edit": "Importa qüestionaris de Kahoot! i edita'ls a frogQuiz"
+        "wrong_creds": "Adreça de correu electrònic o contrasenya incorrecta.",
+        "unexpected": "Error no esperat!"
+      }
     },
-    "overview_page": {
-        "question_count": "Nombre de preguntes",
-        "created_at": "Creat el",
-        "no_quizzes": "Clica el botó \"Crear\", o importa un qüestionari per posar fil a l'agulla."
+    "login_or_create_account": "Inicia sessió o crea un compte",
+    "use_backup_code": "Utilitza un codi de recuperació",
+    "email_or_username": "Correu electrònic o nom d'usuari"
+  },
+  "admin_page": {
+    "get_results_and_stop_time": "Obtén els resultats i atura el temps",
+    "start_game": "Comença el joc",
+    "time_left": "Temps romanent",
+    "export_results": "Exporta els resultats",
+    "already_registered_as_admin": "Ja hi ha un administrador registrat per a aquest joc.",
+    "get_results": "Obtén els resultats",
+    "get_final_results": "Obtén els resultats finals",
+    "stop_time_and_solutions": "Atura el rellotge i mostra les solucions",
+    "no_answers": "Sense respostes!",
+    "request_export_results": "Demanar la descàrrega dels resultats",
+    "show_next_question": "Mostra la pregunta següent",
+    "stop_time": "Atura el temps",
+    "show_results": "Mostra els resultats",
+    "save_results": "Desa els resultats",
+    "enter_answer_into_field": "Escriu la teva resposta al camp d'entrada!",
+    "answers_submitted": "{{answer_count}} respostes enviades",
+    "download_export_results": "Descarrega els resultats",
+    "next_question": "Pregunta següent ({{question}})",
+    "start_by_showing_first_question": "Comença mostrant la primera pregunta."
+  },
+  "index_page": {
+    "meta": {
+      "title": "Inici",
+      "description": "frogQuiz és una aplicació de qüestionaris per a estudiants per aprendre interactivament, de codi obert i d'ús gratuït"
     },
-    "register_page": {
-        "create_account": "Crea un compte",
-        "forgot_password?": "Heu oblidat la contrasenya?",
-        "already_have_account?": "Ja teniu un compte?",
-        "greeting": "Molt de gust!"
+    "features_description": {
+      "1": "frogQuiz és una plataforma de preguntes i respostes que us permet crear i gestionar qüestionaris.",
+      "2": "La principal característica és una funció d'importació de KAHOOT! que us permet d'importar qüestionaris de KAHOOT!"
     },
-    "editor": {
-        "time_in_seconds": "Temps en segons",
-        "add_new_question": "Afegeix una qüestió",
-        "add_new_answer": "Afegeix una resposta",
-        "delete_question": "Esborra la qüestió",
-        "right_or_true?": "Correcte?",
-        "not_all_links_imgur_links": "No tots els enllaços són enllaços a Imgur!",
-        "delete_answer": "Esborra la resposta",
-        "check_choice_description": "Cal escollir totes les respostes correctes per aconseguir punts",
-        "text_description": "Els jugadors poden introduir text",
-        "order_description": "Les respostes s'han de posar en l'ordre correcte",
-        "slide": {
-            "headline": "Títols",
-            "headline_description": "Text en negreta per als títols",
-            "rectangle": "Rectangle",
-            "rectangle_description": "Només un rectangle",
-            "text": "Text",
-            "text_description": "Text més petit i més llarg"
-        },
-        "voting_description": "Les respostes no sumen punts",
-        "range_description": "Es pot seleccionar un rang numèric amb una barra lliscant",
-        "empty": "En blanc...",
-        "abcd_description": "Només es pot escollir una resposta",
-        "bg_image": "Imatge de fons de pantalla",
-        "no_title": "Sense títol...",
-        "enter_answer": "Anota una resposta",
-        "enable_reorder": "Activa la modalitat de reordenar",
-        "disable_reorder": "Desactiva la modalitat de reordenar",
-        "advanced_settings": "Paràmetres avançats",
-        "hide_question_results": "Amagar els resultats de la pregunta?",
-        "need_more_help": "Cal més ajuda?",
-        "visit_docs": "Mireu la documentació."
+    "stats": "Ja hi ha {{user_count}} usuaris i {{quiz_count}} qüestionaris a frogQuiz.",
+    "slogan": "La plataforma de qüestionaris de codi obert!",
+    "quiz_results_downloadable": "Els resultats dels qüestionaris es poden descarregar",
+    "how_does_frogquiz_work": "Com funciona frogQuiz?",
+    "select_answer": "Selecciona la resposta",
+    "user_friendly": "D'ús amigable",
+    "no_tracking": "Sense seguiment",
+    "find_or_explore": "Cerca (o explora) qüestionaris fets o importats per altres persones",
+    "see_how_many_true_and_false": "Mostra quants l'han encertat o s'han equivocat",
+    "download_quizzes": "Descarregar qüestionaris",
+    "dark_mode_content": "Una de les funcions més importants que pot tenir un lloc web!",
+    "multilingual": "Multilingüe",
+    "community_driven_content": "frogQuiz depèn de la seva comunitat pel finançament, prova d'idees, demanar noves funcions, traduccions i més! Tu també pots formar part de la comunitat frogQuiz!",
+    "get_a_quiz": "1. Obté un qüestionari",
+    "quiz_results_downloadable_content": "Els resultats dels qüestionaris es poden exportar fàcilment a un full de càlcul d'Excel. (No sabia que d'altres no podien)",
+    "view_results": "Mostra els resultats",
+    "choose_answer_wisely": "Escull bé la teva resposta",
+    "self_hostable_content": "frogQuiz es pot autoallotjar fàcilment, de manera que les dades queden totalment sota el vostre control!",
+    "german_server_content": "Els servidors de frogQuiz estan a Alemanya, i s'allotgen amb Netcup.",
+    "get_ranking_and_winners": "Obté la classificació i mira qui ha guanyat",
+    "list_winners": "Mostra qui ha guanyat",
+    "students_site": "Portal d'estudiants",
+    "self_hostable": "Autoallotjable",
+    "see_what_true_and_false": "Mostra què era correcte o incorrecte",
+    "german_server": "Servidor a Alemanya",
+    "create_a_quiz_from_scratch": "Crea un qüestionari des de zero amb l'editor, incloent-hi imatges i més coses",
+    "teachers_site": "Portal de docents",
+    "check_if_chosen_wisely": "Comprova si has escollit bé",
+    "create_or_import": "Crea o importa",
+    "dark_mode": "Mode fosc",
+    "why_frogquiz": "Per què frogQuiz?",
+    "community_driven": "Impulsat per la comunitat",
+    "play_quiz": "2. Resol el qüestionari",
+    "see_all_quizzes": "Mostra tots els teus qüestionaris",
+    "completely_free": "Completament gratuït",
+    "completely_free_content": "frogQuiz és completament gratuït (per a l'usuari), sense cap pla de pagament o redireccions molestes a pàgines d'actualitzacions. Les donacions són molt apreciades.",
+    "user_friendly_content": "frogQuiz pretén ser senzill, per tal de poder ser emprat per tothom.",
+    "no_tracking_content": "Altres aplicacions registren el que feu i envien aquesta informació a terceres parts. frogQuiz no ho fa.",
+    "multilingual_content": "frogQuiz està disponible en anglès, francès, alemany, noruec bokmål, turc, i parcialment en indonesi i català.",
+    "download_quizzes_content": "Els qüestionaris es poden descarregar com un sol fitxer i importar-se en qualsevol moment. Això també et permet moure els teus qüestionaris a d'altres instàncies de frogQuiz.",
+    "no_player_limit": "Sense límit de jugadors",
+    "no_player_limit_content": "frogQuiz no té un límit artificial de jugadors. En teoria, més de 1.000 jugadors podrien jugar al mateix qüestionari, però s'ha provat amb un màxim de 300 jugadors per qüestionari.",
+    "import_quiz_from_kahoot_and_edit": "Importa qüestionaris de Kahoot! i edita'ls a frogQuiz"
+  },
+  "overview_page": {
+    "question_count": "Nombre de preguntes",
+    "created_at": "Creat el",
+    "no_quizzes": "Clica el botó \"Crear\", o importa un qüestionari per posar fil a l'agulla."
+  },
+  "register_page": {
+    "create_account": "Crea un compte",
+    "forgot_password?": "Heu oblidat la contrasenya?",
+    "already_have_account?": "Ja teniu un compte?",
+    "greeting": "Molt de gust!"
+  },
+  "editor": {
+    "time_in_seconds": "Temps en segons",
+    "add_new_question": "Afegeix una qüestió",
+    "add_new_answer": "Afegeix una resposta",
+    "delete_question": "Esborra la qüestió",
+    "right_or_true?": "Correcte?",
+    "not_all_links_imgur_links": "No tots els enllaços són enllaços a Imgur!",
+    "delete_answer": "Esborra la resposta",
+    "check_choice_description": "Cal escollir totes les respostes correctes per aconseguir punts",
+    "text_description": "Els jugadors poden introduir text",
+    "order_description": "Les respostes s'han de posar en l'ordre correcte",
+    "slide": {
+      "headline": "Títols",
+      "headline_description": "Text en negreta per als títols",
+      "rectangle": "Rectangle",
+      "rectangle_description": "Només un rectangle",
+      "text": "Text",
+      "text_description": "Text més petit i més llarg"
     },
-    "import_page": {
-        "need_help": "Us cal ajuda?",
-        "visit_docs": "Visiteu la documentació",
-        "this_side_frogquiz_excel": "També pots pujar fitxers excel, si has omplert la plantilla següent. Si ja existeix un qüestionari amb el mateix títol, s'afegiran les preguntes al qüestionari existent.",
-        "download_template_here": "Descarrega la plantilla",
-        "frogquiz_quiz": "Un qüestionari frogQuiz",
-        "this_side_frogquiz": "En aquest costat pots importar qüestionaris, que s'havien exportat de frogQuiz.",
-        "a_kahoot_quiz": "Un qüestionari de Kahoot!",
-        "side_import_kahoot": "En aquest costat pots importar qüestionaris, que es troben a Kahoot!.",
-        "url_should_look_like_this": "L'URL hauria de veure's similar a: https://create.kahoot.it/details/...",
-        "upload_file_ending": "Puja el fitxer que acaba en .cqa o .xlsx"
-    },
-    "edit_page": {
-        "success_update_title": "El qüestionari s'ha actualitzat!",
-        "success_update_body": "Ningú s'espera la InQuizisió!"
-    },
-    "create_page": {
-        "success": {
-            "title": "S'ha creat el qüestionari.",
-            "body": "Que comencin els jocs."
-        }
-    },
-    "password_reset_page": {
-        "reset_password": "Restableix la contrasenya"
-    },
-    "settings_page": {
-        "old_password": "Contrasenya antiga",
-        "new_password": "Contrasenya nova",
-        "repeat_password": "Repetiu la contrasenya",
-        "change_password_submit": "Canvia la contrasenya!",
-        "delete_this_session": "Esborra aquesta sessió",
-        "this_session?": "Aquesta sessió?",
-        "check_location": "Verifica la ubicació",
-        "last_seen": "Última consulta",
-        "change_avatar": "Canvi d'avatar",
-        "security_settings": "Paràmetres de seguretat",
-        "add_api_key": "Afegir clau API"
-    },
-    "explore_page": {
-        "made_by": "Fet per",
-        "imported_by": "Importat per"
-    },
-    "search_page": {
-        "at_least_3_characters": "Introduïu almenys 3 caràcters...",
-        "nothing_here": "Aquí no hi ha res..."
-    },
-    "result_page": {
-        "correct_answer_plural": "{{count}} respostes correctes",
-        "player_score": "Puntuació del jugador",
-        "correct_answer": "{{count}} resposta correcta",
-        "time_taken": "Temps ocupat",
-        "player_name": "Nom del jugador",
-        "average_score": "Puntuació mitjana: {{average_score}}",
-        "custom_field": "Camp personalitzat",
-        "player_correct_questions": "Respostes correctes"
-    },
-    "play_page": {
-        "2nd_place": "2n lloc",
-        "join_description": "Uneix-t'hi a {{url}} i escriu el {{pin}}.",
-        "1st_place": "1r lloc",
-        "points_added": "Punts afegits",
-        "final_result_rank": "{{place}}: {{username}} amb {{points}} punts",
-        "your_score": "La teva puntuació: {{score}}",
-        "end_sentence": "Ja està! Aquest era el qüestionari.",
-        "with_out_of": "amb {{correct_questions}} de {{total_question_count}}",
-        "3rd place": "3r lloc",
-        "join_by_entering_code": "Uneix-t'hi introduint el codi següent",
-        "your_place": "Ets al {{place}} lloc!",
-        "players_waiting": "{{count}} jugador està esperant",
-        "players_waiting_plural": "{{count}} jugadors estan esperant"
-    },
-    "file_dashboard": {
-        "unset": "Descartar",
-        "filename_word": "Nom del fitxer",
-        "imported": "Importat: {{yes_or_no}}",
-        "filename": "Nom de fitxer: {{filename}}",
-        "missing": "ABSENT!",
-        "delete_image": "Elimina la imatge",
-        "size": "Mida: {{size}} MiB",
-        "storage_usage": "Has utilitzat {{used}} MiB de {{total}} MiB d'emmagatzematge. Això equival al {{percent}}% del teu emmagatzematge.",
-        "alt_text": "Text alternatiu / Subtítol",
-        "edit_details": "Edita els detalls",
-        "uploaded": "Pujat: {{date}}",
-        "not_available": "No disponible",
-        "caption": "Subtítol: {{caption}}",
-        "edit_the_image": "Edita la imatge"
-    },
-    "avatar_settings": {
-        "accessories_type": "Ulleres",
-        "go_back": "Enrere",
-        "hair_color": "Color dels cabells",
-        "clothe_graphic_type": "Gràfic",
-        "facial_hair_type": "Pèl facial",
-        "facial_hair_color": "Color del pèl facial",
-        "skin_color": "Color de la pell",
-        "clothe_color": "Color de la roba",
-        "thats_you": "Ets tu!",
-        "start_over": "Torna a començar",
-        "clothe_type": "Roba",
-        "mouth_type": "Boca",
-        "top_type": "Part de dalt",
-        "eyebrow_type": "Celles",
-        "hat_color": "Color de barret"
-    },
-    "footer": {
-        "donate": "Si et resulta útil, si us plau, pensa en les {{donate_link}}.",
-        "self_ads": "Fet amb ❤️ per {{mawoka_link}} i amb l'ajuda d'{{others_link}}.",
-        "more_details_here": "Més detalls aquí"
-    },
-    "quiztivity": {
-        "editor": {
-            "add_new": "Afegeix-ne un de nou",
-            "move_left": "Moure a l'esquerra",
-            "shares": {
-                "never_expires": "Mai caduca",
-                "expires_on": "Caduca el dia {{data}}",
-                "add_new_share": "Afegeix una nova compartició"
-            },
-            "title_placeholder": "Escriu el títol aquí",
-            "delete": "Suprimir",
-            "open_shares_menu": "Obre el menú de comparticions",
-            "select_page_type": "Escull el tipus de pàgina",
-            "move_right": "Moure a la dreta"
-        },
-        "share_expired": "Compartició caducada",
-        "play": {
-            "memory": {
-                "try_count": "Intents: {{try_count}}"
-            }
-        },
-        "memory": {
-            "editor": {
-                "add_card": "Afegeix una targeta",
-                "add_pair": "Afegir parella",
-                "upload_image": "Carrega una imatge"
-            }
-        }
-    },
-    "results_page": {
-        "no_results_so_far": "Encara no hi ha cap resultat desat...",
-        "quiz_title": "Títol del qüestionari",
-        "player_count": "Número de jugadors",
-        "date_played": "Data de la partida",
-        "general_overview": {
-            "sentence": "El qüestionari \"{{title}}\", que es va jugar el dia {{date}}, tenia {{player_count}} jugadors amb una puntuació mitjana de {{average_score}}."
-        }
-    },
-    "security_settings": {
-        "get_backup_code": "Aconsegueix el codi de recolzament",
-        "enable_totp": "Activa TOTP",
-        "disable_totp": "Desactiva TOTP",
-        "totp_setup": {
-            "enter_as_secret_if_no_see_code": "Escriu això com a secret si no pots escanejar el codi QR",
-            "scan_to_set_up": "Escaneja aquest codi QR per configurar el codi",
-            "totp_setup": "Configuració TOTP",
-            "do_not_forget_backup_code": "No t'oblidis de resguardar el teu codi de recuperació!"
-        },
-        "backup_code": "Codi de recolzament",
-        "2fa_deactivated": "L'autenticació de dos factors està desactivada",
-        "backup_codes": {
-            "download_code": "Descarrega el codi",
-            "your_backup_code": "El teu codi de recolzament",
-            "save_somewhere_save": "Resguarda-ho en un lloc segur!"
-        },
-        "totp": "TOTP",
-        "totp_unavailable": "TOTP no està disponible",
-        "2fa_activated": "L'autenticació de dos factors està activa",
-        "webauthn": "Webauthn",
-        "add_security_key": "Afegeix una clau de seguretat",
-        "activate_2fa": "Activa l'autenticació de dos factors",
-        "webauthn_unavailable": "Webauthn no està disponible",
-        "totp_available": "TOTP està disponible",
-        "webauthn_available": "Webauthn està disponible"
-    },
-    "controllers": {
-        "last_seen": "Vist per darrer cop",
-        "cancel_update": "Cancel·lar l'actualització!",
-        "add_new_controller": "Afegeix un nou controlador",
-        "player_name": "Nom del jugador",
-        "controller_name": "Nom del controlador",
-        "already_latest_version": "Ja tens la darrera versió",
-        "update_from_to": "Actualitzar de {{current_version}} a {{newest_version}}",
-        "first_seen": "Vist per primer cop",
-        "version_overview": "La versió disponible més recent és {{newest_version}}, i hi ha instal·lada la versió {{current_version}}."
-    },
-    "view_quiz_page": {
-        "made_by": "Fet per",
-        "view_on_kahoot": "Veure a l'original"
-    },
-    "start_game": {
-        "old_school_mode_description": "Les preguntes i les respostes es mostraran tant a la pantalla de l'administrador com a la dels jugadors",
-        "old_school_mode": "De la vella escola",
-        "start_game": "Comença el joc",
-        "captcha_message": "Si s'activa, el ReCaptcha de Google es carregarà al navegador dels jugadors. Activa'l només si realment ho necessites, perquè cal el consentiment de CADA UN dels jugadors per carregar el captcha.",
-        "normal_mode_description": "La pregunta i resposta només es mostrarà a la pantalla de l'administrador. Els jugadors només tindran botons de colors amb símbols que coincidiran amb els que hi hagi a la pantalla de l'administrador."
-    },
-    "video_uploader": {
-        "time_remaining": "Temps restant",
-        "time_elapsed": "Temps transcorregut"
-    },
-    "error_page": {
-        "unknown_error_text": "Això no hauria de passar. Segurament és culpa meva, no teva, però potser tens un poder màgic per trencar coses...",
-        "404_text": "La pàgina que busques s'ha perdut, o potser mai ha arribat a existir. Qui sap?"
-    },
-    "uploader": {
-        "images_by_pixabay": "Imatges proporcionades per Pixabay",
-        "upload_video_popup_notice": "La finestra emergent està oberta; fes-hi una ullada per a més informació",
-        "add_image": "Afegeix audiovisual",
-        "select_upload_type": "Escull el tipus de càrrega",
-        "upload_a_video": "Carrega un vídeo",
-        "next_page": "Pàgina següent",
-        "visit_pixabay": "Visita Pixabay",
-        "previous_page": "Pàgina anterior",
-        "search_english_only": "La cerca només funciona en anglès",
-        "upload_video": "Carrega el vídeo"
-    },
-    "dashboard": {
-        "commandpalette_notice": "Press <kbd>Ctr</kbd> + <kbd>k</kbd> o <kbd>Meta</kbd> + <kbd>k</kbd> per obrir la paleta de comandament",
-        "views_n_plays": "Vistes i Jugades",
-        "search_for_own_quizzes": "Cerca pels teus propis qüestionaris",
-        "info_analytics": "\"Jugades\" només mostra quants cops s'ha començat el qüestionari (inclòs tu), mentre que \"Vistes\" mostra quants cops s'ha visitat la pàgina \"Vista\", i per tant també compta els bots (em sap greu).",
-        "create_quiz": "Crea un nou qüestionari"
-    },
-    "navbar": {
-        "donate": "Feu una donació"
-    },
-    "editor_page": {
-        "add_an_answer": "Afegeix una resposta",
-        "right_click_to_delete": "Clica amb el botó dret sobre una resposta per eliminar-la!"
-    },
-    "public_user_page": {
-        "no_original_quizzes": "Aquest usuari no té cap qüestionari original",
-        "joined_on": "Unit el dia {{date}}",
-        "user_not_found": "No s'ha trobat l'usuari"
-    },
-    "components": {
-        "popover": {
-            "copied_to_clipboard": "Copiat al porta-retalls!"
-        }
-    },
-    "downloader": {
-        "excel_format": "Format d'Excel",
-        "select_download_type": "Escull el tipus de descàrrega",
-        "own_format": "Format propi",
-        "help": "El format propi (.cqa) també inclou imatges, i admet tot tipus de preguntes, mentre que el format excel només admet els vots i les preguntes d'elecció múltiple."
+    "voting_description": "Les respostes no sumen punts",
+    "range_description": "Es pot seleccionar un rang numèric amb una barra lliscant",
+    "empty": "En blanc...",
+    "abcd_description": "Només es pot escollir una resposta",
+    "bg_image": "Imatge de fons de pantalla",
+    "no_title": "Sense títol...",
+    "enter_answer": "Anota una resposta",
+    "enable_reorder": "Activa la modalitat de reordenar",
+    "disable_reorder": "Desactiva la modalitat de reordenar",
+    "advanced_settings": "Paràmetres avançats",
+    "hide_question_results": "Amagar els resultats de la pregunta?",
+    "need_more_help": "Cal més ajuda?",
+    "visit_docs": "Mireu la documentació."
+  },
+  "import_page": {
+    "need_help": "Us cal ajuda?",
+    "visit_docs": "Visiteu la documentació",
+    "this_side_frogquiz_excel": "També pots pujar fitxers excel, si has omplert la plantilla següent. Si ja existeix un qüestionari amb el mateix títol, s'afegiran les preguntes al qüestionari existent.",
+    "download_template_here": "Descarrega la plantilla",
+    "frogquiz_quiz": "Un qüestionari frogQuiz",
+    "this_side_frogquiz": "En aquest costat pots importar qüestionaris, que s'havien exportat de frogQuiz.",
+    "a_kahoot_quiz": "Un qüestionari de Kahoot!",
+    "side_import_kahoot": "En aquest costat pots importar qüestionaris, que es troben a Kahoot!.",
+    "url_should_look_like_this": "L'URL hauria de veure's similar a: https://create.kahoot.it/details/...",
+    "upload_file_ending": "Puja el fitxer que acaba en .cqa o .xlsx"
+  },
+  "edit_page": {
+    "success_update_title": "El qüestionari s'ha actualitzat!",
+    "success_update_body": "Ningú s'espera la InQuizisió!"
+  },
+  "create_page": {
+    "success": {
+      "title": "S'ha creat el qüestionari.",
+      "body": "Que comencin els jocs."
     }
+  },
+  "password_reset_page": {
+    "reset_password": "Restableix la contrasenya"
+  },
+  "settings_page": {
+    "old_password": "Contrasenya antiga",
+    "new_password": "Contrasenya nova",
+    "repeat_password": "Repetiu la contrasenya",
+    "change_password_submit": "Canvia la contrasenya!",
+    "delete_this_session": "Esborra aquesta sessió",
+    "this_session?": "Aquesta sessió?",
+    "check_location": "Verifica la ubicació",
+    "last_seen": "Última consulta",
+    "change_avatar": "Canvi d'avatar",
+    "security_settings": "Paràmetres de seguretat",
+    "add_api_key": "Afegir clau API"
+  },
+  "explore_page": {
+    "made_by": "Fet per",
+    "imported_by": "Importat per"
+  },
+  "search_page": {
+    "at_least_3_characters": "Introduïu almenys 3 caràcters...",
+    "nothing_here": "Aquí no hi ha res..."
+  },
+  "result_page": {
+    "correct_answer_plural": "{{count}} respostes correctes",
+    "player_score": "Puntuació del jugador",
+    "correct_answer": "{{count}} resposta correcta",
+    "time_taken": "Temps ocupat",
+    "player_name": "Nom del jugador",
+    "average_score": "Puntuació mitjana: {{average_score}}",
+    "custom_field": "Camp personalitzat",
+    "player_correct_questions": "Respostes correctes"
+  },
+  "play_page": {
+    "2nd_place": "2n lloc",
+    "join_description": "Uneix-t'hi a {{url}} i escriu el {{pin}}.",
+    "1st_place": "1r lloc",
+    "points_added": "Punts afegits",
+    "final_result_rank": "{{place}}: {{username}} amb {{points}} punts",
+    "your_score": "La teva puntuació: {{score}}",
+    "end_sentence": "Ja està! Aquest era el qüestionari.",
+    "with_out_of": "amb {{correct_questions}} de {{total_question_count}}",
+    "3rd place": "3r lloc",
+    "join_by_entering_code": "Uneix-t'hi introduint el codi següent",
+    "your_place": "Ets al {{place}} lloc!",
+    "players_waiting": "{{count}} jugador està esperant",
+    "players_waiting_plural": "{{count}} jugadors estan esperant"
+  },
+  "file_dashboard": {
+    "unset": "Descartar",
+    "filename_word": "Nom del fitxer",
+    "imported": "Importat: {{yes_or_no}}",
+    "filename": "Nom de fitxer: {{filename}}",
+    "missing": "ABSENT!",
+    "delete_image": "Elimina la imatge",
+    "size": "Mida: {{size}} MiB",
+    "storage_usage": "Has utilitzat {{used}} MiB de {{total}} MiB d'emmagatzematge. Això equival al {{percent}}% del teu emmagatzematge.",
+    "alt_text": "Text alternatiu / Subtítol",
+    "edit_details": "Edita els detalls",
+    "uploaded": "Pujat: {{date}}",
+    "not_available": "No disponible",
+    "caption": "Subtítol: {{caption}}",
+    "edit_the_image": "Edita la imatge"
+  },
+  "avatar_settings": {
+    "accessories_type": "Ulleres",
+    "go_back": "Enrere",
+    "hair_color": "Color dels cabells",
+    "clothe_graphic_type": "Gràfic",
+    "facial_hair_type": "Pèl facial",
+    "facial_hair_color": "Color del pèl facial",
+    "skin_color": "Color de la pell",
+    "clothe_color": "Color de la roba",
+    "thats_you": "Ets tu!",
+    "start_over": "Torna a començar",
+    "clothe_type": "Roba",
+    "mouth_type": "Boca",
+    "top_type": "Part de dalt",
+    "eyebrow_type": "Celles",
+    "hat_color": "Color de barret"
+  },
+  "footer": {
+    "donate": "Si et resulta útil, si us plau, pensa en les {{donate_link}}.",
+    "self_ads": "Fet amb ❤️ per {{mawoka_link}} i amb l'ajuda d'{{others_link}}.",
+    "more_details_here": "Més detalls aquí"
+  },
+  "quiztivity": {
+    "editor": {
+      "add_new": "Afegeix-ne un de nou",
+      "move_left": "Moure a l'esquerra",
+      "shares": {
+        "never_expires": "Mai caduca",
+        "expires_on": "Caduca el dia {{data}}",
+        "add_new_share": "Afegeix una nova compartició"
+      },
+      "title_placeholder": "Escriu el títol aquí",
+      "delete": "Suprimir",
+      "open_shares_menu": "Obre el menú de comparticions",
+      "select_page_type": "Escull el tipus de pàgina",
+      "move_right": "Moure a la dreta"
+    },
+    "share_expired": "Compartició caducada",
+    "play": {
+      "memory": {
+        "try_count": "Intents: {{try_count}}"
+      }
+    },
+    "memory": {
+      "editor": {
+        "add_card": "Afegeix una targeta",
+        "add_pair": "Afegir parella",
+        "upload_image": "Carrega una imatge"
+      }
+    }
+  },
+  "results_page": {
+    "no_results_so_far": "Encara no hi ha cap resultat desat...",
+    "quiz_title": "Títol del qüestionari",
+    "player_count": "Número de jugadors",
+    "date_played": "Data de la partida",
+    "general_overview": {
+      "sentence": "El qüestionari \"{{title}}\", que es va jugar el dia {{date}}, tenia {{player_count}} jugadors amb una puntuació mitjana de {{average_score}}."
+    }
+  },
+  "security_settings": {
+    "get_backup_code": "Aconsegueix el codi de recolzament",
+    "enable_totp": "Activa TOTP",
+    "disable_totp": "Desactiva TOTP",
+    "totp_setup": {
+      "enter_as_secret_if_no_see_code": "Escriu això com a secret si no pots escanejar el codi QR",
+      "scan_to_set_up": "Escaneja aquest codi QR per configurar el codi",
+      "totp_setup": "Configuració TOTP",
+      "do_not_forget_backup_code": "No t'oblidis de resguardar el teu codi de recuperació!"
+    },
+    "backup_code": "Codi de recolzament",
+    "2fa_deactivated": "L'autenticació de dos factors està desactivada",
+    "backup_codes": {
+      "download_code": "Descarrega el codi",
+      "your_backup_code": "El teu codi de recolzament",
+      "save_somewhere_save": "Resguarda-ho en un lloc segur!"
+    },
+    "totp": "TOTP",
+    "totp_unavailable": "TOTP no està disponible",
+    "2fa_activated": "L'autenticació de dos factors està activa",
+    "webauthn": "Webauthn",
+    "add_security_key": "Afegeix una clau de seguretat",
+    "activate_2fa": "Activa l'autenticació de dos factors",
+    "webauthn_unavailable": "Webauthn no està disponible",
+    "totp_available": "TOTP està disponible",
+    "webauthn_available": "Webauthn està disponible"
+  },
+  "controllers": {
+    "last_seen": "Vist per darrer cop",
+    "cancel_update": "Cancel·lar l'actualització!",
+    "add_new_controller": "Afegeix un nou controlador",
+    "player_name": "Nom del jugador",
+    "controller_name": "Nom del controlador",
+    "already_latest_version": "Ja tens la darrera versió",
+    "update_from_to": "Actualitzar de {{current_version}} a {{newest_version}}",
+    "first_seen": "Vist per primer cop",
+    "version_overview": "La versió disponible més recent és {{newest_version}}, i hi ha instal·lada la versió {{current_version}}."
+  },
+  "view_quiz_page": {
+    "made_by": "Fet per",
+    "view_on_kahoot": "Veure a l'original"
+  },
+  "start_game": {
+    "old_school_mode_description": "Les preguntes i les respostes es mostraran tant a la pantalla de l'administrador com a la dels jugadors",
+    "old_school_mode": "De la vella escola",
+    "start_game": "Comença el joc",
+    "captcha_message": "Si s'activa, el ReCaptcha de Google es carregarà al navegador dels jugadors. Activa'l només si realment ho necessites, perquè cal el consentiment de CADA UN dels jugadors per carregar el captcha.",
+    "normal_mode_description": "La pregunta i resposta només es mostrarà a la pantalla de l'administrador. Els jugadors només tindran botons de colors amb símbols que coincidiran amb els que hi hagi a la pantalla de l'administrador."
+  },
+  "video_uploader": {
+    "time_remaining": "Temps restant",
+    "time_elapsed": "Temps transcorregut"
+  },
+  "error_page": {
+    "unknown_error_text": "Això no hauria de passar. Segurament és culpa meva, no teva, però potser tens un poder màgic per trencar coses...",
+    "404_text": "La pàgina que busques s'ha perdut, o potser mai ha arribat a existir. Qui sap?"
+  },
+  "uploader": {
+    "images_by_pixabay": "Imatges proporcionades per Pixabay",
+    "upload_video_popup_notice": "La finestra emergent està oberta; fes-hi una ullada per a més informació",
+    "add_image": "Afegeix audiovisual",
+    "select_upload_type": "Escull el tipus de càrrega",
+    "upload_a_video": "Carrega un vídeo",
+    "next_page": "Pàgina següent",
+    "visit_pixabay": "Visita Pixabay",
+    "previous_page": "Pàgina anterior",
+    "search_english_only": "La cerca només funciona en anglès",
+    "upload_video": "Carrega el vídeo"
+  },
+  "dashboard": {
+    "commandpalette_notice": "Press <kbd>Ctr</kbd> + <kbd>k</kbd> o <kbd>Meta</kbd> + <kbd>k</kbd> per obrir la paleta de comandament",
+    "views_n_plays": "Vistes i Jugades",
+    "search_for_own_quizzes": "Cerca pels teus propis qüestionaris",
+    "info_analytics": "\"Jugades\" només mostra quants cops s'ha començat el qüestionari (inclòs tu), mentre que \"Vistes\" mostra quants cops s'ha visitat la pàgina \"Vista\", i per tant també compta els bots (em sap greu).",
+    "create_quiz": "Crea un nou qüestionari"
+  },
+  "navbar": {
+    "donate": "Feu una donació"
+  },
+  "editor_page": {
+    "add_an_answer": "Afegeix una resposta",
+    "right_click_to_delete": "Clica amb el botó dret sobre una resposta per eliminar-la!"
+  },
+  "public_user_page": {
+    "no_original_quizzes": "Aquest usuari no té cap qüestionari original",
+    "joined_on": "Unit el dia {{date}}",
+    "user_not_found": "No s'ha trobat l'usuari"
+  },
+  "components": {
+    "popover": {
+      "copied_to_clipboard": "Copiat al porta-retalls!"
+    }
+  },
+  "downloader": {
+    "excel_format": "Format d'Excel",
+    "select_download_type": "Escull el tipus de descàrrega",
+    "own_format": "Format propi",
+    "help": "El format propi (.cqa) també inclou imatges, i admet tot tipus de preguntes, mentre que el format excel només admet els vots i les preguntes d'elecció múltiple."
+  }
 }
