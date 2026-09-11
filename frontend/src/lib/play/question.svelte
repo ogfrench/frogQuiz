@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { socket } from '$lib/socket';
 	import Spinner from '../Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { kahoot_icons } from './kahoot_mode_assets/kahoot_icons';
+	import AnswerShape from './kahoot_mode_assets/AnswerShape.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { flip } from 'svelte/animate';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
@@ -202,10 +202,9 @@ SPDX-License-Identifier: MPL-2.0
 								class="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-black/15"
 							></span>
 							{#if game_mode === 'kahoot'}
-								<img
-									class="relative h-1/2 max-h-24 drop-shadow-sm transition-transform duration-200 group-active:scale-90"
-									alt=""
-									src={kahoot_icons[i]}
+								<AnswerShape
+									index={i}
+									class="relative h-1/2 max-h-24 w-auto drop-shadow-sm transition-transform duration-200 group-active:scale-90"
 								/>
 							{:else}
 								<p class="relative m-auto text-lg font-semibold px-3 text-balance">

@@ -32,9 +32,18 @@ SPDX-License-Identifier: MPL-2.0
 	style="background: {bg_color ? bg_color : 'transparent'}"
 	class:text-black={bg_color}
 >
-	<p class="mr-auto ml-0 col-start-1 col-end-1">
-		{game_state.selected_question === -1 ? '0' : game_state.selected_question + 1}
-		/{game_state.quiz_data.questions.length}
+	<!-- Question position is the most-referenced state on a projector screen, so
+	     it gets a legible pill rather than 14px of body text in the corner. -->
+	<p
+		class="col-start-1 col-end-1 mr-auto ml-3 self-center rounded-full border border-border bg-card/80 px-3 py-1
+			text-base font-semibold tabular-nums shadow-sm backdrop-blur"
+		aria-live="polite"
+	>
+		<span class="sr-only">Question </span>{game_state.selected_question === -1
+			? '0'
+			: game_state.selected_question + 1}<span class="text-muted-foreground"
+			>&nbsp;/&nbsp;{game_state.quiz_data.questions.length}</span
+		>
 	</p>
 	<div class="justify-self-end ml-auto mr-0 col-start-3 col-end-3">
 		{#if game_state.selected_question + 1 === game_state.quiz_data.questions.length && ((game_state.timer_res === '0' && game_state.question_results !== null) || game_state.quiz_data?.questions?.[game_state.selected_question]?.type === QuizQuestionType.SLIDE)}

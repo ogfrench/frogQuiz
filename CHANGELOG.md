@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Replaced the answer icons with the four classic simple shapes (triangle, diamond, circle, square), drawn inline so they take `currentColor` and keep contrast on any tile colour. The previous SVGs were heavy abstract blobs baked black.
+- Rebuilt the host lobby. It was three unaligned columns with the player chips stranded bottom-left and a default-sized Start button; it is now one centred composition with the PIN as the largest element, the QR beside it, a real primary action and animated player chips. Kicking a player is now a labelled button rather than a click handler on a span.
+- Rebuilt the host question screen: balanced question type, a thin timer rail instead of the full-width red block that duplicated the countdown ring, and answer tiles matching the player treatment. Answers now read row-major, in the same order players see them on their phones.
+- Gave the question counter a legible pill. It was 14px of body text in the corner of a projector screen.
 - Rebuilt the player answer tiles: rounded, with gloss and floor shading so they read as pressable, a staggered entrance, hover and press response, and a clear picked state where the chosen tile lifts and the others recede. The hard black borders are gone.
 - Gave the answer buttons real accessible names. They previously announced as "Icon" because the shape image's alt text was the button's only content; they now announce the answer.
 - **Filled the blank screen after answering.** Once every player had answered the timer stopped, the tiles unmounted and nothing replaced them, so the phone went empty with no confirmation the answer had registered. Added an "Answer locked in / waiting for everyone else" state, with the strings added to all 34 locale files.

@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import type { QuizData } from '$lib/quiz_types';
 	import { get_foreground_color } from '$lib/helpers.js';
-	import { kahoot_icons } from '$lib/play/kahoot_mode_assets/kahoot_icons.js';
+	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { getLocalization } from '$lib/i18n';
@@ -45,17 +45,15 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
-<div class="flex flex-col justify-center w-screen h-1/6">
-	<h1 class="text-6xl text-center">
+<div class="flex w-full flex-col items-center gap-6 px-8 pt-4">
+	<h1
+		class="max-w-[22ch] text-balance text-center text-5xl font-bold leading-tight tracking-tight md:text-6xl"
+	>
 		{@html quiz_data.questions[selected_question].question}
 	</h1>
-	<!--			<span class='text-center py-2 text-lg'>{$t('admin_page.time_left')}: {timer_res}</span>-->
-	<div class="grid grid-cols-3 my-2">
-		<span></span>
-		<div class="m-auto">
-			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
-		</div>
-		<p class="m-auto text-3xl">
+	<div class="flex items-center gap-10">
+		<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
+		<p class="text-2xl font-medium text-muted-foreground tabular-nums" aria-live="polite">
 			{$t('admin_page.answers_submitted', { answer_count: answer_count })}
 		</p>
 	</div>
@@ -70,23 +68,23 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {/if}
 {#if quiz_data.questions[selected_question].type === QuizQuestionType.ABCD || quiz_data.questions[selected_question].type === QuizQuestionType.VOTING || quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
-	<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-2 w-full p-4">
+	<div class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-3 p-6 sm:grid-cols-2">
 		{#each quiz_data.questions[selected_question].answers as answer, i}
 			<div
-				class="rounded-lg h-fit flex border-2 border-black"
-				style="background-color: {answer.color ?? default_colors[i]};"
+				class="answer-row relative flex min-h-20 items-center overflow-hidden rounded-2xl transition-all duration-300
+					motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
+				style="background-color: {answer.color ?? default_colors[i]}; animation-delay: {i * 70}ms"
 				class:opacity-50={!answer.right &&
 					timer_res === '0' &&
 					quiz_data.questions[selected_question].type === QuizQuestionType.ABCD}
 			>
-				<img
-					class="w-14 inline-block pl-4"
-					alt=""
+				<AnswerShape
+					index={i}
+					class="w-7 h-7 ml-4 shrink-0 self-center"
 					style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
-					src={kahoot_icons[i]}
 				/>
 				<span
-					class="text-center text-2xl px-2 py-4 w-full"
+					class="w-full px-3 py-5 text-center text-2xl font-semibold"
 					style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
 					>{answer.answer}</span
 				>
@@ -112,3 +110,14 @@ SPDX-License-Identifier: MPL-2.0
 		</div>
 	{/if}
 {/if}
+
+<style>
+	/* Same body treatment as the player tiles so the two screens read as one
+	   system: gloss on top, a floor shadow underneath, no hard black outline. */
+	.answer-row {
+		box-shadow:
+			0 10px 20px -8px rgb(0 0 0 / 0.3),
+			inset 0 1px 0 0 rgb(255 255 255 / 0.25),
+			inset 0 -3px 0 0 rgb(0 0 0 / 0.15);
+	}
+</style>

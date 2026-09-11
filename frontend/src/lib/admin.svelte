@@ -89,8 +89,13 @@ SPDX-License-Identifier: MPL-2.0
 {/if}
 {#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
 	<span
-		class="fixed top-0 bg-red-500 h-8 transition-all"
+		class="fixed top-0 left-0 h-1.5 rounded-r-full bg-destructive/90 transition-[width] duration-1000 ease-linear"
 		class:mt-10={game_state.control_visible}
+		role="progressbar"
+		aria-label="Time remaining"
+		aria-valuemin="0"
+		aria-valuemax={parseInt(game_state.quiz_data.questions[game_state.selected_question].time)}
+		aria-valuenow={parseInt(game_state.timer_res)}
 		style="width: {(100 /
 			parseInt(game_state.quiz_data.questions[game_state.selected_question].time)) *
 			parseInt(game_state.timer_res)}vw"
