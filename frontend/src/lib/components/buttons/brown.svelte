@@ -11,6 +11,8 @@ SPDX-License-Identifier: MPL-2.0
 		href?: undefined | string;
 		target?: undefined | string;
 		type?: 'button' | 'submit' | 'reset';
+		/** Accessible name. Required when the button's only content is an icon. */
+		label?: undefined | string;
 		children?: import('svelte').Snippet;
 		onclick?: (event: MouseEvent) => void;
 	}
@@ -21,6 +23,7 @@ SPDX-License-Identifier: MPL-2.0
 		href = undefined,
 		target = '_self',
 		type = 'button',
+		label = undefined,
 		children,
 		onclick
 	}: Props = $props();
@@ -31,6 +34,7 @@ SPDX-License-Identifier: MPL-2.0
 		{href}
 		{target}
 		{disabled}
+		aria-label={label}
 		class:opacity-50={disabled}
 		class:cursor-not-allowed={disabled}
 		class:pointer-events-none={disabled}
@@ -45,6 +49,7 @@ SPDX-License-Identifier: MPL-2.0
 	<button
 		{disabled}
 		{type}
+		aria-label={label}
 		class="text-black hover:cursor-pointer hover:opacity-80 w-full px-4 py-2 leading-5 transition-all duration-200 transform bg-[#B07156] rounded-sm text-center focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 outline-hidden"
 		{onclick}
 		class:flex

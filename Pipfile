@@ -48,6 +48,8 @@ ormar = "*"
 pydantic = "*"
 pydantic-settings = "*"
 asyncpg = "*"
+# Imported directly by frogquiz/db/__init__.py; current ormar no longer pulls it in.
+databases = "*"
 psycopg2-binary = "*"
 fastapi = "*"
 

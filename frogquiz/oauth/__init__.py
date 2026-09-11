@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, Response
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import jws, jwt, JWTError, JWSError
 
-from frogquiz.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from frogquiz.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_session_key
 from frogquiz.db.models import UserSession
 from frogquiz.oauth import google, github, custom
 from frogquiz.config import settings
@@ -55,7 +55,7 @@ async def rememberme_middleware(request: Request, call_next) -> Response:
 
     if conditions_to_handle_met:
         user_session: UserSession | None = (
-            await UserSession.objects.filter(session_key=rememberme_cookie)
+            await UserSession.objects.filter(session_key=hash_session_key(rememberme_cookie))
             .select_related(UserSession.user)
             .get_or_none()
         )

@@ -30,6 +30,7 @@ from webauthn.helpers.structs import (
 )
 
 from frogquiz.oauth.authenticate_user import log_user_in
+from frogquiz.helpers.ratelimit import rate_limit
 
 settings = settings()
 router = APIRouter()
@@ -100,7 +101,9 @@ def verify_webauthn(data, fidocredentialss: list[FidoCredentials], login_session
 
 
 @router.post("/start")
-async def start_login(data: StartLoginInput):
+async def start_login(data: StartLoginInput, request: Request):
+    # Without this, password guessing against /step is unthrottled.
+    await rate_limit(request, "login_start", limit=20, window_seconds=300)
     user = (
         await User.objects.select_related("fidocredentialss")
         .filter((User.email == data.email) | (User.username == data.email))
@@ -152,6 +155,7 @@ class StepInput(BaseModel):
 
 @router.post("/step/{step_id}")
 async def step_1_endpoint(session_id: str, data: StepInput, request: Request, response: Response, step_id: int):
+    await rate_limit(request, "login_step", limit=10, window_seconds=300)
     if step_id < 0 or step_id > 2:
         raise HTTPException(status_code=401)
     redis_res = await redis.get(f"login_session:{session_id}")

@@ -208,6 +208,10 @@ SPDX-License-Identifier: MPL-2.0
 				bind:value={game_pin}
 				maxlength="6"
 				inputmode="numeric"
+				pattern="[0-9]*"
+				autocomplete="one-time-code"
+				aria-label={$t('words.game_pin')}
+				autofocus
 			/>
 			<!--				use:tippy={{content: "Please enter the game pin", sticky: true, placement: 'top'}}-->
 
@@ -225,6 +229,7 @@ SPDX-License-Identifier: MPL-2.0
 				class="border border-gray-400 self-center text-center text-black ring-0 outline-hidden p-2 rounded-lg focus:shadow-2xl transition-all"
 				bind:value={username}
 				maxlength="17"
+				aria-label={$t('words.username')}
 			/>
 			{#if custom_field}
 				<h1 class="text-lg text-center">{custom_field}</h1>
