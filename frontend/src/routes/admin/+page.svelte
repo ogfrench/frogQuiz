@@ -238,7 +238,7 @@ SPDX-License-Identifier: MPL-2.0
 >
 	{#if JSON.stringify(game_state.final_results) !== JSON.stringify([null])}
 		{#if game_state.control_visible}
-			<div class="w-screen flex justify-center mt-16">
+			<div class="fixed right-4 top-14 z-30 flex justify-end">
 				<div class="w-fit">
 					{#if export_token === undefined}
 						<GrayButton onclick={request_answer_export}
@@ -253,7 +253,7 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 				</div>
 			</div>
-			<div class="w-screen flex justify-center mt-2">
+			<div class="fixed right-4 top-[6.5rem] z-30 flex justify-end">
 				<div class="w-fit">
 					<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
 						{#if results_saved}

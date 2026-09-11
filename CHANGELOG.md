@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Built a real podium for the final results. The leaderboard was one `<p>` per player with a computed font size — literally "1: Froggo with 377 points" as body text, at the emotional peak of the product. It is now a three-place podium that builds from third to first, with the winner's block highlighted, confetti timed to their arrival, and ranks four and below as a clean list.
+- Moved the host's result-export controls out of the podium composition; they were floating over it.
 - Replaced the answer icons with the four classic simple shapes (triangle, diamond, circle, square), drawn inline so they take `currentColor` and keep contrast on any tile colour. The previous SVGs were heavy abstract blobs baked black.
 - Rebuilt the host lobby. It was three unaligned columns with the player chips stranded bottom-left and a default-sized Start button; it is now one centred composition with the PIN as the largest element, the QR beside it, a real primary action and animated player chips. Kicking a player is now a labelled button rather than a click handler on a span.
 - Rebuilt the host question screen: balanced question type, a thin timer rail instead of the full-width red block that duplicated the countdown ring, and answer tiles matching the player treatment. Answers now read row-major, in the same order players see them on their phones.
