@@ -8,7 +8,10 @@ from functools import lru_cache
 from redis import asyncio as redis_lib
 import redis as redis_base_lib
 from pydantic import field_validator, RedisDsn, PostgresDsn, BaseModel
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import json
+from typing import Annotated
+
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 import meilisearch as MeiliSearch
 from arq import create_pool
 from arq.connections import RedisSettings, ArqRedis
@@ -40,6 +43,9 @@ class Settings(BaseSettings):
     root_address: str = "http://127.0.0.1:8000"
     redis: RedisDsn = "redis://localhost:6379/0?decode_responses=True"
     skip_email_verification: bool = False
+    # Registration does a live DNS/MX lookup on the address's domain. Turn this off
+    # for deployments on internal-only mail domains, or without outbound DNS.
+    validate_email_deliverability: bool = True
     db_url: PostgresDsn | str = "postgresql://postgres:mysecretpassword@localhost:5432/frogquiz"
     hcaptcha_key: str | None = None
     recaptcha_key: str | None = None
@@ -50,6 +56,8 @@ class Settings(BaseSettings):
     mail_port: int
     secret_key: str
     access_token_expire_minutes: int = 30
+    # Off only for test runs, which log in far more often than a real client.
+    rate_limit_enabled: bool = True
     cache_expiry: int = 86400
     meilisearch_url: str = "http://127.0.0.1:7700"
     meilisearch_index: str = "frogquiz"
@@ -66,13 +74,25 @@ class Settings(BaseSettings):
     # Origins allowed to call the API / socket.io cross-site (e.g. a Netlify-hosted frontend).
     # Empty means same-origin only, which is what the bundled Caddy setup uses.
     # Accepts a JSON list or a plain comma-separated string.
-    cors_origins: list[str] = []
+    # NoDecode keeps pydantic-settings from JSON-parsing this first, which is what
+    # made the documented comma-separated form raise before the validator below ran.
+    cors_origins: Annotated[list[str], NoDecode] = []
 
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, v):
-        if isinstance(v, str) and not v.strip().startswith("["):
-            return [origin.strip().rstrip("/") for origin in v.split(",") if origin.strip()]
+        # NoDecode means this sees the raw environment string, so both documented
+        # forms are parsed here: a JSON list, or a plain comma-separated list.
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            if v.startswith("["):
+                v = json.loads(v)
+            else:
+                return [origin.strip().rstrip("/") for origin in v.split(",") if origin.strip()]
+        if isinstance(v, list):
+            return [str(origin).strip().rstrip("/") for origin in v if str(origin).strip()]
         return v
 
     # storage_backend

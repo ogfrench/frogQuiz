@@ -7,6 +7,8 @@ from socketio import ASGIApp
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+import logging
+
 from frogquiz.config import settings
 from frogquiz.db import database
 
@@ -47,7 +49,15 @@ async def startup() -> None:
     database_ = app.state.database
     if not database_.is_connected:
         await database_.connect()
-    await meilisearch_init()
+    # Search is not on the critical path: a game needs Postgres and Redis, not
+    # the index. Previously an unreachable Meilisearch aborted startup entirely,
+    # so a search outage took the live game loop down with it.
+    try:
+        await meilisearch_init()
+    except Exception as e:  # noqa: BLE001 - any failure here must stay non-fatal
+        logging.getLogger("frogquiz").warning(
+            "MeiliSearch unavailable at startup (%s); search will be degraded until it returns.", e
+        )
 
 
 @app.on_event("shutdown")

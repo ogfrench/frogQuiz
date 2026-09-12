@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import hashlib
 import uuid
 from datetime import timedelta
 from typing import Dict
@@ -106,6 +107,45 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
+
+def hash_session_key(session_key: str) -> str:
+    """Hash a remember-me session key for storage.
+
+    The key is 32 random bytes, so a fast hash is enough here -- this protects
+    against a database read handing over live sessions, not against guessing.
+    """
+    return hashlib.sha256(session_key.encode()).hexdigest()
+
+
+def _revocation_key(token: str) -> str:
+    # Keyed by hash so live tokens are not themselves stored as Redis keys.
+    return f"revoked_token:{hashlib.sha256(token.encode()).hexdigest()}"
+
+
+async def revoke_token(token: str) -> None:
+    """Deny a token for whatever remains of its lifetime.
+
+    A denylist rather than an allowlist: tokens stay valid by default, so no
+    issuing path has to remember to register them, and the entry expires with
+    the token itself rather than accumulating.
+    """
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM], options={"verify_exp": False})
+    except JWTError:
+        return
+    expires_at = payload.get("exp")
+    if expires_at is None:
+        return
+    remaining = int(expires_at - datetime.utcnow().timestamp())
+    if remaining > 0:
+        await redis.set(_revocation_key(token), "1", ex=remaining)
+
+
+async def token_is_revoked(token: str) -> bool:
+    """True once the token has been explicitly revoked, e.g. by logging out."""
+    return await redis.get(_revocation_key(token)) is not None
+
+
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",
@@ -122,6 +162,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
+    if await token_is_revoked(token):
+        raise credentials_exception
     user = await get_user_from_mail(email=token_data.email)
     if user is None:
         raise credentials_exception
@@ -136,6 +178,8 @@ async def get_current_moderator(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
         token_data = TokenData(email=email)
     except JWTError:
+        raise credentials_exception
+    if await token_is_revoked(token):
         raise credentials_exception
     user = await get_user_from_mail(email=token_data.email)
     if user is None:

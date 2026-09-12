@@ -141,6 +141,7 @@ SPDX-License-Identifier: MPL-2.0
 								placeholder={$t('dashboard.search_for_own_quizzes')}
 							/>
 							<button
+								aria-label={$t('words.search')}
 								onclick={() => {
 									search_term = '';
 									items_to_show = all_items;
@@ -194,7 +195,7 @@ SPDX-License-Identifier: MPL-2.0
 								class:grid-cols-3={quiz.type === 'quiz'}
 								class:grid-cols-2={quiz.type !== 'quiztivity'}
 							>
-								<BrownButton
+								<BrownButton label={$t('words.view')}
 									flex={true}
 									disabled={!quiz.public}
 									href="/view/{quiz.id}"
@@ -221,7 +222,7 @@ SPDX-License-Identifier: MPL-2.0
 										/>
 									</svg>
 								</BrownButton>
-								<BrownButton
+								<BrownButton label={$t('words.analytics')}
 									flex={true}
 									onclick={() => (analytics_quiz_selected = quiz)}
 								>
@@ -242,7 +243,7 @@ SPDX-License-Identifier: MPL-2.0
 										/>
 									</svg>
 								</BrownButton>
-								<BrownButton
+								<BrownButton label={$t('words.edit')}
 									href={quiz.type === 'quiz'
 										? `/edit?quiz_id=${quiz.id}`
 										: `/quiztivity/edit?id=${quiz.id}`}
@@ -266,7 +267,7 @@ SPDX-License-Identifier: MPL-2.0
 									</svg>
 								</BrownButton>
 								{#if quiz.type === 'quiz'}
-									<BrownButton
+									<BrownButton label={$t('words.play')}
 										onclick={() => {
 											start_game = quiz.id;
 										}}
@@ -295,7 +296,7 @@ SPDX-License-Identifier: MPL-2.0
 										</svg>
 									</BrownButton>
 								{:else}
-									<BrownButton href="/quiztivity/play?id={quiz.id}" flex={true}>
+									<BrownButton label={$t('words.play')} href="/quiztivity/play?id={quiz.id}" flex={true}>
 										<!-- heroicons/legacy-outline/Play -->
 										<svg
 											class="w-5 h-5"
