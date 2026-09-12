@@ -8,16 +8,15 @@ SPDX-License-Identifier: MPL-2.0
 	// import AudioPlayer from '$lib/play/audio_player.svelte';
 	import ControllerCodeDisplay from '$lib/components/controller/code.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import GrayButton from '$lib/components/buttons/gray.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { Button } from '$lib/components/ui/button';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
-	import type { GameState } from '$lib/play/admin/game_state';
+	import type { IGameState } from '$lib/play/admin/game_state';
 
 	interface Props {
 		game_pin: string;
-		game_state: GameState;
+		game_state: IGameState;
 		socket_game_controls: SocketGameControls;
 		cqc_code: string;
 	}

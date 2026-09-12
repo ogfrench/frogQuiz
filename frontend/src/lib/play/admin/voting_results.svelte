@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Question } from '$lib/quiz_types';
+	import type { Answer, Question, VotingAnswer } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import { answerColor } from '$lib/play/answer_colors';
@@ -25,19 +25,25 @@ SPDX-License-Identifier: MPL-2.0
 	// layout had to rotate its labels 45 degrees, where they collided with each
 	// other. Colour matches the tile the player tapped, and the shape repeats it
 	// so identity never rests on colour alone.
-	const counts = question.answers.map(
+	// Question.answers is a union covering every question type, including a range
+	// object and a slide string. This component is only rendered for the choice
+	// types, so narrow once here rather than casting at each use.
+	const answers = question.answers as (Answer | VotingAnswer)[];
+
+	const counts = answers.map(
 		(a) => data.filter((d: { answer: string }) => d.answer === a.answer).length
 	);
 	const total = counts.reduce((sum, n) => sum + n, 0);
 	const max = Math.max(1, ...counts);
 	const is_voting = question.type === QuizQuestionType.VOTING;
+	const isCorrect = (a: Answer | VotingAnswer) => !is_voting && (a as Answer).right === true;
 </script>
 
 <div class="mx-auto w-full max-w-3xl px-6">
 	<ul class="flex flex-col gap-2.5">
-		{#each question.answers as answer, i}
+		{#each answers as answer, i}
 			{@const count = counts[i]}
-			{@const correct = answer.right && !is_voting}
+			{@const correct = isCorrect(answer)}
 			<li
 				class="flex items-center gap-3 transition-opacity duration-300"
 				class:opacity-70={!correct && !is_voting}
