@@ -52,6 +52,8 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	}
 
+	let top_players = $derived(player_names.slice(0, 4));
+
 	let show_new_score_clicked = $state(false);
 
 	const show_new_score = () => {
@@ -80,39 +82,44 @@ SPDX-License-Identifier: MPL-2.0
 	// https://svelte.dev/repl/96a58afdea2248a5b7e489160ffba887?version=3.44.2
 </script>
 
-<div class="h-full flex flex-col">
-	<div class="flex justify-center">
-		<div>
-			<table class="table-auto text-xl">
-				<thead>
+<div class="fq-stage">
+	<!-- One composition, in the order the room cares about: what the answer was
+	     and how the room split, then where that leaves the standings. -->
+	<div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+		{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
+			<section class="flex flex-col gap-[var(--fq-space-group)] p-6 sm:p-8">
+				<h2 class="text-center text-lg font-semibold tracking-tight text-balance">
+					{@html question.question}
+				</h2>
+				<VotingResults data={new_data} {question} />
+			</section>
+		{/if}
+
+		<section class="border-t border-border">
+			<table class="w-full text-left text-base">
+				<thead
+					class="bg-muted/50 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+				>
 					<tr>
-						<th class="p-2 border-r border-r-black border-b-2 border-b-black"
-							>{$t('words.name')}</th
-						>
-						<th class="p-2 border-b-2 border-b-black"
-							>{$t('words.point', { count: 2 })}</th
-						>
+						<th class="px-6 py-3">{$t('words.name')}</th>
+						<th class="px-6 py-3 text-right">{$t('words.point', { count: 2 })}</th>
 						{#if show_new_score_clicked}
-							<th in:fly|global={{ x: 300 }} class="p-2 border-b-2 border-b-black"
-								>{$t('play_page.points_added')}
+							<th in:fly|global={{ x: 80 }} class="px-6 py-3 text-right">
+								{$t('play_page.points_added')}
 							</th>
 						{/if}
 					</tr>
 				</thead>
-				<tbody>
-					{#each player_names as player, i (player)}
-						<tr animate:flip>
-							<td class:hidden={i > 3} class="p-2 border-r border-r-black"
-								>{player}</td
-							>
-							<td class:hidden={i > 3} class="p-2">{data[player]}</td>
+				<tbody class="divide-y divide-border">
+					{#each top_players as player (player)}
+						<tr animate:flip={{ duration: 400 }}>
+							<td class="px-6 py-3 font-medium">{player}</td>
+							<td class="px-6 py-3 text-right tabular-nums">{data[player]}</td>
 							{#if show_new_score_clicked}
 								<td
-									in:fly|global={{ x: 300 }}
-									class:hidden={i > 3}
-									class="p-2"
-									class:text-red-600={score_by_username[player] === 0 ||
-										score_by_username[player] === undefined}
+									in:fly|global={{ x: 80 }}
+									class="px-6 py-3 text-right font-medium tabular-nums"
+									class:text-muted-foreground={!score_by_username[player]}
 								>
 									+{score_by_username[player] ?? '0'}
 								</td>
@@ -121,11 +128,6 @@ SPDX-License-Identifier: MPL-2.0
 					{/each}
 				</tbody>
 			</table>
-		</div>
+		</section>
 	</div>
-	{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
-		<div class="mt-12">
-			<VotingResults data={new_data} {question} />
-		</div>
-	{/if}
 </div>

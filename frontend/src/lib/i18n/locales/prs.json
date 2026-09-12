@@ -1,490 +1,492 @@
 {
-    "index_page": {
-        "slogan": "پلتفرم آزمون منبع‌باز!",
-        "meta": {
-            "description": "(frogQuiz) یک برنامهٔ آزمون است که برای یادگیری تعاملی دانش‌آموزان طراحی شده است.در این برنامه منابع‌باز بوده و استفاده از آن رایگان است",
-            "title": "خانه"
-        },
-        "stats": "همین اکنون گزینه {{user_count}} کاربر و {{quiz_count}} آزمون در frogQuiz موجود است.",
-        "see_what_true_and_false": "ببینید، کدام پاسخ‌ها درست یا نادرست بوده‌اند",
-        "see_how_many_true_and_false": "ببینید، چند پاسخ درست یا نادرست بوده‌اند",
-        "create_or_import": "ایجاد یا وارد کردن",
-        "see_all_quizzes": "آزمون‌های خود را ببینید",
-        "teachers_site": "سایت آموزگار",
-        "students_site": "سایت دانش‌آموز",
-        "no_tracking": "بدون ردیابی",
-        "self_hostable": "قابل نصب در سرور شخصی",
-        "german_server": "سرور آلمان",
-        "user_friendly": "کاربرپسند",
-        "completely_free": "کاملاً رایگان",
-        "quiz_results_downloadable": "نتایج آزمون قابل دانلود است",
-        "multilingual": "چندزبانه",
-        "dark_mode": "حالت تاریک",
-        "get_a_quiz": "۱. دریافت یک آزمون",
-        "create_a_quiz_from_scratch": "با استفاده از ویرایشگر، یک آزمون را از صفر بسازید و تصاویر و موارد دیگر را نیز اضافه کنید",
-        "find_or_explore": "آزمون‌هایی را که توسط دیگران ساخته یا وارد شده‌اند، پیدا یا جست‌وجو کنید",
-        "play_quiz": "۲. آزمون را انجام دهید",
-        "select_answer": "پاسخ را انتخاب کنید",
-        "choose_answer_wisely": "پاسخ خود را با دقت انتخاب کنید",
-        "view_results": "مشاهدهٔ نتایج",
-        "check_if_chosen_wisely": "بررسی کنید که آیا درست انتخاب کرده‌اید",
-        "list_winners": "فهرست برندگان",
-        "get_ranking_and_winners": "رتبه‌بندی را دریافت کنید و ببینید چه کسی برنده شده است",
-        "why_frogquiz": "چرا frogQuiz؟",
-        "no_tracking_content": "دیگران شما را ردیابی می‌کنند و این اطلاعات را با اشخاص ثالث شریک می‌سازند، اما frogQuiz چنین کاری را نمی‌کند.",
-        "self_hostable_content": "frogQuiz را می‌توان به‌آسانی و به‌صورت مستقل نگهداری کرد، بنابراین داده‌ها فقط تحت کنترل شما باقی می‌ماند!",
-        "user_friendly_content": "هدف frogQuiz این است که ساده باشد، تا همه بتوانند از آن استفاده کنند.",
-        "completely_free_content": "frogQuiz کاملاً رایگان است (برای کاربر) و هیچ طرح پولی یا انتقال‌های آزاردهنده به صفحهٔ ارتقا ندارد. کمک‌های مالی شما بسیار قدردانی می‌شود.",
-        "quiz_results_downloadable_content": "نتایج آزمون‌ها را می‌توان به‌آسانی به یک فایل Excel ارائه کرد. (نمی‌دانستم که دیگران نمی‌توانند این کار را انجام دهند.)",
-        "multilingual_content": "frogQuiz به زبان‌های انگلیسی، فرانسوی، آلمانی، ایتالیایی، نروژی بوکمال، ترکی و همچنان به‌صورت جزئی به زبان‌های اندونیزیایی و کاتالانی در دسترس است.",
-        "dark_mode_content": "یکی از مهم‌ترین ویژگی‌هایی که یک وب‌سایت می‌تواند داشته باشد!",
-        "german_server_content": "سرورهای frogQuiz در آلمان قرار دارند و توسط netcup میزبانی می‌شوند.",
-        "download_quizzes": "دانلود آزمون‌ها",
-        "download_quizzes_content": "آزمون‌ها را می‌توان به‌صورت یک فایل واحد دانلود کرد و در هر زمان وارد داده‌ها نمود. این امکان همچنان به شما اجازه می‌دهد که آزمون‌های خود را به نمونه‌های دیگر frogQuiz منتقل کنید.",
-        "community_driven": "جامعه‌محور",
-        "community_driven_content": "frogQuiz برای تأمین مالی، آزمایش ایده‌ها، پیشنهاد ویژگی‌های جدید، ترجمه‌ها و موارد دیگر به جامعهٔ کاربران خود وابسته است! شما نیز می‌توانید بخشی از جامعهٔ frogQuiz باشید!",
-        "how_does_frogquiz_work": "frogQuiz اصلاً چگونه کار می‌کند؟",
-        "no_player_limit": "محدودیت در تعداد شرکت‌کنندگان وجود ندارد",
-        "no_player_limit_content": "Class Quiz محدودیت مصنوعی برای تعداد شرکت‌کنندگان ندارد. از نظر تئوری، بیش از ۱۰۰۰ شرکت‌کننده می‌توانند در یک آزمون هم‌زمان اشتراک کنند، اما این سیستم برای حداکثر ۳۰۰ شرکت‌کننده در هر آزمون آزمایش شده است.",
-        "import_quiz_from_kahoot_and_edit": "آزمون‌ها را از Kahoot! وارد کنید و آن‌ها را در frogQuiz ویرایش نمایید"
+  "index_page": {
+    "slogan": "پلتفرم آزمون منبع‌باز!",
+    "meta": {
+      "description": "(frogQuiz) یک برنامهٔ آزمون است که برای یادگیری تعاملی دانش‌آموزان طراحی شده است.در این برنامه منابع‌باز بوده و استفاده از آن رایگان است",
+      "title": "خانه"
     },
-    "overview_page": {
-        "created_at": "ایجاد شده در",
-        "question_count": "تعداد سوالات",
-        "no_quizzes": "برای شروع، روی دکمهٔ «ایجاد» کلیک کنید، یا یک آزمون را وارد نمایید."
-    },
-    "edit_page": {
-        "success_update_title": "آزمون به‌روزرسانی شد.",
-        "success_update_body": "Nobody will expect the inquizition."
-    },
-    "create_page": {
-        "success": {
-            "title": "آزمون ایجاد شد.",
-            "body": "بازی‌ها شروع شود."
-        }
-    },
-    "register_page": {
-        "greeting": "خوشبختم که با شما آشنا شدم!",
-        "create_account": "ایجاد حساب کاربری",
-        "forgot_password?": "رمز عبور را فراموش کرده‌اید؟",
-        "already_have_account?": "از قبل حساب دارید؟"
-    },
-    "login_page": {
-        "welcome_back": "دوباره خوش آمدید.",
-        "login_or_create_account": "ورود به حساب یا ایجاد حساب کاربری",
-        "already_have_account": "حساب ندارید؟",
-        "email_or_username": "ایمیل یا نام کاربری",
-        "modal": {
-            "success": {
-                "success_check_mail": "وارد شدید. صندوق ایمیل خود را بررسی کنید.",
-                "success": "وارد شدید.",
-                "description": {
-                    "success_check_mail": "لطفاً صندوق ایمیل خود را بررسی کنید. یک ایمیل حاوی لینکی دریافت خواهید کرد که با کلیک روی آن می‌توانید وارد شوید.",
-                    "success": "وارد شدید."
-                }
-            },
-            "error": {
-                "wrong_creds": "ایمیل آدرس یا رمز عبور نادرست است.",
-                "unexpected": "خطای غیرمنتظره!",
-                "description": {
-                    "wrong_creds": "لطفاً مطمئن شوید که رمز عبور و آدرس ایمیل شما درست است.",
-                    "unexpected": "همان خطای غیرمنتظرهٔ قدیمی رخ داد!"
-                }
-            }
-        },
-        "use_backup_code": "استفاده از کُد پشتیبان"
-    },
-    "words": {
-        "question": "سوال",
-        "answer": "جواب",
-        "stats": "آمار",
-        "features": "ویژگی‌ها",
-        "login": "ورود",
-        "email": "ایمیل آدرس",
-        "username": "نام کاربری",
-        "password": "رمز عبور",
-        "play": "شروع",
-        "edit": "ویرایش",
-        "delete": "حذف",
-        "public": "عمومی",
-        "start": "آغاز",
-        "create": "ایجاد",
-        "import": "وارد کردن",
-        "logout": "خروج از حساب",
-        "title": "عنوان",
-        "url": "آدرس اینترنتی",
-        "submit": "ارسال",
-        "connect": "اتصال",
-        "pin": "پین",
-        "kick": "اخراج کردن",
-        "register": "ثبت‌نام",
-        "docs": "اسناد",
-        "close": "بستن",
-        "save": "ذخیره کردن",
-        "description": "توضیحات",
-        "image": "تصویر",
-        "settings": "تنظیمات",
-        "repeat_password": "تکرار رمز عبور",
-        "overview": "نمای کلی",
-        "report": "گزارش",
-        "explore": "بررسی",
-        "search": "جستجو",
-        "screenshot": "اسکرین‌شات",
-        "screenshot_plural": "اسکرین‌شات‌ها",
-        "browser": "مرورگر",
-        "view": "مشاهده",
-        "view_plural": "مشاهدات",
-        "correct": "درست",
-        "result": "نتیجه",
-        "result_plural": "نتایج",
-        "count": "شمارش",
-        "range": "محدوده",
-        "multiple_choice": "چندگزینه‌ای",
-        "private": "خصوصی",
-        "dashboard": "داشبورد",
-        "question_plural": "سوال‌ها",
-        "game_pin": "پین بازی",
-        "other": "سایر",
-        "other_plural": "دیگران",
-        "donating": "کمک مالی کردن",
-        "find": "پیدا کردن",
-        "practice": "تمرین",
-        "error": "خطا",
-        "voting": "رای‌گیری",
-        "download": "دانلود",
-        "continue": "ادامه",
-        "backup_code": "کد پشتیبان",
-        "totp": "رمز یک‌بار مصرف مبتنی بر زمان",
-        "text": "متن",
-        "order": "سفارش",
-        "results": "نتایج",
-        "note": "یادداشت",
-        "player_plural": "شرکت‌کننده‌گان",
-        "version": "نسخه",
-        "never": "هرگز",
-        "unknown": "نامعلوم",
-        "update": "به‌روزرسانی",
-        "score": "امتیاز",
-        "slide": "سلاید",
-        "name": "نام",
-        "point": "امتیاز",
-        "point_plural": "امتیازات",
-        "back": "بازگشت",
-        "finish": "پایان",
-        "normal": "عادی",
-        "selected": "انتخاب‌شده",
-        "select": "انتخاب کردن",
-        "quiz": "آزمون",
-        "quiztivity": "کوییزاکتیویتی",
-        "next": "بعدی",
-        "check_choice": "بررسی انتخاب",
-        "video": "ویدیو",
-        "library": "کتابخانه",
-        "progress": "پیشرفت",
-        "speed": "سرعت",
-        "upload": "آپلود",
-        "files_library": "کتابخانهٔ فایل‌ها",
-        "answer_plural": "پاسخ‌ها",
-        "yes": "بله",
-        "no": "خیر",
-        "analytics": "تحلیل‌ها",
-        "rating": "امتیازدهی",
-        "like": "پسندیدن",
-        "like_plural": "پسندها",
-        "dislike": "نپسندیدن",
-        "dislike_plural": "نپسندها",
-        "play_plural": "پخش‌ها",
-        "info": "معلومات",
-        "player": "شرکت‌کننده"
-    },
-    "editor": {
-        "time_in_seconds": "زمان به ثانیه",
-        "right_or_true?": "راست؟",
-        "add_new_answer": "افزودن پاسخ جدید",
-        "add_new_question": "افزودن پرسش جدید",
-        "delete_question": "حذف پرسش",
-        "delete_answer": "حذف پاسخ",
-        "not_all_links_imgur_links": "همهٔ لینک‌ها لینک‌های ایمگور نیستند!",
-        "no_title": "بدون عنوان...",
-        "empty": "خالی...",
-        "bg_image": "تصویر پس‌زمینه",
-        "slide": {
-            "headline": "عنوان اصلی",
-            "headline_description": "متن پررنگ برای عنوان‌ها",
-            "text": "متن",
-            "text_description": "متن کوچک‌تر و طولانی‌تر",
-            "rectangle": "مستطیل",
-            "rectangle_description": "فقط یک مستطیل"
-        },
-        "abcd_description": "فقط یک پاسخ می‌تواند انتخاب شود",
-        "voting_description": "پاسخ‌ها هیچ امتیازی ندارند",
-        "check_choice_description": "برای کسب امتیاز، باید تمام پاسخ‌های درست انتخاب شوند",
-        "order_description": "پاسخ‌ها را می‌توان به ترتیب درست قرار داد",
-        "text_description": "شرکت‌کننده‌گان می‌توانند متن وارد کنند",
-        "range_description": "می‌توان یک محدودهٔ عددی را با استفاده از سلایدر انتخاب کرد",
-        "need_more_help": "به کمک بیشتری نیاز دارید؟",
-        "visit_docs": "مستندات را ببینید.",
-        "enter_answer": "یک پاسخ وارد کنید",
-        "enable_reorder": "فعال‌سازی حالت ترتیب‌دهی",
-        "disable_reorder": "غیرفعال‌سازی حالت ترتیب‌دهی",
-        "advanced_settings": "تنظیمات پیشرفته",
-        "hide_question_results": "نتایج سؤال پنهان شود؟"
-    },
-    "import_page": {
-        "need_help": "کمک نیاز دارید؟",
-        "visit_docs": "به مستندات مراجعه کنید",
-        "a_kahoot_quiz": "یک آزمون Kahoot!",
-        "url_should_look_like_this": "آدرس اینترنتی باید مانند این باشد: https://create.kahoot.it/details/...",
-        "side_import_kahoot": "در این بخش می‌توانید آزمون‌هایی را وارد کنید که در Kahoot! موجود هستند.",
-        "frogquiz_quiz": "یک آزمون frogQuiz",
-        "upload_file_ending": "فایل با پسوند ‎.cqa یا ‎.xlsx را بارگذاری کنید",
-        "this_side_frogquiz": "در این بخش می‌توانید آزمون‌هایی را وارد کنید که از frogQuiz صادر شده‌اند.",
-        "this_side_frogquiz_excel": "شما همچنین می‌توانید فایل‌های اکسل را بارگذاری کنید، اگر قالب زیر را تکمیل کرده باشید. اگر آزمونی با همین عنوان از قبل موجود باشد، پرسش‌ها به همان آزمون اضافه خواهند شد.",
-        "download_template_here": "قالب را دانلود کنید"
-    },
-    "admin_page": {
-        "already_registered_as_admin": "برای این بازی قبلاً یک مدیر ثبت شده است.",
-        "start_game": "بازی را شروع کنید",
-        "time_left": "زمان باقی‌مانده",
-        "get_results": "نتایج را دریافت کنید",
-        "get_results_and_stop_time": "نتایج را دریافت کنید و زمان را متوقف کنید",
-        "get_final_results": "نتایج نهایی را دریافت کنید",
-        "show_next_question": "سؤال بعدی را نشان دهید",
-        "start_by_showing_first_question": "با نشان دادن سؤال اول شروع کنید.",
-        "no_answers": "بدون پاسخ‌ها!",
-        "stop_time": "زمان را متوقف کنید",
-        "save_results": "نتایج را ذخیره کنید",
-        "next_question": "سؤال بعدی ({{question}})",
-        "show_results": "نتایج را نشان دهید",
-        "stop_time_and_solutions": "زمان را متوقف کنید و راه‌حل‌ها را نشان دهید",
-        "enter_answer_into_field": "پاسخ خود را در قسمت ورودی وارد کنید!",
-        "answers_submitted": "{{answer_count}} پاسخ ارسال شد",
-        "request_export_results": "درخواست دانلود نتایج",
-        "download_export_results": "نتایج را دانلود کنید",
-        "export_results": "نتایج را صادر کنید"
-    },
-    "password_reset_page": {
-        "reset_password": "رمز عبور را بازنشانی کنید"
-    },
-    "settings_page": {
-        "old_password": "رمز عبور قبلی",
-        "new_password": "رمز عبور جدید",
-        "repeat_password": "رمز عبور را دوباره وارد کنید",
-        "change_password_submit": "رمز عبور را تغییر دهید!",
-        "last_seen": "آخرین بازدید",
-        "check_location": "موقعیت را بررسی کنید",
-        "delete_this_session": "این دوره را حذف کنید",
-        "this_session?": "این دوره؟",
-        "change_avatar": "عکس پروفایل را تغییر دهید",
-        "security_settings": "تنظیمات امنیتی",
-        "add_api_key": "کلید API را اضافه کنید"
-    },
-    "explore_page": {
-        "made_by": "ساخته‌شده توسط",
-        "imported_by": "واردشده توسط"
-    },
-    "search_page": {
-        "at_least_3_characters": "حداقل ۳ حرف وارد کنید...",
-        "nothing_here": "اینجا چیزی وجود ندارد..."
-    },
-    "play_page": {
-        "end_sentence": "تمام! این آزمون بود.",
-        "1st_place": "مقام اول",
-        "2nd_place": "مقام دوم",
-        "3rd place": "مقام سوم",
-        "with_out_of": "با {{correct_questions}} پاسخ درست از {{total_question_count}} سؤال",
-        "final_result_rank": "{{place}}: {{username}} با {{points}} امتیاز",
-        "your_score": "امتیاز شما: {{score}}",
-        "join_description": "در {{url}} وارد شوید و {{pin}} را وارد کنید.",
-        "join_by_entering_code": "با وارد کردن کد زیر وارد شوید",
-        "points_added": "امتیازها اضافه شدند",
-        "your_place": "شما در مقام {{place}} هستید!",
-        "players_waiting": "{{count}} شرکت‌کننده در انتظار است",
-        "players_waiting_plural": "{{count}} شرکت‌کنندگان در انتظار هستند"
-    },
-    "editor_page": {
-        "add_an_answer": "یک پاسخ اضافه کنید",
-        "right_click_to_delete": "برای حذف یک پاسخ، روی آن راست‌کلیک کنید!"
-    },
-    "dashboard": {
-        "search_for_own_quizzes": "آزمون‌های خود را جستجو کنید",
-        "views_n_plays": "بازدیدها و اجراها",
-        "info_analytics": "«Plays» فقط نشان می‌دهد که آزمون چند بار شروع شده است (شما هم در این شمارش شامل هستید)، در حالی که «Views» نشان می‌دهد صفحهٔ «View» چند بار بازدید شده است؛ بنابراین بازدیدهای ربات‌ها (Bots) را نیز شامل می‌شود. بابت این موضوع متأسفم.",
-        "commandpalette_notice": "برای باز کردن فهرست فرمان‌ها (Command Palette)، <kbd>Ctrl</kbd>+<kbd>K</kbd> یا <kbd>Meta</kbd>+<kbd>K</kbd> را فشار دهید",
-        "create_quiz": "یک کوییز جدید ایجاد کنید"
-    },
-    "footer": {
-        "self_ads": "با ❤️ توسط {{mawoka_link}} و با کمک {{others_link}} ساخته شده است.",
-        "more_details_here": "جزئیات بیشتر در اینجا",
-        "donate": "اگر این مطلب را مفید یافتید، لطفاً در صورت امکان {{donate_link}} را در نظر بگیرید."
-    },
-    "error_page": {
-        "404_text": "صفحه‌ای که به دنبال آن بودید، دیگر وجود ندارد یا شاید اصلاً وجود نداشته است. چه کسی می‌داند؟",
-        "unknown_error_text": "این نباید اتفاق می‌افتاد. احتمالاً تقصیر من است، نه شما؛ اما شاید شما یک قدرت جادویی برای خراب کردن چیزها دارید..."
-    },
-    "uploader": {
-        "add_image": "افزودن رسانه",
-        "select_upload_type": "نوع آپلود را انتخاب کنید",
-        "upload_a_video": "ویدیو را آپلود کنید",
-        "upload_video_popup_notice": "پنجرهٔ بازشو باز است؛ برای اطلاعات بیشتر آن را مشاهده کنید",
-        "upload_video": "آپلود ویدیو",
-        "visit_pixabay": "از Pixabay دیدن کنید",
-        "images_by_pixabay": "تصاویر توسط Pixabay ارائه شده‌اند",
-        "search_english_only": "جستجو فقط به زبان انگلیسی کار می‌کند",
-        "next_page": "صفحهٔ بعدی",
-        "previous_page": "صفحهٔ قبلی"
-    },
-    "avatar_settings": {
-        "skin_color": "رنگ پوست",
-        "top_type": "بالا",
-        "hair_color": "رنگ مو",
-        "facial_hair_type": "موی صورت",
-        "facial_hair_color": "رنگ موی صورت",
-        "mouth_type": "دهان",
-        "eyebrow_type": "ابرو",
-        "accessories_type": "عینک",
-        "hat_color": "رنگ کلاه",
-        "clothe_type": "لباس",
-        "clothe_color": "رنگ لباس",
-        "clothe_graphic_type": "گرافیک",
-        "thats_you": "این شما هستید!",
-        "start_over": "از نو شروع کنید",
-        "go_back": "برگشتن"
-    },
-    "results_page": {
-        "no_results_so_far": "تا هنوز هیچ نتیجه‌ای ذخیره نشده است...",
-        "quiz_title": "عنوان آزمون",
-        "date_played": "تاریخ بازی",
-        "player_count": "تعداد شرکت‌کنندگان",
-        "general_overview": {
-            "sentence": "آزمون «{{title}}» که در تاریخ {{date}} انجام شده بود، {{player_count}} شرکت‌کننده داشت و میانگین امتیاز آن {{average_score}} بود."
-        }
-    },
-    "result_page": {
-        "player_name": "نام شرکت‌کننده",
-        "custom_field": "بخش سفارشی",
-        "average_score": "میانگین امتیاز: {{average_score}}",
-        "correct_answer": "{{count}} پاسخ درست",
-        "correct_answer_plural": "{{count}} پاسخ‌های درست",
-        "time_taken": "زمان صرف‌شده",
-        "player_score": "امتیاز شرکت‌کننده",
-        "player_correct_questions": "پاسخ‌های درست"
-    },
-    "controllers": {
-        "add_new_controller": "کنترل‌کنندهٔ جدید اضافه کنید",
-        "player_name": "نام شرکت‌کننده",
-        "first_seen": "اولین مشاهده",
-        "last_seen": "آخرین مشاهده",
-        "controller_name": "نام کنترل‌کننده",
-        "version_overview": "جدیدترین نسخه موجود {{newest_version}} است و نسخهٔ {{current_version}} نصب شده است.",
-        "already_latest_version": "شما هم‌اکنون از آخرین نسخه استفاده می‌کنید",
-        "cancel_update": "لغو به‌روزرسانی!",
-        "update_from_to": "به‌روزرسانی از نسخهٔ {{current_version}} به نسخهٔ {{newest_version}}"
-    },
-    "navbar": {
-        "donate": "کمک مالی"
-    },
-    "security_settings": {
-        "backup_code": "کد پشتیبان",
-        "get_backup_code": "دریافت کد پشتیبان",
-        "activate_2fa": "احراز هویت دومرحله‌ای را فعال کنید",
-        "2fa_activated": "احراز هویت دومرحله‌ای فعال است",
-        "2fa_deactivated": "احراز هویت دومرحله‌ای غیرفعال است",
-        "webauthn": "احراز هویت وب",
-        "webauthn_available": "احراز هویت وب در دسترس است",
-        "webauthn_unavailable": "احراز هویت وب در دسترس نیست",
-        "add_security_key": "کلید امنیتی اضافه کنید",
-        "totp": "رمز عبور یک‌بارمصرف مبتنی بر زمان",
-        "totp_available": "رمز عبور یک‌بارمصرف مبتنی بر زمان در دسترس است",
-        "totp_unavailable": "رمز عبور یک‌بارمصرف مبتنی بر زمان در دسترس نیست",
-        "disable_totp": "رمز عبور یک‌بارمصرف مبتنی بر زمان را غیرفعال کنید",
-        "enable_totp": "رمز عبور یک‌بارمصرف مبتنی بر زمان را فعال کنید",
-        "backup_codes": {
-            "your_backup_code": "کد پشتیبان شما",
-            "save_somewhere_save": "این را در یک جای امن ذخیره کنید!",
-            "download_code": "کد را دانلود کنید"
-        },
-        "totp_setup": {
-            "scan_to_set_up": "برای تنظیم کد، این کد QR را اسکن کنید",
-            "enter_as_secret_if_no_see_code": "اگر نمی‌توانید کد QR را اسکن کنید، این را به‌عنوان کد محرمانه وارد کنید",
-            "totp_setup": "تنظیم رمز عبور یک‌بارمصرف مبتنی بر زمان",
-            "do_not_forget_backup_code": "فراموش نکنید که کد بازیابی خود را ذخیره کنید!"
-        }
-    },
-    "view_quiz_page": {
-        "made_by": "ساخته‌شده توسط",
-        "view_on_kahoot": "مشاهده در نسخهٔ اصلی"
-    },
-    "start_game": {
-        "captcha_message": "اگر فعال باشد، ReCaptcha گوگل در مرورگر شرکت‌کننده بارگذاری می‌شود. فقط در صورتی آن را فعال کنید که واقعاً به آن نیاز دارید، زیرا برای بارگذاری ReCaptcha باید رضایت هر شرکت‌کننده را داشته باشید.",
-        "normal_mode_description": "سؤال و پاسخ فقط در صفحهٔ مدیر نمایش داده می‌شود. بازیکنان فقط دکمه‌های رنگی با نمادهایی خواهند داشت که با نمادهای روی صفحهٔ مدیر مطابقت دارند.",
-        "old_school_mode": "مکتب قدیمی",
-        "old_school_mode_description": "سؤال‌ها و تصاویر هم در صفحهٔ مدیر و هم در صفحهٔ شرکت‌کننده‌گان نمایش داده می‌شوند",
-        "start_game": "بازی را شروع کنید"
-    },
-    "quiztivity": {
-        "editor": {
-            "select_page_type": "نوع صفحه را انتخاب کنید",
-            "move_left": "به چپ منتقل کنید",
-            "move_right": "به راست منتقل کنید",
-            "title_placeholder": "عنوان را اینجا وارد کنید",
-            "add_new": "افزودن جدید",
-            "delete": "حذف",
-            "open_shares_menu": "فهرست اشتراک‌گذاری را باز کنید",
-            "shares": {
-                "add_new_share": "اشتراک‌گذاری جدید اضافه کنید",
-                "expires_on": "در تاریخ {{date}} انقضاء می‌شود",
-                "never_expires": "هرگز انقضاء نمی‌شود"
-            }
-        },
-        "memory": {
-            "editor": {
-                "add_card": "کارت اضافه کنید",
-                "upload_image": "تصویر را آپلود کنید",
-                "add_pair": "جفت اضافه کنید"
-            }
-        },
-        "play": {
-            "memory": {
-                "try_count": "تلاش‌ها: {{try_count}}"
-            }
-        },
-        "share_expired": "اشتراک‌گذاری انقضاء شده است"
-    },
-    "components": {
-        "popover": {
-            "copied_to_clipboard": "در کلیپ‌بورد کاپی شد!"
-        }
-    },
-    "public_user_page": {
-        "joined_on": "در تاریخ {{date}} پیوست",
-        "no_original_quizzes": "این کاربر هیچ آزمون اصلی ندارد",
-        "user_not_found": "کاربر پیدا نشد"
-    },
-    "file_dashboard": {
-        "not_available": "در دسترس نیست",
-        "missing": "مفقود!",
-        "unset": "تنظیم‌نشده",
-        "size": "اندازه: {{size}} مگابایت",
-        "caption": "عنوان: {{caption}}",
-        "filename": "نام فایل: {{filename}}",
-        "uploaded": "آپلود شده: {{date}}",
-        "imported": "وارد شده: {{yes_or_no}}",
-        "edit_details": "جزئیات را ویرایش کنید",
-        "delete_image": "تصویر را حذف کنید",
-        "edit_the_image": "تصویر را ویرایش کنید",
-        "filename_word": "نام فایل",
-        "alt_text": "متن جایگزین",
-        "storage_usage": "شما {{used}} MiB از مجموع {{total}} MiB فضای ذخیره‌سازی خود را استفاده کرده‌اید. این مقدار برابر با {{percent}}٪ از فضای ذخیره‌سازی شما است."
-    },
-    "video_uploader": {
-        "time_elapsed": "زمان سپری‌شده",
-        "time_remaining": "زمان باقی‌مانده"
-    },
-    "downloader": {
-        "select_download_type": "نوع دانلود را انتخاب کنید",
-        "own_format": "فرمت خودتان",
-        "excel_format": "فرمت اکسل",
-        "help": "فرمت اختصاصی (.cqa) شامل تصاویر نیز می‌شود و از تمام انواع سؤال پشتیبانی می‌کند، در حالی که فرمت Excel فقط از سؤال‌های رأی‌گیری و چندگزینه‌ای پشتیبانی می‌کند."
+    "stats": "همین اکنون گزینه {{user_count}} کاربر و {{quiz_count}} آزمون در frogQuiz موجود است.",
+    "see_what_true_and_false": "ببینید، کدام پاسخ‌ها درست یا نادرست بوده‌اند",
+    "see_how_many_true_and_false": "ببینید، چند پاسخ درست یا نادرست بوده‌اند",
+    "create_or_import": "ایجاد یا وارد کردن",
+    "see_all_quizzes": "آزمون‌های خود را ببینید",
+    "teachers_site": "سایت آموزگار",
+    "students_site": "سایت دانش‌آموز",
+    "no_tracking": "بدون ردیابی",
+    "self_hostable": "قابل نصب در سرور شخصی",
+    "german_server": "سرور آلمان",
+    "user_friendly": "کاربرپسند",
+    "completely_free": "کاملاً رایگان",
+    "quiz_results_downloadable": "نتایج آزمون قابل دانلود است",
+    "multilingual": "چندزبانه",
+    "dark_mode": "حالت تاریک",
+    "get_a_quiz": "۱. دریافت یک آزمون",
+    "create_a_quiz_from_scratch": "با استفاده از ویرایشگر، یک آزمون را از صفر بسازید و تصاویر و موارد دیگر را نیز اضافه کنید",
+    "find_or_explore": "آزمون‌هایی را که توسط دیگران ساخته یا وارد شده‌اند، پیدا یا جست‌وجو کنید",
+    "play_quiz": "۲. آزمون را انجام دهید",
+    "select_answer": "پاسخ را انتخاب کنید",
+    "choose_answer_wisely": "پاسخ خود را با دقت انتخاب کنید",
+    "view_results": "مشاهدهٔ نتایج",
+    "check_if_chosen_wisely": "بررسی کنید که آیا درست انتخاب کرده‌اید",
+    "list_winners": "فهرست برندگان",
+    "get_ranking_and_winners": "رتبه‌بندی را دریافت کنید و ببینید چه کسی برنده شده است",
+    "why_frogquiz": "چرا frogQuiz؟",
+    "no_tracking_content": "دیگران شما را ردیابی می‌کنند و این اطلاعات را با اشخاص ثالث شریک می‌سازند، اما frogQuiz چنین کاری را نمی‌کند.",
+    "self_hostable_content": "frogQuiz را می‌توان به‌آسانی و به‌صورت مستقل نگهداری کرد، بنابراین داده‌ها فقط تحت کنترل شما باقی می‌ماند!",
+    "user_friendly_content": "هدف frogQuiz این است که ساده باشد، تا همه بتوانند از آن استفاده کنند.",
+    "completely_free_content": "frogQuiz کاملاً رایگان است (برای کاربر) و هیچ طرح پولی یا انتقال‌های آزاردهنده به صفحهٔ ارتقا ندارد. کمک‌های مالی شما بسیار قدردانی می‌شود.",
+    "quiz_results_downloadable_content": "نتایج آزمون‌ها را می‌توان به‌آسانی به یک فایل Excel ارائه کرد. (نمی‌دانستم که دیگران نمی‌توانند این کار را انجام دهند.)",
+    "multilingual_content": "frogQuiz به زبان‌های انگلیسی، فرانسوی، آلمانی، ایتالیایی، نروژی بوکمال، ترکی و همچنان به‌صورت جزئی به زبان‌های اندونیزیایی و کاتالانی در دسترس است.",
+    "dark_mode_content": "یکی از مهم‌ترین ویژگی‌هایی که یک وب‌سایت می‌تواند داشته باشد!",
+    "german_server_content": "سرورهای frogQuiz در آلمان قرار دارند و توسط netcup میزبانی می‌شوند.",
+    "download_quizzes": "دانلود آزمون‌ها",
+    "download_quizzes_content": "آزمون‌ها را می‌توان به‌صورت یک فایل واحد دانلود کرد و در هر زمان وارد داده‌ها نمود. این امکان همچنان به شما اجازه می‌دهد که آزمون‌های خود را به نمونه‌های دیگر frogQuiz منتقل کنید.",
+    "community_driven": "جامعه‌محور",
+    "community_driven_content": "frogQuiz برای تأمین مالی، آزمایش ایده‌ها، پیشنهاد ویژگی‌های جدید، ترجمه‌ها و موارد دیگر به جامعهٔ کاربران خود وابسته است! شما نیز می‌توانید بخشی از جامعهٔ frogQuiz باشید!",
+    "how_does_frogquiz_work": "frogQuiz اصلاً چگونه کار می‌کند؟",
+    "no_player_limit": "محدودیت در تعداد شرکت‌کنندگان وجود ندارد",
+    "no_player_limit_content": "Class Quiz محدودیت مصنوعی برای تعداد شرکت‌کنندگان ندارد. از نظر تئوری، بیش از ۱۰۰۰ شرکت‌کننده می‌توانند در یک آزمون هم‌زمان اشتراک کنند، اما این سیستم برای حداکثر ۳۰۰ شرکت‌کننده در هر آزمون آزمایش شده است.",
+    "import_quiz_from_kahoot_and_edit": "آزمون‌ها را از Kahoot! وارد کنید و آن‌ها را در frogQuiz ویرایش نمایید"
+  },
+  "overview_page": {
+    "created_at": "ایجاد شده در",
+    "question_count": "تعداد سوالات",
+    "no_quizzes": "برای شروع، روی دکمهٔ «ایجاد» کلیک کنید، یا یک آزمون را وارد نمایید."
+  },
+  "edit_page": {
+    "success_update_title": "آزمون به‌روزرسانی شد.",
+    "success_update_body": "Nobody will expect the inquizition."
+  },
+  "create_page": {
+    "success": {
+      "title": "آزمون ایجاد شد.",
+      "body": "بازی‌ها شروع شود."
     }
+  },
+  "register_page": {
+    "greeting": "خوشبختم که با شما آشنا شدم!",
+    "create_account": "ایجاد حساب کاربری",
+    "forgot_password?": "رمز عبور را فراموش کرده‌اید؟",
+    "already_have_account?": "از قبل حساب دارید؟"
+  },
+  "login_page": {
+    "welcome_back": "دوباره خوش آمدید.",
+    "login_or_create_account": "ورود به حساب یا ایجاد حساب کاربری",
+    "already_have_account": "حساب ندارید؟",
+    "email_or_username": "ایمیل یا نام کاربری",
+    "modal": {
+      "success": {
+        "success_check_mail": "وارد شدید. صندوق ایمیل خود را بررسی کنید.",
+        "success": "وارد شدید.",
+        "description": {
+          "success_check_mail": "لطفاً صندوق ایمیل خود را بررسی کنید. یک ایمیل حاوی لینکی دریافت خواهید کرد که با کلیک روی آن می‌توانید وارد شوید.",
+          "success": "وارد شدید."
+        }
+      },
+      "error": {
+        "wrong_creds": "ایمیل آدرس یا رمز عبور نادرست است.",
+        "unexpected": "خطای غیرمنتظره!",
+        "description": {
+          "wrong_creds": "لطفاً مطمئن شوید که رمز عبور و آدرس ایمیل شما درست است.",
+          "unexpected": "همان خطای غیرمنتظرهٔ قدیمی رخ داد!"
+        }
+      }
+    },
+    "use_backup_code": "استفاده از کُد پشتیبان"
+  },
+  "words": {
+    "question": "سوال",
+    "answer": "جواب",
+    "stats": "آمار",
+    "features": "ویژگی‌ها",
+    "login": "ورود",
+    "email": "ایمیل آدرس",
+    "username": "نام کاربری",
+    "password": "رمز عبور",
+    "play": "شروع",
+    "edit": "ویرایش",
+    "delete": "حذف",
+    "public": "عمومی",
+    "start": "آغاز",
+    "create": "ایجاد",
+    "import": "وارد کردن",
+    "logout": "خروج از حساب",
+    "title": "عنوان",
+    "url": "آدرس اینترنتی",
+    "submit": "ارسال",
+    "connect": "اتصال",
+    "pin": "پین",
+    "kick": "اخراج کردن",
+    "register": "ثبت‌نام",
+    "docs": "اسناد",
+    "close": "بستن",
+    "save": "ذخیره کردن",
+    "description": "توضیحات",
+    "image": "تصویر",
+    "settings": "تنظیمات",
+    "repeat_password": "تکرار رمز عبور",
+    "overview": "نمای کلی",
+    "report": "گزارش",
+    "explore": "بررسی",
+    "search": "جستجو",
+    "screenshot": "اسکرین‌شات",
+    "screenshot_plural": "اسکرین‌شات‌ها",
+    "browser": "مرورگر",
+    "view": "مشاهده",
+    "view_plural": "مشاهدات",
+    "correct": "درست",
+    "result": "نتیجه",
+    "result_plural": "نتایج",
+    "count": "شمارش",
+    "range": "محدوده",
+    "multiple_choice": "چندگزینه‌ای",
+    "private": "خصوصی",
+    "dashboard": "داشبورد",
+    "question_plural": "سوال‌ها",
+    "game_pin": "پین بازی",
+    "other": "سایر",
+    "other_plural": "دیگران",
+    "donating": "کمک مالی کردن",
+    "find": "پیدا کردن",
+    "practice": "تمرین",
+    "error": "خطا",
+    "voting": "رای‌گیری",
+    "download": "دانلود",
+    "continue": "ادامه",
+    "backup_code": "کد پشتیبان",
+    "totp": "رمز یک‌بار مصرف مبتنی بر زمان",
+    "text": "متن",
+    "order": "سفارش",
+    "results": "نتایج",
+    "note": "یادداشت",
+    "player_plural": "شرکت‌کننده‌گان",
+    "version": "نسخه",
+    "never": "هرگز",
+    "unknown": "نامعلوم",
+    "update": "به‌روزرسانی",
+    "score": "امتیاز",
+    "slide": "سلاید",
+    "name": "نام",
+    "point": "امتیاز",
+    "point_plural": "امتیازات",
+    "back": "بازگشت",
+    "finish": "پایان",
+    "normal": "عادی",
+    "selected": "انتخاب‌شده",
+    "select": "انتخاب کردن",
+    "quiz": "آزمون",
+    "quiztivity": "کوییزاکتیویتی",
+    "next": "بعدی",
+    "check_choice": "بررسی انتخاب",
+    "video": "ویدیو",
+    "library": "کتابخانه",
+    "progress": "پیشرفت",
+    "speed": "سرعت",
+    "upload": "آپلود",
+    "files_library": "کتابخانهٔ فایل‌ها",
+    "answer_plural": "پاسخ‌ها",
+    "yes": "بله",
+    "no": "خیر",
+    "analytics": "تحلیل‌ها",
+    "rating": "امتیازدهی",
+    "like": "پسندیدن",
+    "like_plural": "پسندها",
+    "dislike": "نپسندیدن",
+    "dislike_plural": "نپسندها",
+    "play_plural": "پخش‌ها",
+    "info": "معلومات",
+    "player": "شرکت‌کننده",
+    "answer_locked_in": "Answer locked in",
+    "waiting_for_results": "Waiting for everyone else…"
+  },
+  "editor": {
+    "time_in_seconds": "زمان به ثانیه",
+    "right_or_true?": "راست؟",
+    "add_new_answer": "افزودن پاسخ جدید",
+    "add_new_question": "افزودن پرسش جدید",
+    "delete_question": "حذف پرسش",
+    "delete_answer": "حذف پاسخ",
+    "not_all_links_imgur_links": "همهٔ لینک‌ها لینک‌های ایمگور نیستند!",
+    "no_title": "بدون عنوان...",
+    "empty": "خالی...",
+    "bg_image": "تصویر پس‌زمینه",
+    "slide": {
+      "headline": "عنوان اصلی",
+      "headline_description": "متن پررنگ برای عنوان‌ها",
+      "text": "متن",
+      "text_description": "متن کوچک‌تر و طولانی‌تر",
+      "rectangle": "مستطیل",
+      "rectangle_description": "فقط یک مستطیل"
+    },
+    "abcd_description": "فقط یک پاسخ می‌تواند انتخاب شود",
+    "voting_description": "پاسخ‌ها هیچ امتیازی ندارند",
+    "check_choice_description": "برای کسب امتیاز، باید تمام پاسخ‌های درست انتخاب شوند",
+    "order_description": "پاسخ‌ها را می‌توان به ترتیب درست قرار داد",
+    "text_description": "شرکت‌کننده‌گان می‌توانند متن وارد کنند",
+    "range_description": "می‌توان یک محدودهٔ عددی را با استفاده از سلایدر انتخاب کرد",
+    "need_more_help": "به کمک بیشتری نیاز دارید؟",
+    "visit_docs": "مستندات را ببینید.",
+    "enter_answer": "یک پاسخ وارد کنید",
+    "enable_reorder": "فعال‌سازی حالت ترتیب‌دهی",
+    "disable_reorder": "غیرفعال‌سازی حالت ترتیب‌دهی",
+    "advanced_settings": "تنظیمات پیشرفته",
+    "hide_question_results": "نتایج سؤال پنهان شود؟"
+  },
+  "import_page": {
+    "need_help": "کمک نیاز دارید؟",
+    "visit_docs": "به مستندات مراجعه کنید",
+    "a_kahoot_quiz": "یک آزمون Kahoot!",
+    "url_should_look_like_this": "آدرس اینترنتی باید مانند این باشد: https://create.kahoot.it/details/...",
+    "side_import_kahoot": "در این بخش می‌توانید آزمون‌هایی را وارد کنید که در Kahoot! موجود هستند.",
+    "frogquiz_quiz": "یک آزمون frogQuiz",
+    "upload_file_ending": "فایل با پسوند ‎.cqa یا ‎.xlsx را بارگذاری کنید",
+    "this_side_frogquiz": "در این بخش می‌توانید آزمون‌هایی را وارد کنید که از frogQuiz صادر شده‌اند.",
+    "this_side_frogquiz_excel": "شما همچنین می‌توانید فایل‌های اکسل را بارگذاری کنید، اگر قالب زیر را تکمیل کرده باشید. اگر آزمونی با همین عنوان از قبل موجود باشد، پرسش‌ها به همان آزمون اضافه خواهند شد.",
+    "download_template_here": "قالب را دانلود کنید"
+  },
+  "admin_page": {
+    "already_registered_as_admin": "برای این بازی قبلاً یک مدیر ثبت شده است.",
+    "start_game": "بازی را شروع کنید",
+    "time_left": "زمان باقی‌مانده",
+    "get_results": "نتایج را دریافت کنید",
+    "get_results_and_stop_time": "نتایج را دریافت کنید و زمان را متوقف کنید",
+    "get_final_results": "نتایج نهایی را دریافت کنید",
+    "show_next_question": "سؤال بعدی را نشان دهید",
+    "start_by_showing_first_question": "با نشان دادن سؤال اول شروع کنید.",
+    "no_answers": "بدون پاسخ‌ها!",
+    "stop_time": "زمان را متوقف کنید",
+    "save_results": "نتایج را ذخیره کنید",
+    "next_question": "سؤال بعدی ({{question}})",
+    "show_results": "نتایج را نشان دهید",
+    "stop_time_and_solutions": "زمان را متوقف کنید و راه‌حل‌ها را نشان دهید",
+    "enter_answer_into_field": "پاسخ خود را در قسمت ورودی وارد کنید!",
+    "answers_submitted": "{{answer_count}} پاسخ ارسال شد",
+    "request_export_results": "درخواست دانلود نتایج",
+    "download_export_results": "نتایج را دانلود کنید",
+    "export_results": "نتایج را صادر کنید"
+  },
+  "password_reset_page": {
+    "reset_password": "رمز عبور را بازنشانی کنید"
+  },
+  "settings_page": {
+    "old_password": "رمز عبور قبلی",
+    "new_password": "رمز عبور جدید",
+    "repeat_password": "رمز عبور را دوباره وارد کنید",
+    "change_password_submit": "رمز عبور را تغییر دهید!",
+    "last_seen": "آخرین بازدید",
+    "check_location": "موقعیت را بررسی کنید",
+    "delete_this_session": "این دوره را حذف کنید",
+    "this_session?": "این دوره؟",
+    "change_avatar": "عکس پروفایل را تغییر دهید",
+    "security_settings": "تنظیمات امنیتی",
+    "add_api_key": "کلید API را اضافه کنید"
+  },
+  "explore_page": {
+    "made_by": "ساخته‌شده توسط",
+    "imported_by": "واردشده توسط"
+  },
+  "search_page": {
+    "at_least_3_characters": "حداقل ۳ حرف وارد کنید...",
+    "nothing_here": "اینجا چیزی وجود ندارد..."
+  },
+  "play_page": {
+    "end_sentence": "تمام! این آزمون بود.",
+    "1st_place": "مقام اول",
+    "2nd_place": "مقام دوم",
+    "3rd place": "مقام سوم",
+    "with_out_of": "با {{correct_questions}} پاسخ درست از {{total_question_count}} سؤال",
+    "final_result_rank": "{{place}}: {{username}} با {{points}} امتیاز",
+    "your_score": "امتیاز شما: {{score}}",
+    "join_description": "در {{url}} وارد شوید و {{pin}} را وارد کنید.",
+    "join_by_entering_code": "با وارد کردن کد زیر وارد شوید",
+    "points_added": "امتیازها اضافه شدند",
+    "your_place": "شما در مقام {{place}} هستید!",
+    "players_waiting": "{{count}} شرکت‌کننده در انتظار است",
+    "players_waiting_plural": "{{count}} شرکت‌کنندگان در انتظار هستند"
+  },
+  "editor_page": {
+    "add_an_answer": "یک پاسخ اضافه کنید",
+    "right_click_to_delete": "برای حذف یک پاسخ، روی آن راست‌کلیک کنید!"
+  },
+  "dashboard": {
+    "search_for_own_quizzes": "آزمون‌های خود را جستجو کنید",
+    "views_n_plays": "بازدیدها و اجراها",
+    "info_analytics": "«Plays» فقط نشان می‌دهد که آزمون چند بار شروع شده است (شما هم در این شمارش شامل هستید)، در حالی که «Views» نشان می‌دهد صفحهٔ «View» چند بار بازدید شده است؛ بنابراین بازدیدهای ربات‌ها (Bots) را نیز شامل می‌شود. بابت این موضوع متأسفم.",
+    "commandpalette_notice": "برای باز کردن فهرست فرمان‌ها (Command Palette)، <kbd>Ctrl</kbd>+<kbd>K</kbd> یا <kbd>Meta</kbd>+<kbd>K</kbd> را فشار دهید",
+    "create_quiz": "یک کوییز جدید ایجاد کنید"
+  },
+  "footer": {
+    "self_ads": "با ❤️ توسط {{mawoka_link}} و با کمک {{others_link}} ساخته شده است.",
+    "more_details_here": "جزئیات بیشتر در اینجا",
+    "donate": "اگر این مطلب را مفید یافتید، لطفاً در صورت امکان {{donate_link}} را در نظر بگیرید."
+  },
+  "error_page": {
+    "404_text": "صفحه‌ای که به دنبال آن بودید، دیگر وجود ندارد یا شاید اصلاً وجود نداشته است. چه کسی می‌داند؟",
+    "unknown_error_text": "این نباید اتفاق می‌افتاد. احتمالاً تقصیر من است، نه شما؛ اما شاید شما یک قدرت جادویی برای خراب کردن چیزها دارید..."
+  },
+  "uploader": {
+    "add_image": "افزودن رسانه",
+    "select_upload_type": "نوع آپلود را انتخاب کنید",
+    "upload_a_video": "ویدیو را آپلود کنید",
+    "upload_video_popup_notice": "پنجرهٔ بازشو باز است؛ برای اطلاعات بیشتر آن را مشاهده کنید",
+    "upload_video": "آپلود ویدیو",
+    "visit_pixabay": "از Pixabay دیدن کنید",
+    "images_by_pixabay": "تصاویر توسط Pixabay ارائه شده‌اند",
+    "search_english_only": "جستجو فقط به زبان انگلیسی کار می‌کند",
+    "next_page": "صفحهٔ بعدی",
+    "previous_page": "صفحهٔ قبلی"
+  },
+  "avatar_settings": {
+    "skin_color": "رنگ پوست",
+    "top_type": "بالا",
+    "hair_color": "رنگ مو",
+    "facial_hair_type": "موی صورت",
+    "facial_hair_color": "رنگ موی صورت",
+    "mouth_type": "دهان",
+    "eyebrow_type": "ابرو",
+    "accessories_type": "عینک",
+    "hat_color": "رنگ کلاه",
+    "clothe_type": "لباس",
+    "clothe_color": "رنگ لباس",
+    "clothe_graphic_type": "گرافیک",
+    "thats_you": "این شما هستید!",
+    "start_over": "از نو شروع کنید",
+    "go_back": "برگشتن"
+  },
+  "results_page": {
+    "no_results_so_far": "تا هنوز هیچ نتیجه‌ای ذخیره نشده است...",
+    "quiz_title": "عنوان آزمون",
+    "date_played": "تاریخ بازی",
+    "player_count": "تعداد شرکت‌کنندگان",
+    "general_overview": {
+      "sentence": "آزمون «{{title}}» که در تاریخ {{date}} انجام شده بود، {{player_count}} شرکت‌کننده داشت و میانگین امتیاز آن {{average_score}} بود."
+    }
+  },
+  "result_page": {
+    "player_name": "نام شرکت‌کننده",
+    "custom_field": "بخش سفارشی",
+    "average_score": "میانگین امتیاز: {{average_score}}",
+    "correct_answer": "{{count}} پاسخ درست",
+    "correct_answer_plural": "{{count}} پاسخ‌های درست",
+    "time_taken": "زمان صرف‌شده",
+    "player_score": "امتیاز شرکت‌کننده",
+    "player_correct_questions": "پاسخ‌های درست"
+  },
+  "controllers": {
+    "add_new_controller": "کنترل‌کنندهٔ جدید اضافه کنید",
+    "player_name": "نام شرکت‌کننده",
+    "first_seen": "اولین مشاهده",
+    "last_seen": "آخرین مشاهده",
+    "controller_name": "نام کنترل‌کننده",
+    "version_overview": "جدیدترین نسخه موجود {{newest_version}} است و نسخهٔ {{current_version}} نصب شده است.",
+    "already_latest_version": "شما هم‌اکنون از آخرین نسخه استفاده می‌کنید",
+    "cancel_update": "لغو به‌روزرسانی!",
+    "update_from_to": "به‌روزرسانی از نسخهٔ {{current_version}} به نسخهٔ {{newest_version}}"
+  },
+  "navbar": {
+    "donate": "کمک مالی"
+  },
+  "security_settings": {
+    "backup_code": "کد پشتیبان",
+    "get_backup_code": "دریافت کد پشتیبان",
+    "activate_2fa": "احراز هویت دومرحله‌ای را فعال کنید",
+    "2fa_activated": "احراز هویت دومرحله‌ای فعال است",
+    "2fa_deactivated": "احراز هویت دومرحله‌ای غیرفعال است",
+    "webauthn": "احراز هویت وب",
+    "webauthn_available": "احراز هویت وب در دسترس است",
+    "webauthn_unavailable": "احراز هویت وب در دسترس نیست",
+    "add_security_key": "کلید امنیتی اضافه کنید",
+    "totp": "رمز عبور یک‌بارمصرف مبتنی بر زمان",
+    "totp_available": "رمز عبور یک‌بارمصرف مبتنی بر زمان در دسترس است",
+    "totp_unavailable": "رمز عبور یک‌بارمصرف مبتنی بر زمان در دسترس نیست",
+    "disable_totp": "رمز عبور یک‌بارمصرف مبتنی بر زمان را غیرفعال کنید",
+    "enable_totp": "رمز عبور یک‌بارمصرف مبتنی بر زمان را فعال کنید",
+    "backup_codes": {
+      "your_backup_code": "کد پشتیبان شما",
+      "save_somewhere_save": "این را در یک جای امن ذخیره کنید!",
+      "download_code": "کد را دانلود کنید"
+    },
+    "totp_setup": {
+      "scan_to_set_up": "برای تنظیم کد، این کد QR را اسکن کنید",
+      "enter_as_secret_if_no_see_code": "اگر نمی‌توانید کد QR را اسکن کنید، این را به‌عنوان کد محرمانه وارد کنید",
+      "totp_setup": "تنظیم رمز عبور یک‌بارمصرف مبتنی بر زمان",
+      "do_not_forget_backup_code": "فراموش نکنید که کد بازیابی خود را ذخیره کنید!"
+    }
+  },
+  "view_quiz_page": {
+    "made_by": "ساخته‌شده توسط",
+    "view_on_kahoot": "مشاهده در نسخهٔ اصلی"
+  },
+  "start_game": {
+    "captcha_message": "اگر فعال باشد، ReCaptcha گوگل در مرورگر شرکت‌کننده بارگذاری می‌شود. فقط در صورتی آن را فعال کنید که واقعاً به آن نیاز دارید، زیرا برای بارگذاری ReCaptcha باید رضایت هر شرکت‌کننده را داشته باشید.",
+    "normal_mode_description": "سؤال و پاسخ فقط در صفحهٔ مدیر نمایش داده می‌شود. بازیکنان فقط دکمه‌های رنگی با نمادهایی خواهند داشت که با نمادهای روی صفحهٔ مدیر مطابقت دارند.",
+    "old_school_mode": "مکتب قدیمی",
+    "old_school_mode_description": "سؤال‌ها و تصاویر هم در صفحهٔ مدیر و هم در صفحهٔ شرکت‌کننده‌گان نمایش داده می‌شوند",
+    "start_game": "بازی را شروع کنید"
+  },
+  "quiztivity": {
+    "editor": {
+      "select_page_type": "نوع صفحه را انتخاب کنید",
+      "move_left": "به چپ منتقل کنید",
+      "move_right": "به راست منتقل کنید",
+      "title_placeholder": "عنوان را اینجا وارد کنید",
+      "add_new": "افزودن جدید",
+      "delete": "حذف",
+      "open_shares_menu": "فهرست اشتراک‌گذاری را باز کنید",
+      "shares": {
+        "add_new_share": "اشتراک‌گذاری جدید اضافه کنید",
+        "expires_on": "در تاریخ {{date}} انقضاء می‌شود",
+        "never_expires": "هرگز انقضاء نمی‌شود"
+      }
+    },
+    "memory": {
+      "editor": {
+        "add_card": "کارت اضافه کنید",
+        "upload_image": "تصویر را آپلود کنید",
+        "add_pair": "جفت اضافه کنید"
+      }
+    },
+    "play": {
+      "memory": {
+        "try_count": "تلاش‌ها: {{try_count}}"
+      }
+    },
+    "share_expired": "اشتراک‌گذاری انقضاء شده است"
+  },
+  "components": {
+    "popover": {
+      "copied_to_clipboard": "در کلیپ‌بورد کاپی شد!"
+    }
+  },
+  "public_user_page": {
+    "joined_on": "در تاریخ {{date}} پیوست",
+    "no_original_quizzes": "این کاربر هیچ آزمون اصلی ندارد",
+    "user_not_found": "کاربر پیدا نشد"
+  },
+  "file_dashboard": {
+    "not_available": "در دسترس نیست",
+    "missing": "مفقود!",
+    "unset": "تنظیم‌نشده",
+    "size": "اندازه: {{size}} مگابایت",
+    "caption": "عنوان: {{caption}}",
+    "filename": "نام فایل: {{filename}}",
+    "uploaded": "آپلود شده: {{date}}",
+    "imported": "وارد شده: {{yes_or_no}}",
+    "edit_details": "جزئیات را ویرایش کنید",
+    "delete_image": "تصویر را حذف کنید",
+    "edit_the_image": "تصویر را ویرایش کنید",
+    "filename_word": "نام فایل",
+    "alt_text": "متن جایگزین",
+    "storage_usage": "شما {{used}} MiB از مجموع {{total}} MiB فضای ذخیره‌سازی خود را استفاده کرده‌اید. این مقدار برابر با {{percent}}٪ از فضای ذخیره‌سازی شما است."
+  },
+  "video_uploader": {
+    "time_elapsed": "زمان سپری‌شده",
+    "time_remaining": "زمان باقی‌مانده"
+  },
+  "downloader": {
+    "select_download_type": "نوع دانلود را انتخاب کنید",
+    "own_format": "فرمت خودتان",
+    "excel_format": "فرمت اکسل",
+    "help": "فرمت اختصاصی (.cqa) شامل تصاویر نیز می‌شود و از تمام انواع سؤال پشتیبانی می‌کند، در حالی که فرمت Excel فقط از سؤال‌های رأی‌گیری و چندگزینه‌ای پشتیبانی می‌کند."
+  }
 }

@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
+	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { socket } from './socket';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import Spinner from '$lib/Spinner.svelte';
@@ -15,7 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
 
 	const { t } = getLocalization();
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const default_colors = ANSWER_COLORS;
 
 	let final_results_clicked = $state(false);
 	let timer_interval: NodeJS.Timeout;
@@ -89,19 +90,20 @@ SPDX-License-Identifier: MPL-2.0
 {/if}
 {#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
 	<span
-		class="fixed top-0 bg-red-500 h-8 transition-all"
+		class="fixed top-0 left-0 h-1.5 rounded-r-full bg-destructive/90 transition-[width] duration-1000 ease-linear"
 		class:mt-10={game_state.control_visible}
+		role="progressbar"
+		aria-label="Time remaining"
+		aria-valuemin="0"
+		aria-valuemax={parseInt(game_state.quiz_data.questions[game_state.selected_question].time)}
+		aria-valuenow={parseInt(game_state.timer_res)}
 		style="width: {(100 /
 			parseInt(game_state.quiz_data.questions[game_state.selected_question].time)) *
 			parseInt(game_state.timer_res)}vw"
 	></span>
 {/if}
 
-<div
-	class="w-full h-full"
-	class:pt-28={game_state.control_visible}
-	class:pt-12={!game_state.control_visible}
->
+<div class="fq-stage">
 	{#if game_state.timer_res !== undefined && !final_results_clicked && !game_state.question_results}
 		<!-- Question is shown -->
 		{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}

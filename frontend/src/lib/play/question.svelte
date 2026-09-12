@@ -6,11 +6,12 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
+	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { socket } from '$lib/socket';
 	import Spinner from '../Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { kahoot_icons } from './kahoot_mode_assets/kahoot_icons';
+	import AnswerShape from './kahoot_mode_assets/AnswerShape.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { flip } from 'svelte/animate';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
@@ -140,7 +141,7 @@ SPDX-License-Identifier: MPL-2.0
 			return '100';
 		}
 	};
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const default_colors = ANSWER_COLORS;
 </script>
 
 <div class="h-screen w-screen">
@@ -174,25 +175,48 @@ SPDX-License-Identifier: MPL-2.0
 					<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 				</div>
 
-				<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-2 w-full p-4 h-full">
+				<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-3 w-full p-4 h-full">
 					{#each question.answers as answer, i}
+						{@const picked = selected_answer === answer.answer}
+						{@const waiting = selected_answer !== undefined && !picked}
 						<button
-							class="rounded-lg h-full flex align-middle justify-center disabled:opacity-60 p-3 border-2 border-black"
-							style="background-color: {answer.color ??
-								default_colors[i]}; color: {get_foreground_color(
+							class="answer-tile group relative overflow-hidden rounded-2xl h-full
+								flex items-center justify-center
+								transition-[transform,opacity,filter] duration-200 ease-out
+								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95
+								focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80
+								not-disabled:active:scale-[0.96] not-disabled:hover:scale-[1.02]"
+							class:is-picked={picked}
+							class:is-waiting={waiting}
+							style="background-color: {answer.color ?? default_colors[i]}; color: {get_foreground_color(
 								answer.color ?? default_colors[i]
-							)}"
+							)}; animation-delay: {i * 70}ms"
 							disabled={selected_answer !== undefined}
+							aria-label={answer.answer}
+							aria-pressed={picked}
 							onclick={() => selectAnswer(answer.answer)}
 						>
+							<!-- Gloss and floor shading give the tile a pressable body rather
+							     than a flat rectangle. Purely decorative. -->
+							<span
+								aria-hidden="true"
+								class="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-black/15"
+							></span>
 							{#if game_mode === 'kahoot'}
-								<img
-									class="h-2/3 inline-block m-auto"
-									alt="Icon"
-									src={kahoot_icons[i]}
+								<AnswerShape
+									index={i}
+									class="relative h-1/2 max-h-24 w-auto drop-shadow-sm transition-transform duration-200 group-active:scale-90"
 								/>
 							{:else}
-								<p class="m-auto">{answer.answer}</p>
+								<p class="relative m-auto text-lg font-semibold px-3 text-balance">
+									{answer.answer}
+								</p>
+							{/if}
+							{#if picked}
+								<span
+									aria-hidden="true"
+									class="absolute inset-0 ring-4 ring-inset ring-white rounded-2xl motion-safe:animate-in motion-safe:zoom-in-95"
+								></span>
 							{/if}
 						</button>
 					{/each}
@@ -362,5 +386,90 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			{/await}
 		{/if}
+	{:else if selected_answer !== undefined}
+		<!-- Time is up (or everyone has answered) but the results have not arrived
+		     yet. Without this the player's screen went completely blank, giving no
+		     confirmation that their answer was even registered. -->
+		<div class="flex h-full w-full items-center justify-center p-6">
+			<div
+				class="flex flex-col items-center gap-4 text-center motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
+			>
+				<span
+					class="flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5 ring-1 ring-border"
+				>
+					<svg
+						class="h-8 w-8 text-foreground/70"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.5"
+						aria-hidden="true"
+					>
+						<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</span>
+				<div class="space-y-1">
+					<p class="text-xl font-semibold tracking-tight">{$t('words.answer_locked_in')}</p>
+					<p class="text-sm text-muted-foreground">{$t('words.waiting_for_results')}</p>
+				</div>
+				<span class="flex gap-1.5" aria-hidden="true">
+					{#each [0, 1, 2] as d}
+						<span
+							class="waiting-dot h-2 w-2 rounded-full bg-foreground/30"
+							style="animation-delay: {d * 160}ms"
+						></span>
+					{/each}
+				</span>
+			</div>
+		</div>
 	{/if}
 </div>
+
+<style>
+	.answer-tile {
+		box-shadow:
+			0 10px 20px -8px rgb(0 0 0 / 0.35),
+			inset 0 -4px 0 0 rgb(0 0 0 / 0.18);
+	}
+
+	.waiting-dot {
+		animation: waiting-pulse 1.1s ease-in-out infinite;
+	}
+
+	@keyframes waiting-pulse {
+		0%,
+		100% {
+			opacity: 0.25;
+			transform: translateY(0);
+		}
+		50% {
+			opacity: 0.9;
+			transform: translateY(-3px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.waiting-dot {
+			animation: none;
+		}
+	}
+
+	.answer-tile:disabled {
+		cursor: default;
+	}
+
+	/* The chosen tile stays bright and lifts; the rest recede so a glance at the
+	   phone shows what you picked without reading anything. */
+	.answer-tile.is-picked {
+		transform: scale(1.03);
+		box-shadow:
+			0 16px 32px -10px rgb(0 0 0 / 0.45),
+			inset 0 -4px 0 0 rgb(0 0 0 / 0.18);
+	}
+
+	.answer-tile.is-waiting {
+		opacity: 0.45;
+		filter: saturate(0.5);
+		transform: scale(0.97);
+	}
+</style>

@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { run } from 'svelte/legacy';
+	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 
 	import type { EditorData } from '../quiz_types';
 	import { fade } from 'svelte/transition';
@@ -16,7 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const default_colors = ANSWER_COLORS;
 	interface Props {
 		selected_question: number;
 		data: EditorData;

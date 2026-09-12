@@ -8,14 +8,15 @@ SPDX-License-Identifier: MPL-2.0
 	// import AudioPlayer from '$lib/play/audio_player.svelte';
 	import ControllerCodeDisplay from '$lib/components/controller/code.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import GrayButton from '$lib/components/buttons/gray.svelte';
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
+	import { Button } from '$lib/components/ui/button';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
-	import type { GameState } from '$lib/play/admin/game_state';
+	import type { IGameState } from '$lib/play/admin/game_state';
 
 	interface Props {
 		game_pin: string;
-		game_state: GameState;
+		game_state: IGameState;
 		socket_game_controls: SocketGameControls;
 		cqc_code: string;
 	}
@@ -35,11 +36,13 @@ SPDX-License-Identifier: MPL-2.0
 	}
 </script>
 
-<div class="w-full h-full">
-	<div class="grid grid-cols-3 pt-12">
-		<!--mt-12 -->
-		<div class="flex justify-center">
-			<p class="m-auto text-2xl">
+<div class="fq-stage">
+	<!-- The join details are the whole point of this screen, so they get the
+	     centre and the largest type rather than being split across three
+	     unaligned columns. -->
+	<div class="flex flex-col items-center gap-8 md:flex-row md:items-center md:gap-12">
+		<div class="flex flex-col items-center gap-3 md:items-start">
+			<p class="text-lg text-muted-foreground md:text-xl">
 				{$t('play_page.join_description', {
 					url:
 						window.location.host === 'frogquiz.xyz'
@@ -48,76 +51,76 @@ SPDX-License-Identifier: MPL-2.0
 					pin: game_pin
 				})}
 			</p>
+			<p class="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+				{$t('words.pin')}
+			</p>
+			<p
+				class="select-all font-mono text-6xl font-bold leading-none tracking-[0.12em] tabular-nums md:text-8xl"
+			>
+				{game_pin}
+			</p>
 		</div>
-		<img
+
+		<button
+			type="button"
 			onclick={() => (fullscreen_open = true)}
-			alt="QR code to join the game"
-			src="/api/v1/utils/qr/{game_pin}"
-			class="block mx-auto w-1/2 dark:bg-white shadow-2xl rounded-sm hover:cursor-pointer"
-		/>
-		{#if cqc_code}
-			<div class="m-auto">
-				<div class="flex justify-center my-4">
-					<p class="m-auto text-2xl">
-						{#if game_state.players.length <= 1}
-							{$t('play_page.players_waiting', {
-								count: game_state.players.length ?? 0
-							})}
-						{:else}
-							{$t('play_page.players_waiting_plural', {
-								count: game_state.players.length ?? 0
-							})}
-						{/if}
-					</p>
-				</div>
-				<div class="flex-col flex justify-center">
-					<p class="mx-auto">{$t('play_page.join_by_entering_code')}</p>
-					<ControllerCodeDisplay code={cqc_code} />
-				</div>
-			</div>
-		{:else}
-			<div class="flex justify-center">
-				<p class="m-auto text-2xl">
-					{#if game_state.players.length <= 1}
-						{$t('play_page.players_waiting', {
-							count: game_state.players.length ?? 0
-						})}
-					{:else}
-						{$t('play_page.players_waiting_plural', {
-							count: game_state.players.length ?? 0
-						})}
-					{/if}
-				</p>
-			</div>
-		{/if}
+			aria-label={$t('play_page.join_by_entering_code')}
+			class="rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+		>
+			<img
+				alt="QR code to join the game"
+				src="/api/v1/utils/qr/{game_pin}"
+				class="size-40 md:size-56"
+			/>
+		</button>
 	</div>
-	<p class="text-3xl text-center">
-		{$t('words.pin')}: <span class="select-all">{game_pin}</span>
-	</p>
-	<div class="flex justify-center w-full mt-4">
-		<div>
-			<GrayButton
-				disabled={game_state.players.length < 1}
-				onclick={() => {
-					socket_game_controls.start_game();
-				}}
-				>{$t('admin_page.start_game')}
-			</GrayButton>
+
+	{#if cqc_code}
+		<div class="flex flex-col items-center gap-2">
+			<p class="text-muted-foreground">{$t('play_page.join_by_entering_code')}</p>
+			<ControllerCodeDisplay code={cqc_code} />
 		</div>
-	</div>
-	<div class="flex flex-row w-full mt-4 px-10 flex-wrap">
+	{/if}
+
+	<Button
+		size="lg"
+		class="h-14 rounded-xl px-10 text-lg font-semibold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100"
+		disabled={game_state.players.length < 1}
+		onclick={() => socket_game_controls.start_game()}
+	>
+		{$t('admin_page.start_game')}
+	</Button>
+
+	<div class="flex w-full max-w-5xl flex-col items-center gap-4">
+		<p class="text-xl text-muted-foreground" aria-live="polite">
+			{#if game_state.players.length <= 1}
+				{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
+			{:else}
+				{$t('play_page.players_waiting_plural', { count: game_state.players.length ?? 0 })}
+			{/if}
+		</p>
+
 		{#if game_state.players.length > 0}
-			{#each game_state.players as player}
-				<div class="p-2 m-2 border-2 border-[#B07156] rounded-sm hover:cursor-pointer">
-					<span
-						class="hover:line-through text-lg"
-						onclick={() => {
-							socket_game_controls.kick_player(player.username, game_state.players);
-						}}>{player.username}</span
-					>
-					<!--					<button>{$t('words.kick')}</button>-->
-				</div>
-			{/each}
+			<ul class="flex flex-wrap items-center justify-center gap-2.5">
+				{#each game_state.players as player (player.username)}
+					<li animate:flip={{ duration: 250 }}>
+						<button
+							type="button"
+							title={$t('words.kick')}
+							aria-label="{$t('words.kick')}: {player.username}"
+							onclick={() =>
+								socket_game_controls.kick_player(player.username, game_state.players)}
+							class="group rounded-full border border-border bg-card px-4 py-2 text-lg font-medium shadow-sm
+								transition-all hover:border-destructive hover:text-destructive
+								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
+							in:fly|global={{ y: 8, duration: 220 }}
+						>
+							<span class="group-hover:line-through">{player.username}</span>
+						</button>
+					</li>
+				{/each}
+			</ul>
 		{/if}
 	</div>
 </div>
