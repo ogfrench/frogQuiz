@@ -82,46 +82,52 @@ SPDX-License-Identifier: MPL-2.0
 	// https://svelte.dev/repl/96a58afdea2248a5b7e489160ffba887?version=3.44.2
 </script>
 
-<div class="flex h-full flex-col items-center gap-10 pt-16">
-	<div class="w-full max-w-md overflow-hidden rounded-xl border border-border bg-card">
-		<table class="w-full text-left text-base">
-			<thead class="bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
-				<tr>
-					<th class="px-4 py-2.5 font-medium">{$t('words.name')}</th>
-					<th class="px-4 py-2.5 text-right font-medium"
-						>{$t('words.point', { count: 2 })}</th
-					>
-					{#if show_new_score_clicked}
-						<th
-							in:fly|global={{ x: 120 }}
-							class="px-4 py-2.5 text-right font-medium"
-						>
-							{$t('play_page.points_added')}
-						</th>
-					{/if}
-				</tr>
-			</thead>
-			<tbody class="divide-y divide-border">
-				{#each top_players as player (player)}
-					<tr animate:flip={{ duration: 400 }}>
-						<td class="px-4 py-2.5 font-medium">{player}</td>
-						<td class="px-4 py-2.5 text-right tabular-nums">{data[player]}</td>
+<div class="fq-stage">
+	<!-- One composition, in the order the room cares about: what the answer was
+	     and how the room split, then where that leaves the standings. -->
+	<div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+		{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
+			<section class="flex flex-col gap-[var(--fq-space-group)] p-6 sm:p-8">
+				<h2 class="text-center text-lg font-semibold tracking-tight text-balance">
+					{@html question.question}
+				</h2>
+				<VotingResults data={new_data} {question} />
+			</section>
+		{/if}
+
+		<section class="border-t border-border">
+			<table class="w-full text-left text-base">
+				<thead
+					class="bg-muted/50 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+				>
+					<tr>
+						<th class="px-6 py-3">{$t('words.name')}</th>
+						<th class="px-6 py-3 text-right">{$t('words.point', { count: 2 })}</th>
 						{#if show_new_score_clicked}
-							<td
-								in:fly|global={{ x: 120 }}
-								class="px-4 py-2.5 text-right tabular-nums"
-								class:text-muted-foreground={score_by_username[player] === 0 ||
-									score_by_username[player] === undefined}
-							>
-								+{score_by_username[player] ?? '0'}
-							</td>
+							<th in:fly|global={{ x: 80 }} class="px-6 py-3 text-right">
+								{$t('play_page.points_added')}
+							</th>
 						{/if}
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody class="divide-y divide-border">
+					{#each top_players as player (player)}
+						<tr animate:flip={{ duration: 400 }}>
+							<td class="px-6 py-3 font-medium">{player}</td>
+							<td class="px-6 py-3 text-right tabular-nums">{data[player]}</td>
+							{#if show_new_score_clicked}
+								<td
+									in:fly|global={{ x: 80 }}
+									class="px-6 py-3 text-right font-medium tabular-nums"
+									class:text-muted-foreground={!score_by_username[player]}
+								>
+									+{score_by_username[player] ?? '0'}
+								</td>
+							{/if}
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</section>
 	</div>
-	{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
-		<VotingResults data={new_data} {question} />
-	{/if}
 </div>

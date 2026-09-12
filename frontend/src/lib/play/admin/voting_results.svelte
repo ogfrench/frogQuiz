@@ -9,6 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 	import type { Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
+	import { answerColor } from '$lib/play/answer_colors';
 	import { getLocalization } from '$lib/i18n';
 
 	const { t } = getLocalization();
@@ -39,7 +40,7 @@ SPDX-License-Identifier: MPL-2.0
 			{@const correct = answer.right && !is_voting}
 			<li
 				class="flex items-center gap-3 transition-opacity duration-300"
-				class:opacity-45={!correct && !is_voting}
+				class:opacity-70={!correct && !is_voting}
 			>
 				<span class="flex w-40 shrink-0 items-center gap-2 sm:w-56">
 					<AnswerShape index={i} class="size-4 shrink-0 text-muted-foreground" />
@@ -61,10 +62,14 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 				</span>
 
-				<span class="relative h-8 flex-1 overflow-hidden rounded-md bg-muted">
+				<span
+					class="relative h-8 flex-1 overflow-hidden rounded-md bg-muted"
+					class:ring-2={correct}
+					class:ring-foreground={correct}
+				>
 					<span
 						class="absolute inset-y-0 left-0 rounded-r-md transition-[width] duration-700 ease-out"
-						style="width: {(count / max) * 100}%; background-color: {answer.color ?? 'var(--primary)'}"
+						style="width: {(count / max) * 100}%; background-color: {answer.color ?? answerColor(i)}"
 					></span>
 				</span>
 

@@ -103,11 +103,7 @@ SPDX-License-Identifier: MPL-2.0
 	></span>
 {/if}
 
-<div
-	class="fq-stage"
-	class:pt-28={game_state.control_visible}
-	class:pt-12={!game_state.control_visible}
->
+<div class="fq-stage">
 	{#if game_state.timer_res !== undefined && !final_results_clicked && !game_state.question_results}
 		<!-- Question is shown -->
 		{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}

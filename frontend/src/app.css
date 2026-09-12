@@ -206,6 +206,8 @@ SPDX-License-Identifier: MPL-2.0
    --------------------------------------------------------------------------- */
 
 @utility fq-stage {
+	/* justify-center centres short content; min-height rather than height so a
+	   tall composition grows and the page scrolls instead of clipping. */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
