@@ -17,6 +17,11 @@ services:
     ports:
       - 5432:5432
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d frogquiz"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
   meilisearch:
     image: getmeili/meilisearch:v1.7
     volumes:
