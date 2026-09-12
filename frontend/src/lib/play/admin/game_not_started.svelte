@@ -37,7 +37,7 @@ SPDX-License-Identifier: MPL-2.0
 	}
 </script>
 
-<div class="flex min-h-[calc(100vh-3rem)] w-full flex-col items-center justify-center gap-10 px-6 py-10">
+<div class="fq-stage">
 	<!-- The join details are the whole point of this screen, so they get the
 	     centre and the largest type rather than being split across three
 	     unaligned columns. -->

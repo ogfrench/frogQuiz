@@ -45,7 +45,7 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
-<div class="flex w-full flex-col items-center gap-6 px-8 pt-4">
+<div class="fq-section">
 	<h1
 		class="max-w-[22ch] text-balance text-center text-5xl font-bold leading-tight tracking-tight md:text-6xl"
 	>
@@ -68,7 +68,7 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {/if}
 {#if quiz_data.questions[selected_question].type === QuizQuestionType.ABCD || quiz_data.questions[selected_question].type === QuizQuestionType.VOTING || quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
-	<div class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-3 p-6 sm:grid-cols-2">
+	<div class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-[var(--fq-space-item)] sm:grid-cols-2">
 		{#each quiz_data.questions[selected_question].answers as answer, i}
 			<div
 				class="answer-row relative flex min-h-20 items-center overflow-hidden rounded-2xl transition-all duration-300

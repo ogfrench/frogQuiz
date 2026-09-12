@@ -104,7 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 {/if}
 
 <div
-	class="w-full h-full"
+	class="fq-stage"
 	class:pt-28={game_state.control_visible}
 	class:pt-12={!game_state.control_visible}
 >

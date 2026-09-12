@@ -58,7 +58,7 @@ SPDX-License-Identifier: MPL-2.0
 {#if show_final_results}
 	<canvas bind:this={canvas} class="pointer-events-none fixed inset-0 z-50 h-full w-full"></canvas>
 
-	<div class="flex min-h-[calc(100vh-4rem)] w-full flex-col items-center justify-center gap-10 px-6 pb-10 pt-20">
+	<div class="fq-stage">
 		<!-- The blocks need a floor, or they read as floating cards rather than a
 		     podium. The rule under them is that floor. -->
 		<div
