@@ -2,6 +2,12 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+# Note: this file used to define a `minio` service for S3-style storage. MinIO
+# stopped publishing container images to Docker Hub and Quay.io and archived the
+# community repository, so `docker.io/minio/minio` now fails to pull - which
+# aborted `compose up` and took the database down with it. Nothing here needs it:
+# the test env runs STORAGE_BACKEND=local, and test_minio talks to play.min.io
+# rather than a local container.
 services:
   db:
     #    build:
@@ -38,20 +44,6 @@ services:
     network_mode: "host"
     privileged: true
     restart: unless-stopped
-  minio:
-    image: docker.io/minio/minio
-    environment:
-      MINIO_ROOT_USER: frogquiz
-      MINIO_ROOT_PASSWORD: frogquiz
-      MINIO_ADDRESS: ":9000"
-      MINIO_CONSOLE_ADDRESS: ":9001"
-    volumes:
-      - minio:/data
-    ports:
-      - 9000:9000
-      - 9001:9001
-    restart: unless-stopped
-    command: minio server /data
   redis:
     image: redis:alpine
     restart: always
@@ -62,4 +54,3 @@ services:
 volumes:
   db:
   search:
-  minio:
