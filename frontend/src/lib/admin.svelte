@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
+	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { socket } from './socket';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import Spinner from '$lib/Spinner.svelte';
@@ -15,7 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
 
 	const { t } = getLocalization();
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const default_colors = ANSWER_COLORS;
 
 	let final_results_clicked = $state(false);
 	let timer_interval: NodeJS.Timeout;

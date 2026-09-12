@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 FrogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -7,6 +8,10 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
+	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
+	import { getLocalization } from '$lib/i18n';
+
+	const { t } = getLocalization();
 
 	interface Props {
 		data: any;
@@ -15,66 +20,65 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { data, question }: Props = $props();
 
-	let quiz_answers = [];
-	let quiz_colors = [];
-	let answer_correct: boolean[] = [];
-
-	for (const i of question.answers) {
-		quiz_answers.push(i.answer);
-		quiz_colors.push(i.color);
-		answer_correct.push(i.right);
-	}
-
-	let sorted_data = $state({});
-	for (const i of quiz_answers) {
-		sorted_data[i] = 0;
-	}
-	for (const i of data) {
-		sorted_data[i.answer] += 1;
-	}
+	// Horizontal bars, because answer text is long and the previous vertical
+	// layout had to rotate its labels 45 degrees, where they collided with each
+	// other. Colour matches the tile the player tapped, and the shape repeats it
+	// so identity never rests on colour alone.
+	const counts = question.answers.map(
+		(a) => data.filter((d: { answer: string }) => d.answer === a.answer).length
+	);
+	const total = counts.reduce((sum, n) => sum + n, 0);
+	const max = Math.max(1, ...counts);
+	const is_voting = question.type === QuizQuestionType.VOTING;
 </script>
 
-<div class="flex justify-center w-full">
-	<div
-		class="m-auto w-fit gap-4 flex flex-col"
-		style="grid-template-columns: repeat({quiz_answers.length}, minmax(0, 1fr));"
-	>
-		<div class="flex gap-12">
-			{#each quiz_answers as answer}
-				<span class="text-center self-end mx-auto text-lg"
-					>{#if sorted_data[answer] > 0}{sorted_data[answer]}{/if}</span
-				>
-			{/each}
-		</div>
-		<div class="flex gap-12">
-			{#each quiz_answers as answer, i}
-				<div
-					class="w-20 self-end flex justify-center border border-black shadow-xl rounded-sm"
-					class:shadow-blue-500={answer_correct[i] &&
-						question.type !== QuizQuestionType.VOTING}
-					class:shadow-yellow-500={!answer_correct[i] &&
-						question.type !== QuizQuestionType.VOTING}
-					class:opacity-70={!answer_correct[i] &&
-						question.type !== QuizQuestionType.VOTING}
-					style="height: {(sorted_data[answer] * 20) /
-						data.length}rem; background-color: {quiz_colors[i]
-						? quiz_colors[i]
-						: 'black'}"
-				></div>
-			{/each}
-		</div>
-		<div class="flex gap-12">
-			{#each quiz_answers as answer, i}
-				<div class="w-20">
-					<p
-						class="-rotate-45 text-xl text-str"
-						class:line-through={!answer_correct[i] &&
-							question.type !== QuizQuestionType.VOTING}
-					>
-						{@html answer}
-					</p>
-				</div>
-			{/each}
-		</div>
-	</div>
+<div class="mx-auto w-full max-w-3xl px-6">
+	<ul class="flex flex-col gap-2.5">
+		{#each question.answers as answer, i}
+			{@const count = counts[i]}
+			{@const correct = answer.right && !is_voting}
+			<li
+				class="flex items-center gap-3 transition-opacity duration-300"
+				class:opacity-45={!correct && !is_voting}
+			>
+				<span class="flex w-40 shrink-0 items-center gap-2 sm:w-56">
+					<AnswerShape index={i} class="size-4 shrink-0 text-muted-foreground" />
+					<span class="truncate text-base font-medium" title={answer.answer}>
+						{@html answer.answer}
+					</span>
+					{#if correct}
+						<svg
+							class="size-4 shrink-0 text-foreground"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="3"
+							role="img"
+							aria-label={$t('words.correct')}
+						>
+							<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					{/if}
+				</span>
+
+				<span class="relative h-8 flex-1 overflow-hidden rounded-md bg-muted">
+					<span
+						class="absolute inset-y-0 left-0 rounded-r-md transition-[width] duration-700 ease-out"
+						style="width: {(count / max) * 100}%; background-color: {answer.color ?? 'var(--primary)'}"
+					></span>
+				</span>
+
+				<span class="w-14 shrink-0 text-right text-base font-semibold tabular-nums">
+					{count}
+					<span class="sr-only">
+						{$t('play_page.players_waiting_plural', { count })}
+					</span>
+				</span>
+			</li>
+		{/each}
+	</ul>
+
+	<p class="mt-4 text-center text-sm text-muted-foreground tabular-nums">
+		{$t('admin_page.answers_submitted', { answer_count: total })}
+	</p>
 </div>

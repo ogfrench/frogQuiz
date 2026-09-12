@@ -6,11 +6,12 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
+	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { get_foreground_color } from '$lib/helpers';
 	import { kahoot_icons } from '$lib/play/kahoot_mode_assets/kahoot_icons';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	// import CircularTimer from '$lib/play/circular_progress.svelte';
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const default_colors = ANSWER_COLORS;
 
 	interface Props {
 		question: Question;

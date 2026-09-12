@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
+	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { getLocalization } from '$lib/i18n';
 	import CollapsSection from '$lib/collapsible.svelte';
 	import { createTippy } from 'svelte-tippy';
@@ -20,7 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
 
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const default_colors = ANSWER_COLORS;
 
 	const tippy = createTippy({
 		arrow: true,

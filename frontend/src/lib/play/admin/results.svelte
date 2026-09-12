@@ -52,6 +52,8 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	}
 
+	let top_players = $derived(player_names.slice(0, 4));
+
 	let show_new_score_clicked = $state(false);
 
 	const show_new_score = () => {
@@ -80,52 +82,46 @@ SPDX-License-Identifier: MPL-2.0
 	// https://svelte.dev/repl/96a58afdea2248a5b7e489160ffba887?version=3.44.2
 </script>
 
-<div class="h-full flex flex-col">
-	<div class="flex justify-center">
-		<div>
-			<table class="table-auto text-xl">
-				<thead>
-					<tr>
-						<th class="p-2 border-r border-r-black border-b-2 border-b-black"
-							>{$t('words.name')}</th
+<div class="flex h-full flex-col items-center gap-10 pt-16">
+	<div class="w-full max-w-md overflow-hidden rounded-xl border border-border bg-card">
+		<table class="w-full text-left text-base">
+			<thead class="bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
+				<tr>
+					<th class="px-4 py-2.5 font-medium">{$t('words.name')}</th>
+					<th class="px-4 py-2.5 text-right font-medium"
+						>{$t('words.point', { count: 2 })}</th
+					>
+					{#if show_new_score_clicked}
+						<th
+							in:fly|global={{ x: 120 }}
+							class="px-4 py-2.5 text-right font-medium"
 						>
-						<th class="p-2 border-b-2 border-b-black"
-							>{$t('words.point', { count: 2 })}</th
-						>
+							{$t('play_page.points_added')}
+						</th>
+					{/if}
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-border">
+				{#each top_players as player (player)}
+					<tr animate:flip={{ duration: 400 }}>
+						<td class="px-4 py-2.5 font-medium">{player}</td>
+						<td class="px-4 py-2.5 text-right tabular-nums">{data[player]}</td>
 						{#if show_new_score_clicked}
-							<th in:fly|global={{ x: 300 }} class="p-2 border-b-2 border-b-black"
-								>{$t('play_page.points_added')}
-							</th>
+							<td
+								in:fly|global={{ x: 120 }}
+								class="px-4 py-2.5 text-right tabular-nums"
+								class:text-muted-foreground={score_by_username[player] === 0 ||
+									score_by_username[player] === undefined}
+							>
+								+{score_by_username[player] ?? '0'}
+							</td>
 						{/if}
 					</tr>
-				</thead>
-				<tbody>
-					{#each player_names as player, i (player)}
-						<tr animate:flip>
-							<td class:hidden={i > 3} class="p-2 border-r border-r-black"
-								>{player}</td
-							>
-							<td class:hidden={i > 3} class="p-2">{data[player]}</td>
-							{#if show_new_score_clicked}
-								<td
-									in:fly|global={{ x: 300 }}
-									class:hidden={i > 3}
-									class="p-2"
-									class:text-red-600={score_by_username[player] === 0 ||
-										score_by_username[player] === undefined}
-								>
-									+{score_by_username[player] ?? '0'}
-								</td>
-							{/if}
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+				{/each}
+			</tbody>
+		</table>
 	</div>
 	{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
-		<div class="mt-12">
-			<VotingResults data={new_data} {question} />
-		</div>
+		<VotingResults data={new_data} {question} />
 	{/if}
 </div>

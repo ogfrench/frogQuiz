@@ -35,7 +35,8 @@
   "words": {
     "quiztivity": "Quiztivitéit",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "correct": "Correct"
   },
   "quiztivity": {
     "editor": {

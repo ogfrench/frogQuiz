@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
+	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { socket } from '$lib/socket';
 	import Spinner from '../Spinner.svelte';
@@ -140,7 +141,7 @@ SPDX-License-Identifier: MPL-2.0
 			return '100';
 		}
 	};
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const default_colors = ANSWER_COLORS;
 </script>
 
 <div class="h-screen w-screen">
