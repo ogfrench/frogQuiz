@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -79,19 +80,21 @@ app.include_router(
     include_in_schema=True,
 )
 app.include_router(pixabay.router, tags=["pixabay"], prefix="/api/v1/pixabay", include_in_schema=True)
-app.include_router(
-    quiztivity.router,
-    tags=["quiztivity"],
-    prefix="/api/v1/quiztivity",
-    include_in_schema=True,
-)
+if settings.enable_quiztivity:
+    app.include_router(
+        quiztivity.router,
+        tags=["quiztivity"],
+        prefix="/api/v1/quiztivity",
+        include_in_schema=True,
+    )
 
-app.include_router(
-    box_controller.router,
-    tags=["boxcontroller"],
-    prefix="/api/v1/box-controller",
-    include_in_schema=True,
-)
+if settings.enable_box_controller:
+    app.include_router(
+        box_controller.router,
+        tags=["boxcontroller"],
+        prefix="/api/v1/box-controller",
+        include_in_schema=True,
+    )
 app.include_router(results.router, tags=["results"], prefix="/api/v1/results", include_in_schema=True)
 app.include_router(remote.router, tags=["remote"], prefix="/api/v1/remote", include_in_schema=True)
 app.include_router(login.router, tags=["auth"], prefix="/api/v1/login", include_in_schema=True)

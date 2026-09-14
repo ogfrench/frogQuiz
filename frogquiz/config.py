@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -71,6 +72,15 @@ class Settings(BaseSettings):
     pixabay_api_key: str | None = None
     mods: list[str] = []
     registration_disabled: bool = False
+    # Physical-buzzer hardware and the QuizTivity page builder are not used by the
+    # team. Their entry points were taken out of the UI in PR #5, but the API
+    # routers stayed registered and callable. Off by default; flip to re-enable.
+    enable_box_controller: bool = False
+    enable_quiztivity: bool = False
+    # TOTP and its backup codes are cut from the MVP: the team signs in with a password,
+    # and company SSO is the route to a second factor rather than an authenticator app.
+    # Turning this back on restores both the setup endpoints and the login step.
+    enable_totp: bool = False
     # Origins allowed to call the API / socket.io cross-site (e.g. a Netlify-hosted frontend).
     # Empty means same-origin only, which is what the bundled Caddy setup uses.
     # Accepts a JSON list or a plain comma-separated string.

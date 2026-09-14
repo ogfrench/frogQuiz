@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -144,9 +145,6 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 				<div class="p-4 flex justify-center">
 					<div class="m-auto">
-						<BrownButton href="/account/settings/security"
-							>{$t('settings_page.security_settings')}
-						</BrownButton>
 						<BrownButton href="/user/{user.id}">Public profile page</BrownButton>
 					</div>
 				</div>

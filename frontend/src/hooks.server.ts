@@ -1,16 +1,33 @@
 // SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
 //
 // SPDX-License-Identifier: MPL-2.0
 
-import type { Handle } from '@sveltejs/kit';
+import { error, type Handle } from '@sveltejs/kit';
 import * as jose from 'jose';
 
 // Docker sets API_URL at runtime (http://api:80). On Netlify the value is baked in
 // at build time instead, because build.environment does not reach the function runtime.
 const API_BASE = process.env.API_URL ?? import.meta.env.VITE_API_ORIGIN;
 
+// Features whose entry points PR #5 removed from the UI. The routes themselves stayed
+// reachable by typing the URL, which is obscurity rather than access control. Their API
+// routers are gated by ENABLE_QUIZTIVITY / ENABLE_BOX_CONTROLLER on the backend; this is
+// the matching frontend half. Delete an entry to bring a feature back.
+const DISABLED_ROUTES = [
+	'/quiztivity',
+	'/controller',
+	'/account/controllers',
+	// Nothing is left on this page once TOTP and backup codes are gone.
+	'/account/settings/security'
+];
+
 /** @type {import('@sveltejs/kit').Handle} */
 export const handle: Handle = async ({ event, resolve }) => {
+	const path = event.url.pathname;
+	if (DISABLED_ROUTES.some((p) => path === p || path.startsWith(`${p}/`))) {
+		error(404, 'Not found');
+	}
 	const access_token = event.cookies.get('access_token');
 	if (!access_token) {
 		event.locals.email = null;
