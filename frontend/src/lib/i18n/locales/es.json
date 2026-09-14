@@ -300,7 +300,10 @@
     "enable_reorder": "Activar el modo reordenar",
     "hide_question_results": "¿Ocultar los resultados de la pregunta?",
     "advanced_settings": "Ajustes avanzados",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "import_page": {
     "need_help": "¿Necesitas ayuda?",

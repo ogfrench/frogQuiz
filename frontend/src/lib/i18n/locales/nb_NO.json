@@ -265,7 +265,10 @@
     "need_more_help": "Behov for mer hjelp?",
     "enter_answer": "Skriv inn et svar",
     "visit_docs": "Vis dokumentasjonen.",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "import_page": {
     "visit_docs": "Besøk dokumentasjonen",

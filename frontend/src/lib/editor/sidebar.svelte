@@ -23,12 +23,14 @@ SPDX-License-Identifier: MPL-2.0
 	import Lock from '@lucide/svelte/icons/lock';
 	import Plus from '@lucide/svelte/icons/plus';
 	import X from '@lucide/svelte/icons/x';
+	import PanelLeftClose from '@lucide/svelte/icons/panel-left-close';
+	import PanelLeftOpen from '@lucide/svelte/icons/panel-left-open';
 
 	const { t } = getLocalization();
 
 	interface Props {
-		/** Drawer state below lg, where the rail is off-canvas. Ignored at lg and up. */
-		open?: boolean;
+		/** Collapsed to a slim strip. The list stays in the layout either way. */
+		collapsed?: boolean;
 		data: EditorData;
 		selected_question?: any;
 	}
@@ -36,7 +38,7 @@ SPDX-License-Identifier: MPL-2.0
 	let {
 		data = $bindable(),
 		selected_question = $bindable(-1),
-		open = $bindable(false)
+		collapsed = $bindable(false)
 	}: Props = $props();
 
 	let reorder_mode = $state(false);
@@ -83,23 +85,17 @@ SPDX-License-Identifier: MPL-2.0
 <!-- Below lg the rail is an off-canvas drawer: a fixed w-72 rail on a 390px phone
      leaves about 118px of canvas, which is not an editor. At lg and up it is a
      static column again. The scrim is a sibling so it never covers the rail. -->
-{#if open}
-	<button
-		type="button"
-		class="fixed inset-0 z-30 bg-black/50 lg:hidden"
-		aria-label={$t('words.close')}
-		onclick={() => (open = false)}
-	></button>
-{/if}
-<div
-	class="border-border bg-background lg:bg-muted/30 fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col
-		border-r transition-transform duration-200 lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0 xl:w-72"
-	class:translate-x-0={open}
-	class:-translate-x-full={!open}
+<!-- The question list is the editor's navigation and the only place the quiz's shape
+     is visible, so it stays in the layout at every width: an aside that collapses to
+     a slim strip, never an overlay that hides the structure behind a tap. Below lg
+     the horizontal strip in question-strip.svelte plays the same role. -->
+<aside
+	class="border-border bg-muted/30 hidden shrink-0 flex-col border-r transition-[width] duration-200 lg:flex
+		{collapsed ? 'w-12' : 'w-64 xl:w-72'}"
 >
-	<div class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-3">
+	<div class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-2">
 		<Button
-			class="min-w-0 flex-1"
+			class="min-w-0 flex-1 {collapsed ? 'hidden' : ''}"
 			type="button"
 			variant={reorder_mode ? 'default' : 'outline'}
 			size="sm"
@@ -114,14 +110,15 @@ SPDX-License-Identifier: MPL-2.0
 			type="button"
 			variant="ghost"
 			size="icon-sm"
-			class="shrink-0 lg:hidden"
-			aria-label={$t('words.close')}
-			onclick={() => (open = false)}
+			class="shrink-0"
+			aria-label={collapsed ? $t('editor.show_questions') : $t('editor.hide_questions')}
+			aria-expanded={!collapsed}
+			onclick={() => (collapsed = !collapsed)}
 		>
-			<X />
+			{#if collapsed}<PanelLeftOpen />{:else}<PanelLeftClose />{/if}
 		</Button>
 	</div>
-	<div class="min-h-0 flex-1 overflow-y-auto p-3">
+	<div class="min-h-0 flex-1 overflow-y-auto p-3 {collapsed ? 'hidden' : ''}">
 		<div
 			bind:this={propertyCard}
 			class="border-border bg-card mb-3 rounded-lg border p-2 transition hover:cursor-pointer"
@@ -398,7 +395,7 @@ SPDX-License-Identifier: MPL-2.0
 			{$t('editor.add_new_question')}
 		</Button>
 	</div>
-</div>
+</aside>
 {#if add_new_question_popup_open}
 	<AddNewQuestionPopup
 		bind:questions={data.questions}

@@ -360,7 +360,10 @@
     "bg_image": "Hình nền",
     "no_title": "Không có tiêu đề...",
     "enable_reorder": "Bật chế độ sắp xếp lại",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "controllers": {
     "last_seen": "thấy lần cuối",

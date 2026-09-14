@@ -369,7 +369,10 @@
     "enter_answer": "Введіть відповідь",
     "enable_reorder": "Увімкнути режим зміни порядку",
     "disable_reorder": "Вимкнути режим зміни порядку",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "controllers": {
     "last_seen": "Востаннє бачили",

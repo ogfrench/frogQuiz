@@ -257,7 +257,10 @@
     "hide_question_results": "Soru sonuçlarığnı sakla?",
     "enable_reorder": "Yeniden düzenleme modunu etkinleştir",
     "disable_reorder": "Yeniden düzenleme modu devre dışı bırak",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "import_page": {
     "visit_docs": "Dokümantasyonu ziyaret edin",

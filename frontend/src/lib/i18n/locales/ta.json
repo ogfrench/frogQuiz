@@ -254,7 +254,10 @@
     "disable_reorder": "மறுதொடக்கம் பயன்முறையை முடக்கு",
     "advanced_settings": "மேம்பட்ட அமைப்புகள்",
     "hide_question_results": "கேள்வி முடிவுகளை மறைக்கவா?",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "import_page": {
     "need_help": "உதவி தேவையா?",

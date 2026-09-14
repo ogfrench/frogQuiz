@@ -236,7 +236,10 @@
     "enable_reorder": "Abilita la modalità di riordino",
     "hide_question_results": "Nascondere i risultati della domanda?",
     "advanced_settings": "Impostazioni avanzate",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "import_page": {
     "need_help": "Hai bisogno di aiuto?",

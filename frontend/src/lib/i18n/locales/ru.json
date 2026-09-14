@@ -207,6 +207,9 @@
       "headline": "Заголовок",
       "text": "Текст"
     },
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   }
 }

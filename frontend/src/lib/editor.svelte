@@ -9,6 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { dataSchema } from '$lib/yupSchemas';
 	import type { EditorData } from './quiz_types';
 	import Sidebar from '$lib/editor/sidebar.svelte';
+	import QuestionStrip from '$lib/editor/question-strip.svelte';
 	import SettingsCard from '$lib/editor/settings-card.svelte';
 	import QuizCard from '$lib/editor/card.svelte';
 	import Spinner from './Spinner.svelte';
@@ -16,7 +17,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { Button } from '$lib/components/ui/button';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
-	import PanelLeft from '@lucide/svelte/icons/panel-left';
 	import Save from '@lucide/svelte/icons/save';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 
@@ -32,13 +32,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { data = $bindable(), quiz_id }: Props = $props();
 	let selected_question = $state(-1);
-	// Rail drawer, below lg only. Picking a question closes it, so the tap that
-	// chooses what to edit also reveals the thing being edited.
-	let rail_open = $state(false);
-	$effect(() => {
-		selected_question;
-		rail_open = false;
-	});
+	// The rail collapses to a slim strip at lg and up; below that the horizontal
+	// QuestionStrip carries the same navigation. Neither ever leaves the layout.
+	let rail_collapsed = $state(false);
 
 	const validateInput = async (data: EditorData) => {
 		try {
@@ -130,21 +126,11 @@ SPDX-License-Identifier: MPL-2.0
 		     h-dvh rather than h-screen: 100vh is the wrong number on a phone, where
 		     the browser chrome is counted in and the toolbar ends up off-screen. -->
 		<div class="flex h-dvh w-full overflow-hidden">
-			<Sidebar bind:data bind:selected_question bind:open={rail_open} />
+			<Sidebar bind:data bind:selected_question bind:collapsed={rail_collapsed} />
 			<div class="flex min-w-0 flex-1 flex-col">
 				<header
 					class="border-border bg-background flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-4"
 				>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						class="lg:hidden"
-						aria-label={$t('editor.show_questions')}
-						onclick={() => (rail_open = true)}
-					>
-						<PanelLeft />
-					</Button>
 					<Button
 						href="/dashboard"
 						variant="ghost"
@@ -182,6 +168,7 @@ SPDX-License-Identifier: MPL-2.0
 				     was, so on a wide screen the settings form ran to 900px of label and
 				     field with a lake ofdead space between them. Cap it and centre it, the
 				     way any document editor does. -->
+				<QuestionStrip bind:data bind:selected_question />
 				<div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
 					<div class="mx-auto w-full max-w-2xl">
 						{#if selected_question === -1}

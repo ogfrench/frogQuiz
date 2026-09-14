@@ -272,7 +272,10 @@
     "need_more_help": "Potrzebujesz pomocy?",
     "visit_docs": "Odwiedź dokumentację.",
     "disable_reorder": "Wyłącz tryb zmiany kolejności",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "import_page": {
     "need_help": "Potrzebujesz pomocy?",

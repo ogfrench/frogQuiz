@@ -236,7 +236,10 @@
     "enable_reorder": "Ativar modo reordenador",
     "hide_question_results": "Ocultar o resultado das respostas?",
     "advanced_settings": "Configurações Avançadas",
-    "show_questions": "Show questions"
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move question left",
+    "move_question_right": "Move question right"
   },
   "result_page": {
     "correct_answer_plural": "{{count}} respostas corretas",
