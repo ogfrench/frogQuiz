@@ -106,7 +106,13 @@ SPDX-License-Identifier: MPL-2.0
 	--muted-foreground: oklch(0.546 0.016 285.938);
 	--accent: oklch(0.967 0.001 286.375);
 	--accent-foreground: oklch(0.21 0.006 285.885);
-	--destructive: oklch(0.577 0.245 27.325);
+	/* 0.577 measured 4.01:1 against its own 10% tint, which is the ground the
+	   destructive button and every destructive label actually sit on -- the tint
+	   darkens the background and so eats the contrast. Measured as the browser paints
+	   it, compositing the alpha in sRGB rather than mixing in oklab, which is a real
+	   0.19 difference and the reason a first attempt at 0.535 still measured 4.48.
+	   0.52 measures 4.65:1 on the tint and 5.6:1 on plain card. */
+	--destructive: oklch(0.52 0.245 27.325);
 	--border: oklch(0.92 0.004 286.32);
 	--input: oklch(0.92 0.004 286.32);
 	--ring: oklch(0.705 0.015 286.067);
@@ -224,6 +230,26 @@ SPDX-License-Identifier: MPL-2.0
 	width: 100%;
 	padding: var(--fq-space-section) var(--fq-space-group);
 }
+
+/* A horizontally scrolling container still lets its content's *paint* contribute to
+   document.scrollWidth in Chromium, so a wide table inside a correct overflow-x:auto
+   wrapper (measured 358px, scrolling properly) still made the page report 264px of
+   overflow. contain:paint says what is already true -- nothing should paint outside
+   this box -- and fixes it without table-layout:fixed, which would force equal
+   columns onto content that is not equal. */
+@utility fq-scroll-x {
+	overflow-x: auto;
+	contain: paint;
+}
+
+/* A filter or backdrop-filter expands an element's *painted* region well past its
+   box -- roughly three blur radii each side -- and that phantom paint counts toward
+   document.scrollWidth even when the element is position:fixed and nothing out there
+   is visible. The ambient layer (blur 56px) and the navbar (backdrop-blur-xl) each
+   reported 654px on a 390px phone, so every page with a navbar measured as
+   horizontally overflowing by 264px. Both carry clip-path: inset(0) now, which costs
+   nothing visually because the clipped part is off-screen. Worth knowing before
+   reaching for overflow-x: hidden on body, which hides real overflow too. */
 
 /* Touch targets. Every shadcn button size is under the 44px that Apple's HIG and
    WCAG 2.5.5 ask for on a touch screen: default and icon are 36px, icon-sm is 32,

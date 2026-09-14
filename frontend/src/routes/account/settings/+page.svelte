@@ -7,6 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import { DateTime } from 'luxon';
 	import { UAParser } from 'ua-parser-js';
 	import Spinner from '$lib/Spinner.svelte';
@@ -154,21 +155,21 @@ SPDX-License-Identifier: MPL-2.0
 					<label
 						>{$t('settings_page.old_password')}:<input
 							type="password"
-							class="m-2 text-black rounded-sm p-1 dark:bg-gray-700 dark:text-white"
+							class="border-input bg-background text-foreground focus-visible:ring-ring m-2 min-h-11 rounded-md border p-2 focus-visible:ring-2 focus-visible:outline-none"
 							bind:value={changePasswordData.oldPassword}
 						/></label
 					>
 					<label
 						>{$t('settings_page.new_password')}:<input
 							type="password"
-							class="m-2 text-black rounded-sm p-1 dark:bg-gray-700 dark:text-white"
+							class="border-input bg-background text-foreground focus-visible:ring-ring m-2 min-h-11 rounded-md border p-2 focus-visible:ring-2 focus-visible:outline-none"
 							bind:value={changePasswordData.newPassword}
 						/></label
 					>
 					<label
 						>{$t('settings_page.repeat_password')}:<input
 							type="password"
-							class="m-2 text-black rounded-sm p-1 dark:bg-gray-700 dark:text-white"
+							class="border-input bg-background text-foreground focus-visible:ring-ring m-2 min-h-11 rounded-md border p-2 focus-visible:ring-2 focus-visible:outline-none"
 							bind:value={changePasswordData.newPasswordConfirm}
 						/></label
 					>
@@ -185,79 +186,66 @@ SPDX-License-Identifier: MPL-2.0
 {#await getSessions()}
 	<Spinner />
 {:then sessions}
-	<table class="min-w-full">
-		<thead class="bg-gray-50 dark:bg-gray-700">
-			<tr>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
+	<!-- A bare table with whitespace-nowrap cells and px-6 padding, and no scroll
+	     container: 539px of horizontal overflow on a phone. CLAUDE.md's own rule is that
+	     a table may be wider than the page only inside its own overflow-x container.
+	     Delete was a bare <button> with no box at all, so its target was the 42x20 of
+	     its text. -->
+	<div class="mx-auto w-full max-w-5xl px-4">
+		<h2 class="mb-3 text-lg font-semibold tracking-tight">
+			{$t('settings_page.sessions') ?? 'Sessions'}
+		</h2>
+		<div class="border-border fq-scroll-x rounded-xl border">
+			<table class="w-full text-left text-sm">
+				<thead
+					class="bg-muted/50 text-muted-foreground text-xs font-medium tracking-wider uppercase"
 				>
-					{$t('overview_page.created_at')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('settings_page.last_seen')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('words.browser')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('settings_page.delete_this_session')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('settings_page.this_session?')}
-				</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each sessions as session}
-				<tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{formatDate(session.created_at)}
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{formatDate(session.last_seen)}
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{getFormattedUserAgent(session.user_agent)}
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						<button
-							onclick={() => {
-								deleteSession(session.id);
-							}}>{$t('words.delete')}</button
-						>
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{#if session.id === this_session?.id}
-							✅
-						{:else}
-							❌
-						{/if}
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+					<tr>
+						<th scope="col" class="px-4 py-3">{$t('overview_page.created_at')}</th>
+						<th scope="col" class="px-4 py-3">{$t('settings_page.last_seen')}</th>
+						<th scope="col" class="px-4 py-3">{$t('words.browser')}</th>
+						<th scope="col" class="px-4 py-3">{$t('settings_page.this_session?')}</th>
+						<th scope="col" class="px-4 py-3">
+							<span class="sr-only">{$t('settings_page.delete_this_session')}</span>
+						</th>
+					</tr>
+				</thead>
+				<tbody class="divide-border divide-y">
+					{#each sessions as session}
+						<tr>
+							<td class="text-muted-foreground px-4 py-3 whitespace-nowrap">
+								{formatDate(session.created_at)}
+							</td>
+							<td class="text-muted-foreground px-4 py-3 whitespace-nowrap">
+								{formatDate(session.last_seen)}
+							</td>
+							<td class="px-4 py-3">{getFormattedUserAgent(session.user_agent)}</td>
+							<td class="px-4 py-3 whitespace-nowrap">
+								{#if session.id === this_session?.id}
+									<span
+										class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+										>{$t('settings_page.this_session?')}</span
+									>
+								{:else}
+									<span class="text-muted-foreground">&mdash;</span>
+								{/if}
+							</td>
+							<td class="px-4 py-3 text-right whitespace-nowrap">
+								<Button
+									type="button"
+									variant="destructive"
+									size="sm"
+									onclick={() => {
+										deleteSession(session.id);
+									}}
+								>
+									{$t('words.delete')}
+								</Button>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</div>
 {/await}

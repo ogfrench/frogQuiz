@@ -172,7 +172,12 @@
     "greeting": "পরিচয় হয়ে ভালো লাগলো!",
     "create_account": "অ্যাকাউন্ট তৈরি করুন",
     "already_have_account?": "আগের অ্যাকাউন্ট আছে?",
-    "forgot_password?": "পাসওয়ার্ড ভুলে গেছেন?"
+    "forgot_password?": "পাসওয়ার্ড ভুলে গেছেন?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "আবার স্বাগতম।",
@@ -283,7 +288,8 @@
     "this_session?": "এই সেশন?",
     "change_avatar": "অ্যাভাটার পরিবর্তন করুন",
     "security_settings": "নিরাপত্তা সেটিংস",
-    "add_api_key": "API কী যোগ করুন"
+    "add_api_key": "API কী যোগ করুন",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "তৈরি করেছেন",

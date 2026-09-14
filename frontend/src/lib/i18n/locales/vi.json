@@ -12,7 +12,12 @@
     "create_account": "Tạo tài khoản",
     "greeting": "Rất hân hạnh được gặp bạn!",
     "forgot_password?": "Quên mật khẩu?",
-    "already_have_account?": "Bạn đã có tài khoản?"
+    "already_have_account?": "Bạn đã có tài khoản?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "words": {
     "delete": "Xóa",
@@ -259,7 +264,8 @@
     "this_session?": "Phiên này ?",
     "repeat_password": "Lặp lại mật khẩu",
     "new_password": "Mật khẩu mới",
-    "add_api_key": "Thêm API key"
+    "add_api_key": "Thêm API key",
+    "sessions": "Sessions"
   },
   "footer": {
     "donate": "Nếu bạn thấy điều này hữu ích, xin vui lòng ủng hộ {{donate_link}}.",

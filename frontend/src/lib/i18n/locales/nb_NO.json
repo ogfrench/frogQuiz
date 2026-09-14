@@ -168,7 +168,8 @@
     "delete_this_session": "Slett denne økten",
     "change_avatar": "Endre avatar",
     "security_settings": "Sikkerhetsinnstillinger",
-    "add_api_key": "Legg til API-nøkkel"
+    "add_api_key": "Legg til API-nøkkel",
+    "sessions": "Sessions"
   },
   "admin_page": {
     "time_left": "Gjenværende tid",
@@ -195,7 +196,12 @@
     "already_have_account?": "Har du allerede en konto?",
     "create_account": "Opprett konto",
     "forgot_password?": "Glemt passordet?",
-    "greeting": "Hyggelig å møte deg."
+    "greeting": "Hyggelig å møte deg.",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "overview_page": {
     "question_count": "Antall spørsmål",

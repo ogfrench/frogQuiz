@@ -53,7 +53,12 @@
     "greeting": "נעים להכיר!",
     "create_account": "יצירת חשבון",
     "forgot_password?": "שכחת את הסיסמה?",
-    "already_have_account?": "כבר יש לך חשבון?"
+    "already_have_account?": "כבר יש לך חשבון?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "ברוך שובך.",

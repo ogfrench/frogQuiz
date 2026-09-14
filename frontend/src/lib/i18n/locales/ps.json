@@ -67,7 +67,12 @@
     "greeting": "له تاسو سره په پېژندګلوي خوشحاله شوم!",
     "create_account": "حساب جوړول",
     "forgot_password?": "خپل پټ نوم مو هېر کړی دی؟",
-    "already_have_account?": "ایا مخکې مو حساب جوړ کړی دی؟"
+    "already_have_account?": "ایا مخکې مو حساب جوړ کړی دی؟",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "بیا ښه راغلاست.",
@@ -283,7 +288,8 @@
     "this_session?": "دا دوره؟",
     "change_avatar": "پروفایل انځور بدل کړئ",
     "security_settings": "امنیتي تنظیمات",
-    "add_api_key": "د API کیلي اضافه کړئ"
+    "add_api_key": "د API کیلي اضافه کړئ",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "جوړونکی",

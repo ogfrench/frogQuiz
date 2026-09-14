@@ -67,7 +67,12 @@
     "greeting": "Приятно познакомиться!",
     "forgot_password?": "Забыл пароль?",
     "already_have_account?": "Уже имеется учётная запись?",
-    "create_account": "Создать учетную запись"
+    "create_account": "Создать учетную запись",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "С возвращением!",

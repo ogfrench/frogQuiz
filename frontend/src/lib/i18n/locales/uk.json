@@ -67,7 +67,12 @@
     "create_account": "Створити акаунт",
     "greeting": "Приємно познайомитися!",
     "forgot_password?": "Забули пароль?",
-    "already_have_account?": "Вже маєте акаунт?"
+    "already_have_account?": "Вже маєте акаунт?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "words": {
     "delete": "Видалити",
@@ -265,7 +270,8 @@
     "this_session?": "Ця сесія?",
     "repeat_password": "Повторіть пароль",
     "new_password": "Новий пароль",
-    "add_api_key": "Додайте ключ API"
+    "add_api_key": "Додайте ключ API",
+    "sessions": "Sessions"
   },
   "footer": {
     "donate": "Якщо ви вважаєте це корисним, спробуйте {{donate_link}}.",

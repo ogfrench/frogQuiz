@@ -12,7 +12,12 @@
     "create_account": "",
     "greeting": "",
     "forgot_password?": "",
-    "already_have_account?": ""
+    "already_have_account?": "",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "words": {
     "delete": "",
@@ -251,7 +256,8 @@
     "this_session?": "",
     "repeat_password": "",
     "new_password": "",
-    "add_api_key": ""
+    "add_api_key": "",
+    "sessions": "Sessions"
   },
   "footer": {
     "donate": "",

@@ -61,7 +61,12 @@
     "create_account": "إنشاء حساب",
     "greeting": "سعيد بلقائك!",
     "forgot_password?": "هل نسيت كلمة السر؟",
-    "already_have_account?": "هل لديك حساب؟"
+    "already_have_account?": "هل لديك حساب؟",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "words": {
     "delete": "حذف",
@@ -259,7 +264,8 @@
     "this_session?": "هذه الجلسة؟",
     "repeat_password": "أعد كلمة المرور",
     "new_password": "كلمة مرور جديدة",
-    "add_api_key": "أضف مفتاح API"
+    "add_api_key": "أضف مفتاح API",
+    "sessions": "Sessions"
   },
   "footer": {
     "donate": "",

@@ -69,6 +69,13 @@ SPDX-License-Identifier: MPL-2.0
 			);
 		/* Heavy blur is what turns them from circles into out-of-focus colour. */
 		filter: blur(56px);
+		/* A filter expands the element's painted area well beyond its box -- about three
+		   blur radii each side -- and that phantom paint counts toward the document's
+		   scrollWidth even though the layer is position:fixed and nothing is visible out
+		   there. On a 390px phone it reported 654px and every page measured as
+		   horizontally overflowing. Clipping the paint back to the box costs nothing
+		   visually, because the part being clipped is off-screen. */
+		clip-path: inset(0);
 		opacity: 0.55;
 	}
 

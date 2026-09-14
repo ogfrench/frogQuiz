@@ -72,7 +72,12 @@
     "greeting": "Leuk je te ontmoeten!",
     "create_account": "Account aanmaken",
     "forgot_password?": "Wachtwoord vergeten?",
-    "already_have_account?": "Heb je al een account?"
+    "already_have_account?": "Heb je al een account?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "Welkom terug.",
@@ -288,7 +293,8 @@
     "this_session?": "Deze sessie?",
     "change_avatar": "Verander avatar",
     "security_settings": "Beveiligingsinstellingen",
-    "add_api_key": "API-sleutel toevoegen"
+    "add_api_key": "API-sleutel toevoegen",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "Gemaakt door",

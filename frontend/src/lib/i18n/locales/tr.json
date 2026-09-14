@@ -187,7 +187,12 @@
     "create_account": "Hesap oluştur",
     "forgot_password?": "Şifreni mi unuttun?",
     "already_have_account?": "Halihazırda bir hesabın var mı?",
-    "greeting": "Tanıştığımıza memnun oldum!"
+    "greeting": "Tanıştığımıza memnun oldum!",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "create_page": {
     "success": {
@@ -288,7 +293,8 @@
     "old_password": "Eski şifre",
     "add_api_key": "API anahtarı ekle",
     "change_avatar": "Avatarı değiştir",
-    "security_settings": "Güvenlik Ayarları"
+    "security_settings": "Güvenlik Ayarları",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "Oluşturan:",

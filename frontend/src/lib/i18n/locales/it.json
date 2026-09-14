@@ -72,7 +72,12 @@
     "greeting": "Felice di vederti!",
     "create_account": "Crea un account",
     "forgot_password?": "Password dimenticata?",
-    "already_have_account?": "Hai già un account?"
+    "already_have_account?": "Hai già un account?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "Bentornato.",
@@ -288,7 +293,8 @@
     "delete_this_session": "Elimina questa sessione",
     "change_avatar": "Cambia l'avatar",
     "security_settings": "Impostazioni della sicurezza",
-    "add_api_key": "Aggiungi una chiave API"
+    "add_api_key": "Aggiungi una chiave API",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "Creato da",

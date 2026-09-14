@@ -67,7 +67,12 @@
     "greeting": "خوشبختم که با شما آشنا شدم!",
     "create_account": "ایجاد حساب کاربری",
     "forgot_password?": "رمز عبور را فراموش کرده‌اید؟",
-    "already_have_account?": "از قبل حساب دارید؟"
+    "already_have_account?": "از قبل حساب دارید؟",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "دوباره خوش آمدید.",
@@ -283,7 +288,8 @@
     "this_session?": "این دوره؟",
     "change_avatar": "عکس پروفایل را تغییر دهید",
     "security_settings": "تنظیمات امنیتی",
-    "add_api_key": "کلید API را اضافه کنید"
+    "add_api_key": "کلید API را اضافه کنید",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "ساخته‌شده توسط",

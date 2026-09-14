@@ -212,7 +212,12 @@
     "create_account": "Crea un compte",
     "forgot_password?": "Heu oblidat la contrasenya?",
     "already_have_account?": "Ja teniu un compte?",
-    "greeting": "Molt de gust!"
+    "greeting": "Molt de gust!",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "editor": {
     "time_in_seconds": "Temps en segons",
@@ -287,7 +292,8 @@
     "last_seen": "Última consulta",
     "change_avatar": "Canvi d'avatar",
     "security_settings": "Paràmetres de seguretat",
-    "add_api_key": "Afegir clau API"
+    "add_api_key": "Afegir clau API",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "Fet per",

@@ -97,7 +97,12 @@
     "greeting": "¡Encantado de conocerte!",
     "create_account": "Crear una cuenta",
     "forgot_password?": "¿Olvidaste tu contraseña?",
-    "already_have_account?": "¿Ya tienes una cuenta?"
+    "already_have_account?": "¿Ya tienes una cuenta?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "words": {
     "question_plural": "Preguntas",
@@ -236,7 +241,8 @@
     "old_password": "Contraseña antigua",
     "change_avatar": "Cambiar avatar",
     "security_settings": "Configuración de Seguridad",
-    "add_api_key": "Añadir clave API"
+    "add_api_key": "Añadir clave API",
+    "sessions": "Sessions"
   },
   "play_page": {
     "2nd_place": "2º puesto",

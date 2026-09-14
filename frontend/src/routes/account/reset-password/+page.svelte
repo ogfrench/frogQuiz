@@ -51,37 +51,35 @@ SPDX-License-Identifier: MPL-2.0
 <div class="flex items-center justify-center h-full px-4">
 	<div>
 		<div
-			class="w-full max-w-sm mx-auto overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800"
+			class="w-full max-w-sm mx-auto overflow-hidden border-border bg-card rounded-xl border shadow-sm"
 		>
 			<div class="px-6 py-4">
-				<h2 class="text-3xl font-bold text-center text-gray-700 dark:text-white">
-					frogQuiz
-				</h2>
+				<h2 class="text-3xl font-bold tracking-tight text-center">frogQuiz</h2>
 
 				<!--
-								<h3 class='mt-1 text-xl font-medium text-center text-gray-600 dark:text-gray-200'>
+								<h3 class='mt-1 text-lg font-medium text-center'>
 								</h3>
 				-->
 
-				<p class="mt-1 text-center text-gray-500 dark:text-gray-400">
+				<p class="text-muted-foreground mt-1 text-center">
 					{$t('password_reset_page.reset_password')}
 				</p>
 
 				<form onsubmit={submit}>
 					<div class="w-full mt-4">
-						<div class="dark:bg-gray-800 bg-white p-4 rounded-lg">
+						<div class="bg-card rounded-lg p-4">
 							<div class="relative bg-inherit w-full">
 								<input
 									id="email"
 									bind:value={email}
 									name="email"
 									type="email"
-									class="w-full peer bg-transparent h-10 rounded-lg text-gray-700 dark:text-white placeholder-transparent ring-2 px-2 ring-gray-500 focus:ring-sky-600 focus:outline-hidden focus:border-rose-600"
+									class="peer text-foreground ring-input focus:ring-ring min-h-11 w-full rounded-lg bg-transparent px-2 ring-2 placeholder-transparent focus:outline-hidden"
 									placeholder={$t('words.email')}
 								/>
 								<label
 									for="email"
-									class="absolute cursor-text left-0 -top-3 text-sm text-gray-700 dark:text-white bg-inherit mx-1 px-1 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500 peer-placeholder-shown:top-2 peer-focus:-top-3 peer-focus:text-sky-600 peer-focus:text-sm transition-all"
+									class="text-foreground peer-placeholder-shown:text-muted-foreground peer-focus:text-primary absolute -top-3 left-0 mx-1 cursor-text bg-inherit px-1 text-sm transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-sm"
 								>
 									{$t('words.email')}
 								</label>
@@ -91,12 +89,12 @@ SPDX-License-Identifier: MPL-2.0
 						<div class="flex items-center justify-between mt-4 gap-2">
 							<a
 								href="/account/login"
-								class="text-sm text-gray-600 dark:text-gray-200 hover:text-gray-500"
+								class="text-muted-foreground hover:text-foreground fq-touch-target relative inline-flex min-h-11 items-center text-sm underline-offset-4 transition-colors hover:underline"
 								>{$t('register_page.already_have_account?')}</a
 							>
 
 							<button
-								class="px-4 py-2 leading-5 text-white transition-colors duration-200 transform bg-gray-700 rounded-sm hover:bg-gray-600 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+								class="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring fq-touch-target relative inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 								disabled={email === ''}
 								type="submit"
 							>
@@ -121,15 +119,15 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 
 			<div
-				class="flex items-center justify-center py-4 text-center bg-gray-50 dark:bg-gray-700"
+				class="border-border bg-muted/40 flex items-center justify-center gap-1.5 border-t py-4 text-center"
 			>
-				<span class="text-sm text-gray-600 dark:text-gray-200"
+				<span class="text-muted-foreground text-sm"
 					>{$t('login_page.already_have_account')}
 				</span>
 
 				<a
 					href="/account/register"
-					class="mx-2 text-sm font-bold text-blue-500 dark:text-blue-400 hover:underline"
+					class="text-primary fq-touch-target relative inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 transition-colors hover:underline"
 					>{$t('words.register')}</a
 				>
 			</div>

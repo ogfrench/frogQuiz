@@ -52,7 +52,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <nav
-	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 border-b px-5 py-3 backdrop-blur-xl lg:px-8"
+	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 border-b px-5 py-3 backdrop-blur-xl [clip-path:inset(0)] lg:px-8"
 >
 	<!-- Desktop navbar -->
 	<div class="hidden lg:flex lg:items-center lg:flex-row lg:justify-between">

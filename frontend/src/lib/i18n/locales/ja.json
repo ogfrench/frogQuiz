@@ -119,7 +119,8 @@
     "old_password": "古いパスワード",
     "repeat_password": "パスワードを再入力",
     "new_password": "新しいパスワード",
-    "security_settings": "セキュリティ設定"
+    "security_settings": "セキュリティ設定",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "作者:"
@@ -326,7 +327,12 @@
     "greeting": "はじめまして！",
     "forgot_password?": "パスワードを忘れた？",
     "already_have_account?": "既にアカウントを持っていますか？",
-    "create_account": "アカウントを作成"
+    "create_account": "アカウントを作成",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "password_reset_page": {
     "reset_password": "パスワードをリセット"

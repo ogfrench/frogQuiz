@@ -72,7 +72,12 @@
     "greeting": "Miło cię poznać!",
     "create_account": "Utwórz konto",
     "forgot_password?": "Zapomniałeś hasła?",
-    "already_have_account?": "Masz już konto?"
+    "already_have_account?": "Masz już konto?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "Witaj ponownie.",
@@ -215,7 +220,8 @@
     "change_password_submit": "Zmień hasło!",
     "change_avatar": "Zmień awatar",
     "security_settings": "Ustawienia bezpieczeństwa",
-    "add_api_key": "Dodaj klucz API"
+    "add_api_key": "Dodaj klucz API",
+    "sessions": "Sessions"
   },
   "editor_page": {
     "add_an_answer": "Dodaj odpowiedź",

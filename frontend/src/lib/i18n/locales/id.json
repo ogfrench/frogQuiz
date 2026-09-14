@@ -72,7 +72,12 @@
     "greeting": "Senang bertemu dengan Anda!",
     "create_account": "Buat akun",
     "forgot_password?": "Lupa kata sandi?",
-    "already_have_account?": "Sudah memiliki akun?"
+    "already_have_account?": "Sudah memiliki akun?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "Selamat datang kembali.",
@@ -285,7 +290,8 @@
     "delete_this_session": "Hapus sesi ini",
     "check_location": "Periksa lokasi",
     "this_session?": "Sesi ini?",
-    "add_api_key": "Tambah kunci API"
+    "add_api_key": "Tambah kunci API",
+    "sessions": "Sessions"
   },
   "result_page": {
     "correct_answer_plural": "{{count}} jawaban benar",

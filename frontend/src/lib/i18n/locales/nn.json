@@ -3,7 +3,12 @@
     "already_have_account?": "Har du allereie ein konto?",
     "create_account": "Opprett konto",
     "greeting": "",
-    "forgot_password?": ""
+    "forgot_password?": "",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "overview_page": {
     "created_at": "Oppretta",
@@ -282,7 +287,8 @@
     "this_session?": "",
     "repeat_password": "",
     "new_password": "",
-    "add_api_key": ""
+    "add_api_key": "",
+    "sessions": "Sessions"
   },
   "footer": {
     "donate": "",

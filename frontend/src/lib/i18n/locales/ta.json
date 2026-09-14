@@ -90,7 +90,12 @@
     "greeting": "உங்களை சந்தித்ததில் மகிழ்ச்சி!",
     "create_account": "கணக்கை உருவாக்கவும்",
     "forgot_password?": "கடவுச்சொல்லை மறந்துவிட்டீர்களா?",
-    "already_have_account?": "ஏற்கனவே ஒரு கணக்கு இருக்கிறதா?"
+    "already_have_account?": "ஏற்கனவே ஒரு கணக்கு இருக்கிறதா?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "மீண்டும் வருக.",
@@ -306,7 +311,8 @@
     "this_session?": "இந்த அமர்வு?",
     "change_avatar": "அவதாரத்தை மாற்றவும்",
     "security_settings": "பாதுகாப்பு-அமைவுகள்",
-    "add_api_key": "பநிஇ விசையைச் சேர்க்கவும்"
+    "add_api_key": "பநிஇ விசையைச் சேர்க்கவும்",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "தயாரிக்கப்பட்டது",

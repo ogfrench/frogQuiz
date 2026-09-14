@@ -67,7 +67,12 @@
     "create_account": "建立帳號",
     "forgot_password?": "忘記密碼？",
     "already_have_account?": "已經有帳號了？",
-    "greeting": "很高興見到你！"
+    "greeting": "很高興見到你！",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "login_or_create_account": "登入或建立帳號",
@@ -178,7 +183,8 @@
     "security_settings": "安全性設定",
     "change_avatar": "變更頭像",
     "last_seen": "最後上線時間",
-    "add_api_key": "新增 API 金鑰"
+    "add_api_key": "新增 API 金鑰",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "作者為",

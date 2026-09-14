@@ -67,7 +67,12 @@
     "create_account": "Fiók létrehozása",
     "already_have_account?": "Már van fiókja?",
     "greeting": "Örülök, hogy találkoztunk!",
-    "forgot_password?": "Elfelejtetted a jelszavad?"
+    "forgot_password?": "Elfelejtetted a jelszavad?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "already_have_account": "Nincs fiókod?",
@@ -283,7 +288,8 @@
     "change_avatar": "Avatar módosítása",
     "security_settings": "Biztonsági beállítások",
     "this_session?": "Ez a munkamenet?",
-    "add_api_key": "API-kulcs hozzáadása"
+    "add_api_key": "API-kulcs hozzáadása",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "Készítette",

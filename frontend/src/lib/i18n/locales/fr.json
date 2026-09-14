@@ -202,7 +202,12 @@
     "greeting": "Ravi de vous connaître !",
     "create_account": "Créer un compte",
     "forgot_password?": "Mot de passe oublié ?",
-    "already_have_account?": "Vous avez déjà un compte ?"
+    "already_have_account?": "Vous avez déjà un compte ?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "editor": {
     "time_in_seconds": "Temps en seconde",
@@ -288,7 +293,8 @@
     "this_session?": "Cette session ?",
     "security_settings": "Paramètres de sécurité",
     "change_avatar": "Changer d'avatar",
-    "add_api_key": "Ajouter une clé API"
+    "add_api_key": "Ajouter une clé API",
+    "sessions": "Sessions"
   },
   "explore_page": {
     "made_by": "Créé par",
