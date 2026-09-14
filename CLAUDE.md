@@ -83,6 +83,23 @@ document.documentElement.scrollWidth > clientWidth             // the w-screen o
 getComputedStyle(document.body).backgroundColor                // tokens actually applied
 ```
 
+### Running the backend suite
+
+The suite is order-dependent and shares state, so a re-run against warm infrastructure
+lies to you. Two things bite:
+
+- **Postgres**: the tests are not idempotent. Running them twice without recreating
+  the database fails at `test_create_test_user` with a 409, because the user from the
+  last run is still there.
+- **Redis**: sessions, login challenges and the token denylist live there, not in
+  Postgres. Dropping the database without clearing Redis fails the suite from
+  `test_password_update` onward with a cascade of 401s that looks exactly like broken
+  auth code. It is 40 spurious failures from a warm cache. `run_tests.sh` flushes it
+  now; if you are driving pytest directly, `redis-cli flushall` first.
+
+Compare against a baseline on clean infrastructure before concluding you broke
+something.
+
 ## Feature triage (internal-tool lens)
 
 The app carries a lot of features aimed at a public multi-tenant SaaS. For an internal Kahoot clone, default posture:
