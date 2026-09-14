@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -39,7 +40,8 @@ settings = settings()
 router = APIRouter()
 
 router.include_router(webauthn.router, prefix="/webauthn")
-router.include_router(twofa.router, prefix="/2fa")
+if settings.enable_totp:
+    router.include_router(twofa.router, prefix="/2fa")
 
 
 class RouteUser(pydantic.BaseModel):
@@ -308,8 +310,8 @@ async def list_api_keys(user: User = Depends(get_current_user)):
 
 
 @router.delete("/api_keys")
-async def delete_api_key(api_key: str, _: User = Depends(get_current_user)):
-    key = await ApiKey.objects.get_or_none(key=api_key)
+async def delete_api_key(api_key: str, user: User = Depends(get_current_user)):
+    key = await ApiKey.objects.get_or_none(key=api_key, user=user)
     if key is None:
         raise HTTPException(status_code=404, detail="Key not found")
     await redis.delete(f"apikey:{key.key}")

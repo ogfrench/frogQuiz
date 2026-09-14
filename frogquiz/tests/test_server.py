@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -629,6 +630,18 @@ class TestQuizivity:
         data = resp.json()
         assert type(data) is list
         assert data[0]["id"] == ValueStorage.share_id
+
+    @pytest.mark.asyncio
+    async def test_delete_quiztivity_requires_auth(self, test_client: TestClient):  # noqa : F811
+        # Regression: DELETE /quiztivity/{uuid} carried no auth dependency at all, so
+        # anyone who knew a UUID could delete someone else's QuizTivity. The second
+        # request proves the object survived the unauthenticated attempt.
+        resp = test_client.delete(f"/api/v1/quiztivity/{ValueStorage.quiztivity_id}")
+        assert resp.status_code == 401
+        resp = test_client.get(
+            f"/api/v1/quiztivity/{ValueStorage.quiztivity_id}", cookies=ValueStorage.cookies
+        )
+        assert resp.status_code == 200
 
     @pytest.mark.asyncio
     async def test_delete_quiztivity(self, test_client: TestClient):  # noqa : F811
