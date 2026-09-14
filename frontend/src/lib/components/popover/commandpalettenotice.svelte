@@ -18,6 +18,12 @@ SPDX-License-Identifier: MPL-2.0
 		if (Cookies.get('commandpalette_notice')) {
 			return;
 		}
+		// A keyboard shortcut is not news to someone holding a phone: there is no Ctrl
+		// key to press, and the notice was landing on top of the page heading. Only
+		// offer it where a keyboard is the likely input.
+		if (window.matchMedia('(pointer: coarse)').matches) {
+			return;
+		}
 		open = true;
 		Cookies.set('commandpalette_notice', 'shown', {
 			// setDate returns a timestamp, so no Date instance survives to be reactive

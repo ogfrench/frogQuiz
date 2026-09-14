@@ -171,7 +171,8 @@
     "logout": "تسجيل الخروج",
     "player": "اللاعب",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "edit_page": {
     "success_update_body": "لا أحد يتوقع التحقيق.",
@@ -255,7 +256,7 @@
   },
   "settings_page": {
     "change_avatar": "تغيير الصورة الرمزية",
-    "change_password_submit": "تغيير كلمة المرور!",
+    "change_password_submit": "تغيير كلمة المرور",
     "security_settings": "إعدادت الأمان",
     "delete_this_session": "حذف هذه الجلسة",
     "old_password": "كلمة المرور القديمة",
@@ -265,7 +266,13 @@
     "repeat_password": "أعد كلمة المرور",
     "new_password": "كلمة مرور جديدة",
     "add_api_key": "أضف مفتاح API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "footer": {
     "donate": "",
@@ -399,7 +406,9 @@
     "side_import_kahoot": "في هذا الجانب يمكنك استيراد الاختبارات الموجودة على Kahoot!.",
     "url_should_look_like_this": "يجب أن يبدو عنوان URL بهذا الشكل: https://create.´/details/...",
     "need_help": "تحتاج مساعدة؟",
-    "upload_file_ending": "قم بتحميل الملف الذي ينتهي بـ .cqa أو .xlsx"
+    "upload_file_ending": "قم بتحميل الملف الذي ينتهي بـ .cqa أو .xlsx",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "start_game": {
     "old_school_mode_description": "",

@@ -87,7 +87,9 @@
     "upload_file_ending": ".cqa または .xlsx で終わるファイルをアップロードする",
     "this_side_frogquiz": "ここでは、frogQuizからエクスポートされたクイズをインポートできます.",
     "need_help": "ヘルプが必要？",
-    "a_kahoot_quiz": "Kahoot! のクイズ"
+    "a_kahoot_quiz": "Kahoot! のクイズ",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "すでにこのゲームには登録済みの管理者がいます.",
@@ -120,7 +122,13 @@
     "repeat_password": "パスワードを再入力",
     "new_password": "新しいパスワード",
     "security_settings": "セキュリティ設定",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "作者:"
@@ -280,7 +288,8 @@
     "info": "情報",
     "normal": "普通",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "search_page": {
     "at_least_3_characters": "少なくとも3文字を入力してください.",

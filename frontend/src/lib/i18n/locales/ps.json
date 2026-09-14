@@ -202,7 +202,8 @@
     "info": "معلومات",
     "player": "ګډونوال",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "time_in_seconds": "وخت په ثانیو",
@@ -251,7 +252,9 @@
     "upload_file_ending": "هغه فایل چې په ‎.cqa یا ‎.xlsx پای ته رسېږي، پورته کړئ",
     "this_side_frogquiz": "په دې برخه کې تاسو کولی شئ هغه ازموینې واردې کړئ چې له frogQuiz څخه صادرې شوې دي.",
     "this_side_frogquiz_excel": "تاسو کولی شئ د Excel فایلونه هم پورته کړئ، که لاندې قالب مو ډک کړی وي. که د همدې سرلیک سره یوه ازموینه له مخکې موجوده وي، پوښتنې به هماغې ازموینې ته ورزیاتې شي.",
-    "download_template_here": "قالب ډاونلوډ کړئ"
+    "download_template_here": "قالب ډاونلوډ کړئ",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "د دې لوبې لپاره لا دمخه یو مدیر ثبت شوی دی.",
@@ -281,7 +284,7 @@
     "old_password": "زوړ پټ نوم",
     "new_password": "نوی پټ نوم",
     "repeat_password": "پټ نوم بیا ولیکئ",
-    "change_password_submit": "پټ نوم بدل کړئ!",
+    "change_password_submit": "پټ نوم بدل کړئ",
     "last_seen": "وروستی ځل لیدل شوی",
     "check_location": "موقعیت وګورئ",
     "delete_this_session": "دا دوره ړنګه کړئ",
@@ -289,7 +292,13 @@
     "change_avatar": "پروفایل انځور بدل کړئ",
     "security_settings": "امنیتي تنظیمات",
     "add_api_key": "د API کیلي اضافه کړئ",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "جوړونکی",

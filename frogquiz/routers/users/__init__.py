@@ -12,7 +12,7 @@ import ormar
 import pydantic
 from email_validator import validate_email, EmailNotValidError
 from fastapi import APIRouter, Response, HTTPException, Request, Depends
-from fastapi.responses import JSONResponse, RedirectResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 
 from frogquiz import oauth
@@ -275,19 +275,23 @@ async def delete_user_account(input_data: DeleteUserInput, user: User = Depends(
     await user.delete()
 
 
-@router.get("/avatar", response_class=PlainTextResponse)
-async def get_own_avatar(respo: Response, user: User = Depends(get_current_user)):
-    respo.headers.append("Content-Type", "image/svg+xml")
-    return gzip.decompress(base64.b64decode(user.avatar))
+@router.get("/avatar")
+async def get_own_avatar(user: User = Depends(get_current_user)):
+    # See routers/avatar.py: a patched Content-Type left text/plain in place as a
+    # second header and every avatar rendered as a broken image.
+    return Response(
+        content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml"
+    )
 
 
-@router.get("/avatar/{user_id}", response_class=PlainTextResponse)
-async def get_other_avatar(respo: Response, user_id: uuid.UUID):
+@router.get("/avatar/{user_id}")
+async def get_other_avatar(user_id: uuid.UUID):
     user = await User.objects.filter(id=user_id).get_or_none()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    respo.headers.append("Content-Type", "image/svg+xml")
-    return gzip.decompress(base64.b64decode(user.avatar))
+    return Response(
+        content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml"
+    )
 
 
 class InternalAuthData(BaseModel):

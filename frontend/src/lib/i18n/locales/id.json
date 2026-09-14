@@ -207,7 +207,8 @@
     "game_pin": "PIN Permainan",
     "player": "Pemain",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "right_or_true?": "Benar?",
@@ -256,7 +257,9 @@
     "a_kahoot_quiz": "Kuis Kahoot!",
     "side_import_kahoot": "Di sisi ini Anda dapat mengimpor kuis yang ada di Kahoot!.",
     "url_should_look_like_this": "URL harus terlihat seperti ini: [https://create.kahoot.it/details/](https://create.kahoot.it/details/)...",
-    "upload_file_ending": "Unggah berkas yang berakhiran .cqa atau .xlsx"
+    "upload_file_ending": "Unggah berkas yang berakhiran .cqa atau .xlsx",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "start_game": "Mulai permainan",
@@ -282,7 +285,7 @@
   "settings_page": {
     "old_password": "Kata sandi lama",
     "new_password": "Kata sandi baru",
-    "change_password_submit": "Ubah kata sandi!",
+    "change_password_submit": "Ubah kata sandi",
     "last_seen": "Terakhir dilihat",
     "repeat_password": "Ulangi kata sandi",
     "change_avatar": "Ubah avatar",
@@ -291,7 +294,13 @@
     "check_location": "Periksa lokasi",
     "this_session?": "Sesi ini?",
     "add_api_key": "Tambah kunci API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "result_page": {
     "correct_answer_plural": "{{count}} jawaban benar",

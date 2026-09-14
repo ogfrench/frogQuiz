@@ -166,7 +166,8 @@
     "player": "שחקן",
     "answer_locked_in": "Answer locked in",
     "waiting_for_results": "Waiting for everyone else…",
-    "correct": "Correct"
+    "correct": "Correct",
+    "file": "File"
   },
   "editor": {
     "time_in_seconds": "זמן בשניות",
@@ -192,7 +193,9 @@
   "import_page": {
     "a_kahoot_quiz": "חידון Kahoot!",
     "url_should_look_like_this": "הכתובת צריכה להיראות כך: ‎https://create.kahoot.it/details/...",
-    "frogquiz_quiz": "חידון frogQuiz"
+    "frogquiz_quiz": "חידון frogQuiz",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "start_game": "התחלת המשחק",

@@ -110,10 +110,24 @@ SPDX-License-Identifier: MPL-2.0
 	   not know about the theme, so in dark mode the question title rendered black on
 	   a dark ground and was all but invisible. Hand it the tokens instead of letting
 	   it pick. The balloon toolbar needs the same, or it arrives as a white slab. */
+	/* ckeditor takes the element over on init and applies its own editable styling, so
+	   the border and padding set in the markup stop reading -- on an empty new quiz the
+	   title showed as a label over blank space, with "A title is required" above it and
+	   nowhere visible to type. Give the editable the same affordance as every other
+	   field on the page. */
 	:global(.ck.ck-content),
 	:global(.ck.ck-editor__editable) {
 		color: inherit;
-		background: transparent;
+		min-height: 2.75rem;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid var(--input);
+		border-radius: var(--radius);
+		background: var(--background);
+	}
+
+	:global(.ck.ck-editor__editable.ck-focused) {
+		outline: none;
+		box-shadow: 0 0 0 2px var(--ring);
 	}
 
 	:global(.ck.ck-balloon-panel) {

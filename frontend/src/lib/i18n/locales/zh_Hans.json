@@ -167,7 +167,8 @@
     "range": "",
     "logout": "",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "edit_page": {
     "success_update_body": "",
@@ -257,7 +258,13 @@
     "repeat_password": "",
     "new_password": "",
     "add_api_key": "",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "footer": {
     "donate": "",
@@ -384,7 +391,9 @@
     "side_import_kahoot": "",
     "url_should_look_like_this": "",
     "need_help": "",
-    "upload_file_ending": ""
+    "upload_file_ending": "",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "start_game": {
     "old_school_mode_description": "",

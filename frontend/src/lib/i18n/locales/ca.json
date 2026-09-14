@@ -102,7 +102,8 @@
     "game_pin": "PIN de la partida",
     "player": "Jugador",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "login_page": {
     "already_have_account": "No teniu cap compte?",
@@ -266,7 +267,9 @@
     "a_kahoot_quiz": "Un qüestionari de Kahoot!",
     "side_import_kahoot": "En aquest costat pots importar qüestionaris, que es troben a Kahoot!.",
     "url_should_look_like_this": "L'URL hauria de veure's similar a: https://create.kahoot.it/details/...",
-    "upload_file_ending": "Puja el fitxer que acaba en .cqa o .xlsx"
+    "upload_file_ending": "Puja el fitxer que acaba en .cqa o .xlsx",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "edit_page": {
     "success_update_title": "El qüestionari s'ha actualitzat!",
@@ -285,7 +288,7 @@
     "old_password": "Contrasenya antiga",
     "new_password": "Contrasenya nova",
     "repeat_password": "Repetiu la contrasenya",
-    "change_password_submit": "Canvia la contrasenya!",
+    "change_password_submit": "Canvia la contrasenya",
     "delete_this_session": "Esborra aquesta sessió",
     "this_session?": "Aquesta sessió?",
     "check_location": "Verifica la ubicació",
@@ -293,7 +296,13 @@
     "change_avatar": "Canvi d'avatar",
     "security_settings": "Paràmetres de seguretat",
     "add_api_key": "Afegir clau API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Fet per",

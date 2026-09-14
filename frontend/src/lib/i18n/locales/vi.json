@@ -122,7 +122,8 @@
     "logout": "Đăng xuất",
     "player": "Người chơi",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "edit_page": {
     "success_update_body": "Không ai mong đợi sự điều tra này.",
@@ -255,7 +256,7 @@
   },
   "settings_page": {
     "change_avatar": "Thay đổi hình đại diện",
-    "change_password_submit": "Thay đổi mật khẩu!",
+    "change_password_submit": "Thay đổi mật khẩu",
     "security_settings": "Cài đặt bảo mật",
     "delete_this_session": "Xóa phiên này",
     "old_password": "Mật khẩu cũ",
@@ -265,7 +266,13 @@
     "repeat_password": "Lặp lại mật khẩu",
     "new_password": "Mật khẩu mới",
     "add_api_key": "Thêm API key",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "footer": {
     "donate": "Nếu bạn thấy điều này hữu ích, xin vui lòng ủng hộ {{donate_link}}.",
@@ -396,7 +403,9 @@
     "side_import_kahoot": "Ở bên này, bạn có thể nhập các câu đố trực tiếp trên Kahoot!.",
     "url_should_look_like_this": "URL sẽ trông như thế này: https://create.kahoot.it/details/...",
     "need_help": "Cần trợ giúp?",
-    "upload_file_ending": "Tải lên tệp có đuôi .cqa hoặc .xlsx"
+    "upload_file_ending": "Tải lên tệp có đuôi .cqa hoặc .xlsx",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "start_game": {
     "old_school_mode_description": "Các câu hỏi và hình ảnh sẽ được hiển thị trên cả màn hình quản trị viên và màn hình của người chơi",

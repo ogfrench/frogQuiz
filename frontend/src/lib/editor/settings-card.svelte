@@ -37,10 +37,16 @@ SPDX-License-Identifier: MPL-2.0
 	<div class="border-border bg-card flex flex-col gap-8 rounded-xl border p-6 shadow-sm">
 		<div class="flex flex-col gap-2">
 			<span class="text-muted-foreground text-sm font-medium">{$t('words.title')}</span>
+			<!-- The title is a rich-text field, and with no content it rendered as a label
+			     over blank space: on a new quiz the page said "A title is required" with
+			     no visible box to type in. min-h-11 and the field styling give it the same
+			     affordance as every other input on the page. -->
 			{#await import('$lib/inline-editor.svelte')}
 				<Spinner my_20={false} />
 			{:then c}
-				<div class="[&_[contenteditable]]:w-full">
+				<div
+					class="[&_[contenteditable]]:min-h-11 [&_[contenteditable]]:w-full [&_[contenteditable]]:text-left"
+				>
 					<c.default bind:text={data.title} />
 				</div>
 			{/await}

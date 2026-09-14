@@ -102,7 +102,8 @@
     "quiz": "Questionário",
     "player": "Jogador",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "index_page": {
     "meta": {
@@ -329,7 +330,7 @@
   },
   "settings_page": {
     "change_avatar": "Mudar avatar",
-    "change_password_submit": "Mudar palavra-passe!",
+    "change_password_submit": "Mudar palavra-passe",
     "security_settings": "Configurações de segurança",
     "delete_this_session": "Apagar esta sessão",
     "old_password": "Palavra-passe antiga",
@@ -339,7 +340,13 @@
     "repeat_password": "Repita a palavra-passe",
     "new_password": "Palavra-passe nova",
     "add_api_key": "Adicionar chave de API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "footer": {
     "donate": "Se achar isto útil, por favor considere {{donate_link}}.",
@@ -436,7 +443,9 @@
     "side_import_kahoot": "Neste canto consegue importar quizzes que estão no Kahoot!.",
     "url_should_look_like_this": "A URL deve estar assim: https://create.kahoot.it/details/...",
     "need_help": "Precisa de ajuda?",
-    "upload_file_ending": "Envie o ficheiro com extensão .cqa ou .xlsx"
+    "upload_file_ending": "Envie o ficheiro com extensão .cqa ou .xlsx",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "start_game": {
     "old_school_mode_description": "As perguntas e imagens serão mostradas tanto no ecrã do administrador quanto no ecrã dos jogadores",

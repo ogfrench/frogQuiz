@@ -160,7 +160,8 @@
     "info": "তথ্য",
     "player": "খেলোয়াড়",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "create_page": {
     "success": {
@@ -251,7 +252,9 @@
     "this_side_frogquiz": "এই পাশে আপনি সেসব কুইজ ইমপোর্ট করতে পারবেন, যেগুলো frogQuiz থেকে এক্সপোর্ট করা হয়েছে।",
     "upload_file_ending": ".cqa বা .xlsx এই ফরমেটের ফাইল আপলোড করুন",
     "this_side_frogquiz_excel": "নিচের টেমপ্লেটটি পূরণ করা থাকলে, এক্সেল ফাইলও আপলোড করা যাবে। একই শিরোনামের একটি কুইজ আগে থেকে থাকলে, প্রশ্নগুলো সেটির সাথে যোগ হবে।",
-    "download_template_here": "টেমপ্লেট ডাউনলোড করুন"
+    "download_template_here": "টেমপ্লেট ডাউনলোড করুন",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "এই গেমের জন্য ইতিমধ্যেই একজন অ্যাডমিন নিবন্ধিত আছে।",
@@ -281,7 +284,7 @@
     "old_password": "পুরোনো পাসওয়ার্ড",
     "new_password": "নতুন পাসওয়ার্ড",
     "repeat_password": "পাসওয়ার্ড আবার দিন",
-    "change_password_submit": "পাসওয়ার্ড পরিবর্তন করুন!",
+    "change_password_submit": "পাসওয়ার্ড পরিবর্তন করুন",
     "last_seen": "শেষ দেখা",
     "check_location": "লোকেশন দেখুন",
     "delete_this_session": "এই সেশন মুছুন",
@@ -289,7 +292,13 @@
     "change_avatar": "অ্যাভাটার পরিবর্তন করুন",
     "security_settings": "নিরাপত্তা সেটিংস",
     "add_api_key": "API কী যোগ করুন",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "তৈরি করেছেন",

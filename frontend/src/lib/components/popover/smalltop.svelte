@@ -30,7 +30,7 @@ SPDX-License-Identifier: MPL-2.0
 	     "shadow-smdark:text-gray-400" that silently broke both the shadow and the
 	     dark-mode colour it was meant to set. -->
 	<div
-		class="fixed inset-x-0 top-10 z-[60] flex justify-center px-4"
+		class="fixed inset-x-0 bottom-6 z-[60] flex justify-center px-4"
 		transition:fly|global={{ y: -100 }}
 	>
 		<div

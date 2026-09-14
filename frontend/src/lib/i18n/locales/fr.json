@@ -127,7 +127,8 @@
     "like_plural": "\"J'aime\"",
     "player": "Joueur",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "index_page": {
     "slogan": "La plateforme de quiz open-source !",
@@ -256,7 +257,9 @@
     "url_should_look_like_this": "L'URL devrait ressembler à ceci : https://create.kahoot.it/details/...",
     "this_side_frogquiz": "De ce côté, vous pouvez importer des quiz, qui ont été exportés de frogQuiz.",
     "this_side_frogquiz_excel": "Vous pouvez aussi téléverser des fichiers Excel, si vous avez rempli le modèle suivant. Si un quiz avec le titre existe déjà, cela rajoutera les questions au quiz existant.",
-    "download_template_here": "Télécharger le modèle"
+    "download_template_here": "Télécharger le modèle",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "Il y a déjà un administrateur enregistré pour ce jeu.",
@@ -286,7 +289,7 @@
     "old_password": "Ancien mot de passe",
     "new_password": "Nouveau mot de passe",
     "repeat_password": "Répéter le mot de passe",
-    "change_password_submit": "Changer le mot de passe !",
+    "change_password_submit": "Changer le mot de passe ",
     "last_seen": "Dernière consultation",
     "check_location": "Vérifier la localisation",
     "delete_this_session": "Supprimer cette session",
@@ -294,7 +297,13 @@
     "security_settings": "Paramètres de sécurité",
     "change_avatar": "Changer d'avatar",
     "add_api_key": "Ajouter une clé API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Créé par",

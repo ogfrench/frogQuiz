@@ -177,7 +177,8 @@
     "logout": "Вийти",
     "player": "Гравець",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "edit_page": {
     "success_update_body": "Інквізиції ніхто не чекатиме.",
@@ -261,7 +262,7 @@
   },
   "settings_page": {
     "change_avatar": "Змінити аватар",
-    "change_password_submit": "Змінити пароль!",
+    "change_password_submit": "Змінити пароль",
     "security_settings": "Налаштування безпеки",
     "delete_this_session": "Видалити цей сеанс",
     "old_password": "Старий пароль",
@@ -271,7 +272,13 @@
     "repeat_password": "Повторіть пароль",
     "new_password": "Новий пароль",
     "add_api_key": "Додайте ключ API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "footer": {
     "donate": "Якщо ви вважаєте це корисним, спробуйте {{donate_link}}.",
@@ -405,7 +412,9 @@
     "side_import_kahoot": "На цій стороні ви можете імпортувати тести, які живуть на Kahoot!.",
     "url_should_look_like_this": "URL-адреса має виглядати так: https://create.kahoot.it/details/...",
     "need_help": "Потрібна допомога?",
-    "upload_file_ending": "Завантажте файл із розширенням .cqa або .xlsx"
+    "upload_file_ending": "Завантажте файл із розширенням .cqa або .xlsx",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "start_game": {
     "old_school_mode_description": "Запитання та зображення відображатимуться як на екрані адміністратора, так і на екрані гравців",

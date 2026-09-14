@@ -202,7 +202,8 @@
     "info": "Információ",
     "player": "Játékos",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "add_new_question": "Új kérdés hozzáadása",
@@ -251,7 +252,9 @@
     "side_import_kahoot": "Ezen az oldalon importálhat kvízeket, amelyek a Kahoot!-on aktívak.",
     "need_help": "Segíthetünk?",
     "visit_docs": "Nézze meg a dokumentációt",
-    "frogquiz_quiz": "Egy frogQuiz-kvíz"
+    "frogquiz_quiz": "Egy frogQuiz-kvíz",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "start_game": "Játék kezdése",
@@ -281,7 +284,7 @@
     "old_password": "Régi jelszó",
     "new_password": "Új jelszó",
     "repeat_password": "Jelszó ismét",
-    "change_password_submit": "Jelszó módosítása!",
+    "change_password_submit": "Jelszó módosítása",
     "last_seen": "Utoljára aktív",
     "check_location": "Hely ellenörzése",
     "delete_this_session": "Munkamenetet törlése",
@@ -289,7 +292,13 @@
     "security_settings": "Biztonsági beállítások",
     "this_session?": "Ez a munkamenet?",
     "add_api_key": "API-kulcs hozzáadása",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Készítette",

@@ -6,6 +6,12 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import Upload from '@lucide/svelte/icons/upload';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -105,151 +111,118 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <div class="flex items-center justify-center h-full px-4">
-	<div>
-		<span class="p-4"></span>
+	<!-- Was one card holding a grid-cols-2 with no breakpoint and a border-l divider,
+	     so on a phone each method got about 170px and its prose wrapped every two or
+	     three words. Two cards that stack instead: the cards do the separating, so the
+	     divider goes, and each method carries its own heading, explanation and action.
+	     The card also carried w-screen, which is 100vw and so includes the scrollbar. -->
+	<div class="mx-auto w-full max-w-4xl px-4 py-8">
+		<h1 class="mb-1 text-center text-3xl font-bold tracking-tight">{$t('words.import')}</h1>
+		<p class="text-muted-foreground mb-6 text-center text-sm">
+			{$t('import_page.choose_a_source')}
+		</p>
 
-		<div
-			class="lg:w-[64rem] lg:max-w-[64rem] w-screen max-w-screen mx-auto overflow-hidden border-border bg-card rounded-xl border shadow-sm"
-		>
-			<div class="px-6 py-4">
-				<h2 class="text-3xl font-bold tracking-tight text-center">
-					{$t('words.import')}
-				</h2>
-
-				<!--				<h3 class="mt-1 text-lg font-medium text-center">
-									Welcome Back
-								</h3>-->
-
-				<!--				<p class="text-muted-foreground mt-1 text-center">
-									Login or create account
-								</p>-->
-				<div class="grid grid-cols-2">
-					<form onsubmit={submit}>
-						<div class="w-full mt-4 h-full flex flex-col">
-							<h2 class="text-center text-2xl">{$t('import_page.a_kahoot_quiz')}</h2>
-							<div class="bg-card rounded-lg p-4">
-								<div class="relative bg-inherit w-full">
-									<input
-										id="url"
-										bind:value={url_input}
-										name="email"
-										type="url"
-										class="peer text-foreground ring-input focus:ring-ring min-h-11 w-full rounded-lg bg-transparent px-2 ring-2 placeholder-transparent focus:outline-hidden"
-										placeholder="https://create.kahoot.it/details/something"
-										class:ring-red-700={!url_valid}
-										class:ring-green-600={url_valid}
-									/>
-									<label
-										for="url"
-										class="text-foreground peer-placeholder-shown:text-muted-foreground peer-focus:text-primary absolute -top-3 left-0 mx-1 cursor-text bg-inherit px-1 text-sm transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-sm"
-									>
-										{$t('words.url')}
-									</label>
-									<p class="text-sm">
-										{$t('import_page.url_should_look_like_this')}
-									</p>
-								</div>
-								<p class="mt-2">
-									{$t('import_page.side_import_kahoot')}
-								</p>
-							</div>
-
-							<div class="flex items-center justify-center mt-auto">
-								<span></span>
-
-								<button
-									class="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring fq-touch-target relative inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-									disabled={!url_valid || is_loading}
-									type="submit"
-								>
-									{#if is_loading}
-										<svg
-											class="h-4 w-4 animate-spin mx-auto"
-											viewBox="3 3 18 18"
-										>
-											<path
-												class="fill-black"
-												d="M12 5C8.13401 5 5 8.13401 5 12C5 15.866 8.13401 19 12 19C15.866 19 19 15.866 19 12C19 8.13401 15.866 5 12 5ZM3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12Z"
-											/>
-											<path
-												class="fill-blue-100"
-												d="M16.9497 7.05015C14.2161 4.31648 9.78392 4.31648 7.05025 7.05015C6.65973 7.44067 6.02656 7.44067 5.63604 7.05015C5.24551 6.65962 5.24551 6.02646 5.63604 5.63593C9.15076 2.12121 14.8492 2.12121 18.364 5.63593C18.7545 6.02646 18.7545 6.65962 18.364 7.05015C17.9734 7.44067 17.3403 7.44067 16.9497 7.05015Z"
-											/>
-										</svg>
-									{:else}
-										{$t('words.submit')}
-									{/if}
-								</button>
-							</div>
+		<div class="grid gap-4 md:grid-cols-2">
+			<Card.Root class="flex flex-col">
+				<Card.Header>
+					<Card.Title>{$t('import_page.a_kahoot_quiz')}</Card.Title>
+					<Card.Description>{$t('import_page.side_import_kahoot')}</Card.Description>
+				</Card.Header>
+				<Card.Content class="flex flex-1 flex-col">
+					<form onsubmit={submit} class="flex flex-1 flex-col gap-4">
+						<div class="grid gap-2">
+							<Label for="url">{$t('words.url')}</Label>
+							<Input
+								id="url"
+								bind:value={url_input}
+								name="url"
+								type="url"
+								placeholder="https://create.kahoot.it/details/..."
+								aria-invalid={url_input !== '' && !url_valid}
+							/>
+							<p class="text-muted-foreground text-xs">
+								{$t('import_page.url_should_look_like_this')}
+							</p>
 						</div>
+						<Button
+							type="submit"
+							class="mt-auto w-full"
+							disabled={!url_valid || is_loading}
+						>
+							{#if is_loading}
+								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								<span class="sr-only">{$t('words.submit')}</span>
+							{:else}
+								{$t('words.submit')}
+							{/if}
+						</Button>
 					</form>
-					<form onsubmit={file_submit}>
-						<div class="w-full mt-4 border-l-2 border-gray-600 h-full flex flex-col">
-							<h2 class="text-center text-2xl">{$t('import_page.frogquiz_quiz')}</h2>
-							<div class="bg-card rounded-lg p-4">
-								<div class="relative bg-inherit w-full">
-									<input
-										id="file"
-										bind:files={file_input}
-										name="file"
-										type="file"
-										accept=".cqa,.xlsx"
-										class="peer text-foreground ring-input focus:ring-ring min-h-11 w-full rounded-lg bg-transparent px-2 py-1.5 ring-2 placeholder-transparent focus:outline-hidden"
-										class:ring-red-700={!file_input}
-										class:ring-green-600={file_input}
-									/>
-									<p class="text-sm">{$t('import_page.upload_file_ending')}</p>
-								</div>
-								<p class="mt-2">
-									{$t('import_page.this_side_frogquiz')}
-									<br />
-									{$t('import_page.this_side_frogquiz_excel')}
-								</p>
-							</div>
+				</Card.Content>
+			</Card.Root>
 
-							<div class="flex items-center justify-center mt-auto">
-								<span></span>
-
-								<button
-									class="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring fq-touch-target relative inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-									disabled={!file_input || is_loading}
-									type="submit"
-								>
-									{#if is_loading}
-										<svg
-											class="h-4 w-4 animate-spin mx-auto"
-											viewBox="3 3 18 18"
-										>
-											<path
-												class="fill-black"
-												d="M12 5C8.13401 5 5 8.13401 5 12C5 15.866 8.13401 19 12 19C15.866 19 19 15.866 19 12C19 8.13401 15.866 5 12 5ZM3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12Z"
-											/>
-											<path
-												class="fill-blue-100"
-												d="M16.9497 7.05015C14.2161 4.31648 9.78392 4.31648 7.05025 7.05015C6.65973 7.44067 6.02656 7.44067 5.63604 7.05015C5.24551 6.65962 5.24551 6.02646 5.63604 5.63593C9.15076 2.12121 14.8492 2.12121 18.364 5.63593C18.7545 6.02646 18.7545 6.65962 18.364 7.05015C17.9734 7.44067 17.3403 7.44067 16.9497 7.05015Z"
-											/>
-										</svg>
-									{:else}
-										{$t('words.submit')}
-									{/if}
-								</button>
-							</div>
+			<Card.Root class="flex flex-col">
+				<Card.Header>
+					<Card.Title>{$t('import_page.frogquiz_quiz')}</Card.Title>
+					<Card.Description>
+						{$t('import_page.this_side_frogquiz')}
+						{$t('import_page.this_side_frogquiz_excel')}
+					</Card.Description>
+				</Card.Header>
+				<Card.Content class="flex flex-1 flex-col">
+					<form onsubmit={file_submit} class="flex flex-1 flex-col gap-4">
+						<div class="grid gap-2">
+							<Label for="file">{$t('words.file')}</Label>
+							<!-- A raw file input renders as "Choose File | No file chosen",
+							     truncates on a phone, and cannot be styled. The label is the
+							     control; the input is visually hidden but still focusable. -->
+							<label
+								for="file"
+								class="border-input bg-background hover:bg-muted focus-within:ring-ring flex min-h-11 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors focus-within:ring-2"
+							>
+								<Upload class="text-muted-foreground size-4 shrink-0" />
+								<span class="min-w-0 truncate">
+									{file_input?.[0]?.name ?? $t('import_page.choose_a_file')}
+								</span>
+								<input
+									id="file"
+									bind:files={file_input}
+									name="file"
+									type="file"
+									accept=".cqa,.xlsx"
+									class="sr-only"
+								/>
+							</label>
+							<p class="text-muted-foreground text-xs">
+								{$t('import_page.upload_file_ending')}
+							</p>
 						</div>
+						<Button
+							type="submit"
+							class="mt-auto w-full"
+							disabled={!file_input || is_loading}
+						>
+							{#if is_loading}
+								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								<span class="sr-only">{$t('words.submit')}</span>
+							{:else}
+								{$t('words.submit')}
+							{/if}
+						</Button>
 					</form>
-				</div>
-			</div>
-			<div
-				class="border-border bg-muted/40 mt-4 flex items-center justify-center gap-1.5 border-t py-4 text-center"
-			>
-				<span class="text-muted-foreground text-sm">{$t('import_page.need_help')}</span>
-
-				<a
-					href="/docs/import-from-kahoot"
-					class="text-primary fq-touch-target relative inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 transition-colors hover:underline"
-					>{$t('import_page.visit_docs')}</a
-				>
-			</div>
+				</Card.Content>
+			</Card.Root>
 		</div>
+
+		<p
+			class="text-muted-foreground mt-6 flex items-center justify-center gap-1.5 text-center text-sm"
+		>
+			{$t('import_page.need_help')}
+			<a
+				href="/docs/import-from-kahoot"
+				class="text-primary fq-touch-target relative inline-flex min-h-11 items-center font-medium underline-offset-4 transition-colors hover:underline"
+				>{$t('import_page.visit_docs')}</a
+			>
+		</p>
 	</div>
 </div>
 <!--{/if}-->

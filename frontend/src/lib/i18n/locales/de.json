@@ -207,7 +207,8 @@
     "like_plural": "Likes",
     "player": "Spieler",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "time_in_seconds": "Zeit in Sekunden",
@@ -284,14 +285,16 @@
     "upload_file_ending": "Lade die Datei, die auf .cqa oder auf .xlsx endet, hoch",
     "this_side_frogquiz": "Auf dieser Seite kannst du Quiz importieren, die von frogQuiz exportiert wurden.",
     "this_side_frogquiz_excel": "Du kannst auch Exceldateien hochladen, wenn du die folgende Vorlage ausgefüllt hast.",
-    "download_template_here": "Lade die Vorlage herunter"
+    "download_template_here": "Lade die Vorlage herunter",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "password_reset_page": {
     "reset_password": "Passwort zurücksetzen"
   },
   "settings_page": {
     "repeat_password": "Passwort wiederholen",
-    "change_password_submit": "Passwort ändern!",
+    "change_password_submit": "Passwort ändern",
     "last_seen": "Zuletzt gesehen",
     "check_location": "Standort überprüfen",
     "delete_this_session": "Diese Sitzung löschen",
@@ -301,7 +304,13 @@
     "change_avatar": "Avatar ändern",
     "security_settings": "Sicherheitseinstellungen",
     "add_api_key": "API Schlüssel hinzufügen",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Erstellt von",

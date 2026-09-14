@@ -181,7 +181,8 @@
     "never": "Asla",
     "player": "Oynatıcı",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "register_page": {
     "create_account": "Hesap oluştur",
@@ -277,7 +278,9 @@
     "upload_file_ending": "Sonu .cpa veya .xlsx ile biten dosyayı yükleyin",
     "this_side_frogquiz": "Bu tarafta, frogQuiz'den dışa aktarılan sınavları içe aktarabilirsiniz.",
     "this_side_frogquiz_excel": "Bu taslağı doldurduysanız Excel dosyaları yükleyebilirsiniz. Aynı başlıkla bir quiz varsa, sorular varolan quize eklenecektir.",
-    "download_template_here": "Taslağı indir"
+    "download_template_here": "Taslağı indir",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "password_reset_page": {
     "reset_password": "Şifreyi sıfırla"
@@ -287,14 +290,20 @@
     "this_session?": "Bu oturum mu?",
     "check_location": "Konumu kontrol et",
     "repeat_password": "Şifreyi tekrarla",
-    "change_password_submit": "Şifreyi değiştir!",
+    "change_password_submit": "Şifreyi değiştir",
     "last_seen": "Son görüldüğü tarih",
     "delete_this_session": "Bu oturumu sil",
     "old_password": "Eski şifre",
     "add_api_key": "API anahtarı ekle",
     "change_avatar": "Avatarı değiştir",
     "security_settings": "Güvenlik Ayarları",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Oluşturan:",

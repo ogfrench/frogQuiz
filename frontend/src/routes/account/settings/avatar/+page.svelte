@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import { fade, fly } from 'svelte/transition';
 	import { bounceOut } from 'svelte/easing';
 	import Spinner from '$lib/Spinner.svelte';
@@ -80,51 +81,77 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<div class="h-full">
-	<div class="grid grid-cols-6 overflow-hidden h-full">
-		<div class="border-r-4 border-black h-full">
-			<img src={image_url} />
+<!-- Was a grid-cols-6 with the preview crushed into a one-sixth column behind a
+     border-r-4 border-black, the Back/Finish buttons jammed into the heading row, and a
+     fixed grid-cols-4 of choices at every width. Preview above the choices on a phone,
+     beside them once there is room; the step header is its own row. -->
+<div class="mx-auto w-full max-w-4xl px-4 py-6">
+	<div class="mb-4 flex items-center justify-between gap-3">
+		<Button
+			variant="outline"
+			size="sm"
+			onclick={() => {
+				index = index - 1;
+			}}
+			disabled={index < 1}>{$t('words.back')}</Button
+		>
+		<h1 class="min-w-0 truncate text-center text-lg font-semibold tracking-tight">
+			{translation_map[data_keys[index]]}
+			<span class="text-muted-foreground font-normal tabular-nums"
+				>({index + 1}/{data_keys.length})</span
+			>
+		</h1>
+		<Button
+			size="sm"
+			disabled={index < 11}
+			onclick={() => {
+				save_finished = undefined;
+				finished = true;
+			}}>{$t('words.finish')}</Button
+		>
+	</div>
+
+	<!-- A 12-step wizard with no progress indicator leaves you counting in your head. -->
+	<div class="bg-muted mb-6 h-1.5 overflow-hidden rounded-full">
+		<div
+			class="bg-primary h-full rounded-full transition-[width] duration-300"
+			style="width: {((index + 1) / data_keys.length) * 100}%"
+		></div>
+	</div>
+
+	<div class="flex flex-col gap-6 sm:flex-row sm:items-start">
+		<div
+			class="border-border bg-card mx-auto w-40 shrink-0 rounded-xl border p-3 shadow-sm sm:mx-0"
+		>
+			<img src={image_url} alt="" class="w-full" />
 		</div>
-		<div class="col-start-2 col-end-7 overflow-scroll">
-			<div class="flex pl-2">
-				<div class="mr-auto">
-					<BrownButton
-						onclick={() => {
-							index = index - 1;
-						}}
-						disabled={index < 1}>{$t('words.back')}</BrownButton
-					>
-				</div>
-				<div class="mx-auto">
-					<h2 class="text-2xl">
-						{translation_map[data_keys[index]]} ({index + 1}/{data_keys.length})
-					</h2>
-				</div>
-				<div class="ml-auto">
-					<BrownButton disabled={index < 11}>{$t('words.finish')}</BrownButton>
-				</div>
-			</div>
-			<div class="grid grid-cols-4">
-				{#each Array.from(Array(item_count[data_keys[index]]).keys()) as key}
-					<button
-						class="hover:opacity-80 transition-all"
-						onclick={() => {
-							data[data_keys[index]] = key;
-							if (index < 11) {
-								index++;
-							} else {
-								save_finished = undefined;
-								finished = true;
-							}
-						}}
-					>
-						<img
-							src={get_image_url({ ...data, [data_keys[index]]: key })}
-							in:fade|global={{ duration: 100 }}
-						/>
-					</button>
-				{/each}
-			</div>
+
+		<div class="grid min-w-0 flex-1 grid-cols-3 gap-3 sm:grid-cols-4">
+			{#each Array.from(Array(item_count[data_keys[index]]).keys()) as key}
+				{@const chosen = data[data_keys[index]] === key}
+				<button
+					type="button"
+					class="border-border bg-card hover:border-primary/60 focus-visible:ring-ring rounded-lg border p-1 transition focus-visible:ring-2 focus-visible:outline-none
+						{chosen ? 'ring-primary ring-2' : ''}"
+					aria-pressed={chosen}
+					onclick={() => {
+						data[data_keys[index]] = key;
+						if (index < 11) {
+							index++;
+						} else {
+							save_finished = undefined;
+							finished = true;
+						}
+					}}
+				>
+					<img
+						src={get_image_url({ ...data, [data_keys[index]]: key })}
+						alt=""
+						class="w-full"
+						in:fade|global={{ duration: 100 }}
+					/>
+				</button>
+			{/each}
 		</div>
 	</div>
 </div>

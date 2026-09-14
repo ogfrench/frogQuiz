@@ -211,7 +211,8 @@
     "waiting_for_results": "Waiting for everyone else…",
     "cover_image": "Cover image",
     "visibility": "Visibility",
-    "time_is_up": "Time's up"
+    "time_is_up": "Time's up",
+    "file": "File"
   },
   "editor": {
     "time_in_seconds": "Time in seconds",
@@ -271,7 +272,9 @@
     "upload_file_ending": "Upload the file ending in .cqa or .xlsx",
     "this_side_frogquiz": "On this side you can import quizzes, which were exported from frogQuiz.",
     "this_side_frogquiz_excel": "You can also upload excel files, if you've filled out the following template. If a quiz with the title already exists, it will append the questions to the existing quiz.",
-    "download_template_here": "Download the template"
+    "download_template_here": "Download the template",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "There is already an admin registered for this game.",
@@ -301,7 +304,7 @@
     "old_password": "Old password",
     "new_password": "New password",
     "repeat_password": "Repeat password",
-    "change_password_submit": "Change password!",
+    "change_password_submit": "Change password",
     "last_seen": "Last seen",
     "check_location": "Check location",
     "delete_this_session": "Delete this session",
@@ -309,7 +312,13 @@
     "change_avatar": "Change avatar",
     "security_settings": "Security-Settings",
     "add_api_key": "Add API key",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Made by",

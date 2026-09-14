@@ -207,7 +207,8 @@
     "check_choice": "Controlla la scelta",
     "player": "Giocatore",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "right_or_true?": "Corretto?",
@@ -256,7 +257,9 @@
     "frogquiz_quiz": "Un quiz di frogQuiz",
     "upload_file_ending": "Carica il file che termina con .cqa o .xlsx",
     "this_side_frogquiz_excel": "Puoi anche caricare file excel, se hai compilato il seguente modello. Se esiste già un quiz con il titolo, aggiungerà le domande al quiz esistente.",
-    "download_template_here": "Scarica il modello"
+    "download_template_here": "Scarica il modello",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "C'è già un amministratore registrato per questo quiz.",
@@ -286,7 +289,7 @@
     "old_password": "Vecchia password",
     "new_password": "Nuova password",
     "repeat_password": "Ripeti la password",
-    "change_password_submit": "Cambia la password!",
+    "change_password_submit": "Cambia la password",
     "check_location": "Verifica il luogo",
     "this_session?": "Questa sessione?",
     "last_seen": "Visto l'ultima volta",
@@ -294,7 +297,13 @@
     "change_avatar": "Cambia l'avatar",
     "security_settings": "Impostazioni della sicurezza",
     "add_api_key": "Aggiungi una chiave API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Creato da",

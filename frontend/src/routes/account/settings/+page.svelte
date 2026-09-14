@@ -11,7 +11,9 @@ SPDX-License-Identifier: MPL-2.0
 	import { DateTime } from 'luxon';
 	import { UAParser } from 'ua-parser-js';
 	import Spinner from '$lib/Spinner.svelte';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
 
 	const { t } = getLocalization();
 
@@ -36,6 +38,14 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	let this_session = $state();
+	// The avatar endpoint can 404, and a failed <img> paints its alt text across the
+	// layout, which is what put "Profile image of reviewer" beside the heading.
+	let avatar_ok = $state(true);
+
+	let mismatch = $derived(
+		changePasswordData.newPasswordConfirm !== '' &&
+			changePasswordData.newPassword !== changePasswordData.newPasswordConfirm
+	);
 
 	let passwordChangeDataValid = $derived(
 		changePasswordData.newPassword === changePasswordData.newPasswordConfirm &&
@@ -120,132 +130,196 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz - Settings</title>
 </svelte:head>
 
-{#await getUser()}
-	<Spinner />
-{:then user}
-	<div class="w-full grid grid-cols-6">
-		<div>
-			<img
-				class="rounded-md md:w-80"
-				src="/api/v1/users/avatar"
-				alt="Profile image of {user.username}"
-			/>
-			<div class="m-2 flex justify-center">
-				<BrownButton href="/account/settings/avatar"
-					>{$t('settings_page.change_avatar')}</BrownButton
-				>
-			</div>
-		</div>
-		<div class="grid grid-rows-2 col-start-2 col-end-7">
-			<div class="grid grid-cols-2">
-				<div>
-					<h1 class="text-4xl font-bold my-2">{user.username}</h1>
-					<p class="text-lg mb-6 md:max-w-lg">
-						{$t('words.email')}: {user.email}
-					</p>
-				</div>
-				<div class="p-4 flex justify-center">
-					<div class="m-auto">
-						<BrownButton href="/user/{user.id}">Public profile page</BrownButton>
+<!-- Was a grid-cols-6 with the avatar pinned to a one-sixth column and the rest in a
+     nested grid-rows-2 / grid-cols-2. On a phone that collapsed into a broken image
+     with its alt text wrapping round the heading, a clipped "change avatar", and three
+     password fields squeezed into a row. Settings pages are a single column of
+     labelled sections -- one concern per card, its own description, its own action --
+     which is what every tool that does this well looks like and what survives a narrow
+     screen without any reflow guesswork. -->
+<div class="mx-auto w-full max-w-3xl px-4 py-8">
+	<h1 class="mb-6 text-2xl font-bold tracking-tight">{$t('words.settings')}</h1>
+
+	{#await getUser()}
+		<Spinner />
+	{:then user}
+		<div class="flex flex-col gap-6">
+			<Card.Root>
+				<Card.Header>
+					<Card.Title>{$t('settings_page.profile')}</Card.Title>
+				</Card.Header>
+				<Card.Content class="flex flex-wrap items-center gap-5">
+					<!-- The avatar endpoint can 404, and an <img> that fails paints its alt
+					     text across the layout. Fall back to the initial instead. -->
+					{#if avatar_ok}
+						<img
+							class="border-border size-20 shrink-0 rounded-full border object-cover"
+							src="/api/v1/users/avatar"
+							alt=""
+							onerror={() => (avatar_ok = false)}
+						/>
+					{:else}
+						<span
+							class="bg-muted text-muted-foreground border-border flex size-20 shrink-0 items-center justify-center rounded-full border text-2xl font-semibold"
+							aria-hidden="true"
+						>
+							{user.username?.[0]?.toUpperCase() ?? '?'}
+						</span>
+					{/if}
+
+					<div class="min-w-0 flex-1">
+						<p class="truncate text-lg font-semibold">{user.username}</p>
+						<p class="text-muted-foreground truncate text-sm">{user.email}</p>
 					</div>
-				</div>
-			</div>
-			<div>
-				<form class="flex flex-col md:flex-row" onsubmit={changePassword}>
-					<label
-						>{$t('settings_page.old_password')}:<input
-							type="password"
-							class="border-input bg-background text-foreground focus-visible:ring-ring m-2 min-h-11 rounded-md border p-2 focus-visible:ring-2 focus-visible:outline-none"
-							bind:value={changePasswordData.oldPassword}
-						/></label
-					>
-					<label
-						>{$t('settings_page.new_password')}:<input
-							type="password"
-							class="border-input bg-background text-foreground focus-visible:ring-ring m-2 min-h-11 rounded-md border p-2 focus-visible:ring-2 focus-visible:outline-none"
-							bind:value={changePasswordData.newPassword}
-						/></label
-					>
-					<label
-						>{$t('settings_page.repeat_password')}:<input
-							type="password"
-							class="border-input bg-background text-foreground focus-visible:ring-ring m-2 min-h-11 rounded-md border p-2 focus-visible:ring-2 focus-visible:outline-none"
-							bind:value={changePasswordData.newPasswordConfirm}
-						/></label
-					>
-					<div class="my-auto">
-						<BrownButton disabled={!passwordChangeDataValid} type="submit">
-							{$t('settings_page.change_password_submit')}
-						</BrownButton>
+
+					<div class="flex flex-wrap gap-2">
+						<Button href="/account/settings/avatar" variant="outline" size="sm">
+							{$t('settings_page.change_avatar')}
+						</Button>
+						<Button href="/user/{user.id}" variant="outline" size="sm">
+							{$t('settings_page.public_profile')}
+						</Button>
 					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-{/await}
-{#await getSessions()}
-	<Spinner />
-{:then sessions}
-	<!-- A bare table with whitespace-nowrap cells and px-6 padding, and no scroll
-	     container: 539px of horizontal overflow on a phone. CLAUDE.md's own rule is that
-	     a table may be wider than the page only inside its own overflow-x container.
-	     Delete was a bare <button> with no box at all, so its target was the 42x20 of
-	     its text. -->
-	<div class="mx-auto w-full max-w-5xl px-4">
-		<h2 class="mb-3 text-lg font-semibold tracking-tight">
-			{$t('settings_page.sessions') ?? 'Sessions'}
-		</h2>
-		<div class="border-border fq-scroll-x rounded-xl border">
-			<table class="w-full text-left text-sm">
-				<thead
-					class="bg-muted/50 text-muted-foreground text-xs font-medium tracking-wider uppercase"
-				>
-					<tr>
-						<th scope="col" class="px-4 py-3">{$t('overview_page.created_at')}</th>
-						<th scope="col" class="px-4 py-3">{$t('settings_page.last_seen')}</th>
-						<th scope="col" class="px-4 py-3">{$t('words.browser')}</th>
-						<th scope="col" class="px-4 py-3">{$t('settings_page.this_session?')}</th>
-						<th scope="col" class="px-4 py-3">
-							<span class="sr-only">{$t('settings_page.delete_this_session')}</span>
-						</th>
-					</tr>
-				</thead>
-				<tbody class="divide-border divide-y">
-					{#each sessions as session}
-						<tr>
-							<td class="text-muted-foreground px-4 py-3 whitespace-nowrap">
-								{formatDate(session.created_at)}
-							</td>
-							<td class="text-muted-foreground px-4 py-3 whitespace-nowrap">
-								{formatDate(session.last_seen)}
-							</td>
-							<td class="px-4 py-3">{getFormattedUserAgent(session.user_agent)}</td>
-							<td class="px-4 py-3 whitespace-nowrap">
-								{#if session.id === this_session?.id}
-									<span
-										class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
-										>{$t('settings_page.this_session?')}</span
-									>
-								{:else}
-									<span class="text-muted-foreground">&mdash;</span>
-								{/if}
-							</td>
-							<td class="px-4 py-3 text-right whitespace-nowrap">
-								<Button
-									type="button"
-									variant="destructive"
-									size="sm"
-									onclick={() => {
-										deleteSession(session.id);
-									}}
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header>
+					<Card.Title>{$t('settings_page.password_section')}</Card.Title>
+					<Card.Description>{$t('settings_page.password_requirements')}</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<!-- Stacked, not md:flex-row: three password fields side by side is cramped
+					     at every width and gives each one about a word of room. -->
+					<form class="grid max-w-sm gap-4" onsubmit={changePassword}>
+						<div class="grid gap-2">
+							<Label for="old-password">{$t('settings_page.old_password')}</Label>
+							<Input
+								id="old-password"
+								type="password"
+								autocomplete="current-password"
+								bind:value={changePasswordData.oldPassword}
+							/>
+						</div>
+						<div class="grid gap-2">
+							<Label for="new-password">{$t('settings_page.new_password')}</Label>
+							<Input
+								id="new-password"
+								type="password"
+								autocomplete="new-password"
+								bind:value={changePasswordData.newPassword}
+							/>
+						</div>
+						<div class="grid gap-2">
+							<Label for="repeat-password"
+								>{$t('settings_page.repeat_password')}</Label
+							>
+							<Input
+								id="repeat-password"
+								type="password"
+								autocomplete="new-password"
+								aria-invalid={mismatch}
+								bind:value={changePasswordData.newPasswordConfirm}
+							/>
+							{#if mismatch}
+								<p class="text-destructive text-sm">
+									{$t('settings_page.passwords_do_not_match')}
+								</p>
+							{/if}
+						</div>
+						<div>
+							<Button disabled={!passwordChangeDataValid} type="submit">
+								{$t('settings_page.change_password_submit')}
+							</Button>
+						</div>
+					</form>
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header>
+					<Card.Title>{$t('settings_page.sessions')}</Card.Title>
+					<Card.Description>{$t('settings_page.sessions_description')}</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					{#await getSessions()}
+						<Spinner />
+					{:then sessions}
+						<!-- A table may be wider than the page only inside its own scroll
+						     container, and contain:paint stops its content contributing to the
+						     document's scroll width. Delete was a bare <button> with no box, so
+						     its target was the 42x20 of its own text. -->
+						<div class="border-border fq-scroll-x rounded-lg border">
+							<table class="w-full text-left text-sm">
+								<thead
+									class="bg-muted/50 text-muted-foreground text-xs font-medium tracking-wider uppercase"
 								>
-									{$t('words.delete')}
-								</Button>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+									<tr>
+										<th scope="col" class="px-4 py-3"
+											>{$t('overview_page.created_at')}</th
+										>
+										<th scope="col" class="px-4 py-3"
+											>{$t('settings_page.last_seen')}</th
+										>
+										<th scope="col" class="px-4 py-3">{$t('words.browser')}</th>
+										<th scope="col" class="px-4 py-3"
+											>{$t('settings_page.this_session?')}</th
+										>
+										<th scope="col" class="px-4 py-3">
+											<span class="sr-only"
+												>{$t('settings_page.delete_this_session')}</span
+											>
+										</th>
+									</tr>
+								</thead>
+								<tbody class="divide-border divide-y">
+									{#each sessions as session}
+										<tr>
+											<td
+												class="text-muted-foreground px-4 py-3 whitespace-nowrap"
+											>
+												{formatDate(session.created_at)}
+											</td>
+											<td
+												class="text-muted-foreground px-4 py-3 whitespace-nowrap"
+											>
+												{formatDate(session.last_seen)}
+											</td>
+											<td class="px-4 py-3"
+												>{getFormattedUserAgent(session.user_agent)}</td
+											>
+											<td class="px-4 py-3 whitespace-nowrap">
+												{#if session.id === this_session?.id}
+													<span
+														class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+														>{$t('settings_page.this_session?')}</span
+													>
+												{:else}
+													<span class="text-muted-foreground"
+														>&mdash;</span
+													>
+												{/if}
+											</td>
+											<td class="px-4 py-3 text-right whitespace-nowrap">
+												<Button
+													type="button"
+													variant="destructive"
+													size="sm"
+													onclick={() => {
+														deleteSession(session.id);
+													}}
+												>
+													{$t('words.delete')}
+												</Button>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/await}
+				</Card.Content>
+			</Card.Root>
 		</div>
-	</div>
-{/await}
+	{/await}
+</div>

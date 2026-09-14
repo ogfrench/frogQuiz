@@ -146,7 +146,9 @@
     "upload_file_ending": "上傳副檔名為 .cqa 或 .xlsx 的檔案",
     "frogquiz_quiz": "frogQuiz 測驗",
     "this_side_frogquiz_excel": "如果你已經填好範本，也可以直接上傳 Excel 檔案。如果已存在相同標題的測驗，則會將問題附加到現有的測驗中。",
-    "download_template_here": "下載範本"
+    "download_template_here": "下載範本",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "start_game": "開始遊戲",
@@ -184,7 +186,13 @@
     "change_avatar": "變更頭像",
     "last_seen": "最後上線時間",
     "add_api_key": "新增 API 金鑰",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "作者為",
@@ -331,7 +339,8 @@
     "quiz": "測驗",
     "player": "玩家",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "search_page": {
     "at_least_3_characters": "請輸入至少 3 個字元...",

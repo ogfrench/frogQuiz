@@ -202,7 +202,8 @@
     "info": "Informação",
     "player": "Jogador",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "time_in_seconds": "Tempo em segundos",
@@ -251,7 +252,9 @@
     "upload_file_ending": "Envie o arquivo com extensão .cqa ou .xlsx",
     "this_side_frogquiz": "Neste canto você consegue importar questionários que foram exportados do frogQuiz.",
     "this_side_frogquiz_excel": "Pode-se também enviar arquivos excel, se você tiver preenchido o modelo a seguir. Se um quiz com o título já existir, ele será anexado às perguntas do quiz existente.",
-    "download_template_here": "Baixar o modelo"
+    "download_template_here": "Baixar o modelo",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "Já existe um administrador registado para este jogo.",
@@ -281,7 +284,7 @@
     "old_password": "Senha antiga",
     "new_password": "Senha nova",
     "repeat_password": "Repita a senha",
-    "change_password_submit": "Mudar senha!",
+    "change_password_submit": "Mudar senha",
     "last_seen": "Visto pela última vez",
     "check_location": "Verificar localização",
     "delete_this_session": "Deletar esta sessão",
@@ -289,7 +292,13 @@
     "change_avatar": "Mudar avatar",
     "security_settings": "Configurações de segurança",
     "add_api_key": "Adicionar chave de API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Feito por",

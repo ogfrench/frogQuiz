@@ -207,7 +207,8 @@
     "version": "Versión",
     "player": "Jugador",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "admin_page": {
     "export_results": "Exportar los resultados",
@@ -234,7 +235,7 @@
     "check_location": "Comprobar ubicación",
     "new_password": "Nueva contraseña",
     "repeat_password": "Repite la contraseña",
-    "change_password_submit": "Cambia la contraseña!",
+    "change_password_submit": "Cambia la contraseña",
     "last_seen": "Visto por última vez",
     "delete_this_session": "Borrar esta sesión",
     "this_session?": "¿Esta sesión?",
@@ -242,7 +243,13 @@
     "change_avatar": "Cambiar avatar",
     "security_settings": "Configuración de Seguridad",
     "add_api_key": "Añadir clave API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "play_page": {
     "2nd_place": "2º puesto",
@@ -321,7 +328,9 @@
     "upload_file_ending": "Sube el archivo que termina en .cqa o .xlsx",
     "this_side_frogquiz": "En este lado puede importar cuestionarios, que fueron exportados desde frogQuiz.",
     "this_side_frogquiz_excel": "También puedes subir archivos excel, si has rellenado la siguiente plantilla. Si ya existe un cuestionario con el mismo título, añadirá las preguntas al cuestionario existente.",
-    "download_template_here": "Descargar la plantilla"
+    "download_template_here": "Descargar la plantilla",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "explore_page": {
     "made_by": "Hecho por",

@@ -225,7 +225,8 @@
     "info": "தகவல்",
     "player": "வீரர்",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "time_in_seconds": "நொடிகளில் நேரம்",
@@ -274,7 +275,9 @@
     "upload_file_ending": ".Cqa அல்லது .xlsx இல் முடிவடையும் கோப்பை பதிவேற்றவும்",
     "this_side_frogquiz": "இந்த பக்கத்தில் நீங்கள் நொடி வினாக்களை இறக்குமதி செய்யலாம், அவை frogQuiz இலிருந்து ஏற்றுமதி செய்யப்பட்டன.",
     "this_side_frogquiz_excel": "பின்வரும் வார்ப்புருவை நீங்கள் நிரப்பினால், எக்செல் கோப்புகளையும் பதிவேற்றலாம். தலைப்பைக் கொண்ட நொடி வினா ஏற்கனவே இருந்தால், அது கேள்விகளை ஏற்கனவே உள்ள நொடி வினாவுடன் சேர்க்கும்.",
-    "download_template_here": "வார்ப்புருவைப் பதிவிறக்கவும்"
+    "download_template_here": "வார்ப்புருவைப் பதிவிறக்கவும்",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "இந்த விளையாட்டுக்கு ஏற்கனவே ஒரு நிர்வாகி பதிவு செய்யப்பட்டுள்ளது.",
@@ -304,7 +307,7 @@
     "old_password": "பழைய கடவுச்சொல்",
     "new_password": "புதிய கடவுச்சொல்",
     "repeat_password": "கடவுச்சொல்லை மீண்டும் செய்யவும்",
-    "change_password_submit": "கடவுச்சொல்லை மாற்று!",
+    "change_password_submit": "கடவுச்சொல்லை மாற்று",
     "last_seen": "கடைசியாக பார்த்தேன்",
     "check_location": "இருப்பிடத்தை சரிபார்க்கவும்",
     "delete_this_session": "இந்த அமர்வை நீக்கு",
@@ -312,7 +315,13 @@
     "change_avatar": "அவதாரத்தை மாற்றவும்",
     "security_settings": "பாதுகாப்பு-அமைவுகள்",
     "add_api_key": "பநிஇ விசையைச் சேர்க்கவும்",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "தயாரிக்கப்பட்டது",

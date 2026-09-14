@@ -207,7 +207,8 @@
     "like_plural": "Likes",
     "player": "Speler",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "editor": {
     "not_all_links_imgur_links": "Niet alle links zijn Imgur-links!",
@@ -256,7 +257,9 @@
     "need_help": "Hulp nodig?",
     "frogquiz_quiz": "Een frogQuiz-Quiz",
     "this_side_frogquiz_excel": "Je kunt ook Excel-bestanden uploaden, als je het volgende sjabloon hebt ingevuld. Als er al een quiz met die titel bestaat, worden de vragen aan de bestaande quiz toegevoegd.",
-    "download_template_here": "Download het sjabloon"
+    "download_template_here": "Download het sjabloon",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "start_game": "Start spel",
@@ -286,7 +289,7 @@
     "old_password": "Oud wachtwoord",
     "new_password": "Nieuw wachtwoord",
     "repeat_password": "Herhaal wachtwoord",
-    "change_password_submit": "Wachtwoord aangepast!",
+    "change_password_submit": "Wachtwoord aangepast",
     "last_seen": "Laatst gezien",
     "check_location": "Check locatie",
     "delete_this_session": "Verwijder deze sessie",
@@ -294,7 +297,13 @@
     "change_avatar": "Verander avatar",
     "security_settings": "Beveiligingsinstellingen",
     "add_api_key": "API-sleutel toevoegen",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Gemaakt door",

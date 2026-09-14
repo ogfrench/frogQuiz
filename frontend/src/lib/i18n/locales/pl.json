@@ -207,7 +207,8 @@
     "like": "Lubię",
     "player": "Odtwarzacz",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "file": "File"
   },
   "settings_page": {
     "last_seen": "Ostatnio widziany",
@@ -217,11 +218,17 @@
     "new_password": "Nowe hasło",
     "repeat_password": "Powtórz hasło",
     "this_session?": "Ta sesja?",
-    "change_password_submit": "Zmień hasło!",
+    "change_password_submit": "Zmień hasło",
     "change_avatar": "Zmień awatar",
     "security_settings": "Ustawienia bezpieczeństwa",
     "add_api_key": "Dodaj klucz API",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "editor_page": {
     "add_an_answer": "Dodaj odpowiedź",
@@ -293,7 +300,9 @@
     "a_kahoot_quiz": "Quiz Kahoot",
     "frogquiz_quiz": "Quiz frogQuiz",
     "download_template_here": "Pobierz szablon",
-    "this_side_frogquiz_excel": "Możesz również przesłać pliki Excel, jeśli wypełniłeś poniższy szablon. Jeśli quiz o danym tytule już istnieje, pytania zostaną dołączone do istniejącego quizu."
+    "this_side_frogquiz_excel": "Możesz również przesłać pliki Excel, jeśli wypełniłeś poniższy szablon. Jeśli quiz o danym tytule już istnieje, pytania zostaną dołączone do istniejącego quizu.",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "time_left": "Pozostały czas",
