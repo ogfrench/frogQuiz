@@ -8,9 +8,9 @@
 		"preview": "vite preview",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check --plugin-search-dir=. . '!src/lib/i18n/locales/*.json' '!pnpm-lock.yaml' '!src/app.html' && eslint .",
+		"lint": "prettier --check . && eslint .",
 		"lint-without-format-checking": "eslint .",
-		"format": "prettier --write --plugin-search-dir=. . '!src/lib/i18n/locales/*.json'",
+		"format": "prettier --write .",
 		"run:prod": "node index.js",
 		"translations-scan": "i18next-scanner --config i18next-scanner.config.engine.cjs src/**/*.svelte"
 	},

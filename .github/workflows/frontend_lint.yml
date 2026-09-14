@@ -2,21 +2,25 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# Lints the SvelteKit frontend.
 
 name: "[CI] Frontend / Lint"
 
+# GitHub's path filters do not do brace expansion, so the old
+# "frontend/**/*.{ts,js,svelte}" was matched literally and never hit a real file.
+# The workflow's entire run history is one manual dispatch and one push that
+# touched this file -- not a single frontend change ever triggered it. Match the
+# directory instead and let the job decide what is worth linting.
 on:
   push:
     branches: [ master ]
     paths:
-      - "frontend/**/*.{ts,js,svelte}"
+      - "frontend/**"
       - ".github/workflows/frontend_lint.yml"
   workflow_dispatch:
   pull_request:
     paths:
-      - "frontend/**/*.{ts,js,svelte}"
+      - "frontend/**"
       - ".github/workflows/frontend_lint.yml"
 
 jobs:
