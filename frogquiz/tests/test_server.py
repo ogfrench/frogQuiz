@@ -155,7 +155,7 @@ class TestUsers:
 
     @pytest.mark.asyncio
     async def test_forgotten_password(self, test_client: TestClient, monkeypatch):  # noqa : F811
-        # ponytail: stub the SMTP send -- this route is tested for the reset token it stores, not for delivery
+        # Stub the SMTP send: this route is tested for the reset token it stores, not for delivery
         monkeypatch.setattr("frogquiz.emails._sendMail", lambda **kwargs: None)
         resp = test_client.post("/api/v1/users/forgot-password", json={"email": test_user_email})
         assert resp.status_code == 200

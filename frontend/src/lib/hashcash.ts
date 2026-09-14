@@ -36,7 +36,6 @@ export const mint = async (
 	const challenge = `${ver}:${bits}:${ts}:${resource}:${ext}:${salt}`;
 	let counter = 0;
 	let result: string;
-	const t1 = performance.now();
 
 	// eslint-disable-next-line no-constant-condition
 	while (true) {
@@ -52,6 +51,5 @@ export const mint = async (
 		}
 		counter += 1;
 	}
-	const t2 = performance.now();
 	return `${challenge}:${result}`;
 };

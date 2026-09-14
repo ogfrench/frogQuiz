@@ -9,7 +9,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { signedIn, pathname } from '$lib/stores';
 	import { createTippy } from 'svelte-tippy';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { browser } from '$app/environment';
 	import { beforeNavigate } from '$app/navigation';
 	import { slide } from 'svelte/transition';
@@ -65,7 +64,9 @@ SPDX-License-Identifier: MPL-2.0
 			>
 				<Wordmark />
 			</a>
-			<a class="btn-nav border-border bg-muted/60 text-foreground border" href="/play">{$t('words.play')}</a>
+			<a class="btn-nav border-border bg-muted/60 text-foreground border" href="/play"
+				>{$t('words.play')}</a
+			>
 			<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
 			<a class="btn-nav" href="/search">{$t('words.search')}</a>
 			{#if $signedIn}
@@ -188,7 +189,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if !menuIsClosed}
 			<div class="flex flex-col" transition:slide|global={{ duration: 400 }}>
 				<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
-			<a class="btn-nav" href="/search">{$t('words.search')}</a>
+				<a class="btn-nav" href="/search">{$t('words.search')}</a>
 				{#if $signedIn}
 					<a class="btn-nav" href="/dashboard">{$t('words.dashboard')}</a>
 				{:else}
@@ -214,8 +215,6 @@ SPDX-License-Identifier: MPL-2.0
 						>{$t('words.login')}</a
 					>
 				{/if}
-
-
 			</div>
 		{/if}
 	</div>

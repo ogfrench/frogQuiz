@@ -11,7 +11,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { fade } from 'svelte/transition';
 	import Spinner from '$lib/Spinner.svelte';
 	import { onMount } from 'svelte';
-	import { createTippy } from 'svelte-tippy';
 	import { getLocalization } from '$lib/i18n';
 
 	const { t } = getLocalization();
@@ -22,13 +21,6 @@ SPDX-License-Identifier: MPL-2.0
 	let custom_field = $state('');
 	let cqcs_enabled = $state(false);
 	let randomized_answers = $state(false);
-
-	const tippy = createTippy({
-		arrow: true,
-		animation: 'perspective-subtle',
-		placement: 'top-start',
-		allowHTML: true
-	});
 
 	onMount(() => {
 		const ls_data = localStorage.getItem('custom_field');

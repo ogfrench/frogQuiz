@@ -22,7 +22,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	let {
 		disabled = false,
-		// ponytail: no-op, see brown.svelte.
+		// No-op, see brown.svelte.
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		flex = false,
 		href = undefined,
 		target = '_self',
