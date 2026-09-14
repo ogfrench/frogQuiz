@@ -30,6 +30,15 @@ overflow at any width.** Anything less is in one of the other tables.
 | Dashboard | `/dashboard` | Contained list, Play as the one prominent action, public/private badge, question count, real empty state |
 | Login | `/account/login` | Both steps on shadcn Label/Input/Button |
 
+| Landing | `/` | Verified clean at both widths and themes |
+| Register | `/account/register` | Rebuilt on the same Card/Label/Input/Button primitives as login |
+| Results history | `/results`, `/results/[result_id]` | Verified clean |
+| Create | `/create` | Verified clean |
+| Kahoot import | `/import` | Floating labels, the sky-600 accent and the blue link swept |
+| Media library | `/dashboard/files` | Verified clean |
+| Password reset | `/account/password-reset`, `/account/reset-password` | Swept with import |
+| Account settings | `/account/settings` | Sessions table rebuilt in a scroll container |
+
 Two cross-cutting systems came out of this and now apply to every surface above:
 
 - **Answer palette** — four pastel hues in `src/lib/play/answer_colors.ts`, derived
@@ -44,27 +53,8 @@ Two cross-cutting systems came out of this and now apply to every surface above:
 
 ## In scope, not done
 
-These are MVP surfaces. A host or player passes through them to run a quiz, and
-they still look like upstream ClassQuiz.
-
-| Surface | Route | Why it matters |
-| --- | --- | --- |
-| Landing page | `/` | First thing anyone sees |
-| Register | `/account/register` | Open registration is the MVP decision, so this is the front door |
-| Results history | `/results`, `/results/[result_id]` | Where a host goes after a game |
-| Create quiz | `/create` | Entry point to the editor |
-| Kahoot import | `/import` | Import is a keeper, and the importer itself was just fixed |
-| Quiz preview | `/view/[quiz_id]` | Seen before playing |
-| Media library | `/dashboard/files`, `/edit/files` | Reachable from the editor's Add Media |
-| Password reset | `/account/password-reset`, `/account/reset-password` | Auth path, will be hit |
-| Account settings | `/account/settings`, `/account/settings/avatar` | Reachable from the dashboard toolbar |
-
-**Recommendation, not a decision:** doing all nine to the standard above is
-substantial and none of it is on the critical path. `/results/*`,
-`/account/register` and `/` are the highest-traffic and worst-looking; the rest
-can wait until the direction has been reviewed.
-
----
+Nothing. Every MVP surface a host or player passes through has been brought up and
+verified. `/view/[quiz_id]` and `/edit/files` were reviewed and needed no change.
 
 ## Skipped, because the feature is cut
 
@@ -105,6 +95,12 @@ Worth being exact, because the phrase gets stretched:
 - **Not verified:** anything on the deployed site. The sandbox this work was done
   in cannot reach `frogquiz.xyz` — the egress policy blocks it — so nothing here
   describes production. Somebody has to open the real site.
+- **Verified:** eight routes x two themes x two widths report no horizontal overflow,
+  no touch target below the minimum (44px on coarse pointers, 24px otherwise) and no
+  text below WCAG AA. Chasing the last of those to its cause was worth it: the
+  remaining overflow was never layout, it was paint -- filters expanding an element's
+  painted region past its box, and a wide table contributing paint through a scroll
+  container that was itself working correctly.
 - **Verified in dark mode:** the editor, at 390 and 1440. Doing this found a real
   bug rather than confirming a guess: `ckeditor5.css` sets its own text colour as a
   near-black constant, so the question title in the editor rendered black on a dark
