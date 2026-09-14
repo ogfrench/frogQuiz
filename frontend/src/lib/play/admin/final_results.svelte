@@ -61,9 +61,12 @@ SPDX-License-Identifier: MPL-2.0
 
 	<div class="fq-stage">
 		<!-- The blocks need a floor, or they read as floating cards rather than a
-		     podium. The rule under them is that floor. -->
+		     podium. border-b-2 border-border was too faint to register as one at
+		     projector distance: the blocks looked cut off rather than stood on
+		     something. A full-strength rule that runs wider than the blocks reads as
+		     ground. -->
 		<div
-			class="flex w-full max-w-4xl items-end justify-center gap-4 border-b-2 border-border px-8 sm:gap-6"
+			class="border-foreground/25 flex w-full max-w-4xl items-end justify-center gap-4 border-b-4 px-8 sm:gap-6"
 		>
 			{#each podium as p (p.name)}
 				<div class="flex min-w-0 flex-1 flex-col items-center gap-3">

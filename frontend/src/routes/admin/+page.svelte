@@ -5,6 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import Check from '@lucide/svelte/icons/check';
 	import { socket } from '$lib/socket';
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
@@ -238,43 +239,29 @@ SPDX-License-Identifier: MPL-2.0
 >
 	{#if JSON.stringify(game_state.final_results) !== JSON.stringify([null])}
 		{#if game_state.control_visible}
-			<div class="fixed right-4 top-14 z-30 flex justify-end">
-				<div class="w-fit">
-					{#if export_token === undefined}
-						<GrayButton onclick={request_answer_export}
-							>{$t('admin_page.request_export_results')}</GrayButton
-						>
-					{:else}
-						<GrayButton
-							target="_blank"
-							href="/api/v1/quiz/export_data/{export_token}?ts={new Date().getTime()}&game_pin={game_pin}"
-							>{$t('admin_page.download_export_results')}</GrayButton
-						>
-					{/if}
-				</div>
-			</div>
-			<div class="fixed right-4 top-[6.5rem] z-30 flex justify-end">
-				<div class="w-fit">
-					<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
-						{#if results_saved}
-							<svg
-								class="w-4 h-4"
-								aria-hidden="true"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									d="M5 13l4 4L19 7"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						{:else}{$t('admin_page.save_results')}{/if}
-					</GrayButton>
-				</div>
+			<!-- Two separately positioned fixed divs at top-14 and top-[6.5rem], each
+			     wrapped in a w-fit that fought GrayButton's own w-full, so the pair
+			     rendered as two misaligned pills of different widths hand-placed with
+			     magic numbers. One stack, below the h-12 controls bar, both the same
+			     width. -->
+			<div class="fixed top-16 right-4 z-30 flex w-44 flex-col items-stretch gap-2">
+				{#if export_token === undefined}
+					<GrayButton onclick={request_answer_export}
+						>{$t('admin_page.request_export_results')}</GrayButton
+					>
+				{:else}
+					<GrayButton
+						target="_blank"
+						href="/api/v1/quiz/export_data/{export_token}?ts={new Date().getTime()}&game_pin={game_pin}"
+						>{$t('admin_page.download_export_results')}</GrayButton
+					>
+				{/if}
+				<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
+					{#if results_saved}
+						<Check class="size-4" aria-hidden="true" />
+						<span class="sr-only">{$t('admin_page.save_results')}</span>
+					{:else}{$t('admin_page.save_results')}{/if}
+				</GrayButton>
 			</div>
 		{/if}
 		<FinalResults bind:data={game_state.player_scores} {show_final_results} />
