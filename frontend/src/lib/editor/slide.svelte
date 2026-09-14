@@ -21,13 +21,15 @@ SPDX-License-Identifier: MPL-2.0
 		data?: Question;
 	}
 
-	let { data = $bindable({
-		type: QuizQuestionType.SLIDE,
-		time: '120',
-		question: '',
-		image: undefined,
-		answers: ''
-	}) }: Props = $props();
+	let {
+		data = $bindable({
+			type: QuizQuestionType.SLIDE,
+			time: '120',
+			question: '',
+			image: undefined,
+			answers: ''
+		})
+	}: Props = $props();
 	let selected_element = $state(undefined);
 	let canvas_el: HTMLDivElement | undefined = $state();
 	let canvas: Pikaso;

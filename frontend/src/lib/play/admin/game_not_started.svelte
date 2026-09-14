@@ -109,7 +109,10 @@ SPDX-License-Identifier: MPL-2.0
 							title={$t('words.kick')}
 							aria-label="{$t('words.kick')}: {player.username}"
 							onclick={() =>
-								socket_game_controls.kick_player(player.username, game_state.players)}
+								socket_game_controls.kick_player(
+									player.username,
+									game_state.players
+								)}
 							class="group rounded-full border border-border bg-card px-4 py-2 text-lg font-medium shadow-sm
 								transition-all hover:border-destructive hover:text-destructive
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring

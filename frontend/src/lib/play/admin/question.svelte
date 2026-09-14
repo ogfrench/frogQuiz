@@ -68,12 +68,15 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {/if}
 {#if quiz_data.questions[selected_question].type === QuizQuestionType.ABCD || quiz_data.questions[selected_question].type === QuizQuestionType.VOTING || quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
-	<div class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-[var(--fq-space-item)] sm:grid-cols-2">
+	<div
+		class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-[var(--fq-space-item)] sm:grid-cols-2"
+	>
 		{#each quiz_data.questions[selected_question].answers as answer, i}
 			<div
 				class="answer-row relative flex min-h-20 items-center overflow-hidden rounded-2xl transition-all duration-300
 					motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
-				style="background-color: {answer.color ?? default_colors[i]}; animation-delay: {i * 70}ms"
+				style="background-color: {answer.color ?? default_colors[i]}; animation-delay: {i *
+					70}ms"
 				class:opacity-50={!answer.right &&
 					timer_res === '0' &&
 					quiz_data.questions[selected_question].type === QuizQuestionType.ABCD}

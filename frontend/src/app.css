@@ -8,9 +8,9 @@ SPDX-License-Identifier: MPL-2.0
 @import 'tippy.js/dist/tippy.css';
 /* Write your global styles here, in PostCSS syntax */
 @import 'tailwindcss';
-@import "tw-animate-css";
-@import "shadcn-svelte/tailwind.css";
-@import "@fontsource-variable/inter";
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+@import '@fontsource-variable/inter';
 /*
 ---break---
 */
@@ -39,7 +39,6 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	* {
-
 		@apply border-border outline-ring/50;
 	}
 

@@ -6,10 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:head>
 	<title>frogQuiz/docs - Roadmap</title>
-	<meta
-		name="description"
-		content="The roadmap for frogQuiz, the open-source quiz-application"
-	/>
+	<meta name="description" content="The roadmap for frogQuiz, the open-source quiz-application" />
 </svelte:head>
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"

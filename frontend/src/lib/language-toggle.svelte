@@ -126,7 +126,7 @@ SPDX-License-Identifier: MPL-2.0
 			{
 				code: 'ps',
 				flag: '🇦🇫',
-				name: "Pax̌tó"
+				name: 'Pax̌tó'
 			}
 		]
 	}: Props = $props();

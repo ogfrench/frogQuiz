@@ -8,7 +8,6 @@ SPDX-License-Identifier: MPL-2.0
 	import type { PageData } from './$types';
 	// import FileDahboard from "$lib/files/dashboard.svelte"
 
-
 	interface Props {
 		// import { thumbHashToDataURL } from 'thumbhash';
 		data: PageData;

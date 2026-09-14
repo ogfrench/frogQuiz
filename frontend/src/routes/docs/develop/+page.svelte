@@ -77,8 +77,7 @@ SPDX-License-Identifier: MPL-2.0
 				</li>
 				<li>
 					Start the Python-server:
-					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code
-						></pre>
+					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code></pre>
 				</li>
 				<li>
 					Start the background worker:
@@ -137,8 +136,7 @@ SPDX-License-Identifier: MPL-2.0
 			<ul>
 				<li>
 					Backend:
-					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code
-						></pre>
+					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code></pre>
 				</li>
 				<li>
 					Frontend:
