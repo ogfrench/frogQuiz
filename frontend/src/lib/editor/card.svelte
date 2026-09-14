@@ -112,39 +112,30 @@ SPDX-License-Identifier: MPL-2.0
 		<!-- Reordering lives here rather than on the navigation chip: two 20px arrows
 		     crammed into a 144px chip is half the 44px a finger needs, and it put two
 		     different actions -- choose this question, move this question -- on the same
-		     object. But bare chevrons next to "Question 1 of 3" read as previous and
-		     next, which is navigation, the opposite of what they do. So the group is
-		     labelled and bordered: it says Move, and the arrows are the long-tailed kind
-		     that mean displacement rather than the chevrons used for stepping through. -->
-		<div
-			class="border-input text-muted-foreground flex items-center gap-0.5 rounded-md border py-0.5 pl-2"
-			role="group"
-			aria-label={$t('editor.reorder_question')}
+		     object. Two plain buttons that each say what they do: a bordered group with a
+		     shared "Move" label glued to two icons was neither one control nor two, and
+		     bare chevrons beside "Question 1 of 3" read as previous and next, which is
+		     navigation and the opposite of what these do. -->
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={selected_question === 0}
+			onclick={() => move_question(-1)}
 		>
-			<span class="text-xs font-medium">{$t('words.move')}</span>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon-sm"
-				disabled={selected_question === 0}
-				title={$t('editor.move_question_left')}
-				aria-label={$t('editor.move_question_left')}
-				onclick={() => move_question(-1)}
-			>
-				<MoveLeft />
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon-sm"
-				disabled={selected_question === data.questions.length - 1}
-				title={$t('editor.move_question_right')}
-				aria-label={$t('editor.move_question_right')}
-				onclick={() => move_question(1)}
-			>
-				<MoveRight />
-			</Button>
-		</div>
+			<MoveLeft />
+			{$t('editor.move_question_left')}
+		</Button>
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={selected_question === data.questions.length - 1}
+			onclick={() => move_question(1)}
+		>
+			{$t('editor.move_question_right')}
+			<MoveRight />
+		</Button>
 		<div class="ml-auto flex flex-wrap items-center gap-2">
 			<label
 				class="border-input bg-background text-muted-foreground flex min-h-11 items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"

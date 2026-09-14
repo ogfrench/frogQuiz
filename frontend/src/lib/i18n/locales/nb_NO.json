@@ -155,8 +155,7 @@
     "never": "Aldri",
     "quiz": "Spørrekonkurranse",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…",
-    "move": "Move"
+    "waiting_for_results": "Waiting for everyone else…"
   },
   "settings_page": {
     "repeat_password": "Gjenta passordet",
@@ -268,9 +267,8 @@
     "visit_docs": "Vis dokumentasjonen.",
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
-    "move_question_left": "Move question left",
-    "move_question_right": "Move question right",
-    "reorder_question": "Reorder this question"
+    "move_question_left": "Move left",
+    "move_question_right": "Move right"
   },
   "import_page": {
     "visit_docs": "Besøk dokumentasjonen",

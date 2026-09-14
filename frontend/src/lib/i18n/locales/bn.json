@@ -160,8 +160,7 @@
     "info": "তথ্য",
     "player": "খেলোয়াড়",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…",
-    "move": "Move"
+    "waiting_for_results": "Waiting for everyone else…"
   },
   "create_page": {
     "success": {
@@ -234,9 +233,8 @@
     "hide_question_results": "প্রশ্নের ফলাফল লুকাবেন?",
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
-    "move_question_left": "Move question left",
-    "move_question_right": "Move question right",
-    "reorder_question": "Reorder this question"
+    "move_question_left": "Move left",
+    "move_question_right": "Move right"
   },
   "import_page": {
     "need_help": "সাহায্য দরকার?",

@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Split the reorder control into two plain buttons, "Move left" and "Move right". A bordered group with a shared "Move" label glued to two icon buttons was neither one control nor two, and read as strange rather than as either. Each button now says what it does on its own.
+
 - Made reordering on mobile actually work. Moving the arrows into the question toolbar and labelling them fixed the ambiguity but not the question: the control still sat below the strip, pointing at a list it was nowhere near. Holding a question in the strip now picks it up and dragging repositions it, which is the idiom a filmstrip already has on a phone and the only one where the control *is* the thing being reordered. A press delay separates picking up from scrolling, so a swipe still scrolls the strip. The Move buttons stay as the single-pointer and keyboard alternative, which WCAG 2.5.7 requires and which is also the discoverable path for anyone who never tries the gesture. Verified by driving the gesture: a long press reports `aria-grabbed`, a drag reorders, a quick swipe does not.
 - No instructional line under the strip. The lift, the shadow and the other chips fading back are the feedback; telling someone to "drag to move, release to place" is the app explaining itself to a person already doing it.
 

@@ -279,8 +279,7 @@
     "info": "情報",
     "normal": "普通",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…",
-    "move": "Move"
+    "waiting_for_results": "Waiting for everyone else…"
   },
   "search_page": {
     "at_least_3_characters": "少なくとも3文字を入力してください.",
@@ -312,9 +311,8 @@
     "right_or_true?": "ねえ…？",
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
-    "move_question_left": "Move question left",
-    "move_question_right": "Move question right",
-    "reorder_question": "Reorder this question"
+    "move_question_left": "Move left",
+    "move_question_right": "Move right"
   },
   "result_page": {
     "custom_field": "カスタム欄",

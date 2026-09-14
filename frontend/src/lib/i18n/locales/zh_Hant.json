@@ -128,9 +128,8 @@
     "disable_reorder": "停用重新排序模式",
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
-    "move_question_left": "Move question left",
-    "move_question_right": "Move question right",
-    "reorder_question": "Reorder this question"
+    "move_question_left": "Move left",
+    "move_question_right": "Move right"
   },
   "import_page": {
     "need_help": "需要協助嗎？",
@@ -326,8 +325,7 @@
     "quiz": "測驗",
     "player": "玩家",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…",
-    "move": "Move"
+    "waiting_for_results": "Waiting for everyone else…"
   },
   "search_page": {
     "at_least_3_characters": "請輸入至少 3 個字元...",
