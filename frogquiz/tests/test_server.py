@@ -12,6 +12,8 @@ from frogquiz.config import settings
 from frogquiz.tests import test_user_email, test_user_password, example_quiztivity
 from frogquiz.tests import test_client, example_quiz, ValueStorage  # noqa : F401
 from fastapi.testclient import TestClient
+from frogquiz.db.models import ABCDQuizAnswer
+from frogquiz.socket_server.helpers import check_check_question
 
 # @pytest.fixture
 # async def startup_and_shutdown_server():
@@ -729,3 +731,23 @@ class TestDeleteStuff:
     #     data = {"password": test_user_password}
     #     resp = test_client.delete("/api/v1/users/me", cookies=ValueStorage.cookies, json=data)
     #     assert resp.status_code == 200
+
+
+def test_check_question_scoring_is_all_or_nothing():
+    """A multiple-answer question is scored whole: the indices the player ticked must
+    match the indices marked right exactly. See docs/mvp-scope.md."""
+    answers = [
+        ABCDQuizAnswer(right=True, answer="a"),
+        ABCDQuizAnswer(right=False, answer="b"),
+        ABCDQuizAnswer(right=True, answer="c"),
+        ABCDQuizAnswer(right=False, answer="d"),
+    ]
+    assert check_check_question("02", answers) is True
+    # One of the two right answers, but not both.
+    assert check_check_question("0", answers) is False
+    # Both right answers plus a wrong one.
+    assert check_check_question("023", answers) is False
+    # Everything ticked.
+    assert check_check_question("0123", answers) is False
+    # Nothing ticked.
+    assert check_check_question("", answers) is False
