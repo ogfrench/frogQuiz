@@ -22,6 +22,8 @@ SPDX-License-Identifier: MPL-2.0
 	import Clock from '@lucide/svelte/icons/clock';
 	import ListChecks from '@lucide/svelte/icons/list-checks';
 	import Settings2 from '@lucide/svelte/icons/settings-2';
+	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
 
 	const { t } = getLocalization();
@@ -83,6 +85,17 @@ SPDX-License-Identifier: MPL-2.0
 			data.questions[selected_question].question
 		)
 	);
+	// Reordering is a move of the question plus a move of the selection: the author is
+	// still editing the same question after it changes position, so the selection has
+	// to follow it rather than stay on the index.
+	const move_question = (delta: number) => {
+		const to = selected_question + delta;
+		if (to < 0 || to >= data.questions.length) return;
+		const next = [...data.questions];
+		[next[selected_question], next[to]] = [next[to], next[selected_question]];
+		data.questions = next;
+		selected_question = to;
+	};
 </script>
 
 <div class="mx-auto flex w-full max-w-4xl flex-col gap-5">
@@ -96,9 +109,35 @@ SPDX-License-Identifier: MPL-2.0
 				total: data.questions.length
 			})}
 		</p>
+		<!-- Reordering lives here rather than on the navigation chip. It was two 20px
+		     arrows crammed into a 144px chip, which is half the 44px a finger needs and
+		     put two different actions -- choose this question, move this question -- on
+		     the same object. This row is already scoped to the selected question. -->
+		<div class="flex items-center gap-1">
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon-sm"
+				disabled={selected_question === 0}
+				aria-label={$t('editor.move_question_left')}
+				onclick={() => move_question(-1)}
+			>
+				<ChevronLeft />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon-sm"
+				disabled={selected_question === data.questions.length - 1}
+				aria-label={$t('editor.move_question_right')}
+				onclick={() => move_question(1)}
+			>
+				<ChevronRight />
+			</Button>
+		</div>
 		<div class="ml-auto flex flex-wrap items-center gap-2">
 			<label
-				class="border-input bg-background text-muted-foreground flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
+				class="border-input bg-background text-muted-foreground flex min-h-11 items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
 			>
 				<Clock class="size-4" />
 				<span class="sr-only">{$t('editor.time_in_seconds')}</span>
@@ -245,7 +284,7 @@ SPDX-License-Identifier: MPL-2.0
 				<span>{$t('editor.hide_question_results')}</span>
 				<input
 					type="checkbox"
-					class="accent-primary size-4"
+					class="accent-primary size-5"
 					bind:checked={data.questions[selected_question]['hide_results']}
 				/>
 			</label>

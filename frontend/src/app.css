@@ -82,7 +82,7 @@ SPDX-License-Identifier: MPL-2.0
 	@apply px-4 py-2 leading-5 text-black dark:text-white transition-colors duration-200 transform bg-gray-50 dark:bg-gray-700 rounded-sm text-center hover:bg-gray-300 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-600;
 }
 @utility btn-nav {
-	@apply text-muted-foreground hover:text-foreground hover:bg-muted rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
+	@apply fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
 }
 /*
 ---break---
@@ -99,7 +99,11 @@ SPDX-License-Identifier: MPL-2.0
 	--secondary: oklch(0.967 0.001 286.375);
 	--secondary-foreground: oklch(0.21 0.006 285.885);
 	--muted: oklch(0.967 0.001 286.375);
-	--muted-foreground: oklch(0.552 0.016 285.938);
+	/* 0.552 measured 4.39:1 against --muted, just under AA's 4.5. This is the colour
+	   every secondary label in the app uses, and --muted is a common ground for it
+	   (badges, the language select, hovered nav items), so the pairing is real rather
+	   than theoretical. 0.546 measures 4.52:1. Dark mode already clears it at 5.68. */
+	--muted-foreground: oklch(0.546 0.016 285.938);
 	--accent: oklch(0.967 0.001 286.375);
 	--accent-foreground: oklch(0.21 0.006 285.885);
 	--destructive: oklch(0.577 0.245 27.325);
@@ -219,6 +223,29 @@ SPDX-License-Identifier: MPL-2.0
 	min-height: 100dvh;
 	width: 100%;
 	padding: var(--fq-space-section) var(--fq-space-group);
+}
+
+/* Touch targets. Every shadcn button size is under the 44px that Apple's HIG and
+   WCAG 2.5.5 ask for on a touch screen: default and icon are 36px, icon-sm is 32,
+   icon-xs is 24. Shrinking the visual design to suit a finger would wreck the
+   density on a desktop, where a mouse is precise and 36px is generous, so instead
+   the hit area is grown past the visual bounds -- and only where the pointer is
+   actually coarse. The button looks identical; the thing you can hit is 44px.
+
+   Applied to the button primitive, so it reaches every button in the app rather
+   than the handful somebody remembered to fix. */
+@utility fq-touch-target {
+	@media (pointer: coarse) {
+		&::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: max(100%, 44px);
+			height: max(100%, 44px);
+			transform: translate(-50%, -50%);
+		}
+	}
 }
 
 /* Projector type scale. Paired with fq-stage: any screen the room reads, rather

@@ -59,7 +59,7 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="lg:flex lg:items-center lg:flex-row gap-1">
 			<a
 				href="/"
-				class="text-foreground hover:opacity-80 mr-2 flex items-center text-lg transition-opacity"
+				class="fq-touch-target text-foreground hover:opacity-80 relative mr-2 flex min-h-11 items-center text-lg transition-opacity"
 				aria-label="frogQuiz home"
 			>
 				<Wordmark />
@@ -98,6 +98,7 @@ SPDX-License-Identifier: MPL-2.0
 				<div class="lg:flex items-center justify-center">
 					{#if darkMode}
 						<button
+							class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 							onclick={() => {
 								switchDarkMode();
 							}}
@@ -108,6 +109,7 @@ SPDX-License-Identifier: MPL-2.0
 						</button>
 					{:else}
 						<button
+							class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 							onclick={() => {
 								switchDarkMode();
 							}}
@@ -128,7 +130,7 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="flex items-center justify-between">
 			<a
 				href="/"
-				class="text-foreground hover:opacity-80 mr-2 flex items-center text-lg transition-opacity"
+				class="fq-touch-target text-foreground hover:opacity-80 relative mr-2 flex min-h-11 items-center text-lg transition-opacity"
 				aria-label="frogQuiz home"
 			>
 				<Wordmark />
@@ -140,7 +142,7 @@ SPDX-License-Identifier: MPL-2.0
 				{#if darkMode}
 					<!-- Sun icon -->
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						onclick={() => {
 							switchDarkMode();
 						}}
@@ -152,7 +154,7 @@ SPDX-License-Identifier: MPL-2.0
 				{:else}
 					<!-- Moon icon -->
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						onclick={() => {
 							switchDarkMode();
 						}}
@@ -165,7 +167,7 @@ SPDX-License-Identifier: MPL-2.0
 
 				{#if menuIsClosed}
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						id="open-menu"
 						onclick={toggleMenu}
 						aria-label="Open navbar"
@@ -174,7 +176,7 @@ SPDX-License-Identifier: MPL-2.0
 					</button>
 				{:else}
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						id="close-menu"
 						onclick={toggleMenu}
 						aria-label="Close navbar"

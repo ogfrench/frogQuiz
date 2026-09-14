@@ -152,7 +152,7 @@ SPDX-License-Identifier: MPL-2.0
 		onchange={() => {
 			set_language(selected_language);
 		}}
-		class="border-input bg-background text-foreground focus-visible:ring-ring rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+		class="border-input bg-background text-foreground focus-visible:ring-ring min-h-11 rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
 		aria-label="Language-Selector"
 	>
 		{#each languages as lang}

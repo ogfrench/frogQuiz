@@ -107,16 +107,21 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="flex flex-col gap-2">
 			<span class="text-muted-foreground text-sm font-medium">{$t('editor.bg_color')}</span>
 			<div class="flex items-center gap-3">
-				<input
-					type="checkbox"
-					id="custom-bg-color"
-					bind:checked={custom_bg_color}
-					class="accent-primary size-4"
-				/>
-				<label for="custom-bg-color" class="text-sm">{$t('editor.bg_color_custom')}</label>
+				<!-- The label used to be a sibling of the checkbox rather than its parent, so
+				     the tap target was the 20px box alone and the words beside it did
+				     nothing. Wrapping makes the whole row one target. -->
+				<label class="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+					<input
+						type="checkbox"
+						id="custom-bg-color"
+						bind:checked={custom_bg_color}
+						class="accent-primary size-5"
+					/>
+					{$t('editor.bg_color_custom')}
+				</label>
 				<input
 					type="color"
-					class="border-input h-9 w-16 cursor-pointer rounded-md border p-1 disabled:cursor-not-allowed disabled:opacity-50"
+					class="border-input min-h-11 w-16 cursor-pointer rounded-md border p-1 disabled:cursor-not-allowed disabled:opacity-50"
 					disabled={!custom_bg_color}
 					bind:value={data.background_color}
 				/>

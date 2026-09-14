@@ -244,3 +244,30 @@ SPDX-License-Identifier: MPL-2.0
 		{$t('uploader.add_image')}
 	</Button>
 </div>
+
+<style>
+	/* Uppy ships a light-only palette and draws its own chrome, so inside our modal
+	   its close control measured 1.09:1 and its footer text 2.79:1 -- both well under
+	   AA. Point its variables at the theme instead of letting it choose. */
+	:global(.uppy-Dashboard-inner),
+	:global(.uppy-Dashboard-AddFiles) {
+		background: var(--card);
+		border-color: var(--border);
+	}
+
+	:global(.uppy-Dashboard-close) {
+		color: var(--foreground);
+		font-size: 1.75rem;
+	}
+
+	:global(.uppy-Dashboard-browse),
+	:global(.uppy-Dashboard-AddFiles-title) {
+		color: var(--foreground);
+	}
+
+	/* Uppy's own branding link, at 3.07:1 against AA's 4.5 and not ours to show.
+	   ckeditor's equivalent is hidden the same way. */
+	:global(.uppy-Dashboard-poweredBy) {
+		display: none;
+	}
+</style>
