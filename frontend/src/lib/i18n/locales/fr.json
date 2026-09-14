@@ -431,7 +431,10 @@
     },
     "quiz_title": "Titre du quiz",
     "date_played": "Date",
-    "player_count": "Nombre de joueurs"
+    "player_count": "Nombre de joueurs",
+    "title": "Résultats",
+    "no_results_explanation": "Les résultats apparaissent ici une fois que vous avez animé une partie et enregistré ses scores.",
+    "go_to_quizzes": "Voir vos quiz"
   },
   "start_game": {
     "old_school_mode": "Classique",

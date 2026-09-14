@@ -379,7 +379,10 @@
     "player_count": "Aantal spelers",
     "general_overview": {
       "sentence": "De quiz \"{{title}}\", die werd gespeeld op {{date}} had {{player_count}} spelers met een gemiddelde score van {{average_score}}."
-    }
+    },
+    "title": "Resultaten",
+    "no_results_explanation": "Resultaten verschijnen hier zodra je een spel hebt gehost en de scores hebt opgeslagen.",
+    "go_to_quizzes": "Naar je quizzen"
   },
   "result_page": {
     "player_name": "Naam speler",

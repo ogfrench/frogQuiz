@@ -393,7 +393,10 @@
     "no_results_so_far": "Noch keine Ergebnisse gespeichert...",
     "general_overview": {
       "sentence": "Das Quiz \"{{title}}\", welches am {{date}} gestartet wurde, hatte {{player_count}} Spieler mit einem durchschnittlichen Score von {{average_score}}."
-    }
+    },
+    "title": "Ergebnisse",
+    "no_results_explanation": "Ergebnisse erscheinen hier, sobald du ein Spiel gehostet und dessen Punkte gespeichert hast.",
+    "go_to_quizzes": "Zu deinen Quizzen"
   },
   "result_page": {
     "custom_field": "Benutzerdefiniertes Feld",

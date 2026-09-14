@@ -402,7 +402,10 @@
     "player_count": "Player count",
     "general_overview": {
       "sentence": "The quiz \"<b>{{title}}</b>\", which was played on <b>{{date}}</b> had <b>{{player_count}}</b> players with an average score of <b>{{average_score}}</b>."
-    }
+    },
+    "title": "Results",
+    "no_results_explanation": "Results appear here once you have hosted a game and saved its scores.",
+    "go_to_quizzes": "Go to your quizzes"
   },
   "result_page": {
     "player_name": "Player name",

@@ -386,7 +386,10 @@
     "no_results_so_far": "No hay resultados guardados hasta ahora...",
     "general_overview": {
       "sentence": "La prueba \"{{title}}\", el cual tuvo jugadores en {{date}} tenía {{player_count}} jugadores con una puntuación media de {{average_score}}."
-    }
+    },
+    "title": "Resultados",
+    "no_results_explanation": "Los resultados aparecerán aquí cuando hayas organizado una partida y guardado sus puntuaciones.",
+    "go_to_quizzes": "Ir a tus cuestionarios"
   },
   "result_page": {
     "player_name": "Nombre del jugador",
