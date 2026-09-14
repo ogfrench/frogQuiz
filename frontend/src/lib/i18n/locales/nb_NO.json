@@ -331,7 +331,9 @@
     "points_added": "Poeng tillagt",
     "final_result_rank": "{{place}}: {{username}} med {{points}} poeng",
     "your_score": "Din poengsum: {{score}}",
-    "join_by_entering_code": "Ta del ved å skrive inn følgende kode"
+    "join_by_entering_code": "Ta del ved å skrive inn følgende kode",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "result_page": {
     "correct_answer_plural": "{{count}} riktige svar",

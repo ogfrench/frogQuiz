@@ -307,7 +307,9 @@
     "join_by_entering_code": "Bergabung dengan memasukkan kode berikut",
     "your_place": "Anda berada di tempat {{place}}!",
     "players_waiting": "{{count}} pemain sedang menunggu",
-    "players_waiting_plural": "{{count}} pemain sedang menunggu"
+    "players_waiting_plural": "{{count}} pemain sedang menunggu",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "file_dashboard": {
     "unset": "Belum diatur",

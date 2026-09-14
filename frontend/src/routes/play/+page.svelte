@@ -181,6 +181,7 @@ SPDX-License-Identifier: MPL-2.0
 				title={gameData.title}
 				description={gameData.description}
 				cover_image={gameData.cover_image}
+				{username}
 			/>
 		{:else if gameMeta.started && gameData !== undefined && question_index !== '' && answer_results === undefined}
 			{#key unique}

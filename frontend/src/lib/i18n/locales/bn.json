@@ -303,7 +303,9 @@
     "points_added": "পয়েন্ট যোগ হয়েছে",
     "your_place": "আপনি {{place}} নম্বর স্থানে আছেন!",
     "players_waiting": "{{count}} জন খেলোয়াড় অপেক্ষা করছেন",
-    "players_waiting_plural": "{{count}} জন খেলোয়াড় অপেক্ষা করছে"
+    "players_waiting_plural": "{{count}} জন খেলোয়াড় অপেক্ষা করছে",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "add_an_answer": "একটি উত্তর যোগ করুন",

@@ -308,7 +308,9 @@
     "join_description": "Neem deel via {{url}} en voer {{pin}} in.",
     "players_waiting": "{{count}} speler aan het wachten",
     "players_waiting_plural": "{{count}} spelers aan het wachten",
-    "your_place": "Je bent op plaats {{place}}!"
+    "your_place": "Je bent op plaats {{place}}!",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "add_an_answer": "Voeg een antwoord toe",

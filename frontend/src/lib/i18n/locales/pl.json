@@ -327,7 +327,9 @@
     "final_result_rank": "{{place}}: {{username}} z {{points}} punktów",
     "your_place": "Jesteś na miejscu {{place}}!",
     "players_waiting": "{{count}} graczy oczekuje",
-    "players_waiting_plural": "{{count}} graczy czeka"
+    "players_waiting_plural": "{{count}} graczy czeka",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "explore_page": {
     "made_by": "Wykonane przez",

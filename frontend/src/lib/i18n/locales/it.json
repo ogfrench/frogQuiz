@@ -304,7 +304,9 @@
     "join_by_entering_code": "Entra inserendo il seguente codice",
     "players_waiting": "{{count}} giocatore è in attesa",
     "players_waiting_plural": "{{count}} giocatori sono in attesa",
-    "your_place": "Sei nel posto {{place}}!"
+    "your_place": "Sei nel posto {{place}}!",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "add_an_answer": "Aggiungi una risposta",

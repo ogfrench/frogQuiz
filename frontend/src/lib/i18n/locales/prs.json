@@ -303,7 +303,9 @@
     "points_added": "امتیازها اضافه شدند",
     "your_place": "شما در مقام {{place}} هستید!",
     "players_waiting": "{{count}} شرکت‌کننده در انتظار است",
-    "players_waiting_plural": "{{count}} شرکت‌کنندگان در انتظار هستند"
+    "players_waiting_plural": "{{count}} شرکت‌کنندگان در انتظار هستند",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "add_an_answer": "یک پاسخ اضافه کنید",

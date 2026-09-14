@@ -282,7 +282,9 @@
     "join_by_entering_code": "Entre a inserir o seguinte código",
     "players_waiting_plural": "{{count}} jogadores estão à espera",
     "your_place": "Está na posição {{place}}!",
-    "players_waiting": "{{count}} jogador está à espera"
+    "players_waiting": "{{count}} jogador está à espera",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "file_dashboard": {
     "unset": "Redefinir",

@@ -136,7 +136,9 @@
     "players_waiting": "{{count}} 人が待機中",
     "players_waiting_plural": "{{count}} 人が待機中",
     "final_result_rank": "{{place}}: {{username}} は {{points}} ポイント獲得",
-    "join_description": "{{url}} から参加し、{{pin}}を入力。"
+    "join_description": "{{url}} から参加し、{{pin}}を入力。",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "add_an_answer": "回答を追加する",

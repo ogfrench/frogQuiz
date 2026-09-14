@@ -206,7 +206,9 @@
     "join_by_entering_code": "Tham gia bằng cách nhập mã sau",
     "players_waiting": "{{count}} người chơi đang chờ",
     "your_place": "Bạn đang ở {{place}}!",
-    "players_waiting_plural": "{{count}} người chơi đang chờ"
+    "players_waiting_plural": "{{count}} người chơi đang chờ",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "file_dashboard": {
     "unset": "Bỏ chọn",

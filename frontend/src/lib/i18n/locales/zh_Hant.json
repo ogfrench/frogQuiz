@@ -194,7 +194,9 @@
     "join_by_entering_code": "輸入以下代碼加入",
     "your_place": "你目前排名第 {{place}}！",
     "players_waiting": "有 {{count}} 位玩家正在等待",
-    "players_waiting_plural": "有 {{count}} 位玩家正在等待"
+    "players_waiting_plural": "有 {{count}} 位玩家正在等待",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "add_an_answer": "新增一個答案",

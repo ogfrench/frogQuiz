@@ -206,7 +206,9 @@
     "join_by_entering_code": "انضم عن طريق اخال الرقم التالي",
     "your_place": "أنت في المركز {{place}}!",
     "players_waiting": "هناك {{count}} لاعب ينتظرون",
-    "players_waiting_plural": "{{count}} من اللاعبين  ينتظرون"
+    "players_waiting_plural": "{{count}} من اللاعبين  ينتظرون",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "file_dashboard": {
     "unset": "",

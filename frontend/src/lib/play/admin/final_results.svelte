@@ -32,7 +32,16 @@ SPDX-License-Identifier: MPL-2.0
 	let podium = $derived(
 		[ranked[1], ranked[0], ranked[2]].filter(Boolean).map((p) => ({
 			...p,
-			height: p.place === 1 ? 'h-48' : p.place === 2 ? 'h-36' : 'h-28',
+			// Fixed pixel heights (h-48/h-36/h-28) made the podium a small object adrift
+			// in the middle of a projector screen, and 192 vs 144 vs 112 does not read as
+			// a rank order from the back of a room. Viewport-relative so the podium scales
+			// with the screen it is thrown on, with a floor for short windows.
+			height:
+				p.place === 1
+					? 'h-[38vh] min-h-44'
+					: p.place === 2
+						? 'h-[26vh] min-h-32'
+						: 'h-[18vh] min-h-24',
 			// Built up from last place to first, so the winner lands last.
 			delay: (4 - p.place) * 700
 		}))

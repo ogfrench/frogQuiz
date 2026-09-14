@@ -234,7 +234,9 @@
     "end_sentence": "",
     "with_out_of": "",
     "3rd place": "",
-    "join_by_entering_code": ""
+    "join_by_entering_code": "",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "file_dashboard": {
     "unset": "",

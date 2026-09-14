@@ -303,7 +303,9 @@
     "points_added": "Pontok megszerezve",
     "players_waiting_plural": "{{count}} játékosok várnak",
     "your_place": "{{place}}. helyen vagy!",
-    "players_waiting": "{{count}} játékos vár"
+    "players_waiting": "{{count}} játékos vár",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "right_click_to_delete": "Kattintson a jobb gombbal egy válaszra a törléshez!",

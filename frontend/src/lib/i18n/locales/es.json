@@ -251,7 +251,9 @@
     "points_added": "Puntos añadidos",
     "players_waiting": "{{count}} jugador esperando",
     "your_place": "¡Estás en {{place}}!",
-    "players_waiting_plural": "{{count}} jugadores esperan"
+    "players_waiting_plural": "{{count}} jugadores esperan",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "right_click_to_delete": "Haz clic con el botón derecho en una respuesta para eliminarla!",

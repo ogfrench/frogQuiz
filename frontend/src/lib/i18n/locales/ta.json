@@ -61,7 +61,9 @@
     "points_added": "புள்ளிகள் சேர்க்கப்பட்டன",
     "your_place": "நீங்கள் இடத்தில் {{place}}!",
     "players_waiting": "{{count}}} பிளேயர் காத்திருக்கிறார்",
-    "players_waiting_plural": "{{count}} வீரர்கள் காத்திருக்கிறார்கள்"
+    "players_waiting_plural": "{{count}} வீரர்கள் காத்திருக்கிறார்கள்",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "downloader": {
     "help": "சொந்த வடிவம் (.CQA) ஒவ்வொரு கேள்வி வகையையும் படங்களை உள்ளடக்கியது மற்றும் ஆதரிக்கிறது, அதேசமயம் எக்செல் வடிவம் வாக்களிப்பு மற்றும் பல தேர்வு கேள்விகளை மட்டுமே ஆதரிக்கிறது.",
