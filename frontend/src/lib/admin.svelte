@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -103,7 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 	></span>
 {/if}
 
-<div class="fq-stage">
+<div class="contents">
 	{#if game_state.timer_res !== undefined && !final_results_clicked && !game_state.question_results}
 		<!-- Question is shown -->
 		{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}
@@ -124,7 +125,6 @@ SPDX-License-Identifier: MPL-2.0
 			/>
 		{/if}
 	{/if}
-	<br />
 	{#if game_state.timer_res === '0' && JSON.stringify(game_state.final_results) === JSON.stringify( [null] ) && game_state.quiz_data.questions[game_state.selected_question].type !== QuizQuestionType.SLIDE && game_state.question_results !== null && game_state.quiz_data.questions[game_state.selected_question]?.hide_results !== true}
 		{#if game_state.question_results === undefined}
 			{#if !final_results_clicked}
@@ -153,9 +153,8 @@ SPDX-License-Identifier: MPL-2.0
 			{/await}
 		{/if}
 	{/if}
-	<br />
 	{#if game_state.selected_question === -1}
-		<div class="flex flex-col justify-center w-screen h-full">
+		<div class="fq-stage justify-center">
 			<h1 class="text-7xl text-center">{@html game_state.quiz_data.title}</h1>
 			<p class="text-3xl pt-8 text-center">{@html game_state.quiz_data.description}</p>
 			{#if game_state.quiz_data.cover_image}

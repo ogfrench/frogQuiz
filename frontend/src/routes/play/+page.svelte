@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -183,7 +184,10 @@ SPDX-License-Identifier: MPL-2.0
 			/>
 		{:else if gameMeta.started && gameData !== undefined && question_index !== '' && answer_results === undefined}
 			{#key unique}
-				<div class="text-black dark:text-black">
+				<!-- This wrapper forced black text on the whole question screen, which made the
+				     post-answer and time-up states unreadable in dark mode. The answer tiles set
+				     their own ink inline from the tile colour, so they never needed it. -->
+				<div>
 					<Question bind:game_mode bind:question {question_index} {solution} />
 				</div>
 			{/key}
