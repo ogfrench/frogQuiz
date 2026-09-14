@@ -22,8 +22,8 @@ SPDX-License-Identifier: MPL-2.0
 	import Clock from '@lucide/svelte/icons/clock';
 	import ListChecks from '@lucide/svelte/icons/list-checks';
 	import Settings2 from '@lucide/svelte/icons/settings-2';
-	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
-	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import MoveLeft from '@lucide/svelte/icons/move-left';
+	import MoveRight from '@lucide/svelte/icons/move-right';
 	import X from '@lucide/svelte/icons/x';
 
 	const { t } = getLocalization();
@@ -109,30 +109,40 @@ SPDX-License-Identifier: MPL-2.0
 				total: data.questions.length
 			})}
 		</p>
-		<!-- Reordering lives here rather than on the navigation chip. It was two 20px
-		     arrows crammed into a 144px chip, which is half the 44px a finger needs and
-		     put two different actions -- choose this question, move this question -- on
-		     the same object. This row is already scoped to the selected question. -->
-		<div class="flex items-center gap-1">
+		<!-- Reordering lives here rather than on the navigation chip: two 20px arrows
+		     crammed into a 144px chip is half the 44px a finger needs, and it put two
+		     different actions -- choose this question, move this question -- on the same
+		     object. But bare chevrons next to "Question 1 of 3" read as previous and
+		     next, which is navigation, the opposite of what they do. So the group is
+		     labelled and bordered: it says Move, and the arrows are the long-tailed kind
+		     that mean displacement rather than the chevrons used for stepping through. -->
+		<div
+			class="border-input text-muted-foreground flex items-center gap-0.5 rounded-md border py-0.5 pl-2"
+			role="group"
+			aria-label={$t('editor.reorder_question')}
+		>
+			<span class="text-xs font-medium">{$t('words.move')}</span>
 			<Button
 				type="button"
 				variant="ghost"
 				size="icon-sm"
 				disabled={selected_question === 0}
+				title={$t('editor.move_question_left')}
 				aria-label={$t('editor.move_question_left')}
 				onclick={() => move_question(-1)}
 			>
-				<ChevronLeft />
+				<MoveLeft />
 			</Button>
 			<Button
 				type="button"
 				variant="ghost"
 				size="icon-sm"
 				disabled={selected_question === data.questions.length - 1}
+				title={$t('editor.move_question_right')}
 				aria-label={$t('editor.move_question_right')}
 				onclick={() => move_question(1)}
 			>
-				<ChevronRight />
+				<MoveRight />
 			</Button>
 		</div>
 		<div class="ml-auto flex flex-wrap items-center gap-2">

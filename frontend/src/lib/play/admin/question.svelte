@@ -91,7 +91,7 @@ SPDX-License-Identifier: MPL-2.0
 						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
 					/>
 					<span
-						class="fq-answer w-full px-3 py-5 text-center font-semibold"
+						class="fq-answer w-full px-3 py-5 text-center font-semibold wrap-anywhere"
 						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
 						>{answer.answer}</span
 					>

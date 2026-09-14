@@ -117,7 +117,8 @@
     "logout": "Đăng xuất",
     "player": "Người chơi",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "move": "Move"
   },
   "edit_page": {
     "success_update_body": "Không ai mong đợi sự điều tra này.",
@@ -363,7 +364,8 @@
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
     "move_question_left": "Move question left",
-    "move_question_right": "Move question right"
+    "move_question_right": "Move question right",
+    "reorder_question": "Reorder this question"
   },
   "controllers": {
     "last_seen": "thấy lần cuối",

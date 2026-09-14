@@ -197,7 +197,8 @@
     "info": "Információ",
     "player": "Játékos",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "move": "Move"
   },
   "editor": {
     "add_new_question": "Új kérdés hozzáadása",
@@ -234,7 +235,8 @@
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
     "move_question_left": "Move question left",
-    "move_question_right": "Move question right"
+    "move_question_right": "Move question right",
+    "reorder_question": "Reorder this question"
   },
   "import_page": {
     "url_should_look_like_this": "Az URL-nek így kell kinéznie: https://create.kahoot.it/details/...",

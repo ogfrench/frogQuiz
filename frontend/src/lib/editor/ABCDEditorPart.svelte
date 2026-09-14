@@ -56,6 +56,18 @@ SPDX-License-Identifier: MPL-2.0
 		data.questions[selected_question].answers.splice(index, 1);
 		data.questions[selected_question].answers = data.questions[selected_question].answers;
 	};
+	// An auto-growing textarea: height follows content, so the tile shows the whole
+	// answer instead of clipping it.
+	const grow = (el: HTMLTextAreaElement) => {
+		el.style.height = 'auto';
+		el.style.height = `${el.scrollHeight}px`;
+	};
+	// Content arrives before the element is laid out, so the first measure has to happen
+	// after mount rather than in the markup.
+	const grow_on_mount = (el: HTMLTextAreaElement) => {
+		grow(el);
+		return { update: () => grow(el) };
+	};
 </script>
 
 <div class="grid w-full gap-3 sm:grid-cols-2">
@@ -78,13 +90,22 @@ SPDX-License-Identifier: MPL-2.0
 			>
 				<AnswerShape {index} class="size-6 shrink-0" />
 
-				<input
+				<!-- A text input cannot wrap, so a long answer scrolled inside it and the
+				     author could only ever see the first twenty-odd characters of what they
+				     had written -- no ellipsis, no way to proofread it. The play tile wraps,
+				     and the whole point of this canvas is that it shows what the room will
+				     see, so this wraps too. It grows with the content rather than scrolling.
+				     break-words is for the answer with no spaces in it, which otherwise
+				     pushes straight out of the tile. -->
+				<textarea
 					bind:value={answer.answer}
-					type="text"
-					class="min-w-0 flex-1 bg-transparent text-lg font-medium outline-none placeholder:opacity-60"
+					rows="1"
+					class="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-lg font-medium wrap-anywhere outline-none placeholder:opacity-60"
 					style="color: {ink}"
 					placeholder={$t('editor.enter_answer')}
-				/>
+					oninput={(e) => grow(e.currentTarget)}
+					use:grow_on_mount
+				></textarea>
 
 				<button
 					type="button"

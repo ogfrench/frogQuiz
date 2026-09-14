@@ -220,7 +220,8 @@
     "info": "தகவல்",
     "player": "வீரர்",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "move": "Move"
   },
   "editor": {
     "time_in_seconds": "நொடிகளில் நேரம்",
@@ -257,7 +258,8 @@
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
     "move_question_left": "Move question left",
-    "move_question_right": "Move question right"
+    "move_question_right": "Move question right",
+    "reorder_question": "Reorder this question"
   },
   "import_page": {
     "need_help": "உதவி தேவையா?",

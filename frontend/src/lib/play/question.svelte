@@ -212,7 +212,9 @@ SPDX-License-Identifier: MPL-2.0
 									class="relative h-1/2 max-h-24 w-auto drop-shadow-sm transition-transform duration-200 group-active:scale-90"
 								/>
 							{:else}
-								<p class="relative m-auto text-lg font-semibold px-3 text-balance">
+								<p
+									class="relative m-auto text-lg font-semibold px-3 text-balance wrap-anywhere"
+								>
 									{answer.answer}
 								</p>
 							{/if}

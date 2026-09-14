@@ -206,7 +206,8 @@
     "waiting_for_results": "Waiting for everyone else…",
     "cover_image": "Cover image",
     "visibility": "Visibility",
-    "time_is_up": "Time's up"
+    "time_is_up": "Time's up",
+    "move": "Move"
   },
   "editor": {
     "time_in_seconds": "Time in seconds",
@@ -254,7 +255,8 @@
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
     "move_question_left": "Move question left",
-    "move_question_right": "Move question right"
+    "move_question_right": "Move question right",
+    "reorder_question": "Reorder this question"
   },
   "import_page": {
     "need_help": "Need help?",

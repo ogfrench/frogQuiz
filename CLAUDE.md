@@ -20,7 +20,6 @@ Config lives in `frontend/components.json`: style `vega`, base colour `zinc`, th
 - **Node toolchain**: pnpm 10 (lockfile is v9). pnpm is not on PATH by default; it is at `%APPDATA%
 pm`. The `build` script uses `NODE_ENV=production vite build`, POSIX syntax that fails under cmd.exe — run builds from a POSIX shell.
 
-
 ## Visual identity
 
 The look is deliberately breathy: generous whitespace, a single accent, and one loud element rather than colour everywhere.
@@ -45,7 +44,7 @@ Beyond the three in "Things that keep coming back", these have each shipped:
 
 - **A grid item defaults to `min-width: auto`**, so it will not shrink below its
   content's intrinsic width and bursts out of its column. A bare `<input>` reports
-  about twenty characters. `min-w-0` belongs on the grid or flex *item*, not only on
+  about twenty characters. `min-w-0` belongs on the grid or flex _item_, not only on
   the input inside it.
 - **`h-screen` is `100vh`**, which on a phone counts browser chrome that is not
   there, pushing the bottom of a full-height layout below the fold. Use `h-dvh`.
@@ -78,10 +77,24 @@ Check in a browser, don't assume. The dev server binds IPv6-only — use `http:/
 Assert on these three, since all three have regressed before:
 
 ```js
-document.documentElement.classList.contains('dark')            // the class toggle, not the OS media query
-document.documentElement.scrollWidth > clientWidth             // the w-screen overflow
-getComputedStyle(document.body).backgroundColor                // tokens actually applied
+document.documentElement.classList.contains("dark"); // the class toggle, not the OS media query
+document.documentElement.scrollWidth > clientWidth; // the w-screen overflow
+getComputedStyle(document.body).backgroundColor; // tokens actually applied
 ```
+
+### Running the frontend suite
+
+`pnpm test` (vitest, no browser needed, about a second). It covers the pieces with
+real invariants rather than the ones that are easy to assert:
+
+- the answer palette's contrast, separation, and its documented CVD limitation
+- `isQuestionComplete`, including the whitespace-title case that used to pass
+- every theme token pairing against WCAG AA, read straight out of `app.css`
+- the multiple-answer wire format, which is a contract between three places that do
+  not import each other and had already drifted once
+
+Before adding a test, check it can fail: the token guard was verified by reverting
+`--muted-foreground` to its old value and watching it report 4.39:1.
 
 ### Running the backend suite
 
@@ -122,11 +135,13 @@ They are also coupled: `frontend/src/lib/search-card.svelte` renders the `explor
 If the team ever does decide to delete either, this is the full surface. Do it in this order and do not stop halfway — a half-removal is what leaves reachable-but-broken routes and live endpoints behind a dead UI.
 
 **Explore**
+
 - `frontend/src/routes/explore/` — the route and its loader.
 - `explore_page.*` in all 34 `frontend/src/lib/i18n/locales/*.json`. **Only safe once Search is gone too**, or once `search-card.svelte` stops using those keys.
 - Entry points: navbar (desktop and mobile), the command palette, and any home-page link.
 
 **Search** (bigger — it reaches the backend and a whole service)
+
 - `frontend/src/routes/search/`, `frontend/src/lib/search-card.svelte`, the navbar link, the command-palette entry.
 - `search_page.*` and `explore_page.*` in all locale files.
 - `frogquiz/routers/search.py` — `POST /api/v1/search/` and the GET variant. Unregister it from the router table too, or the endpoint stays live and callable even with no UI.

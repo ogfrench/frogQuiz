@@ -4,7 +4,7 @@
 
 # Lints the SvelteKit frontend.
 
-name: "[CI] Frontend / Lint"
+name: "[CI] Frontend / Lint & Test"
 
 # GitHub's path filters do not do brace expansion, so the old
 # "frontend/**/*.{ts,js,svelte}" was matched literally and never hit a real file.
@@ -46,3 +46,8 @@ jobs:
         working-directory: ./frontend
         run: |
           pnpm run lint-without-format-checking
+
+      - name: Test
+        working-directory: ./frontend
+        run: |
+          pnpm run test

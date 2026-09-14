@@ -10,7 +10,7 @@ export const ABCDQuestionSchema = yup
 	.of(
 		yup.object({
 			right: yup.boolean().required(),
-			answer: yup.string().required('You need an answer')
+			answer: yup.string().trim().required('You need an answer')
 		})
 	)
 	.min(2, 'You need at least 2 answers')
@@ -20,7 +20,7 @@ export const VotingQuestionSchema = yup
 	.array()
 	.of(
 		yup.object({
-			answer: yup.string().required('You need an answer'),
+			answer: yup.string().trim().required('You need an answer'),
 			image: yup.string().optional().nullable()
 		})
 	)
@@ -39,7 +39,7 @@ export const TextQuestionSchema = yup
 	.of(
 		yup.object({
 			case_sensitive: yup.boolean().required(),
-			answer: yup.string().required('You need an answer')
+			answer: yup.string().trim().required('You need an answer')
 		})
 	)
 	.min(1, 'You need at least 1 answer')
@@ -62,7 +62,10 @@ export const dataSchema = yup.object({
 		.array()
 		.of(
 			yup.object({
-				question: yup.string().required('A question-title is required').max(299),
+				// trim() before required(): yup counts '   ' as three characters, so a
+				// question whose title is nothing but spaces passed validation, saved, and
+				// went up on the projector blank.
+				question: yup.string().trim().required('A question-title is required').max(299),
 				time: yup.number().required().positive('The time has to be positive'),
 				image: yup.string().nullable().lowercase(),
 				answers: yup.lazy((v) => {

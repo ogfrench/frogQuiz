@@ -202,7 +202,8 @@
     "like": "Lubię",
     "player": "Odtwarzacz",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "move": "Move"
   },
   "settings_page": {
     "last_seen": "Ostatnio widziany",
@@ -275,7 +276,8 @@
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
     "move_question_left": "Move question left",
-    "move_question_right": "Move question right"
+    "move_question_right": "Move question right",
+    "reorder_question": "Reorder this question"
   },
   "import_page": {
     "need_help": "Potrzebujesz pomocy?",
