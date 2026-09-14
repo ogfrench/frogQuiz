@@ -1,24 +1,24 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
 	import { ANSWER_COLORS } from '$lib/play/answer_colors';
+	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 
 	import type { Answer, EditorData } from '../quiz_types';
 	import { QuizQuestionType } from '../quiz_types';
 	import { fade } from 'svelte/transition';
-	import { reach } from 'yup';
-	import { ABCDQuestionSchema } from '$lib/yupSchemas';
 	import { getLocalization } from '$lib/i18n';
 	import { get_foreground_color } from '$lib/helpers';
+	import Check from '@lucide/svelte/icons/check';
+	import Plus from '@lucide/svelte/icons/plus';
+	import X from '@lucide/svelte/icons/x';
 
 	const { t } = getLocalization();
-
-	const default_colors = ANSWER_COLORS;
 
 	interface Props {
 		selected_question: number;
@@ -30,150 +30,99 @@ SPDX-License-Identifier: MPL-2.0
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
-	const save_colors = (data_local: EditorData) => {
-		if (selected_question === 0) {
-			for (let i = 0; i < data_local.questions[selected_question].answers.length; i++) {
-				localStorage.setItem(
-					`quiz_color:${i}:${data_local.title}`,
-					data_local.questions[selected_question].answers[i].color
-				);
-			}
-		}
-	};
 
-	const get_empty_answer = (i: number): Answer => {
+	const get_empty_answer = (): Answer => {
 		return {
 			answer: '',
-			color: default_colors[i],
 			right: false
 		};
 	};
-	run(() => {
-		save_colors(data);
-	});
+
 	data.questions[selected_question].type =
 		check_choice === true ? QuizQuestionType.CHECK : QuizQuestionType.ABCD;
-	const set_colors_if_unset = () => {
-		for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-			if (!data.questions[selected_question].answers[i].color) {
-				data.questions[selected_question].answers[i].color = default_colors[i];
-			}
-		}
+
+	// Slot colour comes from the palette, which was derived for colour-vision separation
+	// against both surfaces. It belongs to the slot, not to the answer: there is no
+	// per-answer colour picker any more, because an author picking two near-identical hues
+	// is exactly what the palette work was meant to prevent. Deriving it from the index
+	// rather than storing it also keeps the order correct after an answer is deleted, and
+	// it matches what every play surface already does (`answer.color ?? default_colors[i]`).
+	// Quizzes authored before this still carry a hand-picked colour, which is honoured,
+	// and is why the ink is measured rather than assumed.
+	const slot_color = (answer: Answer, index: number): string =>
+		answer.color ?? ANSWER_COLORS[index % ANSWER_COLORS.length];
+
+	const remove_answer = (index: number) => {
+		data.questions[selected_question].answers.splice(index, 1);
+		data.questions[selected_question].answers = data.questions[selected_question].answers;
 	};
-	run(() => {
-		set_colors_if_unset();
-		data;
-		selected_question;
-	});
 </script>
 
-<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-4 w-full px-10">
+<div class="grid w-full gap-3 sm:grid-cols-2">
 	{#if Array.isArray(data.questions[selected_question].answers)}
 		{#each data.questions[selected_question].answers as answer, index}
+			{@const color = slot_color(answer, index)}
+			{@const ink = get_foreground_color(color)}
 			<div
 				out:fade={{ duration: 150 }}
-				class="p-4 rounded-lg flex justify-center w-full transition relative"
-				class:bg-red-500={!answer.right}
-				class:bg-green-500={answer.right}
-				class:bg-yellow-500={!reach(ABCDQuestionSchema, 'answer').isValidSync(
-					answer.answer
-				)}
+				class="group relative flex items-center gap-3 rounded-xl p-4 transition"
+				class:ring-3={answer.right}
+				class:ring-foreground={answer.right}
+				style="background-color: {color}; color: {ink}"
 			>
-				<button
-					class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
-					type="button"
-					onclick={() => {
-						data.questions[selected_question].answers.splice(index, 1);
-						data.questions[selected_question].answers =
-							data.questions[selected_question].answers;
-					}}
-				>
-					<svg
-						class="w-6 h-6 bg-red-500 rounded-full"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-				</button>
+				<AnswerShape {index} class="size-6 shrink-0" />
+
 				<input
 					bind:value={answer.answer}
 					type="text"
-					class="border-b-2 border-dotted w-5/6 text-center rounded-lg bg-transparent outline-hidden focus:shadow-2xl transition-all"
-					style="background-color: {answer.color}; color: {get_foreground_color(
-						answer.color
-					)}"
+					class="min-w-0 flex-1 bg-transparent text-lg font-medium outline-none placeholder:opacity-60"
+					style="color: {ink}"
 					placeholder={$t('editor.enter_answer')}
 				/>
+
 				<button
 					type="button"
+					class="shrink-0 rounded-full border-2 p-1 transition focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
+					style="border-color: {ink}; {answer.right
+						? `background-color: ${ink}; color: ${color}`
+						: 'background-color: transparent'}"
+					aria-pressed={answer.right}
+					title={$t('editor.mark_correct')}
+					aria-label="{$t('editor.mark_correct')}: {answer.answer || $t('words.answer')}"
 					onclick={() => {
 						answer.right = !answer.right;
 					}}
 				>
-					{#if answer.right}
-						<svg
-							class="w-6 h-6 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-					{:else}
-						<svg
-							class="w-6 h-6 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-					{/if}
+					<Check class="size-4" style={answer.right ? '' : 'opacity:0.35'} />
 				</button>
-				<input
-					class="rounded-lg p-1 border-black border"
-					type="color"
-					bind:value={answer.color}
-					oncontextmenu={preventDefault(() => {
-						answer.color = default_colors[index];
-					})}
-				/>
+
+				<button
+					class="absolute -top-2 -right-2 rounded-full border p-1 opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+					style="background-color: {color}; color: {ink}; border-color: {ink}"
+					type="button"
+					title={$t('editor.delete_answer')}
+					aria-label={$t('editor.delete_answer')}
+					onclick={() => remove_answer(index)}
+				>
+					<X class="size-3.5" />
+				</button>
 			</div>
 		{/each}
 	{/if}
 	{#if data.questions[selected_question].answers.length < 4}
 		<button
-			class="p-4 rounded-lg bg-transparent border-gray-500 border-2 hover:bg-gray-300 transition dark:hover:bg-gray-600"
+			class="border-border text-muted-foreground hover:border-primary/50 hover:bg-muted focus-visible:ring-ring flex items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 transition focus-visible:ring-2 focus-visible:outline-none"
 			type="button"
 			in:fade={{ duration: 150 }}
 			onclick={() => {
 				data.questions[selected_question].answers = [
 					...data.questions[selected_question].answers,
-					{ ...get_empty_answer(data.questions[selected_question].answers.length) }
+					{ ...get_empty_answer() }
 				];
 			}}
 		>
-			<span class="italic text-center">{$t('editor_page.add_an_answer')}</span>
+			<Plus class="size-4" />
+			<span>{$t('editor_page.add_an_answer')}</span>
 		</button>
 	{/if}
 </div>

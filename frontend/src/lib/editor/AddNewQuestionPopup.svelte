@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -10,7 +11,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { getLocalization } from '$lib/i18n';
-
+	import { Button } from '$lib/components/ui/button';
+	import X from '@lucide/svelte/icons/x';
 
 	interface Props {
 		questions: Question[];
@@ -18,11 +20,17 @@ SPDX-License-Identifier: MPL-2.0
 		selected_question: number;
 	}
 
-	let { questions = $bindable(), open = $bindable(), selected_question = $bindable() }: Props = $props();
+	let {
+		questions = $bindable(),
+		open = $bindable(),
+		selected_question = $bindable()
+	}: Props = $props();
 
 	const { t } = getLocalization();
 	onMount(() => {
 		document.body.addEventListener('keydown', close_start_game_if_esc_is_pressed);
+		return () =>
+			document.body.removeEventListener('keydown', close_start_game_if_esc_is_pressed);
 	});
 	const close_start_game_if_esc_is_pressed = (key: KeyboardEvent) => {
 		if (key.code === 'Escape') {
@@ -35,6 +43,11 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 
+	// RANGE, TEXT, VOTING, ORDER and SLIDE were cut from the MVP: each one multiplies the
+	// editor, the play screen, the results screen and the scoring path, and none of them is
+	// what people run a live quiz for. True/false needs no type of its own -- it is an ABCD
+	// question with two answers. Existing quizzes that already use a cut type still open and
+	// still play; this list only governs what can be created from here.
 	const question_types: {
 		name: string;
 		description: string;
@@ -48,39 +61,10 @@ SPDX-License-Identifier: MPL-2.0
 			type: QuizQuestionType.ABCD
 		},
 		{
-			name: $t('words.voting'),
-			description: $t('editor.voting_description'),
-			answers: [],
-			type: QuizQuestionType.VOTING
-		},
-		{
 			name: $t('words.check_choice'),
 			description: $t('editor.check_choice_description'),
 			answers: [],
 			type: QuizQuestionType.CHECK
-		},
-		{
-			name: $t('words.order'),
-			description: $t('editor.order_description'),
-			answers: [],
-			type: QuizQuestionType.ORDER
-		},
-		{
-			name: $t('words.text'),
-			description: $t('editor.text_description'),
-			answers: [],
-			type: QuizQuestionType.TEXT
-		},
-		{
-			name: $t('words.range'),
-			description: $t('editor.range_description'),
-			answers: {
-				max: 10,
-				min: 0,
-				max_correct: 7,
-				min_correct: 3
-			},
-			type: QuizQuestionType.RANGE
 		}
 	];
 
@@ -98,39 +82,45 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
+<!-- w-screen/h-screen here meant 100vw, which is wider than the page whenever there is a
+     scrollbar. inset-0 is the correct way to fill a fixed overlay. -->
 <div
-	class="fixed top-0 left-0 w-screen h-screen flex bg-black/50 z-50"
+	class="fixed inset-0 z-50 flex bg-black/50 p-4"
 	onclick={on_parent_click}
 	transition:fade={{ duration: 100 }}
 >
 	<div
-		class="m-auto w-2/3 h-5/6 rounded-sm shadow-2xl bg-white dark:bg-gray-600 p-6 flex flex-col"
+		class="border-border bg-card m-auto flex w-full max-w-lg flex-col gap-5 rounded-xl border p-6 shadow-xl"
+		role="dialog"
+		aria-modal="true"
+		aria-label={$t('editor.add_new_question')}
 	>
-		<h1 class="text-center text-3xl mb-6">{$t('quiztivity.editor.select_page_type')}</h1>
-		<div class="grid grid-cols-4 gap-4 overflow-y-scroll">
-			{#each question_types as qt, i}
-				<div class="rounded-sm p-6 border-[#B07156] border">
-					<button
-						class="text-xl text-black dark:text-white"
-						onclick={() => {
-							add_question(i);
-						}}>{qt.name}</button
-					>
-					<p class="text-sm">{qt.description}</p>
-				</div>
-			{/each}
+		<div class="flex items-start justify-between gap-4">
+			<h2 class="text-lg font-semibold">{$t('editor.add_new_question')}</h2>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				type="button"
+				aria-label={$t('words.close')}
+				onclick={() => (open = false)}
+			>
+				<X />
+			</Button>
 		</div>
 
-		<div class="mt-auto flex justify-center">
-			<p>
-				{$t('editor.need_more_help')}
-				<a
-					href="/docs/quiz/question-types"
-					target="_blank"
-					class="text-sm font-bold underline text-blue-500 dark:text-blue-400"
-					>{$t('editor.visit_docs')}</a
+		<div class="flex flex-col gap-2">
+			{#each question_types as qt, i (qt.type)}
+				<button
+					type="button"
+					class="border-border hover:border-primary/50 hover:bg-muted focus-visible:ring-ring rounded-lg border p-4 text-left transition focus-visible:ring-2 focus-visible:outline-none"
+					onclick={() => {
+						add_question(i);
+					}}
 				>
-			</p>
+					<span class="font-medium">{qt.name}</span>
+					<span class="text-muted-foreground mt-1 block text-sm">{qt.description}</span>
+				</button>
+			{/each}
 		</div>
 	</div>
 </div>

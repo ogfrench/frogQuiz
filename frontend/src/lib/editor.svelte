@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -12,6 +13,11 @@ SPDX-License-Identifier: MPL-2.0
 	import QuizCard from '$lib/editor/card.svelte';
 	import Spinner from './Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
+	import { isQuestionComplete } from '$lib/editor/question_complete';
+	import { Button } from '$lib/components/ui/button';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Save from '@lucide/svelte/icons/save';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 
 	const { t } = getLocalization();
 
@@ -39,8 +45,18 @@ SPDX-License-Identifier: MPL-2.0
 	$effect(() => {
 		validateInput(data);
 	});
+
+	// Same rule the rail marks each question against, counted for the header.
+	const incomplete_count = $derived(
+		(data.questions ?? []).filter((q) => !isQuestionComplete(q)).length
+	);
 	let edit_id: string = $state();
-	let confirm_to_leave = true;
+	// The prompt used to be armed from the moment the editor mounted, so opening a quiz and
+	// going straight back asked whether you wanted to discard changes you had not made. It
+	// now arms on the first real edit. A form-level input/change listener is deliberate over
+	// watching `data`: it cannot miss an edit made through a form control, and missing one
+	// would lose someone's work.
+	let confirm_to_leave = $state(false);
 
 	const getEditID = async () => {
 		let res: Response;
@@ -96,46 +112,53 @@ SPDX-License-Identifier: MPL-2.0
 {#await getEditID()}
 	<Spinner />
 {:then _}
-	<form onsubmit={saveQuiz}>
-		<div class="grid grid-cols-6 h-screen w-screen">
-			<div>
-				<Sidebar bind:data bind:selected_question />
-			</div>
-			<div class="col-span-5 flex flex-col">
-				<div
-					class="h-10 w-full bg-white mb-10 flex align-middle justify-center rounded-br-lg"
+	<form
+		onsubmit={saveQuiz}
+		oninput={() => (confirm_to_leave = true)}
+		onchange={() => (confirm_to_leave = true)}
+	>
+		<!-- w-screen is 100vw, which includes the scrollbar, and put a horizontal
+		     scrollbar on every editor session. w-full is the width we actually want. -->
+		<div class="flex h-screen w-full">
+			<Sidebar bind:data bind:selected_question />
+			<div class="flex min-w-0 flex-1 flex-col">
+				<header
+					class="border-border bg-background flex h-14 shrink-0 items-center gap-3 border-b px-4"
 				>
+					<Button
+						href="/dashboard"
+						variant="ghost"
+						size="icon"
+						aria-label={$t('words.back')}
+					>
+						<ArrowLeft />
+					</Button>
+					<p class="min-w-0 truncate font-medium">{@html data.title}</p>
 					{#if schemaInvalid}
-						<p class="text-center w-full text-red-600 h-full mt-0.5 font-semibold">
-							{yupErrorMessage}
-						</p>
-					{:else}
-						<p class="text-center w-full text-black h-full align-bottom mt-0.5">
-							{@html data.title}
+						<!-- The old header showed a raw yup message, which named a field path rather
+						     than telling the author what to go and fix. The count points at the rail,
+						     where each unfinished question is already flagged. -->
+						<p
+							class="text-destructive ml-auto flex min-w-0 items-center gap-2 text-sm font-medium"
+						>
+							<TriangleAlert class="size-4 shrink-0" />
+							<span class="truncate">
+								{incomplete_count > 0
+									? $t('editor.needs_attention', { count: incomplete_count })
+									: yupErrorMessage}
+							</span>
 						</p>
 					{/if}
-					<button
-						class="pr-2 align-middle bg-[#B07156] pl-2 ml-auto whitespace-nowrap disabled:opacity-60 rounded-br-lg"
+					<Button
+						type="submit"
+						class={schemaInvalid ? 'ml-3' : 'ml-auto'}
 						disabled={schemaInvalid}
 					>
-						<span>{$t('words.save')}</span>
-						<svg
-							class="w-6 h-6 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-							/>
-						</svg>
-					</button>
-				</div>
-				<div class="w-full h-full">
+						<Save />
+						{$t('words.save')}
+					</Button>
+				</header>
+				<div class="min-h-0 flex-1 overflow-y-auto p-6">
 					{#if selected_question === -1}
 						<SettingsCard bind:data bind:edit_id />
 					{:else}

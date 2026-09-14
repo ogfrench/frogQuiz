@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -92,13 +93,13 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
-<div class="w-fit rounded-lg border-gray-500 border">
-	<div
-		bind:this={html_el}
-		contenteditable="true"
-		class="rounded-lg border-gray-500 border text-center w-fit h-fit resize-none dark:bg-gray-500 min-w-[5rem] dark:text-white"
-	></div>
-</div>
+<!-- This was two nested bordered boxes, which read as a box inside a box wherever it was
+     used, and it carried its own dark-mode greys. One bordered field, on tokens. -->
+<div
+	bind:this={html_el}
+	contenteditable="true"
+	class="border-input bg-background focus-within:ring-ring min-w-[5rem] resize-none rounded-lg border px-3 py-2 text-center focus-within:ring-2 focus-within:outline-none"
+></div>
 
 <style>
 	:global(.ck-powered-by) {

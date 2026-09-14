@@ -203,7 +203,10 @@
     "try_again": "Try again",
     "join": "Join",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "cover_image": "Cover image",
+    "visibility": "Visibility",
+    "time_is_up": "Time's up"
   },
   "editor": {
     "time_in_seconds": "Time in seconds",
@@ -236,7 +239,18 @@
     "enable_reorder": "Enable reorder mode",
     "disable_reorder": "Disable reorder mode",
     "advanced_settings": "Advanced Settings",
-    "hide_question_results": "Hide question resuluts?"
+    "hide_question_results": "Hide question resuluts?",
+    "bg_color": "Background colour",
+    "bg_color_custom": "Use a custom colour",
+    "quiz_setup": "Quiz setup",
+    "question_n_of_total": "Question {{n}} of {{total}}",
+    "single_answer": "One correct answer",
+    "multiple_answers": "Several correct answers",
+    "mark_correct": "Mark as correct",
+    "question_incomplete": "Incomplete",
+    "needs_attention": "{{count}} question needs attention",
+    "needs_attention_plural": "{{count}} questions need attention",
+    "no_answers_yet": "Add at least two answers, and mark the correct one."
   },
   "import_page": {
     "need_help": "Need help?",

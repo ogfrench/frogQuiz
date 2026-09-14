@@ -1,19 +1,28 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { EditorData, Question } from '../quiz_types';
+	import type { EditorData } from '../quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { reach } from 'yup';
 	import { ABCDQuestionSchema, dataSchema } from '../yupSchemas';
 	import { createTippy } from 'svelte-tippy';
 	import { getLocalization } from '$lib/i18n';
+	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import AddNewQuestionPopup from '$lib/editor/AddNewQuestionPopup.svelte';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { fade } from 'svelte/transition';
+	import { Button } from '$lib/components/ui/button';
+	import ArrowUpDown from '@lucide/svelte/icons/arrow-up-down';
+	import Settings2 from '@lucide/svelte/icons/settings-2';
+	import Check from '@lucide/svelte/icons/check';
+	import Globe from '@lucide/svelte/icons/globe';
+	import Lock from '@lucide/svelte/icons/lock';
+	import Plus from '@lucide/svelte/icons/plus';
+	import X from '@lucide/svelte/icons/x';
 
 	const { t } = getLocalization();
 
@@ -34,14 +43,6 @@ SPDX-License-Identifier: MPL-2.0
 	let arr_of_cards = $state(Array(data.questions.length));
 	let propertyCard = $state();
 	let add_new_question_popup_open = $state(false);
-
-	const empy_slide: Question = {
-		type: QuizQuestionType.SLIDE,
-		time: '120',
-		question: 'Slide',
-		image: undefined,
-		answers: ''
-	};
 
 	const swapArrayElements = (arr, a: number, b: number) => {
 		let _arr = [...arr];
@@ -73,35 +74,42 @@ SPDX-License-Identifier: MPL-2.0
         });*/
 </script>
 
-<div class="h-screen relative">
-	<div class="h-10 flex justify-center w-full p-1 absolute z-20">
-		<div>
-			<BrownButton onclick={() => (reorder_mode = !reorder_mode)}
-				>{#if reorder_mode}{$t('editor.disable_reorder')}{:else}{$t(
-						'editor.enable_reorder'
-					)}{/if}</BrownButton
-			>
-		</div>
+<div class="border-border bg-muted/30 flex h-screen w-72 shrink-0 flex-col border-r">
+	<div class="border-border flex h-14 shrink-0 items-center border-b px-3">
+		<Button
+			class="w-full"
+			type="button"
+			variant={reorder_mode ? 'default' : 'outline'}
+			size="sm"
+			onclick={() => (reorder_mode = !reorder_mode)}
+		>
+			<ArrowUpDown />
+			{#if reorder_mode}{$t('editor.disable_reorder')}{:else}{$t(
+					'editor.enable_reorder'
+				)}{/if}
+		</Button>
 	</div>
-	<div class="border-r-2 pt-6 px-6 overflow-scroll h-full">
+	<div class="min-h-0 flex-1 overflow-y-auto p-3">
 		<div
 			bind:this={propertyCard}
-			class="bg-white shadow-smrounded-lg h-40 p-2 mb-6 hover:cursor-pointer drop-shadow-2xl border border-gray-500 dark:bg-gray-600 transition"
-			class:bg-green-300={selected_question === -1}
-			class:dark:bg-green-500={selected_question === -1}
+			class="border-border bg-card mb-3 rounded-lg border p-2 transition hover:cursor-pointer"
+			class:ring-2={selected_question === -1}
+			class:ring-primary={selected_question === -1}
 			onclick={() => setSelectedQuestion(-1)}
 		>
+			<p class="text-muted-foreground mb-2 flex items-center gap-2 text-xs font-medium">
+				<Settings2 class="size-3.5" />
+				{$t('editor.quiz_setup')}
+			</p>
 			<div
 				use:tippy={{ content: data.title === '' ? "It's empty!" : data.title }}
-				class="m-1 border border-gray-500 rounded-lg p-0.5 transition"
-				class:border-red-600={!reach(dataSchema, 'title').isValidSync(data.title)}
-				class:border-solid={!reach(dataSchema, 'title').isValidSync(data.title)}
-				class:border-2={!reach(dataSchema, 'title').isValidSync(data.title)}
+				class="border-border m-1 rounded-md border p-1 transition"
+				class:ring-2={!reach(dataSchema, 'title').isValidSync(data.title)}
+				class:ring-destructive={!reach(dataSchema, 'title').isValidSync(data.title)}
 			>
 				<p
 					type="text"
-					class="whitespace-nowrap truncate text-center w-full bg-transparent rounded-sm dark:text-white"
-					class:dark:text-black={selected_question === -1}
+					class="w-full truncate rounded-sm bg-transparent text-center whitespace-nowrap"
 				>
 					{#if data.title}
 						{@html data.title}
@@ -112,61 +120,30 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 			<div
 				use:tippy={{ content: data.description === '' ? "It's empty!" : data.description }}
-				class="m-1 border border-gray-500 rounded-lg p-0.5 transition"
-				class:border-red-600={!reach(dataSchema, 'description').isValidSync(
+				class="border-border m-1 rounded-md border p-1 transition"
+				class:ring-2={!reach(dataSchema, 'description').isValidSync(data.description)}
+				class:ring-destructive={!reach(dataSchema, 'description').isValidSync(
 					data.description
 				)}
-				class:border-solid={!reach(dataSchema, 'description').isValidSync(data.description)}
-				class:border-2={!reach(dataSchema, 'description').isValidSync(data.description)}
 			>
 				<textarea
 					bind:value={data.description}
-					class="bg-transparent resize-none w-full rounded-sm text-sm dark:text-white"
-					class:dark:text-black={selected_question === -1}
+					class="w-full resize-none rounded-sm bg-transparent text-sm"
 				></textarea>
 			</div>
-			<div
-				class="w-full flex justify-center dark:text-white"
-				class:dark:text-black={selected_question === -1}
-			>
+			<div class="flex w-full justify-center">
 				<button
 					type="button"
 					onclick={() => {
 						data.public = !data.public;
 					}}
-					class="text-center"
+					class="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition"
 				>
 					{#if data.public}
-						<svg
-							class="w-5 h-5 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
+						<Globe class="inline-block size-4" />
 						<span>{$t('words.public')}</span>
 					{:else}
-						<svg
-							class="w-5 h-5 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-							/>
-						</svg>
+						<Lock class="inline-block size-4" />
 						<span>{$t('words.private')}</span>
 					{/if}
 				</button>
@@ -174,9 +151,9 @@ SPDX-License-Identifier: MPL-2.0
 		</div>
 		{#each data.questions as question, index}
 			<div
-				class="bg-white shadow-smrounded-lg h-40 p-2 mb-6 hover:cursor-pointer drop-shadow-2xl border border-gray-500 dark:bg-gray-600 transition relative"
-				class:bg-green-300={index === selected_question}
-				class:dark:bg-green-500={index === selected_question}
+				class="border-border bg-card relative mb-3 rounded-lg border p-2 transition hover:cursor-pointer"
+				class:ring-2={index === selected_question}
+				class:ring-primary={index === selected_question}
 				onclick={() => {
 					setSelectedQuestion(index);
 				}}
@@ -250,8 +227,10 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 				{/if}
 				<button
-					class="rounded-full absolute -top-3 -right-3 opacity-70 hover:opacity-100 transition"
+					class="border-border bg-card text-muted-foreground hover:text-destructive focus-visible:ring-ring absolute -top-2 -right-2 rounded-full border p-1 shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
 					type="button"
+					title={$t('editor.delete_question')}
+					aria-label={$t('editor.delete_question')}
 					onclick={() => {
 						if (confirm('Do you really want to delete this Question?')) {
 							selected_question = -1;
@@ -260,40 +239,32 @@ SPDX-License-Identifier: MPL-2.0
 						}
 					}}
 				>
-					<svg
-						class="w-6 h-6 bg-red-500 rounded-full"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
+					<X class="size-4" />
 				</button>
 				<div
 					use:tippy={{
 						content: question.question === '' ? 'No title' : question.question
 					}}
-					class="m-1 border border-gray-500 rounded-lg p-0.5"
+					class="mb-2 flex items-center gap-2"
 				>
-					<h1
-						class="whitespace-nowrap truncate text-center rounded-lg dark:text-white transition"
-						class:bg-yellow-500={!reach(dataSchema, 'questions[].question').isValidSync(
-							question.question
-						)}
-						class:dark:text-black={index === selected_question}
+					<span class="text-muted-foreground w-4 shrink-0 text-xs tabular-nums"
+						>{index + 1}</span
 					>
+					{#if !isQuestionComplete(question)}
+						<span
+							class="bg-destructive size-2 shrink-0 rounded-full"
+							title={$t('editor.question_incomplete')}
+						></span>
+						<span class="sr-only">{$t('editor.question_incomplete')}</span>
+					{/if}
+					<p class="min-w-0 flex-1 truncate text-sm">
 						{#if question.question === ''}
-							<span class="italic text-gray-500">{$t('editor.no_title')}</span>
+							<span class="text-muted-foreground italic">{$t('editor.no_title')}</span
+							>
 						{:else}
 							{@html question.question}
 						{/if}
-					</h1>
+					</p>
 				</div>
 				{#if question.image}
 					<div class="flex justify-center align-middle pb-0.5">
@@ -314,10 +285,13 @@ SPDX-License-Identifier: MPL-2.0
 						{#if Array.isArray(question.answers)}
 							{#each question.answers as answer}
 								<span
-									class="whitespace-nowrap truncate rounded-lg p-0.5 text-sm text-center border border-gray-700"
-									class:bg-green-500={answer.right}
-									class:bg-red-500={!answer.right}
-									class:bg-yellow-500={!reach(
+									class="flex items-center gap-1 truncate rounded-md border px-1.5 py-0.5 text-sm whitespace-nowrap {answer.right
+										? 'border-primary/40 bg-primary/10'
+										: 'border-border bg-muted text-muted-foreground'}"
+									class:ring-2={!reach(ABCDQuestionSchema, 'answer').isValidSync(
+										answer.answer
+									)}
+									class:ring-destructive={!reach(
 										ABCDQuestionSchema,
 										'answer'
 									).isValidSync(answer.answer)}
@@ -327,12 +301,13 @@ SPDX-License-Identifier: MPL-2.0
 												? $t('editor.empty')
 												: answer.answer
 									}}
-									>{#if answer.answer === ''}
-										<i>{$t('editor.empty')}</i>
-									{:else}
-										{answer.answer}
-									{/if}</span
 								>
+									{#if answer.right}<Check class="size-3 shrink-0" />{/if}
+									<span class="truncate"
+										>{#if answer.answer === ''}<i>{$t('editor.empty')}</i
+											>{:else}{answer.answer}{/if}</span
+									>
+								</span>
 							{/each}
 						{/if}
 					</div>
@@ -347,10 +322,11 @@ SPDX-License-Identifier: MPL-2.0
 						<div class="grid grid-cols-2 gap-2">
 							{#each question.answers as answer}
 								<span
-									class="whitespace-nowrap truncate rounded-lg p-0.5 text-sm text-center border border-gray-700"
-									class:dark:bg-gray-500={answer.answer}
-									class:bg-gray-300={answer.answer}
-									class:bg-yellow-500={!reach(
+									class="border-border bg-muted text-muted-foreground truncate rounded-md border px-1.5 py-0.5 text-center text-sm whitespace-nowrap"
+									class:ring-2={!reach(ABCDQuestionSchema, 'answer').isValidSync(
+										answer.answer
+									)}
+									class:ring-destructive={!reach(
 										ABCDQuestionSchema,
 										'answer'
 									).isValidSync(answer.answer)}
@@ -378,56 +354,17 @@ SPDX-License-Identifier: MPL-2.0
 				{/if}
 			</div>
 		{/each}
-		<div
-			class="bg-white shadow-smrounded-lg h-40 p-2 hover:cursor-pointer drop-shadow-2xl border border-gray-500 dark:bg-gray-600 grid grid-cols-2"
+		<Button
+			class="w-full"
+			type="button"
+			variant="outline"
+			onclick={() => {
+				add_new_question_popup_open = true;
+			}}
 		>
-			<button
-				type="button"
-				class="h-full flex justify-center w-full flex-col border-r border-black dark:text-white"
-				onclick={() => {
-					add_new_question_popup_open = true;
-				}}
-			>
-				<span class="w-full text-center">{$t('words.question')}</span>
-				<svg
-					class="w-5/6 m-auto"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					xmlns="http://www.w3.org/2000/svg"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-					/>
-				</svg>
-			</button>
-			<button
-				type="button"
-				class="h-full flex justify-center w-full dark:text-white flex-col"
-				onclick={() => {
-					data.questions = [...data.questions, { ...empy_slide }];
-				}}
-			>
-				<span class="w-full text-center">{$t('words.slide')}</span>
-				<svg
-					class="w-5/6 m-auto"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					xmlns="http://www.w3.org/2000/svg"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-					/>
-				</svg>
-			</button>
-		</div>
+			<Plus />
+			{$t('editor.add_new_question')}
+		</Button>
 	</div>
 </div>
 {#if add_new_question_popup_open}
