@@ -45,74 +45,81 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
-<div class="fq-section">
-	<h1
-		class="max-w-[22ch] text-balance text-center text-5xl font-bold leading-tight tracking-tight md:text-6xl"
-	>
-		{@html quiz_data.questions[selected_question].question}
-	</h1>
-	<div class="flex items-center gap-10">
-		<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
-		<p class="text-2xl font-medium text-muted-foreground tabular-nums" aria-live="polite">
-			{$t('admin_page.answers_submitted', { answer_count: answer_count })}
-		</p>
+<!-- The stage wrapper is what the other three host screens (lobby, per-question
+     results, podium) already use. This one was left without it, so its content sat
+     flush against the top of the viewport: the title was overlapped by the fixed
+     controls bar and the timer rule, and the bottom half of the projector was
+     empty. -->
+<div class="fq-stage">
+	<div class="fq-section">
+		<h1
+			class="max-w-[22ch] text-balance text-center text-5xl font-bold leading-tight tracking-tight md:text-6xl"
+		>
+			{@html quiz_data.questions[selected_question].question}
+		</h1>
+		<div class="flex items-center gap-10">
+			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
+			<p class="text-2xl font-medium text-muted-foreground tabular-nums" aria-live="polite">
+				{$t('admin_page.answers_submitted', { answer_count: answer_count })}
+			</p>
+		</div>
 	</div>
-</div>
-{#if quiz_data.questions[selected_question].image !== null}
-	<div class="flex w-full">
-		<MediaComponent
-			src={quiz_data.questions[selected_question].image}
-			muted={false}
-			css_classes="max-h-[20vh] object-cover mx-auto mb-8 w-auto"
-		/>
-	</div>
-{/if}
-{#if quiz_data.questions[selected_question].type === QuizQuestionType.ABCD || quiz_data.questions[selected_question].type === QuizQuestionType.VOTING || quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
-	<div
-		class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-[var(--fq-space-item)] sm:grid-cols-2"
-	>
-		{#each quiz_data.questions[selected_question].answers as answer, i}
-			<div
-				class="answer-row relative flex min-h-20 items-center overflow-hidden rounded-2xl transition-all duration-300
+	{#if quiz_data.questions[selected_question].image !== null}
+		<div class="flex w-full">
+			<MediaComponent
+				src={quiz_data.questions[selected_question].image}
+				muted={false}
+				css_classes="max-h-[20vh] object-cover mx-auto mb-8 w-auto"
+			/>
+		</div>
+	{/if}
+	{#if quiz_data.questions[selected_question].type === QuizQuestionType.ABCD || quiz_data.questions[selected_question].type === QuizQuestionType.VOTING || quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
+		<div
+			class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-[var(--fq-space-item)] sm:grid-cols-2"
+		>
+			{#each quiz_data.questions[selected_question].answers as answer, i}
+				<div
+					class="answer-row relative flex min-h-20 items-center overflow-hidden rounded-2xl transition-all duration-300
 					motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
-				style="background-color: {answer.color ?? default_colors[i]}; animation-delay: {i *
-					70}ms"
-				class:opacity-50={!answer.right &&
-					timer_res === '0' &&
-					quiz_data.questions[selected_question].type === QuizQuestionType.ABCD}
-			>
-				<AnswerShape
-					index={i}
-					class="w-7 h-7 ml-4 shrink-0 self-center"
-					style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
-				/>
-				<span
-					class="w-full px-3 py-5 text-center text-2xl font-semibold"
-					style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
-					>{answer.answer}</span
+					style="background-color: {answer.color ??
+						default_colors[i]}; animation-delay: {i * 70}ms"
+					class:opacity-50={!answer.right &&
+						timer_res === '0' &&
+						quiz_data.questions[selected_question].type === QuizQuestionType.ABCD}
 				>
-				<span class="pl-4 w-10"></span>
-			</div>
-		{/each}
-	</div>
-{:else if quiz_data.questions[selected_question].type === QuizQuestionType.TEXT}
-	{#if timer_res === '0'}
-		<div class="grid grid-cols-2 gap-2 w-full p-4">
-			{#each quiz_data.questions[selected_question].answers as answer}
-				<div class="rounded-lg h-fit flex bg-[#B07156]">
-					<span class="text-center text-2xl px-2 py-4 w-full text-black"
+					<AnswerShape
+						index={i}
+						class="w-7 h-7 ml-4 shrink-0 self-center"
+						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
+					/>
+					<span
+						class="w-full px-3 py-5 text-center text-2xl font-semibold"
+						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
 						>{answer.answer}</span
 					>
 					<span class="pl-4 w-10"></span>
 				</div>
 			{/each}
 		</div>
-	{:else}
-		<div class="flex justify-center">
-			<p class="text-2xl">{$t('admin_page.enter_answer_into_field')}</p>
-		</div>
+	{:else if quiz_data.questions[selected_question].type === QuizQuestionType.TEXT}
+		{#if timer_res === '0'}
+			<div class="grid grid-cols-2 gap-2 w-full p-4">
+				{#each quiz_data.questions[selected_question].answers as answer}
+					<div class="rounded-lg h-fit flex bg-[#B07156]">
+						<span class="text-center text-2xl px-2 py-4 w-full text-black"
+							>{answer.answer}</span
+						>
+						<span class="pl-4 w-10"></span>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="flex justify-center">
+				<p class="text-2xl">{$t('admin_page.enter_answer_into_field')}</p>
+			</div>
+		{/if}
 	{/if}
-{/if}
+</div>
 
 <style>
 	/* Same body treatment as the player tiles so the two screens read as one

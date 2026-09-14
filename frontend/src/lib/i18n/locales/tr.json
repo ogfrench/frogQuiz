@@ -256,7 +256,8 @@
     "advanced_settings": "Gelişmiş Ayarlar",
     "hide_question_results": "Soru sonuçlarığnı sakla?",
     "enable_reorder": "Yeniden düzenleme modunu etkinleştir",
-    "disable_reorder": "Yeniden düzenleme modu devre dışı bırak"
+    "disable_reorder": "Yeniden düzenleme modu devre dışı bırak",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "visit_docs": "Dokümantasyonu ziyaret edin",

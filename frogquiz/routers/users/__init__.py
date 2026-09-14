@@ -40,8 +40,11 @@ settings = settings()
 router = APIRouter()
 
 router.include_router(webauthn.router, prefix="/webauthn")
-if settings.enable_totp:
-    router.include_router(twofa.router, prefix="/2fa")
+# Mounted whatever ENABLE_TOTP says. The flag is applied per endpoint inside the
+# router: setting TOTP up 404s when it is off, but reading the status and switching
+# it off do not, so nobody who enabled it before the cut is stranded behind a factor
+# they can no longer remove. See docs/mvp-scope.md.
+router.include_router(twofa.router, prefix="/2fa")
 
 
 class RouteUser(pydantic.BaseModel):

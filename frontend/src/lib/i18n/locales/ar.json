@@ -360,7 +360,8 @@
     "enable_reorder": "تمكين وضع إعادة الترتيب",
     "disable_reorder": "تعطيل وضع إعادة الترتيب",
     "advanced_settings": "الإعدادات المتقدمة",
-    "hide_question_results": "هل تريد إخفاء نتائج كل سؤال؟"
+    "hide_question_results": "هل تريد إخفاء نتائج كل سؤال؟",
+    "show_questions": "Show questions"
   },
   "controllers": {
     "last_seen": "",

@@ -306,7 +306,8 @@
     },
     "need_more_help": "もっとヘルプが必要？",
     "time_in_seconds": "記録間隔（秒）",
-    "right_or_true?": "ねえ…？"
+    "right_or_true?": "ねえ…？",
+    "show_questions": "Show questions"
   },
   "result_page": {
     "custom_field": "カスタム欄",

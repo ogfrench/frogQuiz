@@ -63,9 +63,15 @@ SPDX-License-Identifier: MPL-2.0
 		{#each data.questions[selected_question].answers as answer, index}
 			{@const color = slot_color(answer, index)}
 			{@const ink = get_foreground_color(color)}
+			<!-- min-w-0 is what stops the tile bursting out of its grid cell. A grid item
+			     defaults to min-width:auto, so it refuses to shrink below its content's
+			     intrinsic width, and a bare input reports about twenty characters. On a
+			     phone that pushed each tile 59px past the card and clipped the
+			     mark-correct button off the right edge. min-w-0 on the input alone could
+			     not help: the tile is the grid item, not the input. -->
 			<div
 				out:fade={{ duration: 150 }}
-				class="group relative flex items-center gap-3 rounded-xl p-4 transition"
+				class="group relative flex min-w-0 items-center gap-3 rounded-xl p-4 transition"
 				class:ring-3={answer.right}
 				class:ring-foreground={answer.right}
 				style="background-color: {color}; color: {ink}"

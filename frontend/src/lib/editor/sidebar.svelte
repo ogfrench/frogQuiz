@@ -27,11 +27,17 @@ SPDX-License-Identifier: MPL-2.0
 	const { t } = getLocalization();
 
 	interface Props {
+		/** Drawer state below lg, where the rail is off-canvas. Ignored at lg and up. */
+		open?: boolean;
 		data: EditorData;
 		selected_question?: any;
 	}
 
-	let { data = $bindable(), selected_question = $bindable(-1) }: Props = $props();
+	let {
+		data = $bindable(),
+		selected_question = $bindable(-1),
+		open = $bindable(false)
+	}: Props = $props();
 
 	let reorder_mode = $state(false);
 
@@ -74,10 +80,26 @@ SPDX-License-Identifier: MPL-2.0
         });*/
 </script>
 
-<div class="border-border bg-muted/30 flex h-screen w-72 shrink-0 flex-col border-r">
-	<div class="border-border flex h-14 shrink-0 items-center border-b px-3">
+<!-- Below lg the rail is an off-canvas drawer: a fixed w-72 rail on a 390px phone
+     leaves about 118px of canvas, which is not an editor. At lg and up it is a
+     static column again. The scrim is a sibling so it never covers the rail. -->
+{#if open}
+	<button
+		type="button"
+		class="fixed inset-0 z-30 bg-black/50 lg:hidden"
+		aria-label={$t('words.close')}
+		onclick={() => (open = false)}
+	></button>
+{/if}
+<div
+	class="border-border bg-background lg:bg-muted/30 fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col
+		border-r transition-transform duration-200 lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0 xl:w-72"
+	class:translate-x-0={open}
+	class:-translate-x-full={!open}
+>
+	<div class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-3">
 		<Button
-			class="w-full"
+			class="min-w-0 flex-1"
 			type="button"
 			variant={reorder_mode ? 'default' : 'outline'}
 			size="sm"
@@ -87,6 +109,16 @@ SPDX-License-Identifier: MPL-2.0
 			{#if reorder_mode}{$t('editor.disable_reorder')}{:else}{$t(
 					'editor.enable_reorder'
 				)}{/if}
+		</Button>
+		<Button
+			type="button"
+			variant="ghost"
+			size="icon-sm"
+			class="shrink-0 lg:hidden"
+			aria-label={$t('words.close')}
+			onclick={() => (open = false)}
+		>
+			<X />
 		</Button>
 	</div>
 	<div class="min-h-0 flex-1 overflow-y-auto p-3">

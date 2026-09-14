@@ -297,7 +297,8 @@
     "disable_reorder": "Desactivar el modo reordenar",
     "enable_reorder": "Activar el modo reordenar",
     "hide_question_results": "¿Ocultar los resultados de la pregunta?",
-    "advanced_settings": "Ajustes avanzados"
+    "advanced_settings": "Ajustes avanzados",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "¿Necesitas ayuda?",

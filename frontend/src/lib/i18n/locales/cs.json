@@ -349,7 +349,8 @@
     "time_in_seconds": "Čas v sekundách",
     "add_new_question": "Přidat novou otázku",
     "bg_image": "Obrázek na pozadí",
-    "no_title": "Bez názvu..."
+    "no_title": "Bez názvu...",
+    "show_questions": "Show questions"
   },
   "controllers": {
     "last_seen": "",

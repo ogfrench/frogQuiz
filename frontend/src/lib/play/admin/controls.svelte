@@ -27,15 +27,18 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
+<!-- Was a two-column grid whose button cell asked for col-start-3, a column that
+     does not exist, so the one control the host actually uses ended up wherever the
+     browser put it. A flex row with space-between says what is meant. -->
 <div
-	class="fixed top-0 w-full h-10 z-20 grid grid-cols-2"
+	class="fixed inset-x-0 top-0 z-20 flex h-12 items-center justify-between gap-3 px-3"
 	style="background: {bg_color ? bg_color : 'transparent'}"
 	class:text-black={bg_color}
 >
 	<!-- Question position is the most-referenced state on a projector screen, so
 	     it gets a legible pill rather than 14px of body text in the corner. -->
 	<p
-		class="col-start-1 col-end-1 mr-auto ml-3 self-center rounded-full border border-border bg-card/80 px-3 py-1
+		class="rounded-full border border-border bg-card/80 px-3 py-1
 			text-base font-semibold tabular-nums shadow-sm backdrop-blur"
 		aria-live="polite"
 	>
@@ -45,7 +48,7 @@ SPDX-License-Identifier: MPL-2.0
 			>&nbsp;/&nbsp;{game_state.quiz_data.questions.length}</span
 		>
 	</p>
-	<div class="justify-self-end ml-auto mr-0 col-start-3 col-end-3">
+	<div>
 		{#if game_state.selected_question + 1 === game_state.quiz_data.questions.length && ((game_state.timer_res === '0' && game_state.question_results !== null) || game_state.quiz_data?.questions?.[game_state.selected_question]?.type === QuizQuestionType.SLIDE)}
 			{#if JSON.stringify(game_state.final_results) === JSON.stringify([null])}
 				<button

@@ -70,8 +70,12 @@ SPDX-License-Identifier: MPL-2.0
 	@apply bg-gradient-to-r from-[#009444] via-[#39b54a] to-[#8dc63f] dark:bg-[#0f2702] dark:from-[#0f2702] dark:via-[#0f2702] dark:to-[#0f2702];
 }
 
+/* The host's one control on a projector screen. It was a hardcoded gray-700
+   rectangle inherited from upstream, which read as a debug button next to the
+   redesigned screens and ignored the theme entirely. Same shape as the shadcn
+   primary button, built from tokens. */
 @utility admin-button {
-	@apply px-4 py-2 leading-5 text-white transition-colors duration-200 transform bg-gray-700 rounded-sm text-center hover:bg-gray-600 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50;
+	@apply bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @utility action-button {

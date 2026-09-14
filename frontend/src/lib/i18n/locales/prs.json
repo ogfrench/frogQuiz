@@ -230,7 +230,8 @@
     "enable_reorder": "فعال‌سازی حالت ترتیب‌دهی",
     "disable_reorder": "غیرفعال‌سازی حالت ترتیب‌دهی",
     "advanced_settings": "تنظیمات پیشرفته",
-    "hide_question_results": "نتایج سؤال پنهان شود؟"
+    "hide_question_results": "نتایج سؤال پنهان شود؟",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "کمک نیاز دارید؟",

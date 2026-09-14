@@ -235,7 +235,8 @@
     "enable_reorder": "Aktifkan mode urutkan ulang",
     "disable_reorder": "Nonaktifkan mode urutkan ulang",
     "advanced_settings": "Pengaturan Lanjutan",
-    "hide_question_results": "Sembunyikan hasil pertanyaan?"
+    "hide_question_results": "Sembunyikan hasil pertanyaan?",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "Butuh bantuan?",

@@ -250,7 +250,8 @@
     "question_incomplete": "Incomplete",
     "needs_attention": "{{count}} question needs attention",
     "needs_attention_plural": "{{count}} questions need attention",
-    "no_answers_yet": "Add at least two answers, and mark the correct one."
+    "no_answers_yet": "Add at least two answers, and mark the correct one.",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "Need help?",

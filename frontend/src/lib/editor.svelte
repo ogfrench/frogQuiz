@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { Button } from '$lib/components/ui/button';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import PanelLeft from '@lucide/svelte/icons/panel-left';
 	import Save from '@lucide/svelte/icons/save';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 
@@ -31,6 +32,13 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { data = $bindable(), quiz_id }: Props = $props();
 	let selected_question = $state(-1);
+	// Rail drawer, below lg only. Picking a question closes it, so the tap that
+	// chooses what to edit also reveals the thing being edited.
+	let rail_open = $state(false);
+	$effect(() => {
+		selected_question;
+		rail_open = false;
+	});
 
 	const validateInput = async (data: EditorData) => {
 		try {
@@ -118,13 +126,25 @@ SPDX-License-Identifier: MPL-2.0
 		onchange={() => (confirm_to_leave = true)}
 	>
 		<!-- w-screen is 100vw, which includes the scrollbar, and put a horizontal
-		     scrollbar on every editor session. w-full is the width we actually want. -->
-		<div class="flex h-screen w-full">
-			<Sidebar bind:data bind:selected_question />
+		     scrollbar on every editor session. w-full is the width we actually want.
+		     h-dvh rather than h-screen: 100vh is the wrong number on a phone, where
+		     the browser chrome is counted in and the toolbar ends up off-screen. -->
+		<div class="flex h-dvh w-full overflow-hidden">
+			<Sidebar bind:data bind:selected_question bind:open={rail_open} />
 			<div class="flex min-w-0 flex-1 flex-col">
 				<header
-					class="border-border bg-background flex h-14 shrink-0 items-center gap-3 border-b px-4"
+					class="border-border bg-background flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-4"
 				>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						class="lg:hidden"
+						aria-label={$t('editor.show_questions')}
+						onclick={() => (rail_open = true)}
+					>
+						<PanelLeft />
+					</Button>
 					<Button
 						href="/dashboard"
 						variant="ghost"
@@ -158,12 +178,18 @@ SPDX-License-Identifier: MPL-2.0
 						{$t('words.save')}
 					</Button>
 				</header>
-				<div class="min-h-0 flex-1 overflow-y-auto p-6">
-					{#if selected_question === -1}
-						<SettingsCard bind:data bind:edit_id />
-					{:else}
-						<QuizCard bind:data bind:selected_question bind:edit_id />
-					{/if}
+				<!-- The canvas had no measure. Content stretched to whatever the panel
+				     was, so on a wide screen the settings form ran to 900px of label and
+				     field with a lake ofdead space between them. Cap it and centre it, the
+				     way any document editor does. -->
+				<div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
+					<div class="mx-auto w-full max-w-2xl">
+						{#if selected_question === -1}
+							<SettingsCard bind:data bind:edit_id />
+						{:else}
+							<QuizCard bind:data bind:selected_question bind:edit_id />
+						{/if}
+					</div>
 				</div>
 			</div>
 		</div>

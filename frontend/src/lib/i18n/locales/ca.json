@@ -245,7 +245,8 @@
     "advanced_settings": "Paràmetres avançats",
     "hide_question_results": "Amagar els resultats de la pregunta?",
     "need_more_help": "Cal més ajuda?",
-    "visit_docs": "Mireu la documentació."
+    "visit_docs": "Mireu la documentació.",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "Us cal ajuda?",

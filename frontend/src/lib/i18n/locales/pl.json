@@ -271,7 +271,8 @@
     "enable_reorder": "Włącz tryb zmiany kolejności",
     "need_more_help": "Potrzebujesz pomocy?",
     "visit_docs": "Odwiedź dokumentację.",
-    "disable_reorder": "Wyłącz tryb zmiany kolejności"
+    "disable_reorder": "Wyłącz tryb zmiany kolejności",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "Potrzebujesz pomocy?",

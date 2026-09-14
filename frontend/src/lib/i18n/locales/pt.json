@@ -235,7 +235,8 @@
     "disable_reorder": "Desativar modo reordenador",
     "enable_reorder": "Ativar modo reordenador",
     "hide_question_results": "Ocultar o resultado das respostas?",
-    "advanced_settings": "Configurações Avançadas"
+    "advanced_settings": "Configurações Avançadas",
+    "show_questions": "Show questions"
   },
   "result_page": {
     "correct_answer_plural": "{{count}} respostas corretas",

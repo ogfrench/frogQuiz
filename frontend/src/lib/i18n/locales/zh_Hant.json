@@ -125,7 +125,8 @@
     "need_more_help": "需要更多協助嗎？",
     "visit_docs": "查看說明文件。",
     "enable_reorder": "啟用重新排序模式",
-    "disable_reorder": "停用重新排序模式"
+    "disable_reorder": "停用重新排序模式",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "需要協助嗎？",

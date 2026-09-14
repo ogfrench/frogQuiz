@@ -646,6 +646,28 @@ class TestQuizivity:
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
+    async def test_totp_can_be_switched_off_while_the_flag_is_off(self, test_client: TestClient):  # noqa : F811
+        # ENABLE_TOTP is off for the MVP, but the login flow still honours a secret that
+        # is already set. If the whole 2fa router were gated, anyone who enabled TOTP
+        # before the cut would be stuck behind a factor they cannot remove. Setting it
+        # up must 404; reading the status and switching it off must not.
+        assert settings().enable_totp is False
+        resp = test_client.post(
+            "/api/v1/users/2fa/totp",
+            json={"password": test_user_password},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 404
+        assert (test_client.get("/api/v1/users/2fa/totp", cookies=ValueStorage.cookies)).status_code == 200
+        resp = test_client.request(
+            "DELETE",
+            "/api/v1/users/2fa/totp",
+            json={"password": test_user_password},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
     async def test_delete_quiztivity(self, test_client: TestClient):  # noqa : F811
         test_client.delete(f"/api/v1/quiztivity/shares/{ValueStorage.share_id}", cookies=ValueStorage.cookies)
         resp = test_client.delete(

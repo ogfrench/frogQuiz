@@ -235,7 +235,8 @@
     "enable_reorder": "Fragen Umsortieren",
     "disable_reorder": "Umsortieren beenden",
     "advanced_settings": "Erweiterte Einstellungen",
-    "hide_question_results": "Frageergebnisse ausblenden?"
+    "hide_question_results": "Frageergebnisse ausblenden?",
+    "show_questions": "Show questions"
   },
   "import": {
     "need_help": "",

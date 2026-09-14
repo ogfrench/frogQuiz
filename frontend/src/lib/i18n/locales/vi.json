@@ -357,7 +357,8 @@
     "add_new_question": "Thêm câu hỏi mới",
     "bg_image": "Hình nền",
     "no_title": "Không có tiêu đề...",
-    "enable_reorder": "Bật chế độ sắp xếp lại"
+    "enable_reorder": "Bật chế độ sắp xếp lại",
+    "show_questions": "Show questions"
   },
   "controllers": {
     "last_seen": "thấy lần cuối",

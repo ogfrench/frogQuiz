@@ -235,7 +235,8 @@
     "enable_reorder": "Activer le mode réorganisation",
     "disable_reorder": "Désactiver le mode réorganisation",
     "advanced_settings": "Paramètres avancés",
-    "hide_question_results": "Cacher les résultats de la question ?"
+    "hide_question_results": "Cacher les résultats de la question ?",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "Besoin d'aide ?",

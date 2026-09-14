@@ -235,7 +235,8 @@
     "disable_reorder": "Disabilita la modalità di riordino",
     "enable_reorder": "Abilita la modalità di riordino",
     "hide_question_results": "Nascondere i risultati della domanda?",
-    "advanced_settings": "Impostazioni avanzate"
+    "advanced_settings": "Impostazioni avanzate",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "Hai bisogno di aiuto?",

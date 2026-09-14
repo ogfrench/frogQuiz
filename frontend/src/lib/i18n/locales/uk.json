@@ -366,7 +366,8 @@
     "visit_docs": "Відвідайте документацію.",
     "enter_answer": "Введіть відповідь",
     "enable_reorder": "Увімкнути режим зміни порядку",
-    "disable_reorder": "Вимкнути режим зміни порядку"
+    "disable_reorder": "Вимкнути режим зміни порядку",
+    "show_questions": "Show questions"
   },
   "controllers": {
     "last_seen": "Востаннє бачили",

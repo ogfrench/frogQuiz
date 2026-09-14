@@ -376,7 +376,8 @@
     "time_in_seconds": "",
     "add_new_question": "",
     "bg_image": "",
-    "no_title": ""
+    "no_title": "",
+    "show_questions": "Show questions"
   },
   "controllers": {
     "last_seen": "",

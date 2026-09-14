@@ -251,7 +251,8 @@
     "enable_reorder": "மறுதொடக்கம் பயன்முறையை இயக்கவும்",
     "disable_reorder": "மறுதொடக்கம் பயன்முறையை முடக்கு",
     "advanced_settings": "மேம்பட்ட அமைப்புகள்",
-    "hide_question_results": "கேள்வி முடிவுகளை மறைக்கவா?"
+    "hide_question_results": "கேள்வி முடிவுகளை மறைக்கவா?",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "உதவி தேவையா?",

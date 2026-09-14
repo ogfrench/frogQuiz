@@ -206,6 +206,7 @@
     "slide": {
       "headline": "Заголовок",
       "text": "Текст"
-    }
+    },
+    "show_questions": "Show questions"
   }
 }

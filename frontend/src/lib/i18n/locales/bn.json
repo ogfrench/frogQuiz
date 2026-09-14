@@ -230,7 +230,8 @@
     "enable_reorder": "ক্রম সাজানোর মোড চালু করুন",
     "disable_reorder": "ক্রম সাজানোর মোড বন্ধ করুন",
     "advanced_settings": "অ্যাডভান্সড সেটিংস",
-    "hide_question_results": "প্রশ্নের ফলাফল লুকাবেন?"
+    "hide_question_results": "প্রশ্নের ফলাফল লুকাবেন?",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "সাহায্য দরকার?",

@@ -230,7 +230,8 @@
     "enable_reorder": "د ترتیبولو د حالت فعالول",
     "disable_reorder": "د ترتیبولو حالت غیر فعالول",
     "advanced_settings": "پرمختللي تنظیمات",
-    "hide_question_results": "د پوښتنې پایلې پټې شي؟"
+    "hide_question_results": "د پوښتنې پایلې پټې شي؟",
+    "show_questions": "Show questions"
   },
   "import_page": {
     "need_help": "مرستې ته اړتیا لرئ؟",
