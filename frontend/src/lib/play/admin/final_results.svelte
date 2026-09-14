@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
-SPDX-FileCopyrightText: 2026 FrogQuiz contributors
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -56,7 +56,8 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 {#if show_final_results}
-	<canvas bind:this={canvas} class="pointer-events-none fixed inset-0 z-50 h-full w-full"></canvas>
+	<canvas bind:this={canvas} class="pointer-events-none fixed inset-0 z-50 h-full w-full"
+	></canvas>
 
 	<div class="fq-stage">
 		<!-- The blocks need a floor, or they read as floating cards rather than a
@@ -109,7 +110,9 @@ SPDX-License-Identifier: MPL-2.0
 						<span class="w-6 text-sm font-semibold text-muted-foreground tabular-nums"
 							>{p.place}</span
 						>
-						<span class="min-w-0 flex-1 truncate font-medium" title={p.name}>{p.name}</span>
+						<span class="min-w-0 flex-1 truncate font-medium" title={p.name}
+							>{p.name}</span
+						>
 						<span class="text-sm text-muted-foreground tabular-nums">{p.score}</span>
 					</li>
 				{/each}

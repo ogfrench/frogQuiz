@@ -1,4 +1,4 @@
-# FrogQuiz
+# frogQuiz
 
 Internal Kahoot-style quiz tool, forked from the open-source **ClassQuiz** project (MPL-2.0, original author Marlon W / "Mawoka"). Currently rebranding to a frog-themed identity for internal team use, with room to expand to a wider audience later if it proves useful.
 
@@ -86,7 +86,7 @@ Removing the UI is an afternoon. Removing Meilisearch touches the quiz write pat
 
 ## Upstream independence
 
-FrogQuiz should not send data to, or depend at runtime on, servers controlled by the original ClassQuiz maintainer ("Mawoka"). This is separate from MPL-2.0/SPDX attribution (below), which is static legal text, not a network call or data flow.
+frogQuiz should not send data to, or depend at runtime on, servers controlled by the original ClassQuiz maintainer ("Mawoka"). This is separate from MPL-2.0/SPDX attribution (below), which is static legal text, not a network call or data flow.
 
 - Before adding any third-party script, API call, downloadable asset, or contact link, check it isn't pointing at `mawoka.eu` or other upstream-controlled infrastructure.
 - Already fixed: `frontend/Dockerfile`'s `API_URL` default (was `https://mawoka.eu`, now points at the internal `api` service), the Plausible analytics script and Sentry error reporting (both removed, were pointing at Mawoka's own instances), the newsletter signup form (removed — it posted visitor emails to `newsletter.mawoka.eu`), the quiz-report mailto, the import-template download link, the email footer link, and `CONTACT.md`/`CONTRIBUTING.md`/ToS contact info (repointed to internal placeholders — see TODOs in those files for the team's real contact channel).
@@ -95,7 +95,7 @@ FrogQuiz should not send data to, or depend at runtime on, servers controlled by
 ## Licensing (MPL-2.0 / REUSE)
 
 - Source files carry `SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)` + `SPDX-License-Identifier: MPL-2.0` headers under the REUSE spec.
-- **Never strip or alter existing copyright/license headers.** When substantially modifying a file, add a second `SPDX-FileCopyrightText` line for FrogQuiz contributors rather than replacing the original (see `README.md` for the existing dual-header pattern).
+- **Never strip or alter existing copyright/license headers.** When substantially modifying a file, add a second `SPDX-FileCopyrightText` line for frogQuiz contributors rather than replacing the original (see `README.md` for the existing dual-header pattern).
 - If a request would require removing/altering these headers, flag it and check with the team rather than doing it silently — MPL-2.0 has real attribution obligations even for internal-only use, and getting this wrong could matter if the tool ever gets shared more widely.
 
 ## Changelog

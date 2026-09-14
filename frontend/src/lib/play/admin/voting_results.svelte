@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
-SPDX-FileCopyrightText: 2026 FrogQuiz contributors
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -63,7 +63,11 @@ SPDX-License-Identifier: MPL-2.0
 							role="img"
 							aria-label={$t('words.correct')}
 						>
-							<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+							<path
+								d="M5 13l4 4L19 7"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
 						</svg>
 					{/if}
 				</span>
@@ -75,7 +79,8 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					<span
 						class="absolute inset-y-0 left-0 rounded-r-md transition-[width] duration-700 ease-out"
-						style="width: {(count / max) * 100}%; background-color: {answer.color ?? answerColor(i)}"
+						style="width: {(count / max) * 100}%; background-color: {answer.color ??
+							answerColor(i)}"
 					></span>
 				</span>
 

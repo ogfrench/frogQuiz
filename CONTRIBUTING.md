@@ -36,8 +36,8 @@ Just do so.
 
 ## Found a bug
 
-If it is a security-related bug, please contact the FrogQuiz maintainers internally rather than opening a public issue.
-<!-- TODO: replace with your team's actual contact channel --> If not, just open
+If it is a security-related bug, please email francois.prevot@frog.co rather than opening a public issue.
+<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. --> If not, just open
 an issue here on GitHub.
 
 
