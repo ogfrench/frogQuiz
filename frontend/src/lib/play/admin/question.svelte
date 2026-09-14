@@ -52,14 +52,12 @@ SPDX-License-Identifier: MPL-2.0
      empty. -->
 <div class="fq-stage">
 	<div class="fq-section">
-		<h1
-			class="max-w-[22ch] text-balance text-center text-5xl font-bold leading-tight tracking-tight md:text-6xl"
-		>
+		<h1 class="fq-display max-w-[22ch] text-center font-bold text-balance">
 			{@html quiz_data.questions[selected_question].question}
 		</h1>
 		<div class="flex items-center gap-10">
 			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
-			<p class="text-2xl font-medium text-muted-foreground tabular-nums" aria-live="polite">
+			<p class="fq-meta text-muted-foreground font-medium tabular-nums" aria-live="polite">
 				{$t('admin_page.answers_submitted', { answer_count: answer_count })}
 			</p>
 		</div>
@@ -93,7 +91,7 @@ SPDX-License-Identifier: MPL-2.0
 						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
 					/>
 					<span
-						class="w-full px-3 py-5 text-center text-2xl font-semibold"
+						class="fq-answer w-full px-3 py-5 text-center font-semibold"
 						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
 						>{answer.answer}</span
 					>
@@ -106,7 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 			<div class="grid grid-cols-2 gap-2 w-full p-4">
 				{#each quiz_data.questions[selected_question].answers as answer}
 					<div class="rounded-lg h-fit flex bg-[#B07156]">
-						<span class="text-center text-2xl px-2 py-4 w-full text-black"
+						<span class="fq-answer text-center px-2 py-4 w-full text-black"
 							>{answer.answer}</span
 						>
 						<span class="pl-4 w-10"></span>
@@ -115,7 +113,7 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{:else}
 			<div class="flex justify-center">
-				<p class="text-2xl">{$t('admin_page.enter_answer_into_field')}</p>
+				<p class="fq-meta">{$t('admin_page.enter_answer_into_field')}</p>
 			</div>
 		{/if}
 	{/if}

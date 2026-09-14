@@ -54,9 +54,7 @@ SPDX-License-Identifier: MPL-2.0
 			<p class="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
 				{$t('words.pin')}
 			</p>
-			<p
-				class="select-all font-mono text-6xl font-bold leading-none tracking-[0.12em] tabular-nums md:text-8xl"
-			>
+			<p class="fq-pin select-all font-mono font-bold tracking-[0.12em] tabular-nums">
 				{game_pin}
 			</p>
 		</div>

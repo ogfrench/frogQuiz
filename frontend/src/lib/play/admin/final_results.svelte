@@ -84,7 +84,7 @@ SPDX-License-Identifier: MPL-2.0
 						in:fly|global={{ y: -40, duration: 500, delay: p.delay, easing: cubicOut }}
 					>
 						<p
-							class="w-full truncate text-xl font-semibold tracking-tight sm:text-2xl"
+							class="fq-answer w-full truncate font-semibold tracking-tight"
 							title={p.name}
 						>
 							{p.name}
@@ -101,7 +101,7 @@ SPDX-License-Identifier: MPL-2.0
 						class:is-winner={p.place === 1}
 						in:fly|global={{ y: 120, duration: 600, delay: p.delay, easing: cubicOut }}
 					>
-						<span class="text-3xl font-bold tabular-nums sm:text-4xl">{p.place}</span>
+						<span class="fq-display font-bold tabular-nums">{p.place}</span>
 						<span
 							class="px-1 text-center text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground"
 						>
