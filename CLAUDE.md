@@ -105,6 +105,7 @@ something.
 The app carries a lot of features aimed at a public multi-tenant SaaS. For an internal Kahoot clone, default posture:
 
 - **What has already been cut, and how to turn each thing back on, is written down in [`docs/mvp-scope.md`](docs/mvp-scope.md). Read that before proposing or re-litigating a cut.**
+- **Which surfaces have been redesigned and which have not is in [`docs/redesign-status.md`](docs/redesign-status.md).** It also records what "verified" did and did not cover, so nobody has to guess whether a screen was actually looked at.
 - **Hide/disable, don't delete** anything not needed right now (public docs pages, GitHub links in nav/footer, moderation tooling, public OAuth providers beyond what the team actually uses, box-controller/physical-buzzer hardware support, Pixabay integration, hCaptcha/reCAPTCHA, proof-of-work anti-bot challenge, Sentry/Plausible telemetry if unused). Prefer feature flags, route guards, or commenting out nav entries over ripping code out — we may want these back.
 - **Search bar**: keep. Useful for finding/sharing quizzes made by other people on the team.
 - When asked to "clean up" or "trim" the app, propose a list of hide/disable candidates with rationale and wait for a decision before touching anything — don't remove features unilaterally.
