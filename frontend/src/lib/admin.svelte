@@ -90,9 +90,11 @@ SPDX-License-Identifier: MPL-2.0
 	<Controls {bg_color} {socket_game_controls} {game_token} bind:game_state />
 {/if}
 {#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
+	<!-- mt-12 matches the controls bar's h-12. It was mt-10 against an h-10 bar; the
+	     bar is taller now and the rule was cutting across its bottom edge. -->
 	<span
 		class="fixed top-0 left-0 h-1.5 rounded-r-full bg-destructive/90 transition-[width] duration-1000 ease-linear"
-		class:mt-10={game_state.control_visible}
+		class:mt-12={game_state.control_visible}
 		role="progressbar"
 		aria-label="Time remaining"
 		aria-valuemin="0"

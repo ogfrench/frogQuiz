@@ -6,7 +6,7 @@ Internal Kahoot-style quiz tool, forked from the open-source **ClassQuiz** proje
 
 - **Scope**: internal tool for now. Don't over-invest in things only public/multi-tenant products need (billing, heavy scalability, public docs) unless asked — but don't actively break the ability to widen scope later either.
 - **Stack** (inherited from ClassQuiz, see repo root for details): FastAPI + python-socketio backend (`frogquiz/`), SvelteKit 2/Svelte 5 + TypeScript frontend (`frontend/`), Postgres, Redis, Meilisearch, Alembic migrations.
-- **Redesign direction**: moving to a frog-themed visual identity built with **shadcn-svelte** (see below). In progress — the foundation and the login reference page are done, the remaining routes are not.
+- **Redesign direction**: a frog-themed visual identity built with **shadcn-svelte** (see below). Done: the theme foundation, login, the dashboard, the editor, and all four game surfaces (lobby, host question, per-question results, podium). Not done: the account, docs, explore, search and results-history routes, which still look like upstream.
 
 ## Redesign: shadcn-svelte
 
@@ -39,6 +39,38 @@ Recurring bugs worth checking whenever touching UI, each of which shipped at som
 - Hardcoded `text-black` / `bg-white` / `dark:text-black` disappear in one theme or the other. On the landing page `dark:text-black` made a whole panel read as empty. Use tokens.
 - Felte's pristine field value is `undefined`, not `null`. `$errors.field !== null` is therefore always true, which is what put a permanent red ring on every registration field. Use a truthiness check.
 
+## Working on the UI: what this codebase gets wrong repeatedly
+
+Beyond the three in "Things that keep coming back", these have each shipped:
+
+- **A grid item defaults to `min-width: auto`**, so it will not shrink below its
+  content's intrinsic width and bursts out of its column. A bare `<input>` reports
+  about twenty characters. `min-w-0` belongs on the grid or flex *item*, not only on
+  the input inside it.
+- **`h-screen` is `100vh`**, which on a phone counts browser chrome that is not
+  there, pushing the bottom of a full-height layout below the fold. Use `h-dvh`.
+- **`w-full` on a flex child** is `width: 100%` of the container, so it overflows the
+  row and shoves its siblings out. Use `flex-1 min-w-0`.
+- **A translucent background is fine for a static column and wrong for a drawer.**
+  `bg-muted/30` let the whole canvas show through the editor rail once it became an
+  overlay.
+- **A screen that is not inside `fq-stage` has no vertical rhythm at all.** The host
+  question screen was the only game surface missing it, which is why its content sat
+  flush against the top of the projector with the bottom half empty.
+
+### Responsive baseline
+
+Both halves of a live game are used at once, on different devices: the host on a
+projector or laptop, every player on a phone. Neither is the secondary case.
+
+- Check 390, 834 and 1440 before calling a screen done. `document.documentElement.scrollWidth
+  > clientWidth` at any of those is a bug, not a nit.
+- Side panels collapse to an off-canvas drawer below `lg`, with a scrim, a close
+  control inside the panel, and dismissal on selecting something. A fixed `w-72` rail
+  leaves about 118px of content on a phone.
+- Cap the measure on any editing or reading surface (`max-w-2xl mx-auto` is the one
+  in use) rather than letting a form stretch to the panel width.
+
 ## Verifying UI changes
 
 Check in a browser, don't assume. The dev server binds IPv6-only — use `http://localhost:3000`, not `127.0.0.1`. The backend usually is not running locally, so `/explore`, `/view/[id]` and `/user/[id]` return 500 and data-driven pages render empty; that is the environment, not a regression.
@@ -55,6 +87,7 @@ getComputedStyle(document.body).backgroundColor                // tokens actuall
 
 The app carries a lot of features aimed at a public multi-tenant SaaS. For an internal Kahoot clone, default posture:
 
+- **What has already been cut, and how to turn each thing back on, is written down in [`docs/mvp-scope.md`](docs/mvp-scope.md). Read that before proposing or re-litigating a cut.**
 - **Hide/disable, don't delete** anything not needed right now (public docs pages, GitHub links in nav/footer, moderation tooling, public OAuth providers beyond what the team actually uses, box-controller/physical-buzzer hardware support, Pixabay integration, hCaptcha/reCAPTCHA, proof-of-work anti-bot challenge, Sentry/Plausible telemetry if unused). Prefer feature flags, route guards, or commenting out nav entries over ripping code out — we may want these back.
 - **Search bar**: keep. Useful for finding/sharing quizzes made by other people on the team.
 - When asked to "clean up" or "trim" the app, propose a list of hide/disable candidates with rationale and wait for a decision before touching anything — don't remove features unilaterally.
@@ -72,7 +105,7 @@ If the team ever does decide to delete either, this is the full surface. Do it i
 
 **Explore**
 - `frontend/src/routes/explore/` — the route and its loader.
-- `explore_page.*` in all 30 `frontend/src/lib/i18n/locales/*.json`. **Only safe once Search is gone too**, or once `search-card.svelte` stops using those keys.
+- `explore_page.*` in all 34 `frontend/src/lib/i18n/locales/*.json`. **Only safe once Search is gone too**, or once `search-card.svelte` stops using those keys.
 - Entry points: navbar (desktop and mobile), the command palette, and any home-page link.
 
 **Search** (bigger — it reaches the backend and a whole service)
