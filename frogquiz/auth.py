@@ -107,7 +107,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-
 def hash_session_key(session_key: str) -> str:
     """Hash a remember-me session key for storage.
 
