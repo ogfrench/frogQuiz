@@ -76,7 +76,15 @@
     "read_privacy_policy_prefix": "I've read the",
     "privacy_policy": "Privacy policy",
     "agree_tos_prefix": "I agree to the",
-    "terms_of_service": "Terms of Service"
+    "terms_of_service": "Terms of Service",
+    "result": {
+      "check_email": "Account created. Check your email for the verification link.",
+      "ready": "Account created. You can sign in now.",
+      "taken": "That email or username is already taken.",
+      "invalid": "That email address was rejected. Check it and try again.",
+      "too_many": "Too many attempts from this address. Try again in an hour.",
+      "failed": "Something went wrong creating the account. Nothing was saved, so try again."
+    }
   },
   "login_page": {
     "welcome_back": "Welcome back.",
