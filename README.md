@@ -15,7 +15,7 @@ SPDX-License-Identifier: MPL-2.0
     <h2 align='center'>frogQuiz</h2>
     <img src='logo.png' alt='frogQuiz Logo' height='100px' width='100px'>
     <p align='center'>
-        The open-source quiz-platform!
+        The free Kahoot alternative. Host interactive quizzes right from your browser.
         <br/>
         <a href='https://frogquiz.xyz/'><strong>Visit the website »</strong></a>
         <br />
@@ -101,6 +101,12 @@ It defaults to `podman`; set `CONTAINER_BIN=docker` if that is what you have.
 CI runs exactly this command against [.env.ci](.env.ci), a throwaway config
 holding no credentials.
 
+The frontend suite needs nothing running:
+
+```bash
+cd frontend && pnpm run test
+```
+
 ### Search index
 
 Meilisearch is populated from Postgres. After a fresh deployment, or if the
@@ -146,7 +152,6 @@ communication between server and client), [arq](https://arq-docs.helpmanual.io/)
 
 **Closed-source third parties** (optional)
 
-- [Mapbox](https://www.mapbox.com/) (maps)
 - [hCaptcha](https://www.hcaptcha.com/) (captcha)
 
 ## Credits
