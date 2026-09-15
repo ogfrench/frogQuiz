@@ -75,6 +75,14 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     await rate_limit(request, "register", limit=10, window_seconds=3600)
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
+    # Checked before anything is written. Without it the row is created, the send
+    # fails, and the rollback below is the only thing standing between the caller
+    # and an account they can never verify.
+    if not settings.skip_email_verification and not settings.mail_configured:
+        raise HTTPException(
+            status_code=503,
+            detail="This server requires email verification but has no mail server configured.",
+        )
     user: User = User(
         **user.model_dump(),
         id=uuid.uuid4(),
@@ -152,6 +160,8 @@ async def verify_user(verify_key: str):
     user.verified = True
     user.verify_key = None
     await user.update()
+    # The cached copy still says unverified otherwise, for a full cache_expiry.
+    await clear_cache_for_account(user)
     return RedirectResponse(url="/account/login?verified=true")
 
 
@@ -207,14 +217,59 @@ class ForgotPassword(BaseModel):
     email: str
 
 
+# Deliberately identical for every outcome: address on file or not, mail sent or
+# not. Anything else turns this endpoint into a way to test whether an address has
+# an account here.
+_RESET_ACK = {"message": "If that address has an account, a reset link is on its way."}
+
+
 @router.post("/forgot-password")
 async def forgotten_password(forgot_password: ForgotPassword, request: Request):
     # Unrated, this endpoint can be used to spam a victim's inbox or hammer the DB.
     await rate_limit(request, "forgot_password", limit=5, window_seconds=3600)
-    user = await User.objects.filter(email=forgot_password.email, verified=True).get_or_none()
+    if not settings.mail_configured:
+        raise HTTPException(status_code=503, detail="This server has no mail server configured.")
+    # Unverified accounts used to be excluded, which left anyone who registered
+    # while mail was down with no way back in at all -- they could not verify and
+    # could not reset. Clicking the link proves control of the mailbox either way,
+    # so reset_password_with_token marks them verified when they do.
+    user = await User.objects.filter(email=forgot_password.email).get_or_none()
     if user is not None:
-        await send_forgotten_password_email(email=user.email)
-    return {"message": "Password reset email sent"}
+        try:
+            await send_forgotten_password_email(user)
+        except Exception:
+            # A 500 here answers the question the neutral message is there to
+            # avoid: only a real address can reach the code that fails.
+            LOGGER.exception("Could not send a password reset email")
+    return _RESET_ACK
+
+
+class ResendVerification(BaseModel):
+    email: str
+
+
+@router.post("/resend-verification")
+async def resend_verification(body: ResendVerification, request: Request):
+    """Send the confirmation mail again.
+
+    Registration had no recovery path: if the first mail was lost, filtered, or
+    sent while the relay was down, the address stayed unverified and re-registering
+    returned 409 forever.
+    """
+    await rate_limit(request, "resend_verification", limit=5, window_seconds=3600)
+    if not settings.mail_configured:
+        raise HTTPException(status_code=503, detail="This server has no mail server configured.")
+    user = await User.objects.filter(email=body.email).get_or_none()
+    if user is not None and not user.verified:
+        # The old key may be in a mail the user cannot find. Minting a new one
+        # keeps exactly one link live per address.
+        user.verify_key = str(os.urandom(16).hex())
+        await user.update()
+        try:
+            await send_register_email(user)
+        except Exception:
+            LOGGER.exception("Could not resend a verification email")
+    return {"message": "If that address needs confirming, a new link is on its way."}
 
 
 class ResetPassword(BaseModel):
@@ -233,6 +288,10 @@ async def reset_password_with_token(reset_password: ResetPassword, response: Res
     if user is None:
         raise HTTPException(status_code=400, detail="Invalid token")
     user.password = get_password_hash(reset_password.password)
+    # Following the link is proof of mailbox control, which is all verification
+    # ever asserted -- so an account that reset this way is verified by definition.
+    user.verified = True
+    user.verify_key = None
     await user.update()
     await _sign_out_everywhere(user)
     response.delete_cookie("access_token")
