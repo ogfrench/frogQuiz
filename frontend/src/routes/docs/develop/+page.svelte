@@ -44,7 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 	<ul>
 		<li>
 			Clone the repo:
-			<pre><code>git clone https://github.com/mawoka-myblock/ClassQuiz</code></pre>
+			<pre><code>git clone https://github.com/ogfrench/frogQuiz</code></pre>
 		</li>
 		<li>
 			Install the dependencies

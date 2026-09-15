@@ -357,7 +357,6 @@
     "create_quiz": "Create a new quiz"
   },
   "footer": {
-    "self_ads": "Made with ❤️ by {{mawoka_link}} and with the help of {{others_link}}.",
     "more_details_here": "More details here",
     "donate": "If you find this useful, please consider {{donate_link}}."
   },
