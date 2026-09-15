@@ -115,6 +115,14 @@ async def send_forgotten_password_email(user: User):
         raise ValueError("User not found")
     token = os.urandom(32).hex()
     html_body, text_body = await _render("forgotten_password", base_url=settings.root_address, token=token)
+    # One live link per account. Asking again used to leave every earlier token
+    # valid for its full hour, so a run of requests -- a user clicking twice, or
+    # someone probing the endpoint -- left a handful of usable links in as many
+    # inboxes and copies of them.
+    previous = await redis.getset(f"reset_passwd_current:{user.id}", token)
+    if previous is not None and previous != token:
+        await redis.delete(f"reset_passwd:{previous}")
+    await redis.expire(f"reset_passwd_current:{user.id}", RESET_TOKEN_TTL_SECONDS)
     # Written before the send, not after: the alternative leaves a window in which
     # the recipient holds a link the server does not yet honour. On a failed send
     # the token is dropped again, so nothing usable is left behind.
@@ -127,5 +135,5 @@ async def send_forgotten_password_email(user: User):
             subject="Reset your frogQuiz password",
         )
     except Exception:
-        await redis.delete(f"reset_passwd:{token}")
+        await redis.delete(f"reset_passwd:{token}", f"reset_passwd_current:{user.id}")
         raise

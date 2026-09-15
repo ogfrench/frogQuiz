@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     # Off only for test runs, which log in far more often than a real client.
     rate_limit_enabled: bool = True
+    # How many proxies sit in front of the app, counting from it outwards. 1 is the
+    # bundled Caddy. Set 2 when a CDN or Netlify proxies to Caddy, or every user
+    # shares one rate-limit bucket -- see client_ip() for what raising it costs.
+    trusted_proxy_hops: int = 1
     cache_expiry: int = 86400
     meilisearch_url: str = "http://127.0.0.1:7700"
     meilisearch_index: str = "frogquiz"

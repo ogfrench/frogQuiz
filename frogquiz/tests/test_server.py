@@ -69,7 +69,12 @@ class TestUsers:
     @pytest.mark.asyncio
     async def test_verify_email(self, test_client: TestClient):  # noqa : F811
         user = test_client.get(f"/api/v1/internal/testing/user/{test_user_email}?secret_key={settings().secret_key}")
-        assert (test_client.get("/api/v1/users/verify/dasadsasdadsasdsaddassad")).status_code == 404
+        # A spent or superseded key is the commonest way to land here -- clicking the
+        # same link twice, or the older of two mails. It used to render a raw 404 JSON
+        # body in the browser; now it lands on the login page, which says what to do.
+        dead = test_client.get("/api/v1/users/verify/dasadsasdadsasdsaddassad", follow_redirects=False)
+        assert dead.status_code in (302, 307)
+        assert dead.headers["location"] == "/account/login?verified=expired"
 
         test_client.get(f"/api/v1/users/verify/{user.json()['verify_key']}")
         resp = test_client.post("/api/v1/login/start", json={"email": test_user_email})
@@ -182,6 +187,34 @@ class TestUsers:
         unknown = test_client.post("/api/v1/users/resend-verification", json={"email": "nobody@dsa.ads"})
         assert unknown.status_code == 200
         assert known.json() == unknown.json()
+
+    @pytest.mark.asyncio
+    async def test_email_is_stored_folded(self, test_client: TestClient):  # noqa : F811
+        """Addresses differing only in case are one account, not two.
+
+        Without folding, registering as Foo@... and then asking for a reset as
+        foo@... silently matches nothing -- and every response on that path is
+        identical by design, so there is no way to find out why no mail arrived.
+        """
+        mixed = "MiXeD.Case@byom.de"
+        resp = test_client.post(
+            "/api/v1/users/create",
+            json={"email": mixed, "password": test_user_password, "username": "mixedcase"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["email"] == mixed.lower()
+        # And the same address in any casing is now a duplicate, not a second account.
+        again = test_client.post(
+            "/api/v1/users/create",
+            json={"email": mixed.upper(), "password": test_user_password, "username": "mixedcase2"},
+        )
+        assert again.status_code == 409
+
+    @pytest.mark.asyncio
+    async def test_reset_password_rejects_short_password(self, test_client: TestClient):  # noqa : F811
+        """The one password-setting route that took no length bound used to take "a"."""
+        resp = test_client.post("/api/v1/users/reset-password", json={"token": "whatever", "password": "short"})
+        assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_reset_password_with_token(self, test_client: TestClient):  # noqa : F811

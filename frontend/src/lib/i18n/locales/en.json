@@ -84,8 +84,11 @@
       "invalid": "That email address was rejected. Check it and try again.",
       "too_many": "Too many attempts from this address. Try again in an hour.",
       "failed": "Something went wrong creating the account. Nothing was saved, so try again.",
-      "no_mail": "This server can't send the confirmation email right now, so nothing was saved. Try again later."
+      "no_mail": "This server can't send the confirmation email right now, so nothing was saved. Try again later.",
+      "closed": "This server isn't accepting new accounts."
     },
+    "taken_hint": "If that account is yours and you never confirmed it,",
+    "taken_link": "resend the confirmation email",
     "resend": {
       "prompt": "Didn't get the email?",
       "action": "Send it again",
@@ -117,7 +120,15 @@
         }
       }
     },
-    "use_backup_code": "Use backup-code"
+    "use_backup_code": "Use backup-code",
+    "verified": "Your email address is confirmed. You can sign in now.",
+    "verify_link_dead": "That confirmation link has already been used, or a newer one replaced it.",
+    "verify_link_resend": "Send a new one",
+    "wrong_credentials": "That email address and password don't match.",
+    "too_many": "Too many attempts. Wait a few minutes and try again.",
+    "failed": "Couldn't sign you in. Try again.",
+    "unconfirmed_hint": "If you signed up recently, your address may still need confirming.",
+    "unconfirmed_link": "Send the confirmation email again"
   },
   "words": {
     "question": "Question",
@@ -317,6 +328,14 @@
     "request_export_results": "Request result download",
     "download_export_results": "Download results",
     "export_results": "Export results"
+  },
+  "resend_page": {
+    "title": "Resend confirmation",
+    "subtitle": "We'll send the confirmation link again if this address still needs it.",
+    "action": "Send confirmation email",
+    "sent": "If that address still needs confirming, a new link is on its way.",
+    "too_many": "Too many requests for this address. Try again in an hour.",
+    "failed": "Couldn't send the link. Try again."
   },
   "password_reset_page": {
     "reset_password": "Reset password",

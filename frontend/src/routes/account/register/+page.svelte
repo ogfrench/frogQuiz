@@ -83,6 +83,8 @@ SPDX-License-Identifier: MPL-2.0
 					responseData.data = '429';
 				} else if (res.status === 503) {
 					responseData.data = '503';
+				} else if (res.status === 423) {
+					responseData.data = '423';
 				} else {
 					responseData.data = 'error';
 				}
@@ -299,12 +301,25 @@ SPDX-License-Identifier: MPL-2.0
 							{$t('register_page.result.too_many')}
 						{:else if responseData.data === '503'}
 							{$t('register_page.result.no_mail')}
+						{:else if responseData.data === '423'}
+							{$t('register_page.result.closed')}
 						{:else}
 							{$t('register_page.result.failed')}
 						{/if}
 					</p>
 				</div>
 			</div>
+
+			{#if responseData.data === '409'}
+				<div class="text-muted-foreground px-6 pb-2 text-sm">
+					{$t('register_page.taken_hint')}
+					<a
+						href="/account/resend-verification"
+						class="text-primary font-medium underline-offset-4 hover:underline"
+						>{$t('register_page.taken_link')}</a
+					>.
+				</div>
+			{/if}
 
 			{#if responseData.data === '200'}
 				<div class="text-muted-foreground px-6 pb-2 text-sm">

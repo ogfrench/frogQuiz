@@ -83,9 +83,9 @@ SPDX-License-Identifier: MPL-2.0
 <svelte:head>
 	<title>frogQuiz - Login</title>
 </svelte:head>
-<div class="flex min-h-screen items-center justify-center px-4">
+<div class="flex min-h-screen flex-col items-center justify-center px-4">
 	{#if verified}
-		<VerifiedBadge />
+		<VerifiedBadge state={verified} />
 	{/if}
 
 	<Card.Root class="w-full max-w-sm overflow-hidden pt-6 pb-0 shadow-xl">

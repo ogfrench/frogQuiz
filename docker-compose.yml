@@ -39,6 +39,10 @@ services:
       # JSON list of origins allowed to call the API cross-site, e.g. ["https://frogquiz.netlify.app"].
       # Only needed when the frontend is hosted elsewhere (e.g. Netlify) -- see DEPLOY.md.
       CORS_ORIGINS: ${CORS_ORIGINS:-[]}
+      # Proxies in front of the app, counting outwards. 1 is the bundled Caddy; set
+      # 2 when Netlify or a CDN proxies to it, or every visitor shares one
+      # rate-limit bucket. See DEPLOY.md for what raising it costs.
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
 
       # --- MAIL CONFIG ---
       # Optional: leave unset to run without mail, and set SKIP_EMAIL_VERIFICATION

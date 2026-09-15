@@ -45,6 +45,14 @@ API-only domain (`api.example.com`). Then:
 3. On the backend, set `CORS_ORIGINS` in `.env` to a JSON list containing the Netlify
    site URL, e.g. `["https://frogquiz.netlify.app"]`. Without it the socket.io server
    rejects the cross-origin handshake.
+   Also set `TRUSTED_PROXY_HOPS=2`. There are two proxies in front of the app in this
+   setup (Netlify, then Caddy), and the rate limiter keys on the last entry of
+   `X-Forwarded-For` -- which with two hops is Netlify's egress address, the same for
+   every visitor. Left at 1, the whole user base shares one bucket, and
+   `/forgot-password`'s five an hour is five for everyone. The trade-off is that the
+   entry it then reads is one the caller could forge by reaching Caddy directly, so
+   close the backend to everything but Netlify if you rely on the limiter (the
+   per-address limits on the mail endpoints hold either way).
 4. Set `ROOT_ADDRESS` to the Netlify site URL (it is what appears in emails and links).
 
 `NETLIFY=true` is set by Netlify during builds, which is what switches
