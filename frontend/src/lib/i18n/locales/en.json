@@ -127,8 +127,9 @@
     "wrong_credentials": "That email address and password don't match.",
     "too_many": "Too many attempts. Wait a few minutes and try again.",
     "failed": "Couldn't sign you in. Try again.",
-    "unconfirmed_hint": "If you signed up recently, your address may still need confirming.",
-    "unconfirmed_link": "Send the confirmation email again"
+    "unconfirmed_hint": "Signed up recently and never confirmed your address?",
+    "unconfirmed_link": "Send it again",
+    "change_account": "Change"
   },
   "words": {
     "question": "Question",

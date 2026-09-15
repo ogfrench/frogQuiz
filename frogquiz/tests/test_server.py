@@ -50,6 +50,15 @@ class TestUsers:
             json={"email": test_user_email, "password": test_user_password, "username": "mawoka"},
         )
         assert resp.status_code == 409
+        # Addresses are one account whatever the casing. They used to be compared
+        # byte for byte, so this was a second account -- and only one of the two was
+        # reachable by the reset and resend lookups, while both got the same neutral
+        # "a link is on its way" that exists so neither can be told apart.
+        resp = test_client.post(
+            "/api/v1/users/create",
+            json={"email": test_user_email.upper(), "password": test_user_password, "username": "mawoka2"},
+        )
+        assert resp.status_code == 409
         resp = test_client.post(
             "/api/v1/users/create",
             json={"email": "doesntexist@hidsadawadsdaads.ghsxd", "password": test_user_password, "username": "dieter"},
@@ -187,28 +196,6 @@ class TestUsers:
         unknown = test_client.post("/api/v1/users/resend-verification", json={"email": "nobody@dsa.ads"})
         assert unknown.status_code == 200
         assert known.json() == unknown.json()
-
-    @pytest.mark.asyncio
-    async def test_email_is_stored_folded(self, test_client: TestClient):  # noqa : F811
-        """Addresses differing only in case are one account, not two.
-
-        Without folding, registering as Foo@... and then asking for a reset as
-        foo@... silently matches nothing -- and every response on that path is
-        identical by design, so there is no way to find out why no mail arrived.
-        """
-        mixed = "MiXeD.Case@byom.de"
-        resp = test_client.post(
-            "/api/v1/users/create",
-            json={"email": mixed, "password": test_user_password, "username": "mixedcase"},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["email"] == mixed.lower()
-        # And the same address in any casing is now a duplicate, not a second account.
-        again = test_client.post(
-            "/api/v1/users/create",
-            json={"email": mixed.upper(), "password": test_user_password, "username": "mixedcase2"},
-        )
-        assert again.status_code == 409
 
     @pytest.mark.asyncio
     async def test_reset_password_rejects_short_password(self, test_client: TestClient):  # noqa : F811

@@ -25,6 +25,16 @@ SPDX-License-Identifier: MPL-2.0
 
 	let session_data = $state({});
 	let step = $state(0);
+	// The steps after the first had no idea who was signing in, so the card opened
+	// on a bare Password field with nothing above it and no way back to correct a
+	// mistyped address.
+	let identifier = $state('');
+
+	const restart = () => {
+		session_data = {};
+		selected_method = null;
+		step = 0;
+	};
 	let selected_method = $state(null);
 	let done = $state(false);
 
@@ -92,7 +102,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if step === 0}
 			<!--			<p>StartWindow</p>-->
 			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
-				<StartWindow bind:session_data bind:step />
+				<StartWindow bind:session_data bind:step bind:identifier />
 			</div>
 		{:else if selected_method === null}
 			<!--			<p>SelectWindow</p>-->
@@ -102,7 +112,14 @@ SPDX-License-Identifier: MPL-2.0
 		{:else if selected_method === 'PASSWORD'}
 			<!--			<p>PasswordWindow</p>-->
 			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
-				<PasswordComponent {session_data} bind:done bind:step bind:selected_method />
+				<PasswordComponent
+					{session_data}
+					{identifier}
+					{restart}
+					bind:done
+					bind:step
+					bind:selected_method
+				/>
 			</div>
 		{:else if selected_method === 'BACKUP'}
 			<!--			<p>BackupWindow</p>-->
