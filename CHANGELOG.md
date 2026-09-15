@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on FrogQuiz are logged here
 
 ## Unreleased
 
+- Fixed optional authentication for fully anonymous requests and cleaned up the anonymous quiz test user.
 - Added anonymous quiz creation and hosting: a "Create a quiz without an account" link on the homepage lets anyone build and host a quiz (share the pin, play it) without signing up. Ownership is proven by a random secret minted at creation and kept in the browser's `localStorage`, never a login. Anonymous quizzes are always private (never public/searchable), expire 30 days after creation (a daily cleanup job sweeps them and their images), and a signed-in user who still holds the secret can later "claim" one onto their account from its view page. New `POST /api/v1/quiz/claim/{quiz_id}` endpoint; `/editor/start`, `/editor/finish` and `/quiz/start/{quiz_id}` now accept an optional `X-Anon-Secret` header in place of a login. `Quiz.user_id`, `PlayGame.user_id` and `GameResults.user` are now nullable to represent an anonymous owner; fixed the several places (meilisearch indexing, the public quiz view, the live-game lobby cleanup) that assumed a quiz always has an owning user.
 - Fixed the "remember me" auto-refresh path issuing its renewed login cookie without the `Secure` flag, unlike every other cookie-setting call site.
 - Closed a gap where a revoked/logged-out access token still passed `check_token` and `get_current_user_optional`, which skipped the denylist check the other auth dependencies use.
