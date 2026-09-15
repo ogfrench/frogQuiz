@@ -16,10 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:head>
 	<title>frogQuiz/docs - Terms of Service</title>
-	<meta
-		name="description"
-		content="The terms of service of frogQuiz, the open-source quiz-application"
-	/>
+	<meta name="description" content="The terms of service for frogQuiz." />
 </svelte:head>
 
 <article

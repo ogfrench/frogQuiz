@@ -6,10 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:head>
 	<title>frogQuiz/docs - Import from Kahoot</title>
-	<meta
-		name="description"
-		content="How to import quizzes from KAHOOT! into frogQuiz, the open-source quiz-application,  easily"
-	/>
+	<meta name="description" content="How to import an existing Kahoot! quiz into frogQuiz." />
 </svelte:head>
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"

@@ -18,7 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz/docs - Development-setup</title>
 	<meta
 		name="description"
-		content="How to import quizzes from KAHOOT! into frogQuiz, the open-source quiz-application,  easily"
+		content="How to set up a frogQuiz development environment and work on the code."
 	/>
 </svelte:head>
 <article

@@ -17,7 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz/docs - Self-Host</title>
 	<meta
 		name="description"
-		content="How to self-host frogQuiz, the open-source quiz-application"
+		content="How to run your own frogQuiz instance: the services it needs, and how to configure them."
 	/>
 </svelte:head>
 <article

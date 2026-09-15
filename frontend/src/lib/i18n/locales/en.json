@@ -2,7 +2,7 @@
   "index_page": {
     "slogan": "Quizzes for the team.",
     "meta": {
-      "description": "frogQuiz is an internal quiz tool for running interactive quizzes with your team.",
+      "description": "The free Kahoot alternative. Host interactive quizzes right from your browser.",
       "title": "Home"
     },
     "stats": "There are already {{user_count}} users and {{quiz_count}} quizzes on frogQuiz.",
