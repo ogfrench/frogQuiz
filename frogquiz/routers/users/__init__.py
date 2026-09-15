@@ -187,7 +187,9 @@ class ForgotPassword(BaseModel):
 
 
 @router.post("/forgot-password")
-async def forgotten_password(forgot_password: ForgotPassword):
+async def forgotten_password(forgot_password: ForgotPassword, request: Request):
+    # Unrated, this endpoint can be used to spam a victim's inbox or hammer the DB.
+    await rate_limit(request, "forgot_password", limit=5, window_seconds=3600)
     user = await User.objects.filter(email=forgot_password.email, verified=True).get_or_none()
     if user is not None:
         await send_forgotten_password_email(email=user.email)
@@ -201,7 +203,9 @@ class ResetPassword(BaseModel):
 
 @router.post("/reset-password")
 async def reset_password_with_token(reset_password: ResetPassword, response: Response):
-    redis_res = await redis.get(f"reset_passwd:{reset_password.token}")
+    # GETDEL rather than GET-then-DELETE, so two concurrent requests for the same
+    # token can't both pass the check before either invalidates it.
+    redis_res = await redis.getdel(f"reset_passwd:{reset_password.token}")
     if redis_res is None:
         raise HTTPException(status_code=400, detail="Invalid token")
     user = await User.objects.filter(id=uuid.UUID(redis_res)).get_or_none()

@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -24,11 +25,16 @@ settings = settings()
 
 
 async def get_meili_data(quiz: Quiz) -> dict[str, Any]:
+    # Anonymous (accountless) quizzes are never made public, so quiz.user_id
+    # shouldn't be None here -- but resolve to "" rather than crash if a
+    # future caller indexes one anyway, since a stale search index is a much
+    # smaller problem than a 500 at write time.
+    owner = await User.objects.filter(id=quiz.user_id).first() if quiz.user_id is not None else None
     return {
         "id": str(quiz.id),
         "title": quiz.title,
         "description": quiz.description,
-        "user": (await User.objects.filter(id=quiz.user_id).first()).username,
+        "user": owner.username if owner is not None else "",
         "created_at": int(quiz.created_at.timestamp()),
         "imported_from_kahoot": quiz.imported_from_kahoot,
     }

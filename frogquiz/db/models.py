@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 from __future__ import annotations
 
 
+import hashlib
 import os
 import uuid
 from datetime import datetime
@@ -52,7 +54,11 @@ class User(ormar.Model):
     avatar: bytes = ormar.LargeBinary(max_length=25000, represent_as_base64_str=True)
     github_user_id: int | None = ormar.Integer(nullable=True)
     require_password: bool = ormar.Boolean(default=True, nullable=False)
-    backup_code: str = ormar.String(max_length=64, min_length=64, nullable=False, default=lambda: os.urandom(32).hex())
+    # Stored as a hash, like session keys: it's only ever compared for equality,
+    # and this placeholder is unusable anyway until /2fa/backup_code reveals a real one.
+    backup_code: str = ormar.String(
+        max_length=64, min_length=64, nullable=False, default=lambda: hashlib.sha256(os.urandom(32)).hexdigest()
+    )
     totp_secret: str = ormar.String(max_length=32, min_length=32, nullable=True, default=None)
     storage_used: int = ormar.BigInteger(nullable=False, default=0, minimum=0)
 
@@ -188,13 +194,18 @@ class Quiz(ormar.Model):
     description: str = ormar.Text(nullable=True)
     created_at: datetime = ormar.DateTime(default=datetime.now)
     updated_at: datetime = ormar.DateTime(default=datetime.now)
-    user_id: uuid.UUID = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
+    user_id: uuid.UUID | None = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE, nullable=True)
     questions: Json[list[QuizQuestion]] = ormar.JSON(nullable=False)
     imported_from_kahoot: Optional[bool] = ormar.Boolean(default=False, nullable=True)
     cover_image: Optional[str] = ormar.Text(nullable=True, unique=False)
     background_color: str | None = ormar.Text(nullable=True, unique=False)
     background_image: str | None = ormar.Text(nullable=True, unique=False)
     kahoot_id: uuid.UUID | None = ormar.UUID(nullable=True, default=None)
+    # Set only for a quiz created without an account: sha256 of the secret the
+    # creator's browser holds, and when the row should be swept up if no one
+    # claims it. Both are cleared once a signed-in user claims the quiz.
+    anon_secret: str | None = ormar.Text(nullable=True, unique=False)
+    expire_at: datetime | None = ormar.DateTime(nullable=True)
     likes: int = ormar.Integer(nullable=False, default=0, server_default="0")
     dislikes: int = ormar.Integer(nullable=False, default=0, server_default="0")
     plays: int = ormar.Integer(nullable=False, default=0, server_default="0")
@@ -238,7 +249,7 @@ class TokenData(BaseModel):
 class PlayGame(BaseModel):
     quiz_id: uuid.UUID | str
     description: str
-    user_id: uuid.UUID
+    user_id: uuid.UUID | None
     title: str
     questions: list[QuizQuestion]
     game_id: uuid.UUID
@@ -367,7 +378,7 @@ class GameInLobby(BaseModel):
 class GameResults(ormar.Model):
     id: uuid.UUID = ormar.UUID(primary_key=True)
     quiz: uuid.UUID | Quiz = ormar.ForeignKey(Quiz, ondelete=ReferentialAction.CASCADE)
-    user: uuid.UUID | User = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
+    user: uuid.UUID | User | None = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE, nullable=True)
     timestamp: datetime = ormar.DateTime(default=datetime.now, nullable=False)
     player_count: int = ormar.Integer(nullable=False, default=0)
     note: str | None = ormar.Text(nullable=True)

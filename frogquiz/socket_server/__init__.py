@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -219,7 +220,10 @@ async def start_game(sid: str, _data: dict):
     game_data = await PlayGame.get_from_redis(session["game_pin"])
     game_data.started = True
     await game_data.save(session["game_pin"])
-    await redis.delete(f"game_in_lobby:{game_data.user_id.hex}")
+    if game_data.user_id is not None:
+        # Anonymous hosts never get a "game_in_lobby" entry in the first
+        # place (no dashboard to show it on), so there's nothing to clear.
+        await redis.delete(f"game_in_lobby:{game_data.user_id.hex}")
     await sio.emit("start_game", room=session["game_pin"])
 
 

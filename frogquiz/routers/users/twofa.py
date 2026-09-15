@@ -10,7 +10,7 @@ import pyotp
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from frogquiz.auth import get_current_user, verify_password
+from frogquiz.auth import get_current_user, hash_session_key, verify_password
 from frogquiz.db.models import User
 
 router = APIRouter()
@@ -30,7 +30,9 @@ async def get_backup_code(data: RequirePasswordForAction, user: User = Depends(g
     user = await User.objects.get(id=user.id)
     if not verify_password(data.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid")
-    user.backup_code = backup_code
+    # Only the hash is stored, matching remember-me session keys: the code is
+    # only ever compared for equality, so it never needs to be read back.
+    user.backup_code = hash_session_key(backup_code)
     await user.update()
     return GetBackupCodeResponse(code=backup_code)
 

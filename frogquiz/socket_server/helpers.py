@@ -20,19 +20,16 @@ async def check_captcha(captcha_data: str) -> bool:
     async with aiohttp.ClientSession() as session:
         try:
             if settings.hcaptcha_key is not None:
-                try:
-                    async with session.post(
-                        "https://hcaptcha.com/siteverify",
-                        data={
-                            "response": captcha_data,
-                            "secret": settings.hcaptcha_key,
-                        },
-                    ) as resp:
-                        resp_data = await resp.model_dump_json()
-                        if not resp_data["success"]:
-                            return
-                except KeyError:
-                    return False
+                async with session.post(
+                    "https://hcaptcha.com/siteverify",
+                    data={
+                        "response": captcha_data,
+                        "secret": settings.hcaptcha_key,
+                    },
+                ) as resp:
+                    resp_data = await resp.json()
+                    if not resp_data["success"]:
+                        return False
             elif settings.recaptcha_key is not None:
                 async with session.post(
                     "https://www.google.com/recaptcha/api/siteverify",
@@ -41,14 +38,10 @@ async def check_captcha(captcha_data: str) -> bool:
                         "response": captcha_data,
                     },
                 ) as resp:
-                    try:
-                        resp_data = await resp.model_dump_json()
-                        if not resp_data["success"]:
-                            return False
-                    except KeyError:
+                    resp_data = await resp.json()
+                    if not resp_data["success"]:
                         return False
-        except TypeError:
-            pass
+        except (KeyError, TypeError, ValueError, aiohttp.ClientError):
             return False
     return True
 

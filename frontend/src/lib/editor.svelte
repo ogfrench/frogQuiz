@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -12,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import QuizCard from '$lib/editor/card.svelte';
 	import Spinner from './Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
+	import { getAnonSecret, setAnonSecret } from '$lib/anon_quiz';
 
 	const { t } = getLocalization();
 
@@ -43,14 +45,18 @@ SPDX-License-Identifier: MPL-2.0
 	let confirm_to_leave = true;
 
 	const getEditID = async () => {
+		const anon_secret = quiz_id === null ? null : getAnonSecret(quiz_id);
+		const headers: Record<string, string> = anon_secret ? { 'X-Anon-Secret': anon_secret } : {};
 		let res: Response;
 		if (quiz_id === null) {
 			res = await fetch(`/api/v1/editor/start?edit=false`, {
-				method: 'POST'
+				method: 'POST',
+				headers
 			});
 		} else {
 			res = await fetch(`/api/v1/editor/start?edit=true&quiz_id=${quiz_id}`, {
-				method: 'POST'
+				method: 'POST',
+				headers
 			});
 		}
 		if (res.status === 200) {
@@ -75,17 +81,28 @@ SPDX-License-Identifier: MPL-2.0
 		if (schemaInvalid) {
 			return;
 		}
+		const anon_secret = quiz_id === null ? null : getAnonSecret(quiz_id);
 		const res = await fetch(`/api/v1/editor/finish?edit_id=${edit_id}`, {
 			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				...(anon_secret ? { 'X-Anon-Secret': anon_secret } : {})
 			},
 			body: JSON.stringify(data)
 		});
 		if (res.ok) {
 			confirm_to_leave = false;
-			console.log(confirm_to_leave);
-			window.location.href = '/dashboard';
+			// A quiz created without an account has no dashboard entry to land
+			// on -- and the server only ever hands back a fresh secret for
+			// exactly that case, once, right here.
+			const new_anon_secret = res.headers.get('X-Anon-Secret');
+			if (new_anon_secret) {
+				const saved = await res.json();
+				setAnonSecret(saved.id, new_anon_secret);
+				window.location.href = `/view/${saved.id}`;
+			} else {
+				window.location.href = '/dashboard';
+			}
 		} else {
 			alert('Error');
 		}
