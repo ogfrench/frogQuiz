@@ -20,12 +20,10 @@ from fastapi.testclient import TestClient
 from frogquiz.config import settings
 from frogquiz.tests import test_client, example_quiz  # noqa: F401
 
-# Collected (and so normally run) before test_auth.py/test_server.py, since
-# pytest orders test files alphabetically by default and this one sorts
-# first. Running last instead avoids handing the *first* module-scoped
-# TestClient/redis-client lifecycle transition of the whole run to a new
-# file -- test_kahoot_get.py/test_kahoot_search.py already push themselves to
-# order(-2) for the same reason, so this stacks after those too.
+# This suite creates a verified user and a quiz, while test_server.py's
+# TestStats asserts the exact global user and quiz counts. Running last means
+# those counts are taken before these rows exist, and test_cleanup_claimer_user
+# below removes them again afterwards.
 pytestmark = pytest.mark.order(-1)
 
 anon_user_email = "anon-quiz-claimer@byom.de"
@@ -149,7 +147,7 @@ class TestAnonymousQuiz:
             cookies=AnonState.claimer_cookies,
         )
         assert resp.status_code == 200
-        assert resp.json()["user_id"] == resp.json()["user_id"]  # now set, no crash serializing it
+        assert resp.json()["user_id"] is not None  # now set, and serializing an owner doesn't crash
 
         resp = test_client.get("/api/v1/quiz/list", cookies=AnonState.claimer_cookies)
         assert resp.status_code == 200

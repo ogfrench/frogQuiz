@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -8,6 +9,7 @@ from fastapi.testclient import TestClient
 
 # from frogquiz.socket_server import sio
 from frogquiz import app as fastapi_app
+from frogquiz.config import pool
 
 # from typing import List, Optional
 
@@ -111,6 +113,15 @@ example_quiztivity = {
 
 @pytest.fixture(scope="module")
 def test_client() -> Generator:
+    # The Redis client in frogquiz.config is a process-wide global, but each
+    # module-scoped TestClient runs on its own event loop and its pooled
+    # connections stay bound to the loop that created them. Dropping them here
+    # stops the next module picking up a connection attached to the previous
+    # module's closed loop ("got Future attached to a different loop", then
+    # "Event loop is closed" as redis tries to tear that connection down).
+    # reset() is deliberate: pool.disconnect() is a coroutine and would itself
+    # have to await the dead loop.
+    pool.reset()
     with TestClient(fastapi_app) as testclient:
         yield testclient
 
