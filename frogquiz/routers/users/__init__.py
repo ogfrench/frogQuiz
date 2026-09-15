@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
+import logging
 import gzip
 import os
 from datetime import datetime
@@ -37,6 +38,8 @@ from frogquiz.emails import send_register_email, send_forgotten_password_email
 from frogquiz.routers.users import webauthn, twofa
 
 settings = settings()
+LOGGER = logging.getLogger("frogquiz.users")
+
 router = APIRouter()
 
 router.include_router(webauthn.router, prefix="/webauthn")
@@ -99,7 +102,20 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
         user.verified = True
         await user.update()
     else:
-        await send_register_email(user)
+        try:
+            await send_register_email(user)
+        except Exception:
+            # The row was already committed, so a failing mail server used to leave
+            # an unverified account behind and 500 the request. The caller then saw a
+            # generic error, retried, and got 409 "user already exists" forever --
+            # locked out of an address they could never verify, with no resend
+            # endpoint to recover through. Undo the save so retrying actually works.
+            LOGGER.exception("Could not send the verification email to a new user; rolling back")
+            await user.delete()
+            raise HTTPException(
+                status_code=502,
+                detail="Could not send the verification email. Nothing was saved -- please try again.",
+            )
     await redis.delete("global_user_count")
     return user
 

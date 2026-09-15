@@ -15,6 +15,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 
 	const { t } = getLocalization();
 	import reporter from '@felte/reporter-tippy';
@@ -76,6 +78,8 @@ SPDX-License-Identifier: MPL-2.0
 					responseData.data = '409';
 				} else if (res.status === 400) {
 					responseData.data = '400';
+				} else if (res.status === 429) {
+					responseData.data = '429';
 				} else {
 					responseData.data = 'error';
 				}
@@ -235,6 +239,46 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			</form>
 		</Card.Content>
+
+		{#if responseData.open}
+			{@const ok = responseData.data === '200' || responseData.data === '200_verified'}
+			<div class="px-6 pb-2">
+				<div
+					class="flex gap-3 rounded-lg border p-3 text-sm {ok
+						? 'border-border bg-muted/50'
+						: 'border-destructive/40 bg-destructive/10'}"
+					role="status"
+					aria-live="polite"
+				>
+					{#if ok}
+						<CircleCheck
+							class="text-foreground mt-0.5 size-4 shrink-0"
+							aria-hidden="true"
+						/>
+					{:else}
+						<CircleAlert
+							class="text-destructive mt-0.5 size-4 shrink-0"
+							aria-hidden="true"
+						/>
+					{/if}
+					<p class={ok ? 'text-foreground' : 'text-destructive'}>
+						{#if responseData.data === '200'}
+							{$t('register_page.result.check_email')}
+						{:else if responseData.data === '200_verified'}
+							{$t('register_page.result.ready')}
+						{:else if responseData.data === '409'}
+							{$t('register_page.result.taken')}
+						{:else if responseData.data === '400'}
+							{$t('register_page.result.invalid')}
+						{:else if responseData.data === '429'}
+							{$t('register_page.result.too_many')}
+						{:else}
+							{$t('register_page.result.failed')}
+						{/if}
+					</p>
+				</div>
+			</div>
+		{/if}
 
 		<Card.Footer class="justify-center gap-1.5 text-sm">
 			<span class="text-muted-foreground">{$t('register_page.already_have_account?')}</span>
