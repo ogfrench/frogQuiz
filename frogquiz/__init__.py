@@ -10,7 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import logging
 
-from frogquiz.config import settings
+from frogquiz.config import settings, pool as redis_pool
 from frogquiz.db import database
 
 from frogquiz.oauth import rememberme_middleware
@@ -66,6 +66,14 @@ async def shutdown() -> None:
     database_ = app.state.database
     if database_.is_connected:
         await database_.disconnect()
+    # Redis was the asymmetry here: the pool is built once at import, and
+    # redis-py's asyncio connections bind to whichever event loop created them.
+    # Shutdown closed the database and left Redis holding open connections, so
+    # they outlived the loop that made them and the next caller on a new loop
+    # got "RuntimeError: Event loop is closed" out of an otherwise healthy
+    # client. Closing them here makes shutdown symmetric; the pool stays usable
+    # and reconnects lazily on the next request.
+    await redis_pool.disconnect()
 
 
 @app.middleware("http")
