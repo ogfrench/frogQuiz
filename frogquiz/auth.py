@@ -109,7 +109,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-
 def hash_anon_secret(secret: str) -> str:
     """Hash the ownership secret for a quiz created without an account.
 
