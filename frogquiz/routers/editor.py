@@ -1,15 +1,17 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
 
 import asyncio
+import secrets
 import uuid
 from typing import Optional
 
 import asyncpg.exceptions
 import bleach
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header, Request, Response
 from pydantic import BaseModel
 import html
 
@@ -22,9 +24,10 @@ from frogquiz.config import (
     arq,
 )
 from frogquiz.db.models import Quiz, QuizInput, User, QuizQuestionType, StorageItem
-from frogquiz.auth import get_current_user
+from frogquiz.auth import get_current_user_optional, hash_anon_secret, verify_anon_secret
+from frogquiz.helpers.ratelimit import rate_limit
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from frogquiz.helpers import (
@@ -40,6 +43,10 @@ router = APIRouter()
 
 allowed_image_extensions = [".gif", ".jpg", ".jpeg", ".png", ".svg", ".webp", ".jfif"]
 
+# How long a quiz created without an account is kept before it's swept up if
+# no one claims it (see the arq cleanup job in frogquiz/worker/__init__.py).
+ANON_QUIZ_EXPIRE_DAYS = 30
+
 
 class InitEditorResponse(BaseModel):
     token: str
@@ -48,7 +55,11 @@ class InitEditorResponse(BaseModel):
 class EditSessionData(BaseModel):
     quiz_id: UUID
     edit: bool
-    user_id: UUID
+    user_id: UUID | None
+
+
+def _quiz_expired(quiz: Quiz) -> bool:
+    return quiz.expire_at is not None and quiz.expire_at < datetime.now()
 
 
 async def delete_images_for_edit_id(edit_id: str):
@@ -60,35 +71,66 @@ async def delete_images_for_edit_id(edit_id: str):
 
 
 @router.post("/start", response_model=InitEditorResponse)
-async def init_editor(edit: bool, quiz_id: Optional[UUID] = None, user: User = Depends(get_current_user)):
-    if edit and quiz_id is not None and await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id) is None:
-        raise HTTPException(status_code=404, detail="Quiz not found")
+async def init_editor(
+    request: Request,
+    edit: bool,
+    quiz_id: Optional[UUID] = None,
+    user: User | None = Depends(get_current_user_optional),
+    x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+):
+    await rate_limit(request, "editor_start", limit=30, window_seconds=60)
     if not edit and quiz_id is not None:
         raise HTTPException(status_code=400, detail="You can't choose the id for your quiz")
     if edit and quiz_id is None:
         raise HTTPException(status_code=400, detail="Edit can't be true if quiz_id is None")
+    if edit:
+        if user is not None:
+            quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+        else:
+            # Anonymous editors prove ownership with the secret minted at
+            # creation instead of a JWT -- same 404 either way so a wrong
+            # secret can't be told apart from a quiz that doesn't exist.
+            quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
+            if quiz is not None and not verify_anon_secret(x_anon_secret, quiz.anon_secret):
+                quiz = None
+        if quiz is None or _quiz_expired(quiz):
+            raise HTTPException(status_code=404, detail="Quiz not found")
     if quiz_id is None:
         quiz_id = uuid.uuid4()
     edit_id = os.urandom(4).hex()
     await redis.sadd("edit_sessions", edit_id)
     await redis.set(
         f"edit_session:{edit_id}",
-        EditSessionData(quiz_id=quiz_id, edit=edit, user_id=user.id).model_dump_json(),
+        EditSessionData(quiz_id=quiz_id, edit=edit, user_id=user.id if user is not None else None).model_dump_json(),
         ex=3600,
     )
     return InitEditorResponse(token=edit_id)
 
 
 @router.post("/finish")
-async def finish_edit(edit_id: str, quiz_input: QuizInput, user: User = Depends(get_current_user)):
+async def finish_edit(
+    request: Request,
+    response: Response,
+    edit_id: str,
+    quiz_input: QuizInput,
+    user: User | None = Depends(get_current_user_optional),
+    x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+):
+    await rate_limit(request, "editor_finish", limit=30, window_seconds=60)
     session_data = await redis.get(f"edit_session:{edit_id}")
     if session_data is None:
         raise HTTPException(status_code=401, detail="Edit ID not found!")
     session_data = EditSessionData.model_validate_json(session_data)
+    caller_id = user.id if user is not None else None
     # The edit id alone is not a credential: it is 32 bits and lives for an hour.
     # Without this check, knowing it was enough to write a quiz into its owner's account.
-    if session_data.user_id != user.id:
+    if session_data.user_id != caller_id:
         raise HTTPException(status_code=403, detail="This edit session belongs to another user")
+    is_anonymous = session_data.user_id is None
+    if is_anonymous:
+        # Anonymous quizzes are never public/searchable -- there's no
+        # account behind them to hold accountable for indexed content.
+        quiz_input.public = False
     quiz_input.title = bleach.clean(quiz_input.title, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True)
     quiz_input.description = bleach.clean(quiz_input.description, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True)
     if quiz_input.background_color is not None:
@@ -108,6 +150,19 @@ async def finish_edit(edit_id: str, quiz_input: QuizInput, user: User = Depends(
 
     images_to_delete = []
     old_quiz_data: Quiz = await Quiz.objects.get_or_none(id=session_data.quiz_id, user_id=session_data.user_id)
+    if (
+        session_data.edit
+        and is_anonymous
+        and (
+            old_quiz_data is None
+            or _quiz_expired(old_quiz_data)
+            or not verify_anon_secret(x_anon_secret, old_quiz_data.anon_secret)
+        )
+    ):
+        # Defense in depth: /start already checked the secret when the edit
+        # session was created, but re-check here too since that session is
+        # cached in Redis for up to an hour.
+        raise HTTPException(status_code=404, detail="Quiz not found")
 
     for i, question in enumerate(quiz_input.questions):
         image = question.image
@@ -131,11 +186,14 @@ async def finish_edit(edit_id: str, quiz_input: QuizInput, user: User = Depends(
     if session_data.edit:
         await arq.enqueue_job("quiz_update", old_quiz_data, old_quiz_data.id, _defer_by=2)
         quiz = old_quiz_data
-        meilisearch.index(settings.meilisearch_index).update_documents([await get_meili_data(quiz)])
-        if not quiz_input.public:
-            meilisearch.index(settings.meilisearch_index).delete_document(str(quiz.id))
-        else:
-            meilisearch.index(settings.meilisearch_index).add_documents([await get_meili_data(quiz)])
+        if not is_anonymous:
+            # get_meili_data looks up the owning user, which anonymous
+            # quizzes don't have -- and they're never indexed anyway.
+            meilisearch.index(settings.meilisearch_index).update_documents([await get_meili_data(quiz)])
+            if not quiz_input.public:
+                meilisearch.index(settings.meilisearch_index).delete_document(str(quiz.id))
+            else:
+                meilisearch.index(settings.meilisearch_index).add_documents([await get_meili_data(quiz)])
         quiz.title = quiz_input.title
         quiz.public = quiz_input.public
         quiz.description = quiz_input.description
@@ -157,12 +215,21 @@ async def finish_edit(edit_id: str, quiz_input: QuizInput, user: User = Depends(
         await quiz.update()
         return quiz
     else:
+        raw_anon_secret = None
+        anon_secret_hash = None
+        expire_at = None
+        if is_anonymous:
+            raw_anon_secret = secrets.token_hex(32)
+            anon_secret_hash = hash_anon_secret(raw_anon_secret)
+            expire_at = datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS)
         quiz = Quiz(
             **quiz_input.model_dump(),
             user_id=session_data.user_id,
             id=session_data.quiz_id,
             created_at=datetime.now(),
             updated_at=datetime.now(),
+            anon_secret=anon_secret_hash,
+            expire_at=expire_at,
         )
 
         await redis.delete("global_quiz_count")
@@ -181,3 +248,8 @@ async def finish_edit(edit_id: str, quiz_input: QuizInput, user: User = Depends(
             if item is None:
                 continue
             await quiz.storageitems.add(item)
+        if raw_anon_secret is not None:
+            # Issued exactly once, here -- the hash on the row is all that's
+            # kept server-side, so this is the caller's only chance to see it.
+            response.headers["X-Anon-Secret"] = raw_anon_secret
+        return quiz

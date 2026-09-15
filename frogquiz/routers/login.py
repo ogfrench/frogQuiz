@@ -5,6 +5,7 @@
 
 import base64
 import enum
+import hmac
 import os
 import urllib.parse
 import uuid
@@ -13,7 +14,7 @@ import pyotp
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, ValidationError
 
-from frogquiz.auth import verify_password
+from frogquiz.auth import hash_session_key, verify_password
 from frogquiz.config import redis, settings
 
 from frogquiz.db.models import User, FidoCredentials
@@ -198,8 +199,8 @@ async def step_1_endpoint(session_id: str, data: StepInput, request: Request, re
         else:
             raise HTTPException(401, detail="webauthn failed")
     elif data.auth_type == StartLoginResponseTypes.BACKUP:
-        if user.backup_code == data.data:
-            user.backup_code = os.urandom(32).hex()
+        if isinstance(data.data, str) and hmac.compare_digest(hash_session_key(data.data), user.backup_code):
+            user.backup_code = hash_session_key(os.urandom(32).hex())
             await user.update()
             return await log_user_in(user, request, response)
         else:

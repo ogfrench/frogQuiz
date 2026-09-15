@@ -49,7 +49,8 @@
     "import_quiz_from_kahoot_and_edit": "Import quizzes from Kahoot! and edit them in frogQuiz",
     "join_prompt": "Enter the PIN from the host’s screen.",
     "hosting": "Running the quiz?",
-    "host_cta": "Go to your quizzes"
+    "host_cta": "Go to your quizzes",
+    "create_anon": "Create a quiz without an account"
   },
   "overview_page": {
     "created_at": "Created at",

@@ -12,6 +12,7 @@ from jose import jws, jwt, JWTError, JWSError
 from frogquiz.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, hash_session_key
 from frogquiz.db.models import UserSession
 from frogquiz.oauth import google, github, custom
+from frogquiz.oauth.authenticate_user import COOKIE_SECURE
 from frogquiz.config import settings
 
 settings = settings()
@@ -73,6 +74,7 @@ async def rememberme_middleware(request: Request, call_next) -> Response:
             value=f"Bearer {access_token}",
             httponly=True,
             samesite="lax",
+            secure=COOKIE_SECURE,
             max_age=60 * 60 * 24 * 365,
         )
     else:

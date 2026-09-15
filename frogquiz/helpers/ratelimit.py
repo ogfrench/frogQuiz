@@ -18,12 +18,15 @@ from frogquiz.config import redis, settings
 def client_ip(request: Request) -> str:
     """Best-effort client address.
 
-    X-Forwarded-For is attacker-controlled unless a trusted proxy overwrites it,
-    so this is good enough for rate limiting but must not be treated as identity.
+    Caddy (see Caddyfile-docker) appends the real client address to any
+    X-Forwarded-For it receives rather than replacing it, so the last entry is
+    the one the proxy itself added; earlier entries are attacker-supplied. This
+    is still good enough for rate limiting only, not identity -- a request that
+    reaches the app directly (bypassing Caddy) can forge this header outright.
     """
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        return forwarded.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"
 
 

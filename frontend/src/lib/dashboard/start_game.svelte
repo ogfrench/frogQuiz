@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -12,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '$lib/Spinner.svelte';
 	import { onMount } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
+	import { getAnonSecret } from '$lib/anon_quiz';
 
 	const { t } = getLocalization();
 	let { quiz_id = $bindable() } = $props();
@@ -33,18 +35,22 @@ SPDX-License-Identifier: MPL-2.0
 		localStorage.setItem('custom_field', custom_field);
 		const cqcs_enabled_parsed = cqcs_enabled ? 'True' : 'False';
 		const randomized_answers_parsed = randomized_answers ? 'True' : 'False';
+		const anon_secret = getAnonSecret(id);
+		const headers: Record<string, string> = anon_secret ? { 'X-Anon-Secret': anon_secret } : {};
 		if (captcha_enabled && captcha_selected) {
 			res = await fetch(
 				`/api/v1/quiz/start/${id}?captcha_enabled=True&game_mode=${selected_game_mode}&custom_field=${custom_field}&cqcs_enabled=${cqcs_enabled_parsed}`,
 				{
-					method: 'POST'
+					method: 'POST',
+					headers
 				}
 			);
 		} else {
 			res = await fetch(
 				`/api/v1/quiz/start/${id}?captcha_enabled=False&game_mode=${selected_game_mode}&custom_field=${custom_field}&cqcs_enabled=${cqcs_enabled_parsed}&randomize_answers=${randomized_answers_parsed}`,
 				{
-					method: 'POST'
+					method: 'POST',
+					headers
 				}
 			);
 		}
@@ -58,7 +64,9 @@ SPDX-License-Identifier: MPL-2.0
 				window.location.assign('/account/login?returnTo=/dashboard');
 			});*/
 			alert('Starting game failed');
-			window.location.assign('/account/login?returnTo=/dashboard');
+			if (!anon_secret) {
+				window.location.assign('/account/login?returnTo=/dashboard');
+			}
 		} else {
 			const data = await res.json();
 			window.location.assign(

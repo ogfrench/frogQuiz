@@ -1,9 +1,12 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
 
+import re
 import uuid
+from datetime import datetime
 
 import ormar.exceptions
 from arq.worker import Retry
@@ -71,6 +74,37 @@ async def calculate_hash(ctx, file_id_as_str: str):
         return
     user.storage_used += file_data.size
     await user.update()
+
+
+_PIC_NAME_REGEX = re.compile("^.*/(.{36}--.{36})$")
+
+
+# skipcq: PYL-W0613
+async def clean_expired_anonymous_quizzes(ctx):
+    """Delete anonymous (accountless) quizzes past their expiry.
+
+    Reads (the 404 an expired-but-not-yet-swept quiz already gets from
+    `/editor/start`, `/quiz/start` and `/quiz/get/public`) enforce expiry the
+    moment it happens; this job is only the eventual cleanup so the rows and
+    their images don't accumulate forever.
+    """
+    print("Cleaning expired anonymous quizzes up")
+    expired = await Quiz.objects.filter(user_id=None, expire_at__lt=datetime.now()).all()
+    for quiz in expired:
+        pics_to_delete = []
+        for question in quiz.questions:
+            image = question.get("image")
+            if image is None or str(image).startswith("https://i.imgur.com/"):
+                continue
+            match = _PIC_NAME_REGEX.match(image)
+            if match is not None:
+                pics_to_delete.append(match.group(1))
+        if pics_to_delete:
+            try:
+                await storage.delete(pics_to_delete)
+            except DeletionFailedError:
+                print("Deletion Error", pics_to_delete)
+        await quiz.delete()
 
 
 # skipcq: PYL-W0613

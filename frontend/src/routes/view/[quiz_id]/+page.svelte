@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -20,6 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { page } from '$app/state';
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
+	import { getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
 
 	const default_colors = ANSWER_COLORS;
 
@@ -41,13 +43,37 @@ SPDX-License-Identifier: MPL-2.0
 			start_game = null;
 		}
 	};
-	onMount(() => {
-		document.body.addEventListener('keydown', close_start_game_if_esc_is_pressed);
-	});
 
 	const { t } = getLocalization();
 	let { data } = $props();
 	let { quiz, logged_in }: { quiz: QuizData; logged_in: boolean } = $state(data);
+
+	// Ownership of an anonymously-created quiz can only be checked client-side
+	// (the secret lives in this browser's localStorage, not on the server).
+	let owns_anonymously = $state(false);
+	let claiming = $state(false);
+
+	onMount(() => {
+		document.body.addEventListener('keydown', close_start_game_if_esc_is_pressed);
+		owns_anonymously = quiz.user_id === null && getAnonSecret(quiz.id) !== null;
+	});
+
+	const claim_quiz = async () => {
+		const anon_secret = getAnonSecret(quiz.id);
+		if (!anon_secret) return;
+		claiming = true;
+		const res = await fetch(`/api/v1/quiz/claim/${quiz.id}`, {
+			method: 'POST',
+			headers: { 'X-Anon-Secret': anon_secret }
+		});
+		claiming = false;
+		if (res.ok) {
+			clearAnonSecret(quiz.id);
+			window.location.href = '/dashboard';
+		} else {
+			alert('Could not claim this quiz.');
+		}
+	};
 
 	interface Question {
 		time: string;
@@ -68,7 +94,7 @@ SPDX-License-Identifier: MPL-2.0
 		description: string;
 		created_at: string;
 		updated_at: string;
-		user_id: string;
+		user_id: { id: string; username: string } | null;
 		imported_from_kahoot?: boolean;
 		questions: Question[];
 		kahoot_id?: string;
@@ -85,10 +111,12 @@ SPDX-License-Identifier: MPL-2.0
 	<div class="text-center">
 		<p>{@html quiz.description}</p>
 	</div>
-	<p class="text-center">
-		{$t('view_quiz_page.made_by')}
-		<a href="/user/{quiz.user_id.id}" class="underline">@{quiz.user_id.username}</a>
-	</p>
+	{#if quiz.user_id}
+		<p class="text-center">
+			{$t('view_quiz_page.made_by')}
+			<a href="/user/{quiz.user_id.id}" class="underline">@{quiz.user_id.username}</a>
+		</p>
+	{/if}
 	{#if quiz.cover_image}
 		<div class="flex justify-center align-middle items-center">
 			<div class="h-[15vh] m-auto w-auto my-3">
@@ -120,7 +148,7 @@ SPDX-License-Identifier: MPL-2.0
 					</GrayButton>
 				</div>
 			{/if}
-			{#if logged_in}
+			{#if logged_in || owns_anonymously}
 				<div class="w-full">
 					<GrayButton
 						onclick={() => {
@@ -222,6 +250,13 @@ SPDX-License-Identifier: MPL-2.0
 								/>
 							</svg>
 							{$t('words.download')}
+						</GrayButton>
+					</div>
+				{/if}
+				{#if logged_in && owns_anonymously}
+					<div class="w-full">
+						<GrayButton onclick={claim_quiz} disabled={claiming} flex={true}>
+							{claiming ? 'Claiming...' : 'Claim this quiz to your account'}
 						</GrayButton>
 					</div>
 				{/if}

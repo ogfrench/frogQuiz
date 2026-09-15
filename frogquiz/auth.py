@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
 import hashlib
+import hmac
 import uuid
 from datetime import timedelta
 from typing import Dict
@@ -107,6 +109,28 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
+
+def hash_anon_secret(secret: str) -> str:
+    """Hash the ownership secret for a quiz created without an account.
+
+    Only this hash is ever persisted; the raw secret lives in the creator's
+    browser and is returned exactly once, at creation.
+    """
+    return hashlib.sha256(secret.encode()).hexdigest()
+
+
+def verify_anon_secret(secret: str | None, expected_hash: str | None) -> bool:
+    """Constant-time check of a caller-supplied secret against a stored hash.
+
+    Both a missing secret and a quiz with none set return False rather than
+    raising, so callers can use this directly in an `if` without needing to
+    special-case "no secret was ever issued".
+    """
+    if not secret or not expected_hash:
+        return False
+    return hmac.compare_digest(hash_anon_secret(secret), expected_hash)
+
+
 def hash_session_key(session_key: str) -> str:
     """Hash a remember-me session key for storage.
 
@@ -206,6 +230,8 @@ async def get_current_user_optional(token: str = Depends(oauth2_scheme)) -> User
         token_data = TokenData(email=email)
     except JWTError:
         return None
+    if await token_is_revoked(token):
+        return None
     user = await get_user_from_mail(email=token_data.email)
     if user is None:
         return None
@@ -220,6 +246,8 @@ async def check_token(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
         token_data = TokenData(email=email)
     except JWTError:
+        raise credentials_exception
+    if await token_is_revoked(token):
         raise credentials_exception
     return token_data.email
 
