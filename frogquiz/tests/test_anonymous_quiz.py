@@ -20,13 +20,23 @@ from fastapi.testclient import TestClient
 from frogquiz.config import settings
 from frogquiz.tests import test_client, example_quiz  # noqa: F401
 
-# Collected (and so normally run) before test_auth.py/test_server.py, since
-# pytest orders test files alphabetically by default and this one sorts
-# first. Running last instead avoids handing the *first* module-scoped
-# TestClient/redis-client lifecycle transition of the whole run to a new
-# file -- test_kahoot_get.py/test_kahoot_search.py already push themselves to
-# order(-2) for the same reason, so this stacks after those too.
-pytestmark = pytest.mark.order(-1)
+# This module is pinned between two constraints, and the slot below is the only
+# one that satisfies both.
+#
+# It cannot run first (its alphabetical position): it creates a user and a quiz,
+# and test_server.py's TestStats asserts exact user/quiz counts. Hence
+# test_cleanup_claimer_user below, and hence running after test_server.py.
+#
+# It cannot run last either, which is what order(-1) did. test_kahoot_get.py and
+# test_kahoot_search.py sit at order(-2) and are the only async tests in the
+# suite that never open a TestClient -- they run on pytest-asyncio's own
+# per-test loops. Opening a fresh module-scoped TestClient *after* them hands
+# the app's globals a portal loop that disagrees with whatever those left bound,
+# and the first request dies with "got Future attached to a different loop".
+#
+# order(-3) lands this module after test_server.py (counts already asserted) and
+# before the kahoot pair (no loop handover to inherit).
+pytestmark = pytest.mark.order(-3)
 
 anon_user_email = "anon-quiz-claimer@byom.de"
 anon_user_password = "test-password"
