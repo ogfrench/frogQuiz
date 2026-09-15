@@ -20,6 +20,14 @@ from fastapi.testclient import TestClient
 from frogquiz.config import settings
 from frogquiz.tests import test_client, example_quiz  # noqa: F401
 
+# Collected (and so normally run) before test_auth.py/test_server.py, since
+# pytest orders test files alphabetically by default and this one sorts
+# first. Running last instead avoids handing the *first* module-scoped
+# TestClient/redis-client lifecycle transition of the whole run to a new
+# file -- test_kahoot_get.py/test_kahoot_search.py already push themselves to
+# order(-2) for the same reason, so this stacks after those too.
+pytestmark = pytest.mark.order(-1)
+
 anon_user_email = "anon-quiz-claimer@byom.de"
 anon_user_password = "test-password"
 
@@ -161,3 +169,16 @@ class TestAnonymousQuiz:
             cookies=AnonState.claimer_cookies,
         )
         assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_cleanup_claimer_user(self, test_client: TestClient):  # noqa: F811
+        # This suite's user (and, via cascade, the claimed quiz) must not
+        # survive it -- test_server.py's stats tests assert exact user/quiz
+        # counts, which a leftover row here would throw off.
+        resp = test_client.request(
+            "DELETE",
+            "/api/v1/users/me",
+            json={"password": anon_user_password},
+            cookies=AnonState.claimer_cookies,
+        )
+        assert resp.status_code == 200
