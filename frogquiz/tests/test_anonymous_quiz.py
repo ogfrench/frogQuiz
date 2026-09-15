@@ -20,23 +20,11 @@ from fastapi.testclient import TestClient
 from frogquiz.config import settings
 from frogquiz.tests import test_client, example_quiz  # noqa: F401
 
-# This module is pinned between two constraints, and the slot below is the only
-# one that satisfies both.
-#
-# It cannot run first (its alphabetical position): it creates a user and a quiz,
-# and test_server.py's TestStats asserts exact user/quiz counts. Hence
-# test_cleanup_claimer_user below, and hence running after test_server.py.
-#
-# It cannot run last either, which is what order(-1) did. test_kahoot_get.py and
-# test_kahoot_search.py sit at order(-2) and are the only async tests in the
-# suite that never open a TestClient -- they run on pytest-asyncio's own
-# per-test loops. Opening a fresh module-scoped TestClient *after* them hands
-# the app's globals a portal loop that disagrees with whatever those left bound,
-# and the first request dies with "got Future attached to a different loop".
-#
-# order(-3) lands this module after test_server.py (counts already asserted) and
-# before the kahoot pair (no loop handover to inherit).
-pytestmark = pytest.mark.order(-3)
+# This suite creates a verified user and a quiz, while test_server.py's
+# TestStats asserts the exact global user and quiz counts. Running last means
+# those counts are taken before these rows exist, and test_cleanup_claimer_user
+# below removes them again afterwards.
+pytestmark = pytest.mark.order(-1)
 
 anon_user_email = "anon-quiz-claimer@byom.de"
 anon_user_password = "test-password"
@@ -159,7 +147,7 @@ class TestAnonymousQuiz:
             cookies=AnonState.claimer_cookies,
         )
         assert resp.status_code == 200
-        assert resp.json()["user_id"] == resp.json()["user_id"]  # now set, no crash serializing it
+        assert resp.json()["user_id"] is not None  # now set, and serializing an owner doesn't crash
 
         resp = test_client.get("/api/v1/quiz/list", cookies=AnonState.claimer_cookies)
         assert resp.status_code == 200
