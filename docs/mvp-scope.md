@@ -13,10 +13,14 @@ surface we would have to design, test and support for no one.
 
 Two rules govern every cut here.
 
-1. **Nothing is deleted.** Every cut is a flag, a route guard, or an entry removed
-   from a picker. The code stays in the tree, the database columns stay, and
-   content created before the cut still opens and still plays. Each section below
-   says exactly how to turn the thing back on.
+1. **Nothing is deleted** — with one exception, called out rather than buried.
+   Every cut is a flag, a route guard, or an entry removed from a picker. The code
+   stays in the tree, the database columns stay, and content created before the cut
+   still opens and still plays. Each section below says exactly how to turn the
+   thing back on. **The exception is [Languages](#languages): 33 locale files were
+   actually removed from the tree.** They are recoverable from git history and from
+   upstream, and restoring one is a JSON file plus a line, but that cut does not
+   follow the same rule as the others and should not be read as if it does.
 2. **Cuts are a joint decision.** `CLAUDE.md` is explicit that removing a feature
    that exists on master is François and Gonçalo's call together, never Claude's.
    This document exists so that decision can be made against the real cost rather
@@ -212,6 +216,72 @@ real browsers. Anything not in that sentence is a candidate for a flag.
 
 ---
 
+## Languages
+
+frogQuiz ships in **English only**. 33 of the 34 locale files are removed.
+
+**Status: open.** Under rule 2 this needs François and Gonçalo to agree. It is the
+one cut on this page that deleted files, so it deserves the fuller argument.
+
+### What was there
+
+| | |
+| --- | --- |
+| Locale files on disk | 34 (`frontend/src/lib/i18n/locales/*.json`), 14,266 lines |
+| Actually registered in `i18n-service.ts` | 23 |
+| Loaded by nothing at all | 11 |
+| Language picker | A flag-and-name `<select>` in the footer, offering 22 |
+| Detection | `i18next-browser-languagedetector`, ordered querystring → cookie → localStorage → **navigator** |
+
+### Why it was cut
+
+- **It had stopped being translation.** New keys were only ever written in English.
+  Every other locale resolved them through `fallbackLng: 'en'`, so the files were a
+  promise of translation the project was not keeping. Earlier in this very branch a
+  new key was copied verbatim in English into 26 of them, which is the failure mode
+  they invite.
+- **The detector was a live hazard, not just dead weight.** It read `navigator` and
+  `Accept-Language` before anything else, so a browser configured for Tamil got a
+  Tamil UI — half-translated, against whichever keys happened to exist — off a
+  header nobody set deliberately. The RTL branch in the root layout flipped document
+  direction on the same evidence.
+- **It hid a hydration mismatch.** The server rendered `'en'` while the client read
+  `localStorage`, so the first client render could disagree with the server's.
+
+### What was kept
+
+The `$t()` indirection stays. Collapsing it means inlining several hundred call
+sites across 44 routes for no user-visible gain. Keeping it means every string is
+still in one file, and the cut stays cheap to reverse.
+
+### How to turn a language back on
+
+1. Restore the locale file: `git show <commit>^:frontend/src/lib/i18n/locales/nl.json > frontend/src/lib/i18n/locales/nl.json`
+   (or take a fresh one from upstream, which still has all of them).
+2. Import it in `frontend/src/lib/i18n/i18n-service.ts` and add one
+   `addResourceBundle` line.
+3. Remove the pinned `lng: 'en'` so the language can vary at all.
+4. Only if you want automatic detection back: re-add `i18next-browser-languagedetector`
+   to `package.json` and `.use()` it. Consider dropping `navigator` from the
+   detection order — that is the part that produced a surprise UI.
+5. If the language is RTL, restore the `rtl_languages` branch in
+   `frontend/src/routes/+layout.svelte`.
+
+A picker would also need rebuilding; `frontend/src/lib/language-toggle.svelte` is in
+git history.
+
+### What this does not affect
+
+Nothing is lost for users: no stored content is in a locale, quiz text is whatever
+the author typed, and the backend has no language coupling at all — the only hits
+are an unused `locale` field on the Google OAuth payload and Kahoot's own API
+schema, which has to keep matching Kahoot.
+
+The upstream translators keep their credit on `/docs/attribution`, which now says
+plainly that their work is in ClassQuiz rather than implying they translated this.
+
+---
+
 ## Open decisions
 
 Collected so they can be settled in one pass rather than rediscovered:
@@ -226,3 +296,6 @@ Collected so they can be settled in one pass rather than rediscovered:
    is a commitment the team is making without a rota behind it. Each site carries a
    TODO. Replace with a shared channel before anyone outside the team uses this.
 4. **The five cut question types** — confirm with Gonçalo, per `CLAUDE.md`.
+5. **English only, and the 33 deleted locale files** — same rule, and the one cut on
+   this page that removed files from the tree rather than gating them. See
+   [Languages](#languages) for the argument and for how to restore any one of them.

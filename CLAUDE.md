@@ -137,13 +137,13 @@ If the team ever does decide to delete either, this is the full surface. Do it i
 **Explore**
 
 - `frontend/src/routes/explore/` — the route and its loader.
-- `explore_page.*` in all 34 `frontend/src/lib/i18n/locales/*.json`. **Only safe once Search is gone too**, or once `search-card.svelte` stops using those keys.
+- `explore_page.*` in `frontend/src/lib/i18n/locales/en.json` (one file now — the other 33 locales were removed; see `docs/mvp-scope.md`). **Only safe once Search is gone too**, or once `search-card.svelte` stops using those keys.
 - Entry points: navbar (desktop and mobile), the command palette, and any home-page link.
 
 **Search** (bigger — it reaches the backend and a whole service)
 
 - `frontend/src/routes/search/`, `frontend/src/lib/search-card.svelte`, the navbar link, the command-palette entry.
-- `search_page.*` and `explore_page.*` in all locale files.
+- `search_page.*` and `explore_page.*` in `en.json`.
 - `frogquiz/routers/search.py` — `POST /api/v1/search/` and the GET variant. Unregister it from the router table too, or the endpoint stays live and callable even with no UI.
 - **Meilisearch itself**, which is the part people forget. It is wired into `frogquiz/config.py`, `frogquiz/helpers/__init__.py`, `frogquiz/routers/quiz.py`, `frogquiz/routers/editor.py`, `frogquiz/kahoot_importer/import_quiz.py`, and the `meilisearch` service in both `docker-compose.yml` and `docker-compose.dev.yml`. Quiz create/edit/import all write to the index, so those write paths have to be unpicked before the service can go — otherwise the app throws on quiz save, not on search.
 - There is a reindex job referenced by the CI workflow; check `.github/workflows/` before deleting the service.
@@ -156,7 +156,8 @@ frogQuiz should not send data to, or depend at runtime on, servers controlled by
 
 - Before adding any third-party script, API call, downloadable asset, or contact link, check it isn't pointing at `mawoka.eu` or other upstream-controlled infrastructure.
 - Already fixed: `frontend/Dockerfile`'s `API_URL` default (was `https://mawoka.eu`, now points at the internal `api` service), the Plausible analytics script and Sentry error reporting (both removed, were pointing at Mawoka's own instances), the newsletter signup form (removed — it posted visitor emails to `newsletter.mawoka.eu`), the quiz-report mailto, the import-template download link, the email footer link, and `CONTACT.md`/`CONTRIBUTING.md`/ToS contact info (repointed to internal placeholders — see TODOs in those files for the team's real contact channel).
-- `docs/attribution`'s credits to real individual upstream contributors and translators were kept — that's legitimate attribution to people, not a data-flow or infrastructure dependency.
+- `docs/attribution`'s credits to real individual upstream contributors and translators are kept — that's legitimate attribution to people, not a data-flow or infrastructure dependency. **But the page used to frame them wrongly:** it was upstream's contributor list run through the ClassQuiz→frogQuiz find-replace, so it told nine named people they had contributed to and translated *frogQuiz*. They contributed to ClassQuiz. The page now says that plainly. If you ever re-run a global rename across this repo, this is the class of thing it breaks — check anything that names a person.
+- The same find-replace had produced a fabricated testimonial in `frontend/src/lib/landing/testimonials.svelte`: a real person, a real tweet URL, and quote text edited so an endorsement of ClassQuiz read as one of frogQuiz. It was dead code and is now deleted. Do not reintroduce testimonials that were not given to this project.
 
 ## Licensing (MPL-2.0 / REUSE)
 

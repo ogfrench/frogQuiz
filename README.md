@@ -32,9 +32,13 @@ SPDX-License-Identifier: MPL-2.0
 
 ## About frogQuiz
 
-frogQuiz is a Kahoot-style live quiz tool for internal team use. One person
-hosts a quiz on a shared screen, everyone else joins on their phone with a PIN
-and a nickname, and the room answers under a timer.
+**The free Kahoot alternative. Host interactive quizzes right from your browser.**
+
+One person hosts a quiz on a shared screen, everyone else joins on their phone
+with a PIN and a nickname, and the room answers under a timer. It is built for
+internal team use and ships in English only — see
+[docs/mvp-scope.md](docs/mvp-scope.md#languages) for why, and for how to add a
+language back.
 
 It is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz) by
 Marlon W (Mawoka), which was built as a public multi-tenant product for schools.
