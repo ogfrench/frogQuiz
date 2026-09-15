@@ -170,9 +170,6 @@ importers:
       i18next:
         specifier: ^25.6.0
         version: 25.6.0(typescript@5.9.3)
-      i18next-browser-languagedetector:
-        specifier: ^8.2.0
-        version: 8.2.0
       jose:
         specifier: ^6.1.0
         version: 6.1.0
@@ -2182,9 +2179,6 @@ packages:
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
 
-  i18next-browser-languagedetector@8.2.0:
-    resolution: {integrity: sha512-P+3zEKLnOF0qmiesW383vsLdtQVyKtCNA9cjSoKCppTKPQVfKd2W8hbVo5ZhNJKDqeM7BOcvNoKJOjpHh4Js9g==}
-
   i18next@25.6.0:
     resolution: {integrity: sha512-tTn8fLrwBYtnclpL5aPXK/tAYBLWVvoHM1zdfXoRNLcI+RvtMsoZRV98ePlaW3khHYKuNh/Q65W/+NVFUeIwVw==}
     peerDependencies:
@@ -4013,8 +4007,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.1.0
       ckeditor5: 47.1.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-list@47.1.0':
     dependencies:
@@ -6035,10 +6027,6 @@ snapshots:
   highlight.js@11.11.1: {}
 
   html-void-elements@3.0.0: {}
-
-  i18next-browser-languagedetector@8.2.0:
-    dependencies:
-      '@babel/runtime': 7.28.4
 
   i18next@25.6.0(typescript@5.9.3):
     dependencies:

@@ -1,34 +1,19 @@
 // SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
 //
 // SPDX-License-Identifier: MPL-2.0
 
 import i18next from 'i18next';
 import en from './locales/en.json';
-import de from './locales/de.json';
-import fr from './locales/fr.json';
-import tr from './locales/tr.json';
-import id from './locales/id.json';
-import ca from './locales/ca.json';
-import it from './locales/it.json';
-import es from './locales/es.json';
-import nb_no from './locales/nb_NO.json';
-import zh_Hant from './locales/zh_Hant.json';
-import pl from './locales/pl.json';
-import pt from './locales/pt.json';
-import uk from './locales/uk.json';
-import nl from './locales/nl.json';
-import hu from './locales/hu.json';
-import vi from './locales/vi.json';
-import ta from './locales/ta.json';
-import pt_BR from './locales/pt_BR.json';
-import ja from './locales/ja.json';
-import he from './locales/he.json';
-import prs from './locales/prs.json';
-import ps from './locales/ps.json';
-import LanguageDetector from 'i18next-browser-languagedetector';
 
 import type { i18n } from 'i18next';
 
+// frogQuiz ships English only. The 33 other locale files inherited from upstream
+// were stale -- new keys were never translated into them, so they resolved through
+// fallbackLng anyway -- and the browser language detector could flip the whole UI
+// into one of them off an Accept-Language header nobody set deliberately.
+// The $t() indirection stays so the strings remain in one file rather than
+// scattered across 44 routes; adding a locale back means a JSON file and a line here.
 export class I18nService {
 	i18n: i18n;
 
@@ -36,14 +21,14 @@ export class I18nService {
 		this.i18n = i18next;
 		this.initialize();
 	}
+
 	t(key: string, replacements?: Record<string, unknown>): string {
 		return this.i18n.t(key, replacements);
 	}
 
-	// Initializing i18n
 	initialize(): void {
-		this.i18n.use(LanguageDetector).init({
-			// lng: INITIAL_LANGUAGE,
+		this.i18n.init({
+			lng: 'en',
 			compatibilityJSON: 'v4',
 			fallbackLng: 'en',
 			debug: false,
@@ -52,40 +37,8 @@ export class I18nService {
 				escapeValue: false
 			},
 			returnEmptyString: false,
-			simplifyPluralSuffix: true,
-			detection: {
-				order: ['querystring', 'cookie', 'localStorage', 'navigator'],
-				lookupQuerystring: 'lng',
-				lookupLocalStorage: 'language',
-				lookupSessionStorage: true
-			}
+			simplifyPluralSuffix: true
 		});
 		this.i18n.addResourceBundle('en', 'translation', en);
-		this.i18n.addResourceBundle('de', 'translation', de);
-		this.i18n.addResourceBundle('fr', 'translation', fr);
-		this.i18n.addResourceBundle('tr', 'translation', tr);
-		this.i18n.addResourceBundle('id', 'translation', id);
-		this.i18n.addResourceBundle('it', 'translation', it);
-		this.i18n.addResourceBundle('ca', 'translation', ca);
-		this.i18n.addResourceBundle('es', 'translation', es);
-		this.i18n.addResourceBundle('nb_NO', 'translation', nb_no);
-		this.i18n.addResourceBundle('zh_Hant', 'translation', zh_Hant);
-		this.i18n.addResourceBundle('zh_Hant', 'translation', zh_Hant);
-		this.i18n.addResourceBundle('pl', 'translation', pl);
-		this.i18n.addResourceBundle('pt', 'translation', pt);
-		this.i18n.addResourceBundle('uk', 'translation', uk);
-		this.i18n.addResourceBundle('nl', 'translation', nl);
-		this.i18n.addResourceBundle('hu', 'translation', hu);
-		this.i18n.addResourceBundle('vi', 'translation', vi);
-		this.i18n.addResourceBundle('ta', 'translation', ta);
-		this.i18n.addResourceBundle('pt_BR', 'translation', pt_BR);
-		this.i18n.addResourceBundle('ja', 'translation', ja);
-		this.i18n.addResourceBundle('he', 'translation', he);
-		this.i18n.addResourceBundle('prs', 'translation', prs);
-		this.i18n.addResourceBundle('ps', 'translation', ps);
-	}
-
-	changeLanguage(language: string): void {
-		this.i18n.changeLanguage(language);
 	}
 }
