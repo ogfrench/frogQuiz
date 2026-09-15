@@ -32,15 +32,15 @@ Two rules govern every cut here.
 
 The data model has seven question types. The editor offers two.
 
-| Type | In the picker | Renderer | Scoring | Existing quizzes |
-| --- | --- | --- | --- | --- |
-| `ABCD` | **yes** | kept | kept | play |
-| `CHECK` (select several) | **yes** | kept | kept | play |
-| `RANGE` (guess a number on a slider) | no | kept | kept | play |
-| `TEXT` (type the answer) | no | kept | kept | play |
-| `VOTING` (poll, no right answer) | no | kept | kept | play |
-| `ORDER` (put in sequence) | no | kept | kept | play |
-| `SLIDE` (content, not a question) | no | kept | n/a | play |
+| Type                                 | In the picker | Renderer | Scoring | Existing quizzes |
+| ------------------------------------ | ------------- | -------- | ------- | ---------------- |
+| `ABCD`                               | **yes**       | kept     | kept    | play             |
+| `CHECK` (select several)             | **yes**       | kept     | kept    | play             |
+| `RANGE` (guess a number on a slider) | no            | kept     | kept    | play             |
+| `TEXT` (type the answer)             | no            | kept     | kept    | play             |
+| `VOTING` (poll, no right answer)     | no            | kept     | kept    | play             |
+| `ORDER` (put in sequence)            | no            | kept     | kept    | play             |
+| `SLIDE` (content, not a question)    | no            | kept     | n/a     | play             |
 
 **The cut is the picker only.** `QuizQuestionType` still has all seven members,
 every renderer and every scoring branch is still there, and nothing validates a
@@ -178,15 +178,15 @@ Gonçalo's PR #5 hid a set of features from the UI. Hiding a link is not the sam
 closing an endpoint, so each was re-checked. The picture is better than "routes left
 live" suggests:
 
-| Feature | UI | API | Verdict |
-| --- | --- | --- | --- |
-| Moderation | `/moderation` 404s in its loader | live, but every endpoint requires `get_current_moderator`, which checks `settings.mods` — **empty by default, so nobody passes it** | real authorisation, nothing to do |
-| API keys | settings section removed | live, requires the calling user; `DELETE` was scoped to the caller in PR #9 (it used to look a key up by value alone) | user-scoped, safe |
-| QuizTivity | route 404s | router unmounted behind flag | closed |
-| Box controller | route 404s | router unmounted behind flag | closed |
-| WebAuthn / passkeys | removed from the login method chooser and settings | router still mounted; `login.py` still offers `PASSKEY` to a user who has a credential | **open** — nobody can register a new passkey through the UI, and password login still works, so there is no lockout; but the surface is live and undesigned |
-| Ratings | removed from the quiz view page | rating endpoints still live | **open** — low risk, user-scoped |
-| Docs pages | index trimmed (tos, privacy, self-host, roadmap, develop) | n/a | the pages still exist at their URLs; the ToS in particular is linked from registration |
+| Feature             | UI                                                        | API                                                                                                                                 | Verdict                                                                                                                                                     |
+| ------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Moderation          | `/moderation` 404s in its loader                          | live, but every endpoint requires `get_current_moderator`, which checks `settings.mods` — **empty by default, so nobody passes it** | real authorisation, nothing to do                                                                                                                           |
+| API keys            | settings section removed                                  | live, requires the calling user; `DELETE` was scoped to the caller in PR #9 (it used to look a key up by value alone)               | user-scoped, safe                                                                                                                                           |
+| QuizTivity          | route 404s                                                | router unmounted behind flag                                                                                                        | closed                                                                                                                                                      |
+| Box controller      | route 404s                                                | router unmounted behind flag                                                                                                        | closed                                                                                                                                                      |
+| WebAuthn / passkeys | removed from the login method chooser and settings        | router still mounted; `login.py` still offers `PASSKEY` to a user who has a credential                                              | **open** — nobody can register a new passkey through the UI, and password login still works, so there is no lockout; but the surface is live and undesigned |
+| Ratings             | removed from the quiz view page                           | rating endpoints still live                                                                                                         | **open** — low risk, user-scoped                                                                                                                            |
+| Docs pages          | index trimmed (tos, privacy, self-host, roadmap, develop) | n/a                                                                                                                                 | the pages still exist at their URLs; the ToS in particular is linked from registration                                                                      |
 
 The two **open** rows are not urgent and not security holes. They are surface that
 exists, is reachable by URL, and has not been designed or tested since the redesign.
@@ -225,13 +225,13 @@ one cut on this page that deleted files, so it deserves the fuller argument.
 
 ### What was there
 
-| | |
-| --- | --- |
-| Locale files on disk | 34 (`frontend/src/lib/i18n/locales/*.json`), 14,266 lines |
-| Actually registered in `i18n-service.ts` | 23 |
-| Loaded by nothing at all | 11 |
-| Language picker | A flag-and-name `<select>` in the footer, offering 22 |
-| Detection | `i18next-browser-languagedetector`, ordered querystring → cookie → localStorage → **navigator** |
+|                                          |                                                                                                 |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Locale files on disk                     | 34 (`frontend/src/lib/i18n/locales/*.json`), 14,266 lines                                       |
+| Actually registered in `i18n-service.ts` | 23                                                                                              |
+| Loaded by nothing at all                 | 11                                                                                              |
+| Language picker                          | A flag-and-name `<select>` in the footer, offering 22                                           |
+| Detection                                | `i18next-browser-languagedetector`, ordered querystring → cookie → localStorage → **navigator** |
 
 ### Why it was cut
 

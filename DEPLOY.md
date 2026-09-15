@@ -15,10 +15,10 @@ so gameplay traffic (`/socket.io/*`) cannot pass through Netlify at all.
 
 Two supported layouts:
 
-| Layout | Frontend | Backend |
-| --- | --- | --- |
-| Single host (simplest) | container from `docker-compose.yml` | same compose stack |
-| Split | Netlify | container host (VPS, Fly, Railway) running the same compose stack |
+| Layout                 | Frontend                            | Backend                                                           |
+| ---------------------- | ----------------------------------- | ----------------------------------------------------------------- |
+| Single host (simplest) | container from `docker-compose.yml` | same compose stack                                                |
+| Split                  | Netlify                             | container host (VPS, Fly, Railway) running the same compose stack |
 
 ## Option A — everything on one host
 
@@ -62,10 +62,10 @@ Render's free web services sleep after inactivity, which drops live game sockets
 
 What is actually free:
 
-| Piece | Free option | Limit |
-| --- | --- | --- |
-| Frontend | Netlify | 100 GB bandwidth/month |
-| Postgres | Neon | 0.5 GB storage, autosuspend |
+| Piece                              | Free option                 | Limit                                  |
+| ---------------------------------- | --------------------------- | -------------------------------------- |
+| Frontend                           | Netlify                     | 100 GB bandwidth/month                 |
+| Postgres                           | Neon                        | 0.5 GB storage, autosuspend            |
 | API + worker + Redis + Meilisearch | Oracle Cloud Always Free VM | 4 ARM cores / 24 GB RAM, no time limit |
 
 Oracle's Always Free ARM instance runs this whole compose stack with room to spare, and

@@ -19,16 +19,16 @@ overflow at any width.** Anything less is in one of the other tables.
 
 ## Done
 
-| Surface | Route | What changed |
-| --- | --- | --- |
-| Host lobby | `/admin` | One centred composition: giant join code, QR beside it, animated player chips, kick as a labelled button |
-| Host question | `/admin` | Rebuilt; was the only game surface missing `fq-stage`, so it sat flush against the top of the projector with the bottom half empty |
-| Per-question results | `/admin` | Horizontal bars replacing vertical ones whose 45°-rotated labels collided; correct row marked with a tick and a ring |
-| Podium | `/admin` | Three-place podium building 3rd→2nd→1st, winner highlighted, confetti timed to their arrival; viewport-scaled blocks |
-| Player join and answer | `/play` | Answer tiles with shape, colour and pressable body; "you're in" confirmation; locked-in and time's-up states |
-| Editor | `/edit` | Canvas shows the real game tiles; question navigation in the shell at every width; measure-capped canvas |
-| Dashboard | `/dashboard` | Contained list, Play as the one prominent action, public/private badge, question count, real empty state |
-| Login | `/account/login` | Both steps on shadcn Label/Input/Button |
+| Surface                | Route            | What changed                                                                                                                       |
+| ---------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Host lobby             | `/admin`         | One centred composition: giant join code, QR beside it, animated player chips, kick as a labelled button                           |
+| Host question          | `/admin`         | Rebuilt; was the only game surface missing `fq-stage`, so it sat flush against the top of the projector with the bottom half empty |
+| Per-question results   | `/admin`         | Horizontal bars replacing vertical ones whose 45°-rotated labels collided; correct row marked with a tick and a ring               |
+| Podium                 | `/admin`         | Three-place podium building 3rd→2nd→1st, winner highlighted, confetti timed to their arrival; viewport-scaled blocks               |
+| Player join and answer | `/play`          | Answer tiles with shape, colour and pressable body; "you're in" confirmation; locked-in and time's-up states                       |
+| Editor                 | `/edit`          | Canvas shows the real game tiles; question navigation in the shell at every width; measure-capped canvas                           |
+| Dashboard              | `/dashboard`     | Contained list, Play as the one prominent action, public/private badge, question count, real empty state                           |
+| Login                  | `/account/login` | Both steps on shadcn Label/Input/Button                                                                                            |
 
 | Landing | `/` | Verified clean at both widths and themes |
 | Register | `/account/register` | Rebuilt on the same Card/Label/Input/Button primitives as login |
@@ -65,12 +65,12 @@ verified. `/view/[quiz_id]` and `/edit/files` were reviewed and needed no change
 All of these 404 behind a flag or a route guard. See [`mvp-scope.md`](mvp-scope.md)
 for how to turn any of them back on.
 
-| Surface | Route |
-| --- | --- |
-| QuizTivity | `/quiztivity/create`, `/quiztivity/edit`, `/quiztivity/play` |
-| Box controller | `/controller`, `/account/controllers/*` (4 routes) |
-| TOTP and backup codes | `/account/settings/security` |
-| Moderation | `/moderation` — 404s in its loader; its API is separately gated on the `mods` allowlist, which is empty |
+| Surface               | Route                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------- |
+| QuizTivity            | `/quiztivity/create`, `/quiztivity/edit`, `/quiztivity/play`                                            |
+| Box controller        | `/controller`, `/account/controllers/*` (4 routes)                                                      |
+| TOTP and backup codes | `/account/settings/security`                                                                            |
+| Moderation            | `/moderation` — 404s in its loader; its API is separately gated on the `mods` allowlist, which is empty |
 
 `/remote` and `/practice` are alternate play modes nobody on the team uses. They
 are not flag-gated and are not redesigned. Deciding what to do with them is open.
@@ -79,13 +79,13 @@ are not flag-gated and are not redesigned. Deciding what to do with them is open
 
 ## Skipped, deliberately, while still live
 
-| Surface | Route | Why |
-| --- | --- | --- |
-| Explore, Search | `/explore`, `/search` | `CLAUDE.md` is explicit that removing either is a joint François/Gonçalo decision and never Claude's. Both are live and unchanged. Redesigning them would be arguing for keeping them, which is not a call to make in a frontend branch |
-| Docs | `/docs` and 7 pages under it | Layout untouched, but the copy was not left alone: all eight carried upstream's "the open-source quiz-application" description and two described a different page entirely, two told you to `git clone mawoka-myblock/ClassQuiz`, and the attribution page credited nine named people for work on frogQuiz they never did. See the identity section below |
-| Public user page | `/user/[user_id]` | Nobody links to it internally |
-| OAuth error | `/account/oauth-error` | Layout untouched — OAuth renders nothing today, by config. Its "open an issue" link pointed at upstream's tracker and now points at ours |
-| Video editor | `/edit/videos` | Reachable only from the uploader's video path |
+| Surface          | Route                        | Why                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Explore, Search  | `/explore`, `/search`        | `CLAUDE.md` is explicit that removing either is a joint François/Gonçalo decision and never Claude's. Both are live and unchanged. Redesigning them would be arguing for keeping them, which is not a call to make in a frontend branch                                                                                                                   |
+| Docs             | `/docs` and 7 pages under it | Layout untouched, but the copy was not left alone: all eight carried upstream's "the open-source quiz-application" description and two described a different page entirely, two told you to `git clone mawoka-myblock/ClassQuiz`, and the attribution page credited nine named people for work on frogQuiz they never did. See the identity section below |
+| Public user page | `/user/[user_id]`            | Nobody links to it internally                                                                                                                                                                                                                                                                                                                             |
+| OAuth error      | `/account/oauth-error`       | Layout untouched — OAuth renders nothing today, by config. Its "open an issue" link pointed at upstream's tracker and now points at ours                                                                                                                                                                                                                  |
+| Video editor     | `/edit/videos`               | Reachable only from the uploader's video path                                                                                                                                                                                                                                                                                                             |
 
 ---
 
@@ -96,16 +96,16 @@ this was inherited from upstream and had been through a global ClassQuiz→frogQ
 find-replace, which in two places turned other people's work into claims about this
 project.
 
-| Thing | Was | Now |
-| --- | --- | --- |
-| Open Graph card | Upstream's image: says "ClassQuiz", carries "By Mawoka" and his avatar | Regenerated from the app's own mark. `og:image` was also *root-relative*, which crawlers will not resolve, so the card rendered imageless even after the image was right — both image tags are built from the request origin now |
-| Favicon set | "CQ" in upstream's chevrons | Regenerated. `favicon.ico` was a PNG under an `.ico` extension; it is a real ICO wrapping the PNG |
-| `twitter:image` | Pointed at `opengraph-home.webp`, which was a PNG | Deleted the mislabelled file; both tags use the 1200×630 JPEG |
-| Font | Never loaded — seven `@font-face` rules, seven 404s | All seven Inter subsets emit; `document.fonts.check` passes |
-| Tagline | Two different ones at once: "Live quizzes for the room you are standing in" and "an internal quiz tool for running interactive quizzes" | One line in `app.html`, the manifest and `en.json`: "The free Kahoot alternative. Host interactive quizzes right from your browser." |
-| `testimonials.svelte` | A real person, a real tweet URL, and quote text edited so an endorsement of ClassQuiz read as one of frogQuiz | Deleted. Nothing imported it, but it was one line from rendering |
-| `/docs/attribution` | Upstream's contributor list with the same find-replace, so nine named people were credited for contributing to and translating frogQuiz | Rewritten to say the truth: frogQuiz is a fork, these people built the thing it is a fork of, their translations live upstream |
-| Clone URLs in `/docs/self-host` and `/docs/develop` | `git clone mawoka-myblock/ClassQuiz` | `ogfrench/frogQuiz` |
+| Thing                                               | Was                                                                                                                                     | Now                                                                                                                                                                                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Open Graph card                                     | Upstream's image: says "ClassQuiz", carries "By Mawoka" and his avatar                                                                  | Regenerated from the app's own mark. `og:image` was also _root-relative_, which crawlers will not resolve, so the card rendered imageless even after the image was right — both image tags are built from the request origin now |
+| Favicon set                                         | "CQ" in upstream's chevrons                                                                                                             | Regenerated. `favicon.ico` was a PNG under an `.ico` extension; it is a real ICO wrapping the PNG                                                                                                                                |
+| `twitter:image`                                     | Pointed at `opengraph-home.webp`, which was a PNG                                                                                       | Deleted the mislabelled file; both tags use the 1200×630 JPEG                                                                                                                                                                    |
+| Font                                                | Never loaded — seven `@font-face` rules, seven 404s                                                                                     | All seven Inter subsets emit; `document.fonts.check` passes                                                                                                                                                                      |
+| Tagline                                             | Two different ones at once: "Live quizzes for the room you are standing in" and "an internal quiz tool for running interactive quizzes" | One line in `app.html`, the manifest and `en.json`: "The free Kahoot alternative. Host interactive quizzes right from your browser."                                                                                             |
+| `testimonials.svelte`                               | A real person, a real tweet URL, and quote text edited so an endorsement of ClassQuiz read as one of frogQuiz                           | Deleted. Nothing imported it, but it was one line from rendering                                                                                                                                                                 |
+| `/docs/attribution`                                 | Upstream's contributor list with the same find-replace, so nine named people were credited for contributing to and translating frogQuiz | Rewritten to say the truth: frogQuiz is a fork, these people built the thing it is a fork of, their translations live upstream                                                                                                   |
+| Clone URLs in `/docs/self-host` and `/docs/develop` | `git clone mawoka-myblock/ClassQuiz`                                                                                                    | `ogfrench/frogQuiz`                                                                                                                                                                                                              |
 
 One upstream URL is deliberately kept: the box controller fetching its firmware
 releases from `mawoka-myblock/ClassQuizController`. That is upstream's hardware and

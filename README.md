@@ -114,15 +114,15 @@ docker compose exec api python import_to_meili.py
 
 This is a monorepo:
 
-| Path | What lives there |
-| --- | --- |
-| [`frogquiz/`](frogquiz/) | The FastAPI backend, socket.io server and arq worker |
-| [`frontend/`](frontend/) | The SvelteKit frontend |
-| [`migrations/`](migrations/) | Alembic database migrations |
-| `Pipfile` | The backend project, at the repository root |
-| [`docs/mvp-scope.md`](docs/mvp-scope.md) | What the MVP includes, what was cut, and how to restore it |
-| [`docs/redesign-status.md`](docs/redesign-status.md) | Which surfaces have been redesigned, which have not, and why |
-| [`CLAUDE.md`](CLAUDE.md) | Conventions: changelog discipline, licence headers, feature triage, UI baseline |
+| Path                                                 | What lives there                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`frogquiz/`](frogquiz/)                             | The FastAPI backend, socket.io server and arq worker                            |
+| [`frontend/`](frontend/)                             | The SvelteKit frontend                                                          |
+| [`migrations/`](migrations/)                         | Alembic database migrations                                                     |
+| `Pipfile`                                            | The backend project, at the repository root                                     |
+| [`docs/mvp-scope.md`](docs/mvp-scope.md)             | What the MVP includes, what was cut, and how to restore it                      |
+| [`docs/redesign-status.md`](docs/redesign-status.md) | Which surfaces have been redesigned, which have not, and why                    |
+| [`CLAUDE.md`](CLAUDE.md)                             | Conventions: changelog discipline, licence headers, feature triage, UI baseline |
 
 ### Tech stack
 

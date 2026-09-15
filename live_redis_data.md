@@ -12,19 +12,19 @@ Contains only the sid (socket.io session-id) of {PLAYER_NAME}
 
 Stores the answer per question which the players submitted
 
-model: _AnswerDataList
+model: \_AnswerDataList
 
 example-data:
 
 ```json
 [
-    {
-        "username": "Mawoka",
-        "answer": "a",
-        "right": false,
-        "time_taken": 4994.246999999999,
-        "score": 0
-    }
+  {
+    "username": "Mawoka",
+    "answer": "a",
+    "right": false,
+    "time_taken": 4994.246999999999,
+    "score": 0
+  }
 ]
 ```
 
@@ -38,40 +38,40 @@ example:
 
 ```json
 {
-    "quiz_id": "be7089c6-ec97-4da9-bb3e-1aa9b67fb939",
-    "description": "asddsadas",
-    "user_id": "7cbabbc5-fdbb-4d8b-9a89-7005dfdb6f33",
-    "title": "Test",
-    "questions": [
+  "quiz_id": "be7089c6-ec97-4da9-bb3e-1aa9b67fb939",
+  "description": "asddsadas",
+  "user_id": "7cbabbc5-fdbb-4d8b-9a89-7005dfdb6f33",
+  "title": "Test",
+  "questions": [
+    {
+      "question": "sdadsadas",
+      "time": "20",
+      "type": "ABCD",
+      "answers": [
         {
-            "question": "sdadsadas",
-            "time": "20",
-            "type": "ABCD",
-            "answers": [
-                {
-                    "right": false,
-                    "answer": "a",
-                    "color": null
-                },
-                {
-                    "right": true,
-                    "answer": "b",
-                    "color": "null"
-                }
-            ],
-            "image": null
+          "right": false,
+          "answer": "a",
+          "color": null
+        },
+        {
+          "right": true,
+          "answer": "b",
+          "color": "null"
         }
-    ],
-    "game_id": "7b572f2b-cf7b-47a9-ac0f-446dac22eab0",
-    "game_pin": "623490",
-    "started": true,
-    "captcha_enabled": false,
-    "cover_image": null,
-    "game_mode": "kahoot",
-    "current_question": 0,
-    "background_color": null,
-    "background_image": null,
-    "custom_field": null
+      ],
+      "image": null
+    }
+  ],
+  "game_id": "7b572f2b-cf7b-47a9-ac0f-446dac22eab0",
+  "game_pin": "623490",
+  "started": true,
+  "captcha_enabled": false,
+  "cover_image": null,
+  "game_mode": "kahoot",
+  "current_question": 0,
+  "background_color": null,
+  "background_image": null,
+  "custom_field": null
 }
 ```
 
@@ -93,9 +93,9 @@ example:
 
 ```json
 {
-    "admin": "qo1yt-rBG4HyX0YGAAAB",
-    "game_id": "7b572f2b-cf7b-47a9-ac0f-446dac22eab0",
-    "answers": []
+  "admin": "qo1yt-rBG4HyX0YGAAAB",
+  "game_id": "7b572f2b-cf7b-47a9-ac0f-446dac22eab0",
+  "answers": []
 }
 ```
 
@@ -107,8 +107,8 @@ entry:
 
 ```json
 {
-    "username": "Mawoka",
-    "sid": "VSprqk7xGKaH5QbwAAAD"
+  "username": "Mawoka",
+  "sid": "VSprqk7xGKaH5QbwAAAD"
 }
 ```
 
@@ -126,7 +126,6 @@ Returns the Game-pin
 
 Holds the custom-field data, but is only set if the custom-field is enabled.
 
-
 data: `{PLAYER_NAME} = {CUSTOM_FIELD_VALUE}`
 
 ## game:cqb:code:{cqc_code} [string]
@@ -136,11 +135,13 @@ data: `{PLAYER_NAME} = {CUSTOM_FIELD_VALUE}`
 Only holds the game-pin
 
 ## game_in_lobby:{admin_user_id} [string]
+
 Set if game is waiting for players to join for the admin to enable remote control
 
 model: GameInLobby
 
 example:
+
 ```json
 {
   "game_pin": "1234543",
