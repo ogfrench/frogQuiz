@@ -138,6 +138,7 @@
     "docs": "Docs",
     "close": "Close",
     "save": "Save",
+    "retry": "Try again",
     "description": "Description",
     "image": "Image",
     "settings": "Settings",
@@ -269,7 +270,10 @@
     "show_questions": "Show questions",
     "hide_questions": "Hide questions",
     "move_question_left": "Move left",
-    "move_question_right": "Move right"
+    "move_question_right": "Move right",
+    "start_failed": "The editor could not be opened",
+    "start_failed_detail": "The server turned down the request to start an editing session. If this keeps happening, the quiz may no longer exist, or you may not have permission to edit it.",
+    "save_failed": "Could not save: {{detail}}"
   },
   "import_page": {
     "need_help": "Need help?",
