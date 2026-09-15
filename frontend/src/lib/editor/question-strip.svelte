@@ -5,6 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import { moveItem, selectionAfterMove } from '$lib/editor/reorder';
 	import type { EditorData } from '../quiz_types';
 	import { getLocalization } from '$lib/i18n';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
@@ -79,12 +80,10 @@ SPDX-License-Identifier: MPL-2.0
 			?.closest<HTMLElement>('[data-index]');
 		const to = over ? Number(over.dataset.index) : NaN;
 		if (Number.isNaN(to) || to === dragging) return;
-		const next = [...data.questions];
-		const [moved] = next.splice(dragging, 1);
-		next.splice(to, 0, moved);
-		data.questions = next;
+		// Same helper as the sidebar's drag, so the two reordering paths cannot drift.
+		selected_question = selectionAfterMove(selected_question, dragging, to);
+		data.questions = moveItem(data.questions, dragging, to);
 		dragging = to;
-		selected_question = to;
 	};
 
 	const on_pointer_up = () => {

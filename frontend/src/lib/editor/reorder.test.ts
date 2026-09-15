@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { describe, expect, it } from 'vitest';
+import { moveItem, selectionAfterMove } from './reorder';
 
 /**
  * Reordering exists in two shapes and they have to agree: a long-press drag on the
@@ -14,21 +15,14 @@ import { describe, expect, it } from 'vitest';
  * looks like their own mistake.
  */
 
-/** The drag: splice out, splice in. */
-const moveTo = <T>(list: T[], from: number, to: number): T[] => {
-	const next = [...list];
-	const [moved] = next.splice(from, 1);
-	next.splice(to, 0, moved);
-	return next;
-};
+// The drag is the shipped helper. The buttons step one place, which is the same
+// rearrangement as dragging onto the neighbouring slot -- asserted below.
+const moveTo = moveItem;
 
-/** The buttons: swap with a neighbour, refusing to fall off either end. */
 const step = <T>(list: T[], index: number, delta: number): { list: T[]; index: number } => {
 	const to = index + delta;
 	if (to < 0 || to >= list.length) return { list, index };
-	const next = [...list];
-	[next[index], next[to]] = [next[to], next[index]];
-	return { list: next, index: to };
+	return { list: moveItem(list, index, to), index: selectionAfterMove(index, index, to) };
 };
 
 const q = ['a', 'b', 'c', 'd'];
@@ -52,8 +46,8 @@ describe('drag to an arbitrary position', () => {
 	});
 });
 
-describe('stepping one place with the Move buttons', () => {
-	it('swaps with the neighbour and follows the question', () => {
+describe('stepping one place', () => {
+	it('trades with the neighbour and follows the question', () => {
 		expect(step(q, 1, -1)).toEqual({ list: ['b', 'a', 'c', 'd'], index: 0 });
 		expect(step(q, 1, 1)).toEqual({ list: ['a', 'c', 'b', 'd'], index: 2 });
 	});
@@ -67,5 +61,40 @@ describe('stepping one place with the Move buttons', () => {
 		// One step right is the same rearrangement as dragging onto the next slot.
 		expect(step(q, 1, 1).list).toEqual(moveTo(q, 1, 2));
 		expect(step(q, 2, -1).list).toEqual(moveTo(q, 2, 1));
+	});
+});
+
+describe('the selection follows the question that moved', () => {
+	it('travels with the dragged question', () => {
+		expect(selectionAfterMove(0, 0, 2)).toBe(2);
+		expect(selectionAfterMove(3, 3, 0)).toBe(0);
+	});
+
+	it('shifts the questions the move displaced', () => {
+		// Dragging 0 to 2 pulls 1 and 2 up one place each.
+		expect(selectionAfterMove(1, 0, 2)).toBe(0);
+		expect(selectionAfterMove(2, 0, 2)).toBe(1);
+		// Dragging 3 to 1 pushes 1 and 2 down one place each.
+		expect(selectionAfterMove(1, 3, 1)).toBe(2);
+		expect(selectionAfterMove(2, 3, 1)).toBe(3);
+	});
+
+	it('leaves questions outside the moved range alone', () => {
+		expect(selectionAfterMove(3, 0, 2)).toBe(3);
+		expect(selectionAfterMove(0, 1, 3)).toBe(0);
+		// -1 is the quiz-settings card, which is not a question and never moves.
+		expect(selectionAfterMove(-1, 0, 2)).toBe(-1);
+	});
+
+	it('keeps the selection pointing at the same question, whatever moves', () => {
+		const list = ['a', 'b', 'c', 'd'];
+		for (let from = 0; from < list.length; from++) {
+			for (let to = 0; to < list.length; to++) {
+				for (let sel = 0; sel < list.length; sel++) {
+					const moved = moveItem(list, from, to);
+					expect(moved[selectionAfterMove(sel, from, to)]).toBe(list[sel]);
+				}
+			}
+		}
 	});
 });

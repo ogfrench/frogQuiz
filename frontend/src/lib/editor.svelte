@@ -20,6 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Save from '@lucide/svelte/icons/save';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import { getAnonSecret, setAnonSecret } from '$lib/anon_quiz';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 
 	const { t } = getLocalization();
 
@@ -200,11 +201,11 @@ SPDX-License-Identifier: MPL-2.0
 							</span>
 						</p>
 					{/if}
-					<Button
-						type="submit"
-						class={schemaInvalid || save_error ? 'ml-3' : 'ml-auto'}
-						disabled={schemaInvalid}
-					>
+					<!-- The editor hides the navbar, which is where the theme switch used
+					     to live and only live -- so the one screen people sit in longest
+					     was the one with no way to change it. -->
+					<ThemeToggle class={schemaInvalid || save_error ? 'ml-3' : 'ml-auto'} />
+					<Button type="submit" disabled={schemaInvalid}>
 						<Save />
 						{$t('words.save')}
 					</Button>

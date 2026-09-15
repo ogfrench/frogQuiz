@@ -13,10 +13,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { createTippy } from 'svelte-tippy';
 	import { getLocalization } from '$lib/i18n';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
+	import { moveItem, selectionAfterMove } from '$lib/editor/reorder';
 	import AddNewQuestionPopup from '$lib/editor/AddNewQuestionPopup.svelte';
-	import { fade } from 'svelte/transition';
 	import { Button } from '$lib/components/ui/button';
-	import ArrowUpDown from '@lucide/svelte/icons/arrow-up-down';
+	import GripVertical from '@lucide/svelte/icons/grip-vertical';
 	import Settings2 from '@lucide/svelte/icons/settings-2';
 	import Check from '@lucide/svelte/icons/check';
 	import Globe from '@lucide/svelte/icons/globe';
@@ -41,7 +41,17 @@ SPDX-License-Identifier: MPL-2.0
 		collapsed = $bindable(false)
 	}: Props = $props();
 
-	let reorder_mode = $state(false);
+	// Reordering was a mode: a toolbar toggle that laid two invisible half-card hit
+	// areas over every question, each holding an unsized <svg> that stretched to fill
+	// its grid cell -- so turning it on painted a pair of chevrons the size of the card
+	// over the content you were trying to reorder. It was also unreachable by keyboard:
+	// the hit areas were `role="button"` divs with no tabindex.
+	//
+	// Dragging replaces it, matching the long-press drag the mobile strip already has.
+	// The grip is a real button, so Arrow keys move the question without a pointer at
+	// all, which is the single-pointer alternative WCAG 2.5.7 asks for.
+	let drag_from: number | null = $state(null);
+	let drag_over: number | null = $state(null);
 
 	const tippy = createTippy({
 		arrow: true,
@@ -52,18 +62,33 @@ SPDX-License-Identifier: MPL-2.0
 	let propertyCard = $state();
 	let add_new_question_popup_open = $state(false);
 
-	const swapArrayElements = (arr, a: number, b: number) => {
-		let _arr = [...arr];
-		let temp = _arr[a];
-		_arr[a] = _arr[b];
-		_arr[b] = temp;
-		return _arr;
+	const moveQuestion = (from: number, to: number) => {
+		if (to < 0 || to >= data.questions.length || from === to) {
+			return;
+		}
+		data.questions = moveItem(data.questions, from, to);
+		selected_question = selectionAfterMove(selected_question, from, to);
+	};
+
+	const on_grip_keydown = (e: KeyboardEvent, index: number) => {
+		const delta = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+		if (delta === 0) {
+			return;
+		}
+		e.preventDefault();
+		e.stopPropagation();
+		moveQuestion(index, index + delta);
+		// Keep the grip under the finger: after the move, focus the one that travelled.
+		const target = e.currentTarget as HTMLElement;
+		requestAnimationFrame(() =>
+			target
+				.closest('[data-question-card]')
+				?.querySelector<HTMLElement>('[data-grip]')
+				?.focus()
+		);
 	};
 
 	const setSelectedQuestion = (index: number): void => {
-		if (reorder_mode) {
-			return;
-		}
 		selected_question = index;
 		if (index === -1) {
 			propertyCard.scrollIntoView({
@@ -94,18 +119,13 @@ SPDX-License-Identifier: MPL-2.0
 		{collapsed ? 'w-12' : 'w-64 xl:w-72'}"
 >
 	<div class="border-border flex h-14 shrink-0 items-center gap-2 border-b px-2">
-		<Button
-			class="min-w-0 flex-1 {collapsed ? 'hidden' : ''}"
-			type="button"
-			variant={reorder_mode ? 'default' : 'outline'}
-			size="sm"
-			onclick={() => (reorder_mode = !reorder_mode)}
+		<p
+			class="text-muted-foreground min-w-0 flex-1 truncate px-1 text-xs font-medium {collapsed
+				? 'hidden'
+				: ''}"
 		>
-			<ArrowUpDown />
-			{#if reorder_mode}{$t('editor.disable_reorder')}{:else}{$t(
-					'editor.enable_reorder'
-				)}{/if}
-		</Button>
+			{$t('editor.questions_count', { count: data.questions.length })}
+		</p>
 		<Button
 			type="button"
 			variant="ghost"
@@ -180,80 +200,41 @@ SPDX-License-Identifier: MPL-2.0
 		</div>
 		{#each data.questions as question, index}
 			<div
+				data-question-card
 				class="border-border bg-card relative mb-3 rounded-lg border p-2 transition hover:cursor-pointer"
 				class:ring-2={index === selected_question}
 				class:ring-primary={index === selected_question}
+				class:opacity-40={drag_from === index}
+				ondragover={(e) => {
+					if (drag_from === null) return;
+					e.preventDefault();
+					drag_over = index;
+				}}
+				ondragleave={() => {
+					if (drag_over === index) drag_over = null;
+				}}
+				ondrop={(e) => {
+					if (drag_from === null) return;
+					e.preventDefault();
+					moveQuestion(drag_from, index);
+					drag_from = null;
+					drag_over = null;
+				}}
 				onclick={() => {
 					setSelectedQuestion(index);
 				}}
 				bind:this={arr_of_cards[index]}
 			>
-				{#if reorder_mode}
+				<!-- A real element, not a before:/after: variant: those need an explicit
+				     content-[''] to generate a box at all, so the indicator was there in
+				     the class list and invisible on screen. -->
+				{#if drag_over === index && drag_from !== null && drag_from !== index}
 					<div
-						transition:fade|global={{ duration: 90 }}
-						class="absolute z-10 grid grid-cols-2 bg-transparent w-full rounded-sm h-full"
-					>
-						<!-- Div is used, since it just put me on the dashboard when using button elements... Idk why and I hate it-->
-						<div
-							class="h-full"
-							role="button"
-							aria-label="Move card up"
-							class:opacity-50={index === 0}
-							class:pointer-events-none={index === 0}
-							onclick={() =>
-								(data.questions = swapArrayElements(
-									data.questions,
-									index,
-									index - 1
-								))}
-						>
-							<!-- heroicons/new/ChevronUp --><svg
-								data-slot="icon"
-								aria-hidden="true"
-								fill="none"
-								stroke-width="1.5"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									d="m4.5 15.75 7.5-7.5 7.5 7.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</div>
-						<div
-							class="h-full"
-							role="button"
-							aria-label="Move card down"
-							class:opacity-50={index + 1 === data.questions.length}
-							class:pointer-events-none={index + 1 === data.questions.length}
-							onclick={() =>
-								(data.questions = swapArrayElements(
-									data.questions,
-									index,
-									index + 1
-								))}
-						>
-							<!-- heroicons/new/ChevronDown -->
-							<svg
-								data-slot="icon"
-								aria-hidden="true"
-								fill="none"
-								stroke-width="1.5"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									d="m19.5 8.25-7.5 7.5-7.5-7.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</div>
-					</div>
+						class="bg-primary pointer-events-none absolute inset-x-0 h-0.5 rounded-full"
+						class:-top-1.5={drag_from > index}
+						class:-bottom-1.5={drag_from < index}
+						aria-hidden="true"
+					></div>
 				{/if}
 				<button
 					class="border-border bg-card text-muted-foreground hover:text-destructive focus-visible:ring-ring absolute -top-2 -right-2 rounded-full border p-1 shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
@@ -276,6 +257,28 @@ SPDX-License-Identifier: MPL-2.0
 					}}
 					class="mb-2 flex items-center gap-2"
 				>
+					<!-- The whole card is draggable, but only the grip starts a drag, so
+					     selecting a question by clicking its title still works. -->
+					<button
+						data-grip
+						type="button"
+						draggable="true"
+						class="text-muted-foreground hover:text-foreground focus-visible:ring-ring -ml-1 shrink-0 cursor-grab rounded-sm p-0.5 transition-colors focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing"
+						aria-label={$t('editor.reorder_grip', { n: index + 1 })}
+						onclick={(e) => e.stopPropagation()}
+						onkeydown={(e) => on_grip_keydown(e, index)}
+						ondragstart={(e) => {
+							drag_from = index;
+							e.dataTransfer?.setData('text/plain', String(index));
+							if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+						}}
+						ondragend={() => {
+							drag_from = null;
+							drag_over = null;
+						}}
+					>
+						<GripVertical class="size-4" aria-hidden="true" />
+					</button>
 					<span class="text-muted-foreground w-4 shrink-0 text-xs tabular-nums"
 						>{index + 1}</span
 					>

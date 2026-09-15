@@ -8,23 +8,14 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
 	import { signedIn, pathname } from '$lib/stores';
-	import { createTippy } from 'svelte-tippy';
-	import { browser } from '$app/environment';
 	import { beforeNavigate } from '$app/navigation';
 	import { slide } from 'svelte/transition';
 	import { registration_disabled } from './config';
 	import Wordmark from '$lib/components/Wordmark.svelte';
-	import Sun from '@lucide/svelte/icons/sun';
-	import Moon from '@lucide/svelte/icons/moon';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import Menu from '@lucide/svelte/icons/menu';
 	import X from '@lucide/svelte/icons/x';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
-
-	const tippy = createTippy({
-		arrow: true,
-		animation: 'perspective-subtle',
-		placement: 'bottom'
-	});
 
 	const { t } = getLocalization();
 
@@ -36,19 +27,6 @@ SPDX-License-Identifier: MPL-2.0
 	beforeNavigate(() => {
 		menuIsClosed = true; // Closes menu to let the user see the page beneath
 	});
-
-	let darkMode = $state(false);
-	if (browser) {
-		darkMode =
-			localStorage.theme === 'dark' ||
-			(!('theme' in localStorage) &&
-				window.matchMedia('(prefers-color-scheme: dark)').matches);
-	}
-
-	const switchDarkMode = () => {
-		!darkMode ? localStorage.setItem('theme', 'dark') : localStorage.setItem('theme', 'light');
-		window.location.reload();
-	};
 </script>
 
 <nav
@@ -96,29 +74,7 @@ SPDX-License-Identifier: MPL-2.0
 
 			<div class="fit-content flex items-center justify-center gap-2">
 				<div class="lg:flex items-center justify-center">
-					{#if darkMode}
-						<button
-							class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
-							onclick={() => {
-								switchDarkMode();
-							}}
-							use:tippy={{ content: 'Switch light mode on' }}
-							aria-label="Activate light mode"
-						>
-							<Sun class="size-5" aria-hidden="true" />
-						</button>
-					{:else}
-						<button
-							class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
-							onclick={() => {
-								switchDarkMode();
-							}}
-							aria-label="Activate darkmode"
-							use:tippy={{ content: 'Switch dark mode on' }}
-						>
-							<Moon class="size-5" aria-hidden="true" />
-						</button>
-					{/if}
+					<ThemeToggle />
 				</div>
 			</div>
 		</div>
@@ -139,31 +95,7 @@ SPDX-License-Identifier: MPL-2.0
 
 			<!-- Dark/Light mode toggle + Open/Close menu -->
 			<div class="flex items-center">
-				{#if darkMode}
-					<!-- Sun icon -->
-					<button
-						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
-						onclick={() => {
-							switchDarkMode();
-						}}
-						use:tippy={{ content: 'Switch light mode on' }}
-						aria-label="Activate light mode"
-					>
-						<Sun class="size-5" aria-hidden="true" />
-					</button>
-				{:else}
-					<!-- Moon icon -->
-					<button
-						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
-						onclick={() => {
-							switchDarkMode();
-						}}
-						aria-label="Activate darkmode"
-						use:tippy={{ content: 'Switch dark mode on' }}
-					>
-						<Moon class="size-5" aria-hidden="true" />
-					</button>
-				{/if}
+				<ThemeToggle />
 
 				{#if menuIsClosed}
 					<button

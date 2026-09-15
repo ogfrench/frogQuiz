@@ -4,6 +4,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Editor
+
+- Replaced the question-reorder mode with drag and drop. Reordering was a toolbar toggle that laid two invisible half-card hit areas over every question, each containing an `<svg>` with no size class -- so it stretched to fill its grid cell and turning reorder mode on painted a pair of chevrons the size of the card over the content you were trying to reorder. Each question now has a grip: drag it with a pointer, or focus it and use the arrow keys. The hit areas were `role="button"` divs with no `tabindex`, so the old control could not be reached by keyboard at all; the grip is a real button, which is the single-pointer alternative WCAG 2.5.7 asks for.
+- Reordering now moves rather than swaps. Dragging question 1 to the end used to trade it with the last one, scrambling everything in between.
+- The selection follows the question that moved. Both reorder paths now share `moveItem` and `selectionAfterMove` in `lib/editor/reorder.ts`, with a property test asserting the selected index still points at the same question after every possible move.
+- Added the theme switch to the editor header. It lived inside `navbar.svelte` as four near-identical copies, and the editor hides the navbar -- so the one screen people sit in longest had no way to change theme. It is now one `theme-toggle.svelte` used in both places, and switching toggles the class the boot script in `app.html` already looks for instead of calling `window.location.reload()`, which in the editor meant a round trip through the unsaved-changes prompt to change a colour.
+
+### i18n
+
+- Fixed every plural in the app. The locale file uses i18next's v3 `_plural` suffix, but `i18n-service.ts` initialises i18next 25 with `compatibilityJSON: 'v4'`, where counted lookups resolve to `_one` and `_other`. All fifteen were silently falling back to the singular, so the app said "3 question", "2 player", "5 point". Renamed to the v4 spelling, with the bare keys kept for the uncounted uses.
+
 ### Registration and recovery: edge cases
 
 - Addresses are stored case-folded, and looked up case-insensitively. `Foo@x.com` and `foo@x.com` were two accounts, and only one of them was reachable by the reset and resend lookups -- so the other got the same neutral "a link is on its way" as everyone else and no mail, with nothing to distinguish the two outcomes. Pre-existing rows are still matched by a second exact-case query.
