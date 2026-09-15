@@ -5,17 +5,11 @@ SPDX-FileCopyrightText: 2026 François & Gonçalo
 SPDX-License-Identifier: MPL-2.0
 -->
 
-<a href="https://github.com/ogfrench/frogQuiz/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/ogfrench/frogQuiz?style=for-the-badge"></a>
-<a href="https://github.com/ogfrench/frogQuiz/graphs/contributors"><img alt="GitHub contributors" src="https://img.shields.io/github/contributors/ogfrench/frogQuiz?color=green&style=for-the-badge"></a>
-<a href="https://github.com/ogfrench/frogQuiz/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc"><img alt="GitHub issues" src="https://img.shields.io/github/issues/ogfrench/frogQuiz?style=for-the-badge"></a>
-<a href="https://github.com/ogfrench/frogQuiz/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/ogfrench/frogQuiz?style=for-the-badge"></a>
-<a href="https://github.com/ogfrench/frogQuiz/actions/workflows/pytest.yml"><img alt="PyTest" src="https://img.shields.io/github/actions/workflow/status/ogfrench/frogQuiz/pytest.yml?branch=master&label=tests&style=for-the-badge"></a>
-
 <div align='center'>
     <h2 align='center'>frogQuiz</h2>
     <img src='logo.png' alt='frogQuiz Logo' height='100px' width='100px'>
     <p align='center'>
-        The open-source quiz-platform!
+        The free Kahoot alternative. Host interactive quizzes right from your browser.
         <br/>
         <a href='https://frogquiz.xyz/'><strong>Visit the website »</strong></a>
         <br />
@@ -101,6 +95,12 @@ It defaults to `podman`; set `CONTAINER_BIN=docker` if that is what you have.
 CI runs exactly this command against [.env.ci](.env.ci), a throwaway config
 holding no credentials.
 
+The frontend suite needs nothing running:
+
+```bash
+cd frontend && pnpm run test
+```
+
 ### Search index
 
 Meilisearch is populated from Postgres. After a fresh deployment, or if the
@@ -146,7 +146,6 @@ communication between server and client), [arq](https://arq-docs.helpmanual.io/)
 
 **Closed-source third parties** (optional)
 
-- [Mapbox](https://www.mapbox.com/) (maps)
 - [hCaptcha](https://www.hcaptcha.com/) (captcha)
 
 ## Credits
@@ -154,12 +153,10 @@ communication between server and client), [arq](https://arq-docs.helpmanual.io/)
 frogQuiz is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz),
 written by Marlon W (Mawoka), who deserves the credit for essentially all of
 the software here. The upstream project has its own hosted instance at
-[classquiz.de](https://classquiz.de), its own
-[docs](https://classquiz.de/docs), and welcomes support:
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/K3K3CK3ES)
-
-<a href="https://liberapay.com/Mawoka/donate"><img src="https://img.shields.io/liberapay/goal/Mawoka.svg?logo=liberapay"></a>
+[classquiz.de](https://classquiz.de) and its own
+[docs](https://classquiz.de/docs). If his work has been useful to you,
+support him at [Ko-fi](https://ko-fi.com/K3K3CK3ES) or
+[Liberapay](https://liberapay.com/Mawoka/donate).
 
 ## License
 
