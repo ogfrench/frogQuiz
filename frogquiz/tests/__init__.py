@@ -109,7 +109,15 @@ example_quiztivity = {
 # 'answer': 'Anwendungsprogramme', 'right': True}]}
 
 
-@pytest.fixture(scope="module")
+# Session-scoped, not module-scoped. Every TestClient context runs the app's
+# lifespan on its own event loop, but `app.state.database` is a module-level
+# global and `startup()` skips connecting when it is already marked connected.
+# So a module that inherited a database still flagged connected against a loop
+# that has since closed would reuse it and die on the first query with
+# "RuntimeError: Event loop is closed". One client for the whole run means one
+# lifespan, one loop, and no transition to get wrong -- which is also what the
+# `pytest.mark.order` marks dotted around the suite were working around.
+@pytest.fixture(scope="session")
 def test_client() -> Generator:
     with TestClient(fastapi_app) as testclient:
         yield testclient
