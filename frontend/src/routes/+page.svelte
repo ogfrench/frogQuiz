@@ -16,11 +16,20 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import { page } from '$app/state';
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
-	import WebPOpenGraph from '$lib/assets/landing/opengraph-home.webp';
 
 	const { t } = getLocalization();
 	navbarVisible.visible = true;
+
+	// Open Graph requires absolute URLs. The Vite asset import resolves to a
+	// root-relative path, which Slack, LinkedIn and Discord will not follow, so
+	// the card rendered without its image no matter how good the image was.
+	// Deriving the origin from the request also means a deploy preview advertises
+	// its own card rather than production's, which is what makes it checkable.
+	const origin = $derived(page.url.origin);
+	const share_image = $derived(`${origin}${JpgOpenGraph}`);
+	const share_url = $derived(`${origin}/`);
 
 	let pin = $state('');
 	let ready = $derived(pin.trim().length === 6);
@@ -36,18 +45,21 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz - {$t('index_page.meta.title')}</title>
 	<meta name="description" content={$t('index_page.meta.description')} />
 
-	<meta property="og:url" content="https://frogquiz.xyz/" />
+	<meta property="og:url" content={share_url} />
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="frogQuiz - {$t('index_page.meta.title')}" />
 	<meta property="og:description" content={$t('index_page.meta.description')} />
-	<meta property="og:image" content={JpgOpenGraph} />
+	<meta property="og:image" content={share_image} />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta property="og:image:alt" content="frogQuiz" />
 
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta property="twitter:domain" content="frogquiz.xyz" />
-	<meta property="twitter:url" content="https://frogquiz.xyz/" />
+	<meta property="twitter:domain" content={page.url.host} />
+	<meta property="twitter:url" content={share_url} />
 	<meta name="twitter:title" content="frogQuiz - {$t('index_page.meta.title')}" />
 	<meta name="twitter:description" content={$t('index_page.meta.description')} />
-	<meta name="twitter:image" content={WebPOpenGraph} />
+	<meta name="twitter:image" content={share_image} />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col">

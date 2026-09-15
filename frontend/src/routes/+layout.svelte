@@ -5,6 +5,14 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	// Imported here rather than via `@import` in app.css on purpose. Tailwind v4's
+	// processor inlines an @import's text but leaves its relative url(files/...)
+	// references alone, so Vite never saw the .woff2 files as dependencies: it
+	// emitted none of them, every font request 404'd, and the app silently
+	// rendered in whatever `sans-serif` meant on that OS. Importing from the module
+	// graph puts the stylesheet through Vite's own CSS pipeline, which rewrites the
+	// urls and emits the files. Verified by `document.fonts.check`.
+	import '@fontsource-variable/inter';
 	import '../app.css';
 	import Navbar from '$lib/navbar.svelte';
 	import { pathname } from '$lib/stores';
@@ -32,14 +40,7 @@ SPDX-License-Identifier: MPL-2.0
 			document.documentElement.classList.remove('dark');
 		}
 	}
-	let start_language = 'en';
-	const rtl_languages = ['he', 'prs', 'ps'];
-	if (browser) {
-		start_language = localStorage.getItem('language') ?? 'en';
-		document.documentElement.lang = start_language;
-		document.documentElement.dir = rtl_languages.includes(start_language) ? 'rtl' : 'ltr';
-	}
-	initLocalizationContext(start_language);
+	initLocalizationContext();
 </script>
 
 <AmbientBackground />
