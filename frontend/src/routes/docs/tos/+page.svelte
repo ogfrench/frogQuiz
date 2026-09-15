@@ -24,58 +24,64 @@ SPDX-License-Identifier: MPL-2.0
 >
 	<h1>Terms of Service</h1>
 
-	<h2>For those who don't like reading</h2>
-
+	<h2>The short version</h2>
 	<ul>
+		<li>frogQuiz is an internal tool. It is provided as-is, with no uptime guarantee.</li>
+		<li>Do not put anything illegal, harmful or confidential into it.</li>
 		<li>
-			<b>I</b> may do anything with the data you provide, stop providing this service, etc.
-		</li>
-		<li>
-			<b
-				>You don't upload, write, create any harmful content or anything that is against any
-				German law.</b
-			>
+			We will not publish or sell what you put in. We may remove content that breaks these
+			rules.
 		</li>
 	</ul>
 
-	<h2>What doesn't belong on frogQuiz</h2>
+	<h2>What frogQuiz is</h2>
 	<p>
-		The owner may delete, change and modify any quiz. Quizzes with any pornography, illegal
-		content or propaganda <b>have to be reported</b> and will be reviewed and deleted, if it's
-		against these rules. This platform is made to share educational content, which can include
-		anything, but <b>NO PORNOGRAPHY, ILLEGAL CONTENT or PROPAGANDA</b>.
-		<i>I hope you understand what I mean.</i> 😇
-	</p>
-	<h2>How to report illegal content</h2>
-	<p>
-		You have to report illegal content by emailing
-		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
-	</p>
-	<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
-	<h2>The rights of the admin</h2>
-	<p>
-		The admin is allowed to publish <b>ANY</b> data provided by the user, although the admin
-		doesn't want to do it. The admin can also delete <b>ANY</b> content, whether it's against any
-		rule or not. frogQuiz also doesn't provide any (uptime)-guarantee, so frogQuiz could be shut
-		down without any warning and without any ability for the user to get their data. The admin may
-		publish any data provided by the user anywhere and share it with anyone.
-	</p>
-	<h2>The rights of the user</h2>
-	<p>
-		You can request the deletion of your data at any time by emailing
-		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
-		<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
+		A quiz tool run by François and Gonçalo for internal use. It is not a commercial service and
+		comes with no service-level guarantee: it may be unavailable, may lose data, and may be shut
+		down. Keep a copy elsewhere of anything you would mind losing.
 	</p>
 
-	<h2>Final Words</h2>
+	<h2>What does not belong here</h2>
 	<p>
-		All of that may sound hard, but, for example, the part with the data-publishing: What
-		happens if data should be stolen and published? i don't run this platform to get insulted
-		for publishing (personal) data, so I just make sure you're fine with that! Of course, I'll
-		try to not publish any data, delete any content without a reason, etc, but I could. If you
-		still got any questions, please email <a href="mailto:francois.prevot@frog.co"
-			>francois.prevot@frog.co</a
-		>.
-		<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
+		Do not upload or create content that is illegal, harassing, pornographic, or that infringes
+		someone else's rights. Do not put confidential or personal information about other people
+		into a quiz — a quiz is visible to everyone playing it, and a public quiz is visible to
+		anyone. Content that breaks these rules will be removed.
+	</p>
+
+	<h2>Reporting something</h2>
+	<p>
+		Email <a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a> and we will look at
+		it.
+	</p>
+	<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
+
+	<h2>What we may do</h2>
+	<p>
+		We may remove content that breaks the rules above, suspend an account being used to break
+		them, and change or stop the service. We may look at stored data where we need to in order
+		to keep the service running, fix a fault, or deal with a report.
+	</p>
+	<p>
+		We will not publish your content or your personal data, and we will not sell or share either
+		with anyone outside the team, except where we are legally required to. What is stored,
+		where, and for how long is set out in the
+		<a href="/docs/privacy-policy">privacy policy</a>.
+	</p>
+
+	<h2>What you may do</h2>
+	<p>
+		You keep ownership of the quizzes you write. You can delete your content or your whole
+		account at any time from the settings page, or ask us to do it. Deleting your account
+		removes your quizzes and uploads with it.
+	</p>
+
+	<h2>The software</h2>
+	<p>
+		frogQuiz is a fork of <a href="https://github.com/mawoka-myblock/ClassQuiz">ClassQuiz</a>,
+		licensed under the
+		<a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank" rel="noreferrer">MPL-2.0</a
+		>. These terms cover the instance we run, not the source code, which carries its own
+		licence.
 	</p>
 </article>
