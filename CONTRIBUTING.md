@@ -3,26 +3,29 @@ SPDX-FileCopyrightText: 2026 Marlon W (Mawoka)
 
 SPDX-License-Identifier: MPL-2.0
 -->
+
 # Contribute to frogQuiz
 
 For the development-setup, please check out the
 docs: [https://frogquiz.xyz/docs/develop](https://frogquiz.xyz/docs/develop)
 
 ## Coding guidelines
+
 - _Try_ to use type hints (python) and TypeScript everwhere possible (for python `foo() -> dict` is better than nothing)
 
 ### Frontend
+
 - Follow the existing coding style
-	- CamelCase for classnames
-	- snake_case for function names, variables and everything else
-	- aka Rust-style
+  - CamelCase for classnames
+  - snake_case for function names, variables and everything else
+  - aka Rust-style
 - Feel free to reduce complexity in the code you're already touching
 - always make sure the frontend builds (`pnpm build`) as it catches most typos
 - Stick to current design language
 - Use premade Brown and GreyButton components
 
-
 ## AI Usage
+
 - Feel free to use any AI help
 - Please refrain from using coding agents
 
@@ -36,10 +39,11 @@ Just do so.
 
 ## Found a bug
 
-If it is a security-related bug, please contact the FrogQuiz maintainers internally rather than opening a public issue.
-<!-- TODO: replace with your team's actual contact channel --> If not, just open
-an issue here on GitHub.
+If it is a security-related bug, please email francois.prevot@frog.co rather than opening a public issue.
 
+<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. --> If not, just open
+
+an issue here on GitHub.
 
 ## Want to translate?
 

@@ -57,7 +57,9 @@ async def log_user_in(user: User | None, request: Request, response: Response):
 
 async def rememberme_check(rememberme_token: str, response: Response):
     user_session: UserSession | None = (
-        await UserSession.objects.filter(session_key=hash_session_key(rememberme_token)).select_related(UserSession.user).get_or_none()
+        await UserSession.objects.filter(session_key=hash_session_key(rememberme_token))
+        .select_related(UserSession.user)
+        .get_or_none()
     )
     if (user_session is None) or (user_session.user is None):
         raise HTTPException(status_code=401, detail="No user session")

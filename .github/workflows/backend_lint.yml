@@ -7,13 +7,24 @@
 
 name: "[CI] Backend / Lint"
 
+# Lint has to run on master too, not only on pull requests. Work has been merged
+# straight to master here, so a pull_request-only trigger meant the check simply
+# never ran on the commits that mattered and master sat red without anyone seeing it.
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - "frogquiz/**"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - ".github/workflows/backend_lint.yml"
   pull_request:
     paths:
       - "frogquiz/**"
       - "Pipfile"
       - "Pipfile.lock"
+      - ".github/workflows/backend_lint.yml"
 
 
 jobs:

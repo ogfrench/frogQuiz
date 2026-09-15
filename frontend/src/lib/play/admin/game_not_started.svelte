@@ -54,9 +54,7 @@ SPDX-License-Identifier: MPL-2.0
 			<p class="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
 				{$t('words.pin')}
 			</p>
-			<p
-				class="select-all font-mono text-6xl font-bold leading-none tracking-[0.12em] tabular-nums md:text-8xl"
-			>
+			<p class="fq-pin select-all font-mono font-bold tracking-[0.12em] tabular-nums">
 				{game_pin}
 			</p>
 		</div>
@@ -109,7 +107,10 @@ SPDX-License-Identifier: MPL-2.0
 							title={$t('words.kick')}
 							aria-label="{$t('words.kick')}: {player.username}"
 							onclick={() =>
-								socket_game_controls.kick_player(player.username, game_state.players)}
+								socket_game_controls.kick_player(
+									player.username,
+									game_state.players
+								)}
 							class="group rounded-full border border-border bg-card px-4 py-2 text-lg font-medium shadow-sm
 								transition-all hover:border-destructive hover:text-destructive
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring

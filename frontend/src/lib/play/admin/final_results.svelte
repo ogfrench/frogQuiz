@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
-SPDX-FileCopyrightText: 2026 FrogQuiz contributors
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -32,7 +32,16 @@ SPDX-License-Identifier: MPL-2.0
 	let podium = $derived(
 		[ranked[1], ranked[0], ranked[2]].filter(Boolean).map((p) => ({
 			...p,
-			height: p.place === 1 ? 'h-48' : p.place === 2 ? 'h-36' : 'h-28',
+			// Fixed pixel heights (h-48/h-36/h-28) made the podium a small object adrift
+			// in the middle of a projector screen, and 192 vs 144 vs 112 does not read as
+			// a rank order from the back of a room. Viewport-relative so the podium scales
+			// with the screen it is thrown on, with a floor for short windows.
+			height:
+				p.place === 1
+					? 'h-[38vh] min-h-44'
+					: p.place === 2
+						? 'h-[26vh] min-h-32'
+						: 'h-[18vh] min-h-24',
 			// Built up from last place to first, so the winner lands last.
 			delay: (4 - p.place) * 700
 		}))
@@ -56,13 +65,17 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 {#if show_final_results}
-	<canvas bind:this={canvas} class="pointer-events-none fixed inset-0 z-50 h-full w-full"></canvas>
+	<canvas bind:this={canvas} class="pointer-events-none fixed inset-0 z-50 h-full w-full"
+	></canvas>
 
 	<div class="fq-stage">
 		<!-- The blocks need a floor, or they read as floating cards rather than a
-		     podium. The rule under them is that floor. -->
+		     podium. border-b-2 border-border was too faint to register as one at
+		     projector distance: the blocks looked cut off rather than stood on
+		     something. A full-strength rule that runs wider than the blocks reads as
+		     ground. -->
 		<div
-			class="flex w-full max-w-4xl items-end justify-center gap-4 border-b-2 border-border px-8 sm:gap-6"
+			class="border-foreground/25 flex w-full max-w-4xl items-end justify-center gap-4 border-b-4 px-8 sm:gap-6"
 		>
 			{#each podium as p (p.name)}
 				<div class="flex min-w-0 flex-1 flex-col items-center gap-3">
@@ -71,7 +84,7 @@ SPDX-License-Identifier: MPL-2.0
 						in:fly|global={{ y: -40, duration: 500, delay: p.delay, easing: cubicOut }}
 					>
 						<p
-							class="w-full truncate text-xl font-semibold tracking-tight sm:text-2xl"
+							class="fq-answer w-full truncate font-semibold tracking-tight"
 							title={p.name}
 						>
 							{p.name}
@@ -88,7 +101,7 @@ SPDX-License-Identifier: MPL-2.0
 						class:is-winner={p.place === 1}
 						in:fly|global={{ y: 120, duration: 600, delay: p.delay, easing: cubicOut }}
 					>
-						<span class="text-3xl font-bold tabular-nums sm:text-4xl">{p.place}</span>
+						<span class="fq-display font-bold tabular-nums">{p.place}</span>
 						<span
 							class="px-1 text-center text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground"
 						>
@@ -109,7 +122,9 @@ SPDX-License-Identifier: MPL-2.0
 						<span class="w-6 text-sm font-semibold text-muted-foreground tabular-nums"
 							>{p.place}</span
 						>
-						<span class="min-w-0 flex-1 truncate font-medium" title={p.name}>{p.name}</span>
+						<span class="min-w-0 flex-1 truncate font-medium" title={p.name}
+							>{p.name}</span
+						>
 						<span class="text-sm text-muted-foreground tabular-nums">{p.score}</span>
 					</li>
 				{/each}

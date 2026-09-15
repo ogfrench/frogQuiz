@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -13,20 +14,19 @@ SPDX-License-Identifier: MPL-2.0
 	import { reach } from 'yup';
 	import { dataSchema } from '$lib/yupSchemas';
 	import Spinner from '../Spinner.svelte';
-	import { createTippy } from 'svelte-tippy';
 	import { getLocalization } from '$lib/i18n';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { fade } from 'svelte/transition';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
-	// import MediaComponent from "$lib/editor/MediaComponent.svelte";
+	import { Button } from '$lib/components/ui/button';
+	import CircleDot from '@lucide/svelte/icons/circle-dot';
+	import Clock from '@lucide/svelte/icons/clock';
+	import ListChecks from '@lucide/svelte/icons/list-checks';
+	import Settings2 from '@lucide/svelte/icons/settings-2';
+	import MoveLeft from '@lucide/svelte/icons/move-left';
+	import MoveRight from '@lucide/svelte/icons/move-right';
+	import X from '@lucide/svelte/icons/x';
 
 	const { t } = getLocalization();
-
-	const tippy = createTippy({
-		arrow: true,
-		animation: 'perspective-subtle',
-		placement: 'top'
-	});
 
 	interface Props {
 		data: EditorData;
@@ -79,65 +79,115 @@ SPDX-License-Identifier: MPL-2.0
 		data.questions;
 	});
 
-	const type_to_name = {
-		RANGE: $t('words.range'),
-		ABCD: $t('words.multiple_choice'),
-		VOTING: $t('words.voting'),
-		TEXT: $t('words.text'),
-		ORDER: $t('words.order'),
-		CHECK: $t('words.check_choice')
+	const type = $derived(data.questions[selected_question].type);
+	const question_valid = $derived(
+		reach(dataSchema, 'questions[].question').isValidSync(
+			data.questions[selected_question].question
+		)
+	);
+	// Reordering is a move of the question plus a move of the selection: the author is
+	// still editing the same question after it changes position, so the selection has
+	// to follow it rather than stay on the index.
+	const move_question = (delta: number) => {
+		const to = selected_question + delta;
+		if (to < 0 || to >= data.questions.length) return;
+		const next = [...data.questions];
+		[next[selected_question], next[to]] = [next[to], next[selected_question]];
+		data.questions = next;
+		selected_question = to;
 	};
-
-	/*
-    if (typeof data.questions[selected_question].type !== QuizQuestionType) {
-        console.log(data.questions[selected_question].type !== QuizQuestionType.ABCD || data.questions[selected_question].type !== QuizQuestionType.RANGE)
-        data.questions[selected_question].type = QuizQuestionType.ABCD;
-    }
-     */
 </script>
 
-<div class="w-full max-h-full pb-10 px-10 h-full">
-	<div class="rounded-lg bg-white w-full h-full border-gray-500 dark:bg-gray-700 shadow-2xl">
-		<div class="h-12 bg-gray-300 rounded-t-lg dark:bg-gray-500">
-			<div class="flex align-middle p-4 gap-3">
-				<span
-					class="inline-block bg-gray-600 w-4 h-4 rounded-full hover:bg-red-400 transition"
-				></span>
-				<span
-					class="inline-block bg-gray-600 w-4 h-4 rounded-full hover:bg-yellow-400 transition"
-				></span>
-				<span
-					class="inline-block bg-gray-600 w-4 h-4 rounded-full hover:bg-green-400 transition"
-				></span>
-				<button
-					class="ml-auto"
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-5">
+	<!-- Toolbar: what this question is, how long it runs, and how it is answered. These
+	     three facts govern the whole round, so they sit above the canvas rather than being
+	     scattered through it. -->
+	<div class="flex flex-wrap items-center gap-3">
+		<p class="text-sm font-medium">
+			{$t('editor.question_n_of_total', {
+				n: selected_question + 1,
+				total: data.questions.length
+			})}
+		</p>
+		<!-- Reordering lives here rather than on the navigation chip: two 20px arrows
+		     crammed into a 144px chip is half the 44px a finger needs, and it put two
+		     different actions -- choose this question, move this question -- on the same
+		     object. Two plain buttons that each say what they do: a bordered group with a
+		     shared "Move" label glued to two icons was neither one control nor two, and
+		     bare chevrons beside "Question 1 of 3" read as previous and next, which is
+		     navigation and the opposite of what these do. -->
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={selected_question === 0}
+			onclick={() => move_question(-1)}
+		>
+			<MoveLeft />
+			{$t('editor.move_question_left')}
+		</Button>
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={selected_question === data.questions.length - 1}
+			onclick={() => move_question(1)}
+		>
+			{$t('editor.move_question_right')}
+			<MoveRight />
+		</Button>
+		<div class="ml-auto flex flex-wrap items-center gap-2">
+			<label
+				class="border-input bg-background text-muted-foreground flex min-h-11 items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
+			>
+				<Clock class="size-4" />
+				<span class="sr-only">{$t('editor.time_in_seconds')}</span>
+				<input
+					type="number"
+					max="999"
+					min="1"
+					class="text-foreground w-12 bg-transparent text-right tabular-nums outline-none"
+					bind:value={data.questions[selected_question].time}
+				/>
+				<span>s</span>
+			</label>
+			{#if type === QuizQuestionType.ABCD || type === QuizQuestionType.CHECK}
+				<Button
 					type="button"
-					use:tippy={{ content: $t('editor.advanced_settings') }}
-					onclick={() => (advanced_options_open = true)}
+					variant="outline"
+					size="sm"
+					onclick={() => {
+						data.questions[selected_question].type =
+							type === QuizQuestionType.CHECK
+								? QuizQuestionType.ABCD
+								: QuizQuestionType.CHECK;
+					}}
 				>
-					<svg
-						class="text-white w-5 h-5"
-						aria-hidden="true"
-						fill="none"
-						stroke="white"
-						stroke-width="2"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-						<path
-							d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-					</svg>
-				</button>
-			</div>
+					{#if type === QuizQuestionType.CHECK}
+						<ListChecks />
+						{$t('editor.multiple_answers')}
+					{:else}
+						<CircleDot />
+						{$t('editor.single_answer')}
+					{/if}
+				</Button>
+			{/if}
+			<Button
+				variant="ghost"
+				size="icon"
+				type="button"
+				title={$t('editor.advanced_settings')}
+				aria-label={$t('editor.advanced_settings')}
+				onclick={() => (advanced_options_open = true)}
+			>
+				<Settings2 />
+			</Button>
 		</div>
+	</div>
+
+	<!-- The canvas renders the question the way the room will see it, so there is no gap
+	     between what the author builds and what gets projected. -->
+	<div class="border-border bg-card flex flex-col gap-6 rounded-xl border p-6 shadow-sm">
 		{#if data.questions[selected_question].type === QuizQuestionType.SLIDE}
 			{#await import('./slide.svelte')}
 				<Spinner my_20={false} />
@@ -145,154 +195,103 @@ SPDX-License-Identifier: MPL-2.0
 				<c.default bind:data={data.questions[selected_question]} />
 			{/await}
 		{:else}
-			{@const type = data.questions[selected_question].type}
-			<div class="flex flex-col">
-				<div class="flex justify-center pt-10 w-full">
-					{#key unique}
-						{#await import('$lib/inline-editor.svelte')}
-							<Spinner my_20={false} />
-						{:then c}
-							<div
-								class="rounded-lg placeholder:italic placeholder:font-normal dark:bg-gray-500"
-								class:bg-yellow-500={!reach(
-									dataSchema,
-									'questions[].question'
-								).isValidSync(data.questions[selected_question].question)}
-							>
-								<c.default bind:text={data.questions[selected_question].question} />
-							</div>
-						{/await}
-					{/key}
-				</div>
-				{#if data.questions[selected_question].image}
-					<div class="flex justify-center pt-10 w-full h-72">
-						<div class="h-72 relative">
-							<button
-								class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
-								type="button"
-								onclick={() => {
-									data.questions[selected_question].image = null;
-								}}
-							>
-								<svg
-									class="w-6 h-6 bg-red-500 rounded-full"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									xmlns="http://www.w3.org/2000/svg"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-									/>
-								</svg>
-							</button>
-							<MediaComponent bind:src={image_url} />
-						</div>
+			{#key unique}
+				{#await import('$lib/inline-editor.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<div
+						class="rounded-lg text-center text-xl font-semibold [&_[contenteditable]]:w-full"
+						class:ring-2={!question_valid}
+						class:ring-destructive={!question_valid}
+					>
+						<c.default bind:text={data.questions[selected_question].question} />
 					</div>
-				{:else}
-					{#await import('$lib/editor/uploader.svelte')}
-						<Spinner my_20={false} />
-					{:then c}
-						<c.default
-							bind:modalOpen={uppyOpen}
-							bind:edit_id
-							bind:data
-							bind:selected_question
-							video_upload={true}
-						/>
-					{/await}
-				{/if}
-				<div class="flex justify-center pt-10 w-full">
-					<div>
-						<svg
-							class="w-8 h-8 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-						<input
-							type="number"
-							max="999"
-							min="1"
-							class="w-20 bg-transparent rounded-lg text-lg border-2 border-gray-500 p-1 outline-hidden focus:shadow-2xl"
-							bind:value={data.questions[selected_question].time}
-						/>
-						<p class="inline-block">s</p>
+				{/await}
+			{/key}
+
+			{#if data.questions[selected_question].image}
+				<div class="relative mx-auto w-fit">
+					<button
+						class="border-border bg-card text-muted-foreground hover:text-destructive focus-visible:ring-ring absolute -top-2 -right-2 z-10 rounded-full border p-1 shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
+						type="button"
+						title={$t('words.delete')}
+						aria-label={$t('words.delete')}
+						onclick={() => {
+							data.questions[selected_question].image = null;
+						}}
+					>
+						<X class="size-4" />
+					</button>
+					<div class="h-56">
+						<MediaComponent bind:src={image_url} />
 					</div>
 				</div>
-				<div class="flex justify-center py-5">
-					<p>{type_to_name[String(data.questions[selected_question].type)]}</p>
-				</div>
-				<div class="flex justify-center w-full">
-					{#if type === QuizQuestionType.ABCD || type === QuizQuestionType.CHECK}
-						{#await import('$lib/editor/ABCDEditorPart.svelte')}
-							<Spinner my_20={false} />
-						{:then c}
-							<c.default
-								bind:data
-								bind:selected_question
-								check_choice={type === QuizQuestionType.CHECK}
-							/>
-						{/await}
-					{:else if type === QuizQuestionType.RANGE}
-						<RangeEditor bind:selected_question bind:data />
-					{:else if type === QuizQuestionType.VOTING}
-						{#await import('$lib/editor/VotingEditorPart.svelte')}
-							<Spinner my_20={false} />
-						{:then c}
-							<c.default bind:data bind:selected_question />
-						{/await}
-					{:else if type === QuizQuestionType.TEXT}
-						{#await import('$lib/editor/TextEditorPart.svelte')}
-							<Spinner my_20={false} />
-						{:then c}
-							<c.default bind:data bind:selected_question />
-						{/await}
-					{:else if type === QuizQuestionType.ORDER}
-						{#await import('$lib/editor/OrderEditorPart.svelte')}
-							<Spinner my_20={false} />
-						{:then c}
-							<c.default bind:data bind:selected_question />
-						{/await}
-					{/if}
-				</div>
-			</div>
+			{:else}
+				{#await import('$lib/editor/uploader.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<c.default
+						bind:modalOpen={uppyOpen}
+						bind:edit_id
+						bind:data
+						bind:selected_question
+						video_upload={true}
+					/>
+				{/await}
+			{/if}
+
+			{#if type === QuizQuestionType.ABCD || type === QuizQuestionType.CHECK}
+				{#await import('$lib/editor/ABCDEditorPart.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<c.default
+						bind:data
+						bind:selected_question
+						check_choice={type === QuizQuestionType.CHECK}
+					/>
+				{/await}
+			{:else if type === QuizQuestionType.RANGE}
+				<RangeEditor bind:selected_question bind:data />
+			{:else if type === QuizQuestionType.VOTING}
+				{#await import('$lib/editor/VotingEditorPart.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<c.default bind:data bind:selected_question />
+				{/await}
+			{:else if type === QuizQuestionType.TEXT}
+				{#await import('$lib/editor/TextEditorPart.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<c.default bind:data bind:selected_question />
+				{/await}
+			{:else if type === QuizQuestionType.ORDER}
+				{#await import('$lib/editor/OrderEditorPart.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<c.default bind:data bind:selected_question />
+				{/await}
+			{/if}
 		{/if}
 	</div>
 </div>
 
 {#if advanced_options_open}
-	<div
-		class="fixed top-0 left-0 w-full h-full bg-black/60 flex"
-		transition:fade|global={{ duration: 150 }}
-	>
+	<div class="fixed inset-0 z-50 flex bg-black/60 p-4" transition:fade|global={{ duration: 150 }}>
 		<div
-			class="w-1/4 h-1/3 m-auto bg-white dark:bg-gray-700 rounded-lg flex flex-col p-2 gap-2"
+			class="border-border bg-card m-auto flex w-full max-w-sm flex-col gap-5 rounded-xl border p-5 shadow-xl"
 		>
-			<h1 class="text-3xl mx-auto">{$t('editor.advanced_settings')}</h1>
-			<label class="flex justify-around text-lg">
-				<span class="my-auto">{$t('editor.hide_question_results')}</span>
+			<h2 class="text-lg font-semibold">{$t('editor.advanced_settings')}</h2>
+			<label class="flex items-center justify-between gap-4 text-sm">
+				<span>{$t('editor.hide_question_results')}</span>
 				<input
 					type="checkbox"
+					class="accent-primary size-5"
 					bind:checked={data.questions[selected_question]['hide_results']}
 				/>
 			</label>
-			<div class="mt-auto w-full">
-				<BrownButton onclick={() => (advanced_options_open = false)}
-					>{$t('words.close')}</BrownButton
-				>
-			</div>
+			<Button class="w-full" type="button" onclick={() => (advanced_options_open = false)}>
+				{$t('words.close')}
+			</Button>
 		</div>
 	</div>
 {/if}

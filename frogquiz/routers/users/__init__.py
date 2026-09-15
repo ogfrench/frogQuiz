@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -11,7 +12,7 @@ import ormar
 import pydantic
 from email_validator import validate_email, EmailNotValidError
 from fastapi import APIRouter, Response, HTTPException, Request, Depends
-from fastapi.responses import JSONResponse, RedirectResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 
 from frogquiz import oauth
@@ -39,6 +40,10 @@ settings = settings()
 router = APIRouter()
 
 router.include_router(webauthn.router, prefix="/webauthn")
+# Mounted whatever ENABLE_TOTP says. The flag is applied per endpoint inside the
+# router: setting TOTP up 404s when it is off, but reading the status and switching
+# it off do not, so nobody who enabled it before the cut is stranded behind a factor
+# they can no longer remove. See docs/mvp-scope.md.
 router.include_router(twofa.router, prefix="/2fa")
 
 
@@ -274,19 +279,23 @@ async def delete_user_account(input_data: DeleteUserInput, user: User = Depends(
     await user.delete()
 
 
-@router.get("/avatar", response_class=PlainTextResponse)
-async def get_own_avatar(respo: Response, user: User = Depends(get_current_user)):
-    respo.headers.append("Content-Type", "image/svg+xml")
-    return gzip.decompress(base64.b64decode(user.avatar))
+@router.get("/avatar")
+async def get_own_avatar(user: User = Depends(get_current_user)):
+    # See routers/avatar.py: a patched Content-Type left text/plain in place as a
+    # second header and every avatar rendered as a broken image.
+    return Response(
+        content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml"
+    )
 
 
-@router.get("/avatar/{user_id}", response_class=PlainTextResponse)
-async def get_other_avatar(respo: Response, user_id: uuid.UUID):
+@router.get("/avatar/{user_id}")
+async def get_other_avatar(user_id: uuid.UUID):
     user = await User.objects.filter(id=user_id).get_or_none()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    respo.headers.append("Content-Type", "image/svg+xml")
-    return gzip.decompress(base64.b64decode(user.avatar))
+    return Response(
+        content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml"
+    )
 
 
 class InternalAuthData(BaseModel):
@@ -312,8 +321,8 @@ async def list_api_keys(user: User = Depends(get_current_user)):
 
 
 @router.delete("/api_keys")
-async def delete_api_key(api_key: str, _: User = Depends(get_current_user)):
-    key = await ApiKey.objects.get_or_none(key=api_key)
+async def delete_api_key(api_key: str, user: User = Depends(get_current_user)):
+    key = await ApiKey.objects.get_or_none(key=api_key, user=user)
     if key is None:
         raise HTTPException(status_code=404, detail="Key not found")
     await redis.delete(f"apikey:{key.key}")

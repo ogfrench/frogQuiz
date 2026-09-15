@@ -30,6 +30,7 @@ import urllib.parse
 def _quiz_expired(quiz: Quiz) -> bool:
     return quiz.expire_at is not None and quiz.expire_at < datetime.now()
 
+
 settings = settings()
 
 router = APIRouter()

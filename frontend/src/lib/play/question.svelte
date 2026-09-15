@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -7,6 +8,8 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
 	import { ANSWER_COLORS } from '$lib/play/answer_colors';
+	import Check from '@lucide/svelte/icons/check';
+	import Clock from '@lucide/svelte/icons/clock';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { socket } from '$lib/socket';
 	import Spinner from '../Spinner.svelte';
@@ -188,7 +191,8 @@ SPDX-License-Identifier: MPL-2.0
 								not-disabled:active:scale-[0.96] not-disabled:hover:scale-[1.02]"
 							class:is-picked={picked}
 							class:is-waiting={waiting}
-							style="background-color: {answer.color ?? default_colors[i]}; color: {get_foreground_color(
+							style="background-color: {answer.color ??
+								default_colors[i]}; color: {get_foreground_color(
 								answer.color ?? default_colors[i]
 							)}; animation-delay: {i * 70}ms"
 							disabled={selected_answer !== undefined}
@@ -208,7 +212,9 @@ SPDX-License-Identifier: MPL-2.0
 									class="relative h-1/2 max-h-24 w-auto drop-shadow-sm transition-transform duration-200 group-active:scale-90"
 								/>
 							{:else}
-								<p class="relative m-auto text-lg font-semibold px-3 text-balance">
+								<p
+									class="relative m-auto text-lg font-semibold px-3 text-balance wrap-anywhere"
+								>
 									{answer.answer}
 								</p>
 							{/if}
@@ -386,36 +392,36 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			{/await}
 		{/if}
-	{:else if selected_answer !== undefined}
-		<!-- Time is up (or everyone has answered) but the results have not arrived
-		     yet. Without this the player's screen went completely blank, giving no
-		     confirmation that their answer was even registered. -->
+	{:else}
+		{@const answered = selected_answer !== undefined}
+		<!-- Time is up (or everyone has answered) but the results have not arrived yet.
+		     Without this the player's screen went completely blank, giving no confirmation
+		     that their answer was registered. The `answered` split matters: gating the whole
+		     block on a submitted answer left anyone who ran out of time staring at nothing,
+		     which is the worse case, because they cannot tell the app from a dead connection. -->
 		<div class="flex h-full w-full items-center justify-center p-6">
 			<div
-				class="flex flex-col items-center gap-4 text-center motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
+				class="motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 flex flex-col items-center gap-4 text-center"
 			>
 				<span
-					class="flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5 ring-1 ring-border"
+					class="bg-foreground/5 ring-border flex h-16 w-16 items-center justify-center rounded-full ring-1"
 				>
-					<svg
-						class="h-8 w-8 text-foreground/70"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.5"
-						aria-hidden="true"
-					>
-						<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
+					{#if answered}
+						<Check class="text-foreground/70 h-8 w-8" />
+					{:else}
+						<Clock class="text-foreground/70 h-8 w-8" />
+					{/if}
 				</span>
 				<div class="space-y-1">
-					<p class="text-xl font-semibold tracking-tight">{$t('words.answer_locked_in')}</p>
-					<p class="text-sm text-muted-foreground">{$t('words.waiting_for_results')}</p>
+					<p class="text-xl font-semibold tracking-tight">
+						{answered ? $t('words.answer_locked_in') : $t('words.time_is_up')}
+					</p>
+					<p class="text-muted-foreground text-sm">{$t('words.waiting_for_results')}</p>
 				</div>
 				<span class="flex gap-1.5" aria-hidden="true">
 					{#each [0, 1, 2] as d}
 						<span
-							class="waiting-dot h-2 w-2 rounded-full bg-foreground/30"
+							class="waiting-dot bg-foreground/30 h-2 w-2 rounded-full"
 							style="animation-delay: {d * 160}ms"
 						></span>
 					{/each}

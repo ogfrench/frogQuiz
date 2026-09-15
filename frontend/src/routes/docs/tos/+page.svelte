@@ -16,10 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:head>
 	<title>frogQuiz/docs - Terms of Service</title>
-	<meta
-		name="description"
-		content="The terms of service of frogQuiz, the open-source quiz-application"
-	/>
+	<meta name="description" content="The terms of service for frogQuiz." />
 </svelte:head>
 
 <article
@@ -50,8 +47,11 @@ SPDX-License-Identifier: MPL-2.0
 		<i>I hope you understand what I mean.</i> 😇
 	</p>
 	<h2>How to report illegal content</h2>
-	<p>You have to report illegal content by contacting the FrogQuiz maintainers internally.</p>
-	<!-- TODO: replace with your team's actual contact channel -->
+	<p>
+		You have to report illegal content by emailing
+		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
+	</p>
+	<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
 	<h2>The rights of the admin</h2>
 	<p>
 		The admin is allowed to publish <b>ANY</b> data provided by the user, although the admin
@@ -62,9 +62,9 @@ SPDX-License-Identifier: MPL-2.0
 	</p>
 	<h2>The rights of the user</h2>
 	<p>
-		You can request the deletion of your data at any time by contacting the FrogQuiz
-		maintainers internally.
-		<!-- TODO: replace with your team's actual contact channel -->
+		You can request the deletion of your data at any time by emailing
+		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
+		<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
 	</p>
 
 	<h2>Final Words</h2>
@@ -73,7 +73,9 @@ SPDX-License-Identifier: MPL-2.0
 		happens if data should be stolen and published? i don't run this platform to get insulted
 		for publishing (personal) data, so I just make sure you're fine with that! Of course, I'll
 		try to not publish any data, delete any content without a reason, etc, but I could. If you
-		still got any questions, please contact the FrogQuiz maintainers internally.
-		<!-- TODO: replace with your team's actual contact channel -->
+		still got any questions, please email <a href="mailto:francois.prevot@frog.co"
+			>francois.prevot@frog.co</a
+		>.
+		<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
 	</p>
 </article>

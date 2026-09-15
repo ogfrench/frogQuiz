@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -11,9 +12,26 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from frogquiz.auth import get_current_user, hash_session_key, verify_password
+from frogquiz.config import settings
 from frogquiz.db.models import User
 
 router = APIRouter()
+
+settings = settings()
+
+
+async def totp_setup_enabled():
+    """Gate for the endpoints that *turn TOTP on*.
+
+    TOTP is cut from the MVP (see docs/mvp-scope.md), but the login flow still honours
+    a secret that is already set, so anyone who enabled it before the cut keeps being
+    asked for a code. Gating the whole router would leave them behind a factor they can
+    no longer remove, which is a lockout we would have created ourselves. So only the
+    setup endpoints are gated; reading the status and switching it off stay available
+    whatever the flag says, and both already require the account password.
+    """
+    if not settings.enable_totp:
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 class GetBackupCodeResponse(BaseModel):
@@ -24,7 +42,7 @@ class RequirePasswordForAction(BaseModel):
     password: str
 
 
-@router.post("/backup_code", response_model=GetBackupCodeResponse)
+@router.post("/backup_code", response_model=GetBackupCodeResponse, dependencies=[Depends(totp_setup_enabled)])
 async def get_backup_code(data: RequirePasswordForAction, user: User = Depends(get_current_user)):
     backup_code = os.urandom(32).hex()
     user = await User.objects.get(id=user.id)
@@ -42,7 +60,7 @@ class SetRequirePassword(BaseModel):
     password: str
 
 
-@router.post("/require_password", response_model=SetRequirePassword)
+@router.post("/require_password", response_model=SetRequirePassword, dependencies=[Depends(totp_setup_enabled)])
 async def set_require_password(data: SetRequirePassword, user: User = Depends(get_current_user)):
     user = await User.objects.get(id=user.id)
     if not verify_password(data.password, user.password):
@@ -57,7 +75,7 @@ class SetTotpUpResponse(BaseModel):
     secret: str
 
 
-@router.post("/totp", response_model=SetTotpUpResponse)
+@router.post("/totp", response_model=SetTotpUpResponse, dependencies=[Depends(totp_setup_enabled)])
 async def set_totp_up(data: RequirePasswordForAction, user: User = Depends(get_current_user)):
     user = await User.objects.get(id=user.id)
     if not verify_password(data.password, user.password):

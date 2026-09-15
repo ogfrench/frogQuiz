@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2026 FrogQuiz contributors
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->

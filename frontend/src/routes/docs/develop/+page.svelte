@@ -18,7 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz/docs - Development-setup</title>
 	<meta
 		name="description"
-		content="How to import quizzes from KAHOOT! into frogQuiz, the open-source quiz-application,  easily"
+		content="How to set up a frogQuiz development environment and work on the code."
 	/>
 </svelte:head>
 <article
@@ -44,7 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 	<ul>
 		<li>
 			Clone the repo:
-			<pre><code>git clone https://github.com/mawoka-myblock/ClassQuiz</code></pre>
+			<pre><code>git clone https://github.com/ogfrench/frogQuiz</code></pre>
 		</li>
 		<li>
 			Install the dependencies
@@ -77,8 +77,7 @@ SPDX-License-Identifier: MPL-2.0
 				</li>
 				<li>
 					Start the Python-server:
-					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code
-						></pre>
+					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code></pre>
 				</li>
 				<li>
 					Start the background worker:
@@ -137,8 +136,7 @@ SPDX-License-Identifier: MPL-2.0
 			<ul>
 				<li>
 					Backend:
-					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code
-						></pre>
+					<pre><code>pipenv run uvicorn frogquiz:app --reload --proxy-headers</code></pre>
 				</li>
 				<li>
 					Frontend:

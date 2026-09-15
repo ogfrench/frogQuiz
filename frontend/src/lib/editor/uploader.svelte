@@ -13,6 +13,8 @@ SPDX-License-Identifier: MPL-2.0
 	import Compressor from '@uppy/compressor';
 	import { fade } from 'svelte/transition';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import ImagePlus from '@lucide/svelte/icons/image-plus';
 
 	// CSS imports
 	import '@uppy/core/dist/style.css';
@@ -138,7 +140,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {#if modalOpen}
 	<div
-		class="w-screen h-screen fixed top-0 left-0 bg-black/50 z-20 flex justify-center"
+		class="fixed inset-0 z-20 flex overflow-y-auto bg-black/50 p-4"
 		onclick={handle_on_click}
 		tabindex="0"
 		role="button"
@@ -147,9 +149,13 @@ SPDX-License-Identifier: MPL-2.0
 		transition:fade={{ duration: 100 }}
 	>
 		{#if selected_type === null}
-			<div class="m-auto w-1/3 h-auto bg-white dark:bg-gray-700 p-4 rounded-sm">
-				<h1 class="text-3xl text-center mb-4">{$t('uploader.select_upload_type')}</h1>
-				<div class="flex flex-row gap-4">
+			<div
+				class="border-border bg-card m-auto w-full max-w-lg rounded-xl border p-6 shadow-xl"
+			>
+				<h1 class="mb-5 text-center text-xl font-semibold">
+					{$t('uploader.select_upload_type')}
+				</h1>
+				<div class="flex flex-wrap gap-3 sm:flex-nowrap">
 					<div class="w-full">
 						<BrownButton
 							onclick={() => {
@@ -188,14 +194,14 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			</div>
 		{:else if selected_type === AvailableUploadTypes.Image}
-			<div class="m-auto w-1/3 h-5/6" transition:fade={{ duration: 100 }}>
+			<div class="m-auto w-full max-w-3xl" transition:fade={{ duration: 100 }}>
 				<div>
 					<SvelteDashboard {uppy} width="100%" {properties} />
 				</div>
 			</div>
 		{:else if selected_type === AvailableUploadTypes.Video}
 			<div
-				class="m-auto w-1/3 h-auto bg-white dark:bg-gray-700 p-4 rounded-sm"
+				class="border-border bg-card m-auto w-full max-w-lg rounded-xl border p-6 shadow-xl"
 				transition:fade={{ duration: 100 }}
 			>
 				<h1 class="text-3xl text-center mb-4">{$t('uploader.upload_a_video')}</h1>
@@ -220,27 +226,48 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	</div>
 {/if}
-<div class="flex justify-center w-full pt-10" transition:fade>
-	<button
-		class="rounded-lg p-4 flex justify-center bg-transparent border-gray-500 border-2 w-1/2 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+<!-- Was a hand-rolled button: label set in italic for no reason, no gap between
+     that label and its icon so the two collided, pt-10 of hardcoded dead space
+     above it, an arbitrary w-1/2, a raw Heroicon path, and gray-500/gray-300
+     borders that ignore the theme. It is a shadcn outline button now, full width of
+     whatever field it sits in, with the Lucide icon and a real gap. -->
+<div class="w-full" transition:fade>
+	<Button
 		type="button"
+		variant="outline"
+		class="w-full gap-2"
 		onclick={() => {
 			modalOpen = true;
 		}}
-		><span class="italic">{$t('uploader.add_image')}</span>
-		<svg
-			class="w-6 h-6 inline-block"
-			fill="none"
-			stroke="currentColor"
-			viewBox="0 0 24 24"
-			xmlns="http://www.w3.org/2000/svg"
-		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-			/>
-		</svg>
-	</button>
+	>
+		<ImagePlus class="size-4 shrink-0" />
+		{$t('uploader.add_image')}
+	</Button>
 </div>
+
+<style>
+	/* Uppy ships a light-only palette and draws its own chrome, so inside our modal
+	   its close control measured 1.09:1 and its footer text 2.79:1 -- both well under
+	   AA. Point its variables at the theme instead of letting it choose. */
+	:global(.uppy-Dashboard-inner),
+	:global(.uppy-Dashboard-AddFiles) {
+		background: var(--card);
+		border-color: var(--border);
+	}
+
+	:global(.uppy-Dashboard-close) {
+		color: var(--foreground);
+		font-size: 1.75rem;
+	}
+
+	:global(.uppy-Dashboard-browse),
+	:global(.uppy-Dashboard-AddFiles-title) {
+		color: var(--foreground);
+	}
+
+	/* Uppy's own branding link, at 3.07:1 against AA's 4.5 and not ours to show.
+	   ckeditor's equivalent is hidden the same way. */
+	:global(.uppy-Dashboard-poweredBy) {
+		display: none;
+	}
+</style>

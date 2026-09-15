@@ -7,7 +7,6 @@ import gzip
 
 from fastapi import APIRouter, Response, HTTPException, Depends
 import py_avataaars_no_png as av
-from fastapi.responses import PlainTextResponse
 from frogquiz.config import redis
 
 from frogquiz.auth import get_current_user
@@ -32,9 +31,8 @@ class AvatarItemsAsList:
     clothe_graphic_type = list(av.ClotheGraphicType)
 
 
-@router.get("/custom", response_class=PlainTextResponse)
+@router.get("/custom")
 async def get_customized_avatar(
-    resp: Response,
     skin_color: int | None = 0,
     hair_color: int | None = 0,
     facial_hair_type: int | None = 0,
@@ -65,7 +63,6 @@ async def get_customized_avatar(
         clothe_graphic_type = AvatarItemsAsList.clothe_graphic_type[clothe_graphic_type]
     except IndexError:
         raise HTTPException(status_code=400, detail="One parameter-value doesn't exist.")
-    resp.headers.append("Content-Type", "image/svg+xml")
     avatar = av.PyAvataaar(
         style=av.AvatarStyle.TRANSPARENT,
         skin_color=skin_color,
@@ -82,8 +79,11 @@ async def get_customized_avatar(
         clothe_color=clothe_color,
         clothe_graphic_type=clothe_graphic_type,
     ).render_svg()
-    # skipcq: PY-W0069
-    return avatar
+    # Return a Response with the media type rather than a PlainTextResponse whose
+    # Content-Type is patched afterwards: patching left text/plain in place as a second
+    # Content-Type header, the browser honoured the first, and a perfectly valid SVG
+    # body rendered as a broken image everywhere an avatar appears.
+    return Response(content=avatar, media_type="image/svg+xml")
 
 
 @router.post("/save")

@@ -36,7 +36,7 @@ SPDX-License-Identifier: MPL-2.0
 	<div class="flex justify-center w-full pt-10">
 		<p>
 			If the error persists, please open an <a
-				href="https://github.com/mawoka-myblock/ClassQuiz/issues/new?assignees=&labels=&template=Bug_report.md"
+				href="https://github.com/ogfrench/frogQuiz/issues/new"
 				class="underline transition hover:text-blue-300">issue on GitHub</a
 			>.
 		</p>

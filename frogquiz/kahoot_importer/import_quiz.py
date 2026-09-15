@@ -12,7 +12,8 @@ import bleach
 from aiohttp import ClientSession
 
 from frogquiz.config import settings, storage, meilisearch, ALLOWED_TAGS_FOR_QUIZ, arq
-from frogquiz.db.models import Quiz, ABCDQuizAnswer, QuizQuestion, User, StorageItem
+from frogquiz.db.models import Quiz, ABCDQuizAnswer, QuizQuestion, QuizQuestionType, User, StorageItem
+from frogquiz.kahoot_importer import _Question
 from frogquiz.kahoot_importer.get import get as get_quiz
 from frogquiz.helpers import get_meili_data
 
@@ -22,9 +23,6 @@ settings = settings()
 async def _download_image(url: str) -> bytes:
     async with ClientSession() as session, session.get(url) as resp:
         return await resp.read()
-
-
-DEFAULT_COLORS = ["#D6EDC9", "#B07156", "#7F7057", "#4E6E58"]
 
 
 async def handle_image_upload(url: str, user: User) -> StorageItem:
@@ -46,6 +44,39 @@ async def handle_image_upload(url: str, user: User) -> StorageItem:
     return file_obj
 
 
+def map_question(q: _Question, image: str | None) -> dict | None:
+    """Map one Kahoot question onto a frogQuiz question, or None if it is not importable."""
+    answers = [
+        ABCDQuizAnswer(
+            right=a.correct,
+            answer=bleach.clean(a.answer, tags=[], strip=True),
+            # No colour. This used to stamp a fixed four-colour palette onto every
+            # imported answer, which both overrode the app's own answer palette and
+            # raised IndexError on any question with more than four choices. Leaving it
+            # None lets the play screen apply the shared palette by position, the same
+            # as a quiz written in the editor.
+            color=None,
+        )
+        for a in q.choices
+    ]
+    # A Kahoot deck mixes scored questions with surveys and polls, which have choices
+    # but mark none of them correct. Imported as an ABCD question that is a round
+    # nobody can score, so skip it. Keyed off the answers themselves rather than off
+    # Kahoot's type string, which is undocumented and gains new values whenever they
+    # ship a new question kind.
+    if not any(a.right for a in answers):
+        return None
+    return QuizQuestion(
+        question=bleach.clean(q.question, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True),
+        answers=answers,
+        # Stated rather than left to the model default: the importer only ever produces
+        # ABCD, which is what the MVP supports. See docs/mvp-scope.md.
+        type=QuizQuestionType.ABCD,
+        time=str(q.time / 1000),
+        image=image,
+    ).model_dump()
+
+
 async def import_quiz(quiz_id: str, user: User) -> Quiz | int:
     """
     Imports a quiz from Kahoot.
@@ -64,31 +95,20 @@ async def import_quiz(quiz_id: str, user: User) -> Quiz | int:
     uploaded_images: list[StorageItem] = []
 
     for q in quiz.kahoot.questions:
-        answers: list[ABCDQuizAnswer] = []
         image = None
         if q.image is not None and q.image != "":
             image_obj = await handle_image_upload(q.image, user)
             uploaded_images.append(image_obj)
             image = image_obj.id.hex
-        for i, a in enumerate(q.choices):
-            answers.append(
-                (
-                    ABCDQuizAnswer(
-                        right=a.correct,
-                        answer=bleach.clean(a.answer, tags=[], strip=True),
-                        color=DEFAULT_COLORS[i],
-                    )
-                )
-            )
+        question = map_question(q, image)
+        if question is not None:
+            quiz_questions.append(question)
 
-        quiz_questions.append(
-            QuizQuestion(
-                question=bleach.clean(q.question, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True),
-                answers=answers,
-                time=str(q.time / 1000),
-                image=image,
-            ).model_dump()
-        )
+    if not quiz_questions:
+        # Every question in the deck was a survey or a poll, so there is nothing to
+        # import. 422 rather than 404: the Kahoot exists, it just has no scored
+        # question in it.
+        return 422
     cover = None
     if quiz.kahoot.cover != "" and quiz.kahoot.cover is not None:
         img_obj = await handle_image_upload(quiz.kahoot.cover, user)

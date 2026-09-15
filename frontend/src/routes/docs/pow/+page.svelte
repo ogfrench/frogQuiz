@@ -6,10 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:head>
 	<title>frogQuiz/docs - PoW</title>
-	<meta
-		name="description"
-		content="Use-case of PoW for frogQuiz, the open-source quiz-application"
-	/>
+	<meta name="description" content="Why frogQuiz uses a proof-of-work check, and what it does." />
 </svelte:head>
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"

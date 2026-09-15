@@ -1,11 +1,20 @@
 {
-	"name": "",
-	"short_name": "",
+	"name": "frogQuiz",
+	"short_name": "frogQuiz",
+	"description": "The free Kahoot alternative.",
 	"icons": [
 		{ "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
-		{ "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+		{ "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" },
+		{
+			"src": "/android-chrome-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
 	],
-	"theme_color": "#ffffff",
-	"background_color": "#ffffff",
-	"display": "standalone"
+	"theme_color": "#fafafa",
+	"background_color": "#fafafa",
+	"display": "standalone",
+	"start_url": "/",
+	"scope": "/"
 }

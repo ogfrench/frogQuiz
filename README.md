@@ -32,15 +32,19 @@ SPDX-License-Identifier: MPL-2.0
 
 ## About frogQuiz
 
-frogQuiz is a quiz app to learn interactively for students,
-but open-source which is very important if it is a product for educational
-purposes.
-You can create quizzes and play them remotely with other people.
-It is mainly made for teachers who create a
-quiz, so students can compete with their knowledge against each other.
+**The free Kahoot alternative. Host interactive quizzes right from your browser.**
 
-frogQuiz is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz) by
-Marlon W (Mawoka). See [Credits](#credits) below.
+One person hosts a quiz on a shared screen, everyone else joins on their phone
+with a PIN and a nickname, and the room answers under a timer. It is built for
+internal team use and ships in English only — see
+[docs/mvp-scope.md](docs/mvp-scope.md#languages) for why, and for how to add a
+language back.
+
+It is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz) by
+Marlon W (Mawoka), which was built as a public multi-tenant product for schools.
+A good deal of that surface is switched off here, because an internal tool does
+not need it — what was cut and how to turn any of it back on is in
+[docs/mvp-scope.md](docs/mvp-scope.md). See [Credits](#credits) below.
 
 ## Try it
 
@@ -72,7 +76,7 @@ docker compose up -d
 Bring up the backing services, then run the two halves separately:
 
 ```bash
-# Postgres, Redis, Meilisearch and MinIO for local development
+# Postgres, Redis and Meilisearch for local development
 docker compose -f docker-compose.dev.yml up -d
 
 # backend
@@ -110,12 +114,15 @@ docker compose exec api python import_to_meili.py
 
 This is a monorepo:
 
-| Path | What lives there |
-| --- | --- |
-| [`frogquiz/`](frogquiz/) | The FastAPI backend, socket.io server and arq worker |
-| [`frontend/`](frontend/) | The SvelteKit frontend |
-| [`migrations/`](migrations/) | Alembic database migrations |
-| `Pipfile` | The backend project, at the repository root |
+| Path                                                 | What lives there                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`frogquiz/`](frogquiz/)                             | The FastAPI backend, socket.io server and arq worker                            |
+| [`frontend/`](frontend/)                             | The SvelteKit frontend                                                          |
+| [`migrations/`](migrations/)                         | Alembic database migrations                                                     |
+| `Pipfile`                                            | The backend project, at the repository root                                     |
+| [`docs/mvp-scope.md`](docs/mvp-scope.md)             | What the MVP includes, what was cut, and how to restore it                      |
+| [`docs/redesign-status.md`](docs/redesign-status.md) | Which surfaces have been redesigned, which have not, and why                    |
+| [`CLAUDE.md`](CLAUDE.md)                             | Conventions: changelog discipline, licence headers, feature triage, UI baseline |
 
 ### Tech stack
 
@@ -125,8 +132,9 @@ This is a monorepo:
 communication between server and client), [arq](https://arq-docs.helpmanual.io/)
 (background jobs).
 
-**Frontend** — [SvelteKit](https://kit.svelte.dev/) (web framework) and
-[TailwindCSS](https://tailwindcss.com/) (CSS framework).
+**Frontend** — [SvelteKit](https://kit.svelte.dev/) (web framework),
+[TailwindCSS](https://tailwindcss.com/) (CSS framework) and
+[shadcn-svelte](https://shadcn-svelte.com/) (component layer).
 
 **Services you host yourself**
 

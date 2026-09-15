@@ -9,7 +9,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { signedIn, pathname } from '$lib/stores';
 	import { createTippy } from 'svelte-tippy';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { browser } from '$app/environment';
 	import { beforeNavigate } from '$app/navigation';
 	import { slide } from 'svelte/transition';
@@ -53,19 +52,21 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <nav
-	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 border-b px-5 py-3 backdrop-blur-xl lg:px-8"
+	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 border-b px-5 py-3 backdrop-blur-xl [clip-path:inset(0)] lg:px-8"
 >
 	<!-- Desktop navbar -->
 	<div class="hidden lg:flex lg:items-center lg:flex-row lg:justify-between">
 		<div class="lg:flex lg:items-center lg:flex-row gap-1">
 			<a
 				href="/"
-				class="text-foreground hover:opacity-80 mr-2 flex items-center text-lg transition-opacity"
+				class="fq-touch-target text-foreground hover:opacity-80 relative mr-2 flex min-h-11 items-center text-lg transition-opacity"
 				aria-label="frogQuiz home"
 			>
 				<Wordmark />
 			</a>
-			<a class="btn-nav border-border bg-muted/60 text-foreground border" href="/play">{$t('words.play')}</a>
+			<a class="btn-nav border-border bg-muted/60 text-foreground border" href="/play"
+				>{$t('words.play')}</a
+			>
 			<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
 			<a class="btn-nav" href="/search">{$t('words.search')}</a>
 			{#if $signedIn}
@@ -97,6 +98,7 @@ SPDX-License-Identifier: MPL-2.0
 				<div class="lg:flex items-center justify-center">
 					{#if darkMode}
 						<button
+							class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 							onclick={() => {
 								switchDarkMode();
 							}}
@@ -107,6 +109,7 @@ SPDX-License-Identifier: MPL-2.0
 						</button>
 					{:else}
 						<button
+							class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 							onclick={() => {
 								switchDarkMode();
 							}}
@@ -127,7 +130,7 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="flex items-center justify-between">
 			<a
 				href="/"
-				class="text-foreground hover:opacity-80 mr-2 flex items-center text-lg transition-opacity"
+				class="fq-touch-target text-foreground hover:opacity-80 relative mr-2 flex min-h-11 items-center text-lg transition-opacity"
 				aria-label="frogQuiz home"
 			>
 				<Wordmark />
@@ -139,7 +142,7 @@ SPDX-License-Identifier: MPL-2.0
 				{#if darkMode}
 					<!-- Sun icon -->
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						onclick={() => {
 							switchDarkMode();
 						}}
@@ -151,7 +154,7 @@ SPDX-License-Identifier: MPL-2.0
 				{:else}
 					<!-- Moon icon -->
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						onclick={() => {
 							switchDarkMode();
 						}}
@@ -164,7 +167,7 @@ SPDX-License-Identifier: MPL-2.0
 
 				{#if menuIsClosed}
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						id="open-menu"
 						onclick={toggleMenu}
 						aria-label="Open navbar"
@@ -173,7 +176,7 @@ SPDX-License-Identifier: MPL-2.0
 					</button>
 				{:else}
 					<button
-						class="px-3"
+						class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors"
 						id="close-menu"
 						onclick={toggleMenu}
 						aria-label="Close navbar"
@@ -188,7 +191,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if !menuIsClosed}
 			<div class="flex flex-col" transition:slide|global={{ duration: 400 }}>
 				<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
-			<a class="btn-nav" href="/search">{$t('words.search')}</a>
+				<a class="btn-nav" href="/search">{$t('words.search')}</a>
 				{#if $signedIn}
 					<a class="btn-nav" href="/dashboard">{$t('words.dashboard')}</a>
 				{:else}
@@ -214,8 +217,6 @@ SPDX-License-Identifier: MPL-2.0
 						>{$t('words.login')}</a
 					>
 				{/if}
-
-
 			</div>
 		{/if}
 	</div>

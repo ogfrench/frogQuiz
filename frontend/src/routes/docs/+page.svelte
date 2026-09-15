@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz/docs - Index</title>
 	<meta
 		name="description"
-		content="The overview about the docs for frogQuiz, the open-source quiz-application"
+		content="An overview of the frogQuiz documentation: hosting a game, importing quizzes, and running your own instance."
 	/>
 </svelte:head>
 <article

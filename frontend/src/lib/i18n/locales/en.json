@@ -2,7 +2,7 @@
   "index_page": {
     "slogan": "Quizzes for the team.",
     "meta": {
-      "description": "frogQuiz is an internal quiz tool for running interactive quizzes with your team.",
+      "description": "The free Kahoot alternative. Host interactive quizzes right from your browser.",
       "title": "Home"
     },
     "stats": "There are already {{user_count}} users and {{quiz_count}} quizzes on frogQuiz.",
@@ -49,7 +49,8 @@
     "import_quiz_from_kahoot_and_edit": "Import quizzes from Kahoot! and edit them in frogQuiz",
     "join_prompt": "Enter the PIN from the host’s screen.",
     "hosting": "Running the quiz?",
-    "host_cta": "Go to your quizzes"
+    "host_cta": "Go to your quizzes",
+    "create_anon": "Create a quiz without an account"
   },
   "overview_page": {
     "created_at": "Created at",
@@ -70,7 +71,12 @@
     "greeting": "Nice to meet you!",
     "create_account": "Create account",
     "forgot_password?": "Forgot password?",
-    "already_have_account?": "Already have an account?"
+    "already_have_account?": "Already have an account?",
+    "repeat_password": "Repeat password",
+    "read_privacy_policy_prefix": "I've read the",
+    "privacy_policy": "Privacy policy",
+    "agree_tos_prefix": "I agree to the",
+    "terms_of_service": "Terms of Service"
   },
   "login_page": {
     "welcome_back": "Welcome back.",
@@ -203,7 +209,11 @@
     "try_again": "Try again",
     "join": "Join",
     "answer_locked_in": "Answer locked in",
-    "waiting_for_results": "Waiting for everyone else…"
+    "waiting_for_results": "Waiting for everyone else…",
+    "cover_image": "Cover image",
+    "visibility": "Visibility",
+    "time_is_up": "Time's up",
+    "file": "File"
   },
   "editor": {
     "time_in_seconds": "Time in seconds",
@@ -236,7 +246,22 @@
     "enable_reorder": "Enable reorder mode",
     "disable_reorder": "Disable reorder mode",
     "advanced_settings": "Advanced Settings",
-    "hide_question_results": "Hide question resuluts?"
+    "hide_question_results": "Hide question resuluts?",
+    "bg_color": "Background colour",
+    "bg_color_custom": "Use a custom colour",
+    "quiz_setup": "Quiz setup",
+    "question_n_of_total": "Question {{n}} of {{total}}",
+    "single_answer": "One correct answer",
+    "multiple_answers": "Several correct answers",
+    "mark_correct": "Mark as correct",
+    "question_incomplete": "Incomplete",
+    "needs_attention": "{{count}} question needs attention",
+    "needs_attention_plural": "{{count}} questions need attention",
+    "no_answers_yet": "Add at least two answers, and mark the correct one.",
+    "show_questions": "Show questions",
+    "hide_questions": "Hide questions",
+    "move_question_left": "Move left",
+    "move_question_right": "Move right"
   },
   "import_page": {
     "need_help": "Need help?",
@@ -248,7 +273,9 @@
     "upload_file_ending": "Upload the file ending in .cqa or .xlsx",
     "this_side_frogquiz": "On this side you can import quizzes, which were exported from frogQuiz.",
     "this_side_frogquiz_excel": "You can also upload excel files, if you've filled out the following template. If a quiz with the title already exists, it will append the questions to the existing quiz.",
-    "download_template_here": "Download the template"
+    "download_template_here": "Download the template",
+    "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
+    "choose_a_file": "Choose a file"
   },
   "admin_page": {
     "already_registered_as_admin": "There is already an admin registered for this game.",
@@ -278,14 +305,21 @@
     "old_password": "Old password",
     "new_password": "New password",
     "repeat_password": "Repeat password",
-    "change_password_submit": "Change password!",
+    "change_password_submit": "Change password",
     "last_seen": "Last seen",
     "check_location": "Check location",
     "delete_this_session": "Delete this session",
     "this_session?": "This session?",
     "change_avatar": "Change avatar",
     "security_settings": "Security-Settings",
-    "add_api_key": "Add API key"
+    "add_api_key": "Add API key",
+    "sessions": "Sessions",
+    "profile": "Profile",
+    "public_profile": "Public profile",
+    "sessions_description": "Devices and browsers currently signed in to your account.",
+    "password_requirements": "At least 8 characters, and different from your current password.",
+    "passwords_do_not_match": "The two passwords do not match.",
+    "password_section": "Password"
   },
   "explore_page": {
     "made_by": "Made by",
@@ -308,7 +342,9 @@
     "points_added": "Points added",
     "your_place": "You're on place {{place}}!",
     "players_waiting": "{{count}} player are waiting",
-    "players_waiting_plural": "{{count}} players are waiting"
+    "players_waiting_plural": "{{count}} players are waiting",
+    "youre_in": "You're in, {{username}}",
+    "waiting_for_host": "Waiting for the host to start"
   },
   "editor_page": {
     "add_an_answer": "Add an answer",
@@ -322,7 +358,6 @@
     "create_quiz": "Create a new quiz"
   },
   "footer": {
-    "self_ads": "Made with ❤️ by {{mawoka_link}} and with the help of {{others_link}}.",
     "more_details_here": "More details here",
     "donate": "If you find this useful, please consider {{donate_link}}."
   },
@@ -367,7 +402,10 @@
     "player_count": "Player count",
     "general_overview": {
       "sentence": "The quiz \"<b>{{title}}</b>\", which was played on <b>{{date}}</b> had <b>{{player_count}}</b> players with an average score of <b>{{average_score}}</b>."
-    }
+    },
+    "title": "Results",
+    "no_results_explanation": "Results appear here once you have hosted a game and saved its scores.",
+    "go_to_quizzes": "Go to your quizzes"
   },
   "result_page": {
     "player_name": "Player name",

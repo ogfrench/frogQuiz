@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 FrogQuiz contributors
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
 //
 // SPDX-License-Identifier: MPL-2.0
 
@@ -9,11 +9,26 @@
  * Derived in OKLCH at L=0.76, C=0.13, keeping each brand hue:
  *   coral 22.8°, sky 231.1°, green 148.6°, violet 292.1°
  *
- * Those four hues are spaced 80-110° apart because closer pairs failed the
- * colour-vision check: the original amber/green pairing measured ΔE 8.6 for
- * normal vision, which is hard to tell apart even without a deficiency. This
- * set measures ΔE 17.1 at worst, and passes CVD separation and contrast
- * against both the light and dark surface.
+ * Those four hues are spaced 80-110° apart because closer pairs were hard to
+ * tell apart even with normal vision: an earlier amber/green pairing measured
+ * ΔE 8.6. This set measures 13.2 at worst (sky against violet) and 25.2 at
+ * best, and every tile clears AA for its ink.
+ *
+ * What this palette does NOT do is survive colour-vision deficiency on its own,
+ * and an earlier version of this comment claimed otherwise. Simulated, the
+ * distances collapse: under deuteranopia coral and green differ by 4 of 255,
+ * and sky and violet by 9. Four hues at one lightness cannot be separated by a
+ * dichromat, because hue is most of what they have lost -- keeping them apart
+ * would mean spreading them across lightness instead, which is a different
+ * palette from this one.
+ *
+ * That is survivable only because colour is never the sole channel here. Every
+ * tile also carries a distinct shape (triangle, diamond, circle, square) in the
+ * same position on the host screen and the player's phone, and the host screen
+ * carries the answer text as well. WCAG 1.4.1 asks that colour not be the only
+ * visual means of conveying information, and it is not. If the shapes are ever
+ * removed, this palette stops being accessible and has to be redesigned around
+ * lightness. See answer_colors.test.ts, which pins both halves of that.
  *
  * The same four values are used in both themes on purpose. A player learns
  * "I'm picking the coral one"; that identity must not shift when the host's

@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
 //
 // SPDX-License-Identifier: MPL-2.0
 
@@ -21,7 +22,15 @@ const config = {
 		}
 	],
 	server: {
-		port: 3000
+		port: 3000,
+		// Without this the dev server cannot reach the API at all, and every local run
+		// needs the same proxy hand-wired back in. The backend is expected on 8000
+		// (`uvicorn frogquiz:app --port 8000`); nothing here affects the built app,
+		// which is served behind Caddy and never sees Vite.
+		proxy: {
+			'/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+			'/socket.io': { target: 'http://127.0.0.1:8000', ws: true, changeOrigin: true }
+		}
 	},
 	preview: {
 		port: 3000

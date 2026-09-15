@@ -30,6 +30,17 @@ wait_for_db() {
   return 1
 }
 
+# Sessions, login challenges and the token denylist all live in Redis, not Postgres.
+# Dropping the database volume without clearing Redis leaves those keys behind, and
+# the suite then fails from test_password_update onward with a cascade of 401s that
+# looks like broken auth code -- 40 spurious failures from a warm cache. CI never hit
+# it because "compose down --volumes" takes Redis with it; running the suite twice in
+# a row locally does.
+flush_redis() {
+  $CONTAINER_BIN compose -f docker-compose.dev.yml exec -T redis redis-cli flushall >/dev/null 2>&1 \
+    || echo "could not flush redis; a stale session cache can fail the suite" >&2
+}
+
 init() {
   if [ ! -d /tmp/storage ]; then
     mkdir /tmp/storage
@@ -40,6 +51,7 @@ init() {
     return 1
   fi
   wait_for_db || return 1
+  flush_redis
   pipenv run alembic upgrade head
 }
 

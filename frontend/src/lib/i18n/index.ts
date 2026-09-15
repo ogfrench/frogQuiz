@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
 //
 // SPDX-License-Identifier: MPL-2.0
 
 import { I18nService } from './i18n-service';
 import { I18NextTranslationService } from './translation-service';
 import type { TType } from './translation-service';
-import type { Readable, Writable } from 'svelte/store';
+import type { Readable } from 'svelte/store';
 import { getContext, setContext } from 'svelte';
 
 export type I18nContext = {
 	t: Readable<TType>;
-	currentLanguage: Writable<string>;
 };
 const CONTEXT_KEY = 't';
 export const setLocalization = (context: I18nContext) => {
@@ -22,19 +22,13 @@ export const getLocalization = () => {
 	return getContext<I18nContext>(CONTEXT_KEY);
 };
 
-export const initLocalizationContext = (start_lanugage: string): { i18n: I18nService } => {
-	// Initialize our services
+export const initLocalizationContext = (): { i18n: I18nService } => {
 	const i18n = new I18nService();
-	const tranlator = new I18NextTranslationService(i18n);
-	let locale: any;
-	if (start_lanugage) {
-		locale = start_lanugage;
-	}
-	tranlator.locale.set(locale);
+	const translator = new I18NextTranslationService(i18n);
+
 	// skipcq: JS-0357
 	setLocalization({
-		t: tranlator.translate,
-		currentLanguage: locale
+		t: translator.translate
 	});
 
 	return {

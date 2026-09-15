@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -11,6 +12,8 @@ from frogquiz.config import settings
 from frogquiz.tests import test_user_email, test_user_password, example_quiztivity
 from frogquiz.tests import test_client, example_quiz, ValueStorage  # noqa : F401
 from fastapi.testclient import TestClient
+from frogquiz.db.models import ABCDQuizAnswer
+from frogquiz.socket_server.helpers import check_check_question
 
 # @pytest.fixture
 # async def startup_and_shutdown_server():
@@ -154,7 +157,7 @@ class TestUsers:
 
     @pytest.mark.asyncio
     async def test_forgotten_password(self, test_client: TestClient, monkeypatch):  # noqa : F811
-        # ponytail: stub the SMTP send -- this route is tested for the reset token it stores, not for delivery
+        # Stub the SMTP send: this route is tested for the reset token it stores, not for delivery
         monkeypatch.setattr("frogquiz.emails._sendMail", lambda **kwargs: None)
         resp = test_client.post("/api/v1/users/forgot-password", json={"email": test_user_email})
         assert resp.status_code == 200
@@ -631,6 +634,40 @@ class TestQuizivity:
         assert data[0]["id"] == ValueStorage.share_id
 
     @pytest.mark.asyncio
+    async def test_delete_quiztivity_requires_auth(self, test_client: TestClient):  # noqa : F811
+        # Regression: DELETE /quiztivity/{uuid} carried no auth dependency at all, so
+        # anyone who knew a UUID could delete someone else's QuizTivity. The second
+        # request proves the object survived the unauthenticated attempt.
+        resp = test_client.delete(f"/api/v1/quiztivity/{ValueStorage.quiztivity_id}")
+        assert resp.status_code == 401
+        resp = test_client.get(
+            f"/api/v1/quiztivity/{ValueStorage.quiztivity_id}", cookies=ValueStorage.cookies
+        )
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_totp_can_be_switched_off_while_the_flag_is_off(self, test_client: TestClient):  # noqa : F811
+        # ENABLE_TOTP is off for the MVP, but the login flow still honours a secret that
+        # is already set. If the whole 2fa router were gated, anyone who enabled TOTP
+        # before the cut would be stuck behind a factor they cannot remove. Setting it
+        # up must 404; reading the status and switching it off must not.
+        assert settings().enable_totp is False
+        resp = test_client.post(
+            "/api/v1/users/2fa/totp",
+            json={"password": test_user_password},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 404
+        assert (test_client.get("/api/v1/users/2fa/totp", cookies=ValueStorage.cookies)).status_code == 200
+        resp = test_client.request(
+            "DELETE",
+            "/api/v1/users/2fa/totp",
+            json={"password": test_user_password},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
     async def test_delete_quiztivity(self, test_client: TestClient):  # noqa : F811
         test_client.delete(f"/api/v1/quiztivity/shares/{ValueStorage.share_id}", cookies=ValueStorage.cookies)
         resp = test_client.delete(
@@ -716,3 +753,23 @@ class TestDeleteStuff:
     #     data = {"password": test_user_password}
     #     resp = test_client.delete("/api/v1/users/me", cookies=ValueStorage.cookies, json=data)
     #     assert resp.status_code == 200
+
+
+def test_check_question_scoring_is_all_or_nothing():
+    """A multiple-answer question is scored whole: the indices the player ticked must
+    match the indices marked right exactly. See docs/mvp-scope.md."""
+    answers = [
+        ABCDQuizAnswer(right=True, answer="a"),
+        ABCDQuizAnswer(right=False, answer="b"),
+        ABCDQuizAnswer(right=True, answer="c"),
+        ABCDQuizAnswer(right=False, answer="d"),
+    ]
+    assert check_check_question("02", answers) is True
+    # One of the two right answers, but not both.
+    assert check_check_question("0", answers) is False
+    # Both right answers plus a wrong one.
+    assert check_check_question("023", answers) is False
+    # Everything ticked.
+    assert check_check_question("0123", answers) is False
+    # Nothing ticked.
+    assert check_check_question("", answers) is False

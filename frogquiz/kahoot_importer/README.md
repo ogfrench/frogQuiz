@@ -24,7 +24,6 @@ async def main():
 run(main())
 ```
 
-
 ## Search
 
 ```python
@@ -39,8 +38,8 @@ async def main():
 run(main())
 ```
 
-
 ## Import-Quiz
-This script is meant just to be used with frogquiz, not alone.
----
-*Kahoot! and the K! logo are trademarks of Kahoot! AS*
+
+## This script is meant just to be used with frogquiz, not alone.
+
+_Kahoot! and the K! logo are trademarks of Kahoot! AS_

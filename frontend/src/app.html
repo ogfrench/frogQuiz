@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -8,7 +9,12 @@ SPDX-License-Identifier: MPL-2.0
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="description" content="" />
+		<!-- Was empty, so every page with no head of its own shipped a blank description
+		     and search and link previews had nothing to quote. -->
+		<meta
+			name="description"
+			content="The free Kahoot alternative. Host interactive quizzes right from your browser."
+		/>
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script>
 			// Apply the stored theme before first paint, so dark mode does not flash
@@ -46,8 +52,11 @@ SPDX-License-Identifier: MPL-2.0
 		<link rel="manifest" href="%sveltekit.assets%/site.webmanifest" />
 		<meta name="apple-mobile-web-app-title" content="frogQuiz" />
 		<meta name="application-name" content="frogQuiz" />
-		<meta name="msapplication-TileColor" content="#00a300" />
-		<meta name="theme-color" content="#ffffff" />
+		<meta name="msapplication-TileColor" content="#fafafa" />
+		<!-- Two theme-colors so the browser chrome follows the app's own theme instead of
+		     staying white behind a dark page. #00a300 was upstream's green. -->
+		<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa" />
+		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#09090b" />
 		%sveltekit.head%
 	</head>
 	<body>

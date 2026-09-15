@@ -24,7 +24,9 @@ SPDX-License-Identifier: MPL-2.0
 > Note: Most of these events require some kind of data.
 
 ### Player
+
 TODO
+
 ## API-Docs
 
 ### Init

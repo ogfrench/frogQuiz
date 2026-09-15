@@ -18,7 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz/docs - Privacy policy</title>
 	<meta
 		name="description"
-		content="How to self-host frogQuiz, the open-source quiz-application"
+		content="What data frogQuiz stores, why, and how to have it deleted."
 	/>
 </svelte:head>
 

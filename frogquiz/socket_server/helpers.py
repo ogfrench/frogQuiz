@@ -116,6 +116,19 @@ def check_text_question(answer: str, answers: list[TextQuizAnswer]) -> bool:
 
 
 def check_check_question(answer: str, answers: list[ABCDQuizAnswer]) -> bool:
+    """Score a multiple-answer question. All or nothing.
+
+    The player submits the indices of every option they ticked, concatenated in
+    ascending order, so ticking the first and third of four options sends "02". The
+    same string is built here from the options marked right, and the two are compared
+    whole: a partly correct set scores zero, and so does a correct set with one extra
+    tick. There is no partial credit, deliberately -- a room cannot reason about a
+    score it cannot predict, and half marks make "select all that apply" pay off for
+    ticking everything.
+
+    The format is only unambiguous while a question has fewer than ten options, which
+    the editor enforces by capping a question at four answers.
+    """
     correct_string = ""
     for i, a in enumerate(answers):
         if a.right:

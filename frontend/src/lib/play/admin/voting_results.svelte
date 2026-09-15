@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
-SPDX-FileCopyrightText: 2026 FrogQuiz contributors
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -30,12 +30,25 @@ SPDX-License-Identifier: MPL-2.0
 	// types, so narrow once here rather than casting at each use.
 	const answers = question.answers as (Answer | VotingAnswer)[];
 
-	const counts = answers.map(
-		(a) => data.filter((d: { answer: string }) => d.answer === a.answer).length
-	);
-	const total = counts.reduce((sum, n) => sum + n, 0);
-	const max = Math.max(1, ...counts);
 	const is_voting = question.type === QuizQuestionType.VOTING;
+	const is_check = question.type === QuizQuestionType.CHECK;
+
+	// A CHECK player submits the indices of everything they ticked, concatenated:
+	// ticking the first and third option sends "02". Matching that against the
+	// answer text, as the other types do, never matches, so every bar on a CHECK
+	// question read zero. Count a submission once for each option it contains.
+	const counts = is_check
+		? answers.map(
+				(_, i) =>
+					data.filter((d: { answer: string }) => (d.answer ?? '').includes(String(i)))
+						.length
+			)
+		: answers.map((a) => data.filter((d: { answer: string }) => d.answer === a.answer).length);
+
+	// On CHECK the counts overlap, so summing them would over-report. The number
+	// that means something to the room is how many people answered at all.
+	const total = is_check ? data.length : counts.reduce((sum, n) => sum + n, 0);
+	const max = Math.max(1, ...counts);
 	const isCorrect = (a: Answer | VotingAnswer) => !is_voting && (a as Answer).right === true;
 </script>
 
@@ -63,7 +76,11 @@ SPDX-License-Identifier: MPL-2.0
 							role="img"
 							aria-label={$t('words.correct')}
 						>
-							<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+							<path
+								d="M5 13l4 4L19 7"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
 						</svg>
 					{/if}
 				</span>
@@ -75,7 +92,8 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					<span
 						class="absolute inset-y-0 left-0 rounded-r-md transition-[width] duration-700 ease-out"
-						style="width: {(count / max) * 100}%; background-color: {answer.color ?? answerColor(i)}"
+						style="width: {(count / max) * 100}%; background-color: {answer.color ??
+							answerColor(i)}"
 					></span>
 				</span>
 

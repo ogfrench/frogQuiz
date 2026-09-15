@@ -40,11 +40,13 @@ SPDX-License-Identifier: MPL-2.0
 	};
 	let score_by_username = $derived(group_username_by_score(new_data));
 
-	let player_names = $derived(Object.keys(data).sort((a, b) => {
-		const scoreA = parseFloat(data[a]) || 0;
-		const scoreB = parseFloat(data[b]) || 0;
-		return scoreB - scoreA;
-	}));
+	let player_names = $derived(
+		Object.keys(data).sort((a, b) => {
+			const scoreA = parseFloat(data[a]) || 0;
+			const scoreB = parseFloat(data[b]) || 0;
+			return scoreB - scoreA;
+		})
+	);
 
 	if (JSON.stringify(data) === '{}') {
 		for (const i of new_data) {
@@ -85,7 +87,9 @@ SPDX-License-Identifier: MPL-2.0
 <div class="fq-stage">
 	<!-- One composition, in the order the room cares about: what the answer was
 	     and how the room split, then where that leaves the standings. -->
-	<div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+	<div
+		class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
+	>
 		{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
 			<section class="flex flex-col gap-[var(--fq-space-group)] p-6 sm:p-8">
 				<h2 class="text-center text-lg font-semibold tracking-tight text-balance">

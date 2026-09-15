@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz/docs - Roadmap</title>
 	<meta
 		name="description"
-		content="The roadmap for frogQuiz, the open-source quiz-application"
+		content="What is planned for frogQuiz, and what is deliberately out of scope."
 	/>
 </svelte:head>
 <article

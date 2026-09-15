@@ -5,18 +5,23 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 #### :tophat: What? Why?
-*Please describe your pull request.*
+
+_Please describe your pull request._
 
 #### :pushpin: Related Issues
-*Link your PR to an issue*
+
+_Link your PR to an issue_
+
 - Related to #?
 - Fixes #?
 
 #### Testing
-*Describe the best way to test or validate your PR.*
+
+_Describe the best way to test or validate your PR._
 
 #### :clipboard: Checklist
-⚠️  No tests suites for now ⚠️
+
+⚠️ No tests suites for now ⚠️
 :rotating_light: Please review the [guidelines for contributing](https://github.com/mawoka-myblock/ClassQuiz/blob/master/CONTRIBUTING.md) to this repository.
 
 - [ ] :question: ~~**CONSIDER** adding a unit test if your PR resolves an issue.~~
@@ -29,6 +34,7 @@ SPDX-License-Identifier: MPL-2.0
 - [ ] :x:**AVOID** making significant changes to the overall architecture.
 
 ### :camera: Screenshots
-*Please add screenshots of the changes you're proposing*
+
+_Please add screenshots of the changes you're proposing_
 
 :hearts: Thank you!

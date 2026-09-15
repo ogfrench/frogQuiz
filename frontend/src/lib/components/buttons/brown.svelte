@@ -24,8 +24,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	let {
 		disabled = false,
-		// ponytail: `flex` is a no-op now — the shadcn button is already a centred
-		// flex row. Kept so the 25 existing call sites don't need touching.
+		// `flex` is a no-op now: the shadcn button is already a centred flex row.
+		// Kept so the 25 existing call sites don't need touching.
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		flex = false,
 		href = undefined,
 		target = '_self',

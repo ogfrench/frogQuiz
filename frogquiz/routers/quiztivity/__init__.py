@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -44,8 +45,8 @@ async def put_quiztivity(data: QuizTivityInput, uuid: UUID, user: User = Depends
 
 
 @router.delete("/{uuid}")
-async def delete_quiztivity(uuid: UUID):
-    quiztivity = await QuizTivity.objects.get_or_none(id=uuid)
+async def delete_quiztivity(uuid: UUID, user: User = Depends(get_current_user)):
+    quiztivity = await QuizTivity.objects.get_or_none(id=uuid, user=user)
     if quiztivity is None:
         raise HTTPException(status_code=404, detail="QuizTivity not found")
     await quiztivity.delete()
