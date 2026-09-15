@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Removed `.github/FUNDING.yml`. It listed `ko_fi: mawoka`, `liberapay: Mawoka` and `github: mawoka-myblock`, which put a **Sponsor** button on this repository routing donations to upstream. Anyone clicking Sponsor on frogQuiz was funding a different project without being told. The credit to Marlon W stays in the README, where the surrounding sentence makes clear whose project is being supported.
+- Fixed two issue templates that GitHub could not parse. `Feature_request.md` and `Repo_architecture_changes.md` had their SPDX comment block _above_ the YAML frontmatter, and frontmatter has to start on line 1 -- so `name:` and `about:` never registered and both templates rendered as raw text with visible `---` delimiters. The feature-request template also asked contributors to "Describe the bug".
+- Pointed the pull-request template's contributing link at our `CONTRIBUTING.md` instead of upstream's.
+- Removed `.github/codecov.yml`. No workflow references codecov and nothing uploads coverage, so it was configuration for a service this repository does not use.
 - Replaced `logo.png`, the image at the top of the README. It was still upstream's: "CQ" in ClassQuiz's green-and-brown chevrons, sitting directly under the frogQuiz heading. Same defect as the favicon and the Open Graph card, missed because it lives at the repository root rather than in `frontend/static`. Regenerated from the mark the app uses, and its SPDX sidecar now credits frogQuiz rather than carrying upstream's copyright on an image they did not make.
 - Fixed the README advertising the project two ways at once. The header block still said "The open-source quiz-platform!" while the About section two screens below gave the real line, which is the same split the app itself had between `app.html` and `en.json`.
 - Dropped Mapbox from the README's third-party list. It is named as an optional dependency and appears nowhere in the source.

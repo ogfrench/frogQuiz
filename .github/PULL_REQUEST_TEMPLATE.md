@@ -22,7 +22,7 @@ _Describe the best way to test or validate your PR._
 #### :clipboard: Checklist
 
 ⚠️ No tests suites for now ⚠️
-:rotating_light: Please review the [guidelines for contributing](https://github.com/mawoka-myblock/ClassQuiz/blob/master/CONTRIBUTING.md) to this repository.
+:rotating_light: Please review the [guidelines for contributing](https://github.com/ogfrench/frogQuiz/blob/master/CONTRIBUTING.md) to this repository.
 
 - [ ] :question: ~~**CONSIDER** adding a unit test if your PR resolves an issue.~~
 - [ ] :heavy_check_mark: **DO** check open PR's to avoid duplicates.
