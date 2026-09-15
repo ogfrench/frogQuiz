@@ -83,7 +83,15 @@
       "taken": "That email or username is already taken.",
       "invalid": "That email address was rejected. Check it and try again.",
       "too_many": "Too many attempts from this address. Try again in an hour.",
-      "failed": "Something went wrong creating the account. Nothing was saved, so try again."
+      "failed": "Something went wrong creating the account. Nothing was saved, so try again.",
+      "no_mail": "This server can't send the confirmation email right now, so nothing was saved. Try again later."
+    },
+    "resend": {
+      "prompt": "Didn't get the email?",
+      "action": "Send it again",
+      "sent": "If that address still needs confirming, a new link is on its way.",
+      "too_many": "Too many requests. Try again in an hour.",
+      "failed": "Couldn't send another link. Try again."
     }
   },
   "login_page": {
@@ -311,7 +319,21 @@
     "export_results": "Export results"
   },
   "password_reset_page": {
-    "reset_password": "Reset password"
+    "reset_password": "Reset password",
+    "request_subtitle": "Enter the address you signed up with and we'll send you a link.",
+    "send_link": "Send reset link",
+    "sent": "If that address has an account, a reset link is on its way. It works for one hour.",
+    "send_too_many": "Too many requests from this address. Try again in an hour.",
+    "no_mail": "This server has no mail server set up, so it can't send reset links. Ask whoever runs it.",
+    "send_failed": "Couldn't send the link. Try again.",
+    "choose_title": "Choose a new password",
+    "choose_subtitle": "This also signs you out on every other device.",
+    "missing_token": "This link is missing its token, so there's nothing to reset.",
+    "set_password": "Set password",
+    "invalid_token": "That link has expired or has already been used.",
+    "set_failed": "Couldn't set the new password. Try again.",
+    "request_new": "Request a new link",
+    "remembered": "Remember it after all?"
   },
   "settings_page": {
     "old_password": "Old password",

@@ -41,12 +41,22 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-[]}
 
       # --- MAIL CONFIG ---
+      # Optional: leave unset to run without mail, and set SKIP_EMAIL_VERIFICATION
+      # to True so registration doesn't ask for a confirmation it can't send.
+      # Without a relay there is no password recovery either -- the only way back
+      # into a forgotten account is the database.
+      MAIL_SERVER: ${MAIL_SERVER:-}
       MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_ADDRESS: ${MAIL_ADDRESS:?}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:?}
-      MAIL_USERNAME: ${MAIL_USERNAME:?}
-      MAIL_SERVER: ${MAIL_SERVER:?}
-      SKIP_EMAIL_VERIFICATION: "True" # Does the user have to confirm its email by clicking a link?
+      # starttls (587, the usual), ssl (465), or none (local relay only).
+      MAIL_SECURITY: ${MAIL_SECURITY:-starttls}
+      # Has to be an address the relay will send for, or it rejects the message.
+      MAIL_ADDRESS: ${MAIL_ADDRESS:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-frogQuiz}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      # Was hardcoded to "True", so no deployment ever asked for a confirmation
+      # and every account was verified on creation regardless of .env.
+      SKIP_EMAIL_VERIFICATION: ${SKIP_EMAIL_VERIFICATION:-False}
 
       # --- EXTERNAL API CONFIG ---
       # HCAPTCHA_KEY: ""

@@ -1,136 +1,139 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
+<!-- Step one of recovery: ask for a link. (Step two, choosing the new password,
+     is /account/password-reset -- the near-identical names are upstream's and are
+     kept because the second one is baked into every reset email already sent.)
+
+     Was four `alert()` calls over an upstream floating-label form, one of which
+     said "user not found!" -- an oracle for whether an address has an account
+     here, and a lie besides, since the API has never returned 404. Rebuilt on the
+     same Card primitives as login and register, with one neutral outcome. -->
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 
 	navbarVisible.visible = true;
-
 	const { t } = getLocalization();
 
+	let email = $state('');
 	let isSubmitting = $state(false);
+	let result: 'sent' | 'too_many' | 'no_mail' | 'failed' | null = $state(null);
 
 	const submit = async (e: Event) => {
 		e.preventDefault();
 		isSubmitting = true;
+		result = null;
 		try {
 			const res = await fetch('/api/v1/users/forgot-password', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					email: email
-				})
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email })
 			});
 			if (res.ok) {
-				alert('Email was sent! Please check your inbox.');
-			} else if (res.status === 404) {
-				alert('user not found!');
+				result = 'sent';
+			} else if (res.status === 429) {
+				result = 'too_many';
+			} else if (res.status === 503) {
+				result = 'no_mail';
 			} else {
-				alert('An error occurred while sending the email. Please try again.');
+				result = 'failed';
 			}
 		} catch {
-			alert('An error occurred while sending the email. Please try again.');
+			result = 'failed';
 		} finally {
 			isSubmitting = false;
 		}
 	};
-
-	let email = $state('');
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Reset your Password</title>
+	<title>frogQuiz - Reset your password</title>
 </svelte:head>
 
-<div class="flex items-center justify-center h-full px-4">
-	<div>
-		<div
-			class="w-full max-w-sm mx-auto overflow-hidden border-border bg-card rounded-xl border shadow-sm"
-		>
-			<div class="px-6 py-4">
-				<h2 class="text-3xl font-bold tracking-tight text-center">frogQuiz</h2>
+<div class="flex min-h-dvh items-center justify-center px-4 py-10">
+	<Card.Root class="w-full max-w-sm">
+		<Card.Header class="gap-1 text-center">
+			<Card.Title class="text-2xl">{$t('password_reset_page.reset_password')}</Card.Title>
+			<Card.Description>{$t('password_reset_page.request_subtitle')}</Card.Description>
+		</Card.Header>
 
-				<!--
-								<h3 class='mt-1 text-lg font-medium text-center'>
-								</h3>
-				-->
+		<Card.Content>
+			<form onsubmit={submit} class="grid gap-4">
+				<div class="grid gap-2">
+					<Label for="email">{$t('words.email')}</Label>
+					<Input
+						id="email"
+						name="email"
+						type="email"
+						autocomplete="email"
+						required
+						bind:value={email}
+					/>
+				</div>
+				<Button type="submit" class="w-full" disabled={isSubmitting || email.length === 0}>
+					{#if isSubmitting}
+						<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+					{/if}
+					{$t('password_reset_page.send_link')}
+				</Button>
+			</form>
+		</Card.Content>
 
-				<p class="text-muted-foreground mt-1 text-center">
-					{$t('password_reset_page.reset_password')}
-				</p>
-
-				<form onsubmit={submit}>
-					<div class="w-full mt-4">
-						<div class="bg-card rounded-lg p-4">
-							<div class="relative bg-inherit w-full">
-								<input
-									id="email"
-									bind:value={email}
-									name="email"
-									type="email"
-									class="peer text-foreground ring-input focus:ring-ring min-h-11 w-full rounded-lg bg-transparent px-2 ring-2 placeholder-transparent focus:outline-hidden"
-									placeholder={$t('words.email')}
-								/>
-								<label
-									for="email"
-									class="text-foreground peer-placeholder-shown:text-muted-foreground peer-focus:text-primary absolute -top-3 left-0 mx-1 cursor-text bg-inherit px-1 text-sm transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-sm"
-								>
-									{$t('words.email')}
-								</label>
-							</div>
-						</div>
-
-						<div class="flex items-center justify-between mt-4 gap-2">
-							<a
-								href="/account/login"
-								class="text-muted-foreground hover:text-foreground fq-touch-target relative inline-flex min-h-11 items-center text-sm underline-offset-4 transition-colors hover:underline"
-								>{$t('register_page.already_have_account?')}</a
-							>
-
-							<button
-								class="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring fq-touch-target relative inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-								disabled={email === ''}
-								type="submit"
-							>
-								{#if isSubmitting}
-									<svg class="h-4 w-4 animate-spin mx-auto" viewBox="3 3 18 18">
-										<path
-											class="fill-black"
-											d="M12 5C8.13401 5 5 8.13401 5 12C5 15.866 8.13401 19 12 19C15.866 19 19 15.866 19 12C19 8.13401 15.866 5 12 5ZM3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12Z"
-										/>
-										<path
-											class="fill-blue-100"
-											d="M16.9497 7.05015C14.2161 4.31648 9.78392 4.31648 7.05025 7.05015C6.65973 7.44067 6.02656 7.44067 5.63604 7.05015C5.24551 6.65962 5.24551 6.02646 5.63604 5.63593C9.15076 2.12121 14.8492 2.12121 18.364 5.63593C18.7545 6.02646 18.7545 6.65962 18.364 7.05015C17.9734 7.44067 17.3403 7.44067 16.9497 7.05015Z"
-										/>
-									</svg>
-								{:else}
-									{$t('words.submit')}
-								{/if}
-							</button>
-						</div>
-					</div>
-				</form>
-			</div>
-
-			<div
-				class="border-border bg-muted/40 flex items-center justify-center gap-1.5 border-t py-4 text-center"
-			>
-				<span class="text-muted-foreground text-sm"
-					>{$t('login_page.already_have_account')}
-				</span>
-
-				<a
-					href="/account/register"
-					class="text-primary fq-touch-target relative inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 transition-colors hover:underline"
-					>{$t('words.register')}</a
+		{#if result !== null}
+			{@const ok = result === 'sent'}
+			<div class="px-6 pb-2">
+				<div
+					class="flex gap-3 rounded-lg border p-3 text-sm {ok
+						? 'border-border bg-muted/50'
+						: 'border-destructive/40 bg-destructive/10'}"
+					role="status"
+					aria-live="polite"
 				>
+					{#if ok}
+						<CircleCheck
+							class="text-foreground mt-0.5 size-4 shrink-0"
+							aria-hidden="true"
+						/>
+					{:else}
+						<CircleAlert
+							class="text-destructive mt-0.5 size-4 shrink-0"
+							aria-hidden="true"
+						/>
+					{/if}
+					<p class={ok ? 'text-foreground' : 'text-destructive'}>
+						{#if result === 'sent'}
+							{$t('password_reset_page.sent')}
+						{:else if result === 'too_many'}
+							{$t('password_reset_page.send_too_many')}
+						{:else if result === 'no_mail'}
+							{$t('password_reset_page.no_mail')}
+						{:else}
+							{$t('password_reset_page.send_failed')}
+						{/if}
+					</p>
+				</div>
 			</div>
-		</div>
-	</div>
+		{/if}
+
+		<Card.Footer class="justify-center gap-1.5 text-sm">
+			<span class="text-muted-foreground">{$t('password_reset_page.remembered')}</span>
+			<a
+				href="/account/login"
+				class="text-primary font-medium underline-offset-4 hover:underline"
+				>{$t('words.login')}</a
+			>
+		</Card.Footer>
+	</Card.Root>
 </div>

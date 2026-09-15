@@ -126,6 +126,45 @@ UI that the API itself serves as well as the remote one.
 Keep `MAX_WORKERS: "1"`. The socket.io server holds per-game state in one process; a
 second gunicorn worker or a second API replica breaks live games.
 
+## Email
+
+Two things need mail: the confirmation link at registration, and password recovery.
+Neither is optional in a way the app can paper over -- without a relay, a forgotten
+password can only be fixed in the database.
+
+Set the `MAIL_*` block in `.env` and restart `api` and `worker`:
+
+```
+MAIL_SERVER=smtp.resend.com
+MAIL_PORT=587
+MAIL_SECURITY=starttls        # or ssl for port 465, none for a local relay
+MAIL_ADDRESS=noreply@yourdomain
+MAIL_FROM_NAME=frogQuiz
+MAIL_USERNAME=resend
+MAIL_PASSWORD=<api key>
+SKIP_EMAIL_VERIFICATION=False
+```
+
+`ROOT_ADDRESS` is what goes into the links, so it has to be the public URL people
+browse to -- the Netlify site on a split deploy, not the API host. The confirmation
+link is `/api/v1/users/verify/...`, which reaches the backend through the Netlify
+proxy in `netlify.toml`.
+
+Two things go wrong more often than anything else:
+
+- **`MAIL_ADDRESS` is not a sender the relay will send for.** Every provider checks
+  this. Use a verified sender, or an address on a domain with SPF and DKIM set up.
+  The symptom is a message the app reports as sent and the provider silently drops
+  or bounces.
+- **`SKIP_EMAIL_VERIFICATION` is on.** Accounts are then created already verified and
+  no confirmation is ever sent. That is a reasonable setting for an internal
+  deployment; it is not a mail configuration, and password recovery still needs one.
+
+To run without mail at all, leave the block blank and set
+`SKIP_EMAIL_VERIFICATION=True`. Registration then works and recovery does not;
+the API says so with a 503 rather than pretending, and the app logs a warning at
+startup.
+
 ## Managed Postgres (Neon)
 
 The `db` container can be swapped for Neon when the app host has no persistent disk.

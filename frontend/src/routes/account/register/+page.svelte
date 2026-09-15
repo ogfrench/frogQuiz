@@ -55,6 +55,7 @@ SPDX-License-Identifier: MPL-2.0
 		validate: validateSchema(registerSchema),
 		extend: [reporter()],
 		onSubmit: async (values) => {
+			registeredEmail = values.email;
 			try {
 				const res = await fetch('/api/v1/users/create', {
 					method: 'post',
@@ -80,6 +81,8 @@ SPDX-License-Identifier: MPL-2.0
 					responseData.data = '400';
 				} else if (res.status === 429) {
 					responseData.data = '429';
+				} else if (res.status === 503) {
+					responseData.data = '503';
 				} else {
 					responseData.data = 'error';
 				}
@@ -93,6 +96,28 @@ SPDX-License-Identifier: MPL-2.0
 		open: false,
 		data: ''
 	});
+
+	// Registration had no way back: if the confirmation mail was lost or filtered,
+	// signing up again just returned 409 and the address stayed unverified forever.
+	let resend = $state({ busy: false, result: '' });
+	let registeredEmail = $state('');
+
+	const resendVerification = async () => {
+		resend.busy = true;
+		resend.result = '';
+		try {
+			const res = await fetch('/api/v1/users/resend-verification', {
+				method: 'post',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email: registeredEmail })
+			});
+			resend.result = res.ok ? 'sent' : res.status === 429 ? 'too_many' : 'failed';
+		} catch {
+			resend.result = 'failed';
+		} finally {
+			resend.busy = false;
+		}
+	};
 </script>
 
 <svelte:head>
@@ -272,12 +297,40 @@ SPDX-License-Identifier: MPL-2.0
 							{$t('register_page.result.invalid')}
 						{:else if responseData.data === '429'}
 							{$t('register_page.result.too_many')}
+						{:else if responseData.data === '503'}
+							{$t('register_page.result.no_mail')}
 						{:else}
 							{$t('register_page.result.failed')}
 						{/if}
 					</p>
 				</div>
 			</div>
+
+			{#if responseData.data === '200'}
+				<div class="text-muted-foreground px-6 pb-2 text-sm">
+					{#if resend.result === ''}
+						<span>{$t('register_page.resend.prompt')}</span>
+						<button
+							type="button"
+							class="text-primary font-medium underline-offset-4 hover:underline disabled:opacity-50"
+							disabled={resend.busy}
+							onclick={resendVerification}
+						>
+							{$t('register_page.resend.action')}
+						</button>
+					{:else}
+						<p role="status" aria-live="polite">
+							{#if resend.result === 'sent'}
+								{$t('register_page.resend.sent')}
+							{:else if resend.result === 'too_many'}
+								{$t('register_page.resend.too_many')}
+							{:else}
+								{$t('register_page.resend.failed')}
+							{/if}
+						</p>
+					{/if}
+				</div>
+			{/if}
 		{/if}
 
 		<Card.Footer class="justify-center gap-1.5 text-sm">
