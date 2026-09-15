@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Removed every external image from the README: five shields.io badges at the top, plus the Ko-fi button and Liberapay goal badge in Credits. Seven third-party requests fired on every view of the page, each one handing shields.io or ko-fi.com the visitor's IP and referrer to render a picture of a number. The badges were also wrong: `CONTRIBUTORS` read 93, which is upstream's contributor count inherited through the fork, and `TESTS` read FAILING. The Ko-fi and Liberapay links stay in Credits as plain text links, which is the attribution without the beacon.
 - Removed `.github/FUNDING.yml`. It listed `ko_fi: mawoka`, `liberapay: Mawoka` and `github: mawoka-myblock`, which put a **Sponsor** button on this repository routing donations to upstream. Anyone clicking Sponsor on frogQuiz was funding a different project without being told. The credit to Marlon W stays in the README, where the surrounding sentence makes clear whose project is being supported.
 - Fixed two issue templates that GitHub could not parse. `Feature_request.md` and `Repo_architecture_changes.md` had their SPDX comment block _above_ the YAML frontmatter, and frontmatter has to start on line 1 -- so `name:` and `about:` never registered and both templates rendered as raw text with visible `---` delimiters. The feature-request template also asked contributors to "Describe the bug".
 - Pointed the pull-request template's contributing link at our `CONTRIBUTING.md` instead of upstream's.
