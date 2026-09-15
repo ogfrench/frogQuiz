@@ -4,7 +4,6 @@
 import asyncio
 import logging
 import os
-import re
 import smtplib
 import ssl
 from email.headerregistry import Address
@@ -41,25 +40,7 @@ class MailNotConfigured(RuntimeError):
     """Raised when something wants to send mail and no relay has been set up."""
 
 
-_TAG_RE = re.compile(r"<[^>]+>")
-
-
-def _plaintext_from(html_body: str, fallback_url: str | None) -> str:
-    """A readable text/plain part.
-
-    MIMEMultipart("alternative") promises two representations and the old code only
-    ever attached one, which is a spam-filter signal and leaves plain-text clients
-    with an empty message. This is not a full HTML-to-text pass -- the templates are
-    a table layout around a single link -- so the link is what has to survive.
-    """
-    text = _TAG_RE.sub(" ", html_body)
-    text = re.sub(r"\s+", " ", text).strip()
-    if fallback_url:
-        text = f"{text}\n\n{fallback_url}"
-    return text
-
-
-def _sendMail_blocking(template: str, to: str, subject: str, link: str | None) -> None:
+def _sendMail_blocking(html_body: str, text_body: str, to: str, subject: str) -> None:
     if not settings.mail_configured:
         raise MailNotConfigured("MAIL_SERVER and MAIL_ADDRESS are not set")
     msg = MIMEMultipart("alternative")
@@ -75,8 +56,11 @@ def _sendMail_blocking(template: str, to: str, subject: str, link: str | None) -
     msg["Message-ID"] = make_msgid(domain=domain or None)
     # text/plain first: in a multipart/alternative the last part is the preferred
     # one, so the HTML has to come second or clients will show the fallback.
-    msg.attach(MIMEText(_plaintext_from(template, link), "plain", "utf-8"))
-    msg.attach(MIMEText(template, "html", "utf-8"))
+    # The plain part is written by hand in its own template rather than derived
+    # from the HTML -- stripping tags out of a table layout with a <style> block
+    # yields the CSS as prose.
+    msg.attach(MIMEText(text_body, "plain", "utf-8"))
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     context = ssl.create_default_context()
     # Closed on every path: the old code never called quit(), so a server that
@@ -102,33 +86,46 @@ def _sendMail_blocking(template: str, to: str, subject: str, link: str | None) -
         server.sendmail(settings.mail_address, to, msg.as_string())
 
 
-async def _sendMail(template: str, to: str, subject: str, link: str | None = None) -> None:
+async def _sendMail(html_body: str, text_body: str, to: str, subject: str) -> None:
     """Send mail off the event loop. Raises on failure -- callers decide what that means."""
-    await asyncio.to_thread(_sendMail_blocking, template, to, subject, link)
+    await asyncio.to_thread(_sendMail_blocking, html_body, text_body, to, subject)
+
+
+async def _render(name: str, **ctx) -> tuple[str, str]:
+    """Render one message's HTML and plain-text bodies from its two templates."""
+    html_body = await jinja.get_template(f"{name}.jinja2").render_async(**ctx)
+    text_body = await jinja.get_template(f"{name}.txt.jinja2").render_async(**ctx)
+    return html_body, text_body.strip() + "\n"
 
 
 async def send_register_email(user: User):
     if user is None:
         raise ValueError("User not found")
-    link = f"{settings.root_address}/api/v1/users/verify/{user.verify_key}"
-    template = jinja.get_template("register.jinja2")
-    template = await template.render_async(base_url=settings.root_address, token=user.verify_key)
-    await _sendMail(template=template, to=user.email, subject="Confirm your frogQuiz address", link=link)
+    html_body, text_body = await _render("register", base_url=settings.root_address, token=user.verify_key)
+    await _sendMail(
+        html_body=html_body,
+        text_body=text_body,
+        to=user.email,
+        subject="Confirm your frogQuiz address",
+    )
 
 
 async def send_forgotten_password_email(user: User):
     if user is None:
         raise ValueError("User not found")
     token = os.urandom(32).hex()
-    link = f"{settings.root_address}/account/password-reset?token={token}"
-    template = jinja.get_template("forgotten_password.jinja2")
-    template = await template.render_async(base_url=settings.root_address, token=token)
+    html_body, text_body = await _render("forgotten_password", base_url=settings.root_address, token=token)
     # Written before the send, not after: the alternative leaves a window in which
     # the recipient holds a link the server does not yet honour. On a failed send
     # the token is dropped again, so nothing usable is left behind.
     await redis.set(f"reset_passwd:{token}", str(user.id), ex=RESET_TOKEN_TTL_SECONDS)
     try:
-        await _sendMail(template=template, to=user.email, subject="Reset your frogQuiz password", link=link)
+        await _sendMail(
+            html_body=html_body,
+            text_body=text_body,
+            to=user.email,
+            subject="Reset your frogQuiz password",
+        )
     except Exception:
         await redis.delete(f"reset_passwd:{token}")
         raise
