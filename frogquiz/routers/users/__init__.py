@@ -435,16 +435,25 @@ async def delete_user_account(
     # The cache clear is the load-bearing one: get_current_user reads the user out of
     # Redis, where this very request just warmed an entry, so without it a deleted
     # account keeps authenticating for up to cache_expiry (24h).
-    await clear_cache_for_account(user)
-    access_token = request.cookies.get("access_token")
-    if access_token is not None:
-        await revoke_token(access_token.removeprefix("Bearer "))
-    for key in api_keys:
-        await redis.delete(f"apikey:{key}")
+    # Cookies first, because setting them on the response cannot fail. Redis can,
+    # and if it did before this point the browser would still be holding a session
+    # for an account that no longer exists.
     response.delete_cookie("access_token")
     response.delete_cookie("expiry")
     response.delete_cookie("rememberme")
     response.delete_cookie("rememberme_token")
+    try:
+        await clear_cache_for_account(user)
+        access_token = request.cookies.get("access_token")
+        if access_token is not None:
+            await revoke_token(access_token.removeprefix("Bearer "))
+        for key in api_keys:
+            await redis.delete(f"apikey:{key}")
+    except Exception:
+        # Worth a loud log: until the entry expires, the deleted account's token
+        # still resolves to a cached user. Raising here would report failure for a
+        # deletion that has already committed, which is worse.
+        LOGGER.exception("Deleted a user but could not clear their Redis session state")
 
     # Both of these are best-effort, and both run after the commit on purpose.
     # Meilisearch used to be stripped *before* a delete that could fail, which left
