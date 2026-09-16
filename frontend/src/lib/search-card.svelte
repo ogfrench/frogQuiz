@@ -1,48 +1,59 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
-
-	const { t } = getLocalization();
 	import ImportedOrNot from '$lib/view_quiz/imported_or_not.svelte';
 	import { highlightToHtml } from '$lib/search/highlight';
+	import * as Card from '$lib/components/ui/card/index.js';
+
+	const { t } = getLocalization();
+
 	let { quiz } = $props();
 </script>
 
-<div class="flex justify-center">
-	<a href="/view/{quiz.id}" class="h-max w-fit">
-		<div class="max-w-md py-4 px-8 bg-white shadow-lg rounded-lg my-20 dark:bg-slate-800">
-			<div>
-				<div class="flex w-full items-center">
-					<h2
-						class="text-gray-800 dark:text-gray-200 text-3xl font-semibold truncate pr-2"
-					>
-						{@html highlightToHtml(quiz.title)}
-					</h2>
-					<span class="inline-block ml-auto">
-						<ImportedOrNot imported={quiz.imported_from_kahoot} />
-					</span>
-				</div>
-				<p
-					class="mt-2 text-gray-600 dark:text-gray-300 break-all overflow-hidden text-ellipsis max-h-[4.5rem] block"
-				>
-					{@html highlightToHtml(quiz.description)}
-				</p>
+<!--
+	Was `bg-white … dark:bg-slate-800` with `text-gray-800`/`text-gray-600` and a
+	`my-20` margin on every card, which is where the huge gaps between rows came from:
+	the grid had no gap and each card paid for its own spacing. Tokens and a grid gap
+	now, so it survives a theme change and lines up.
+
+	`min-w-0` is on the link rather than only the text: a grid item defaults to
+	`min-width: auto`, so a long unbroken title pushed the card out of its column.
+-->
+<a
+	href="/view/{quiz.id}"
+	class="focus-visible:ring-ring block min-w-0 rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+>
+	<Card.Root class="hover:ring-primary/40 h-full transition">
+		<Card.Header>
+			<div class="flex min-w-0 items-start gap-2">
+				<Card.Title class="min-w-0 flex-1 truncate text-xl">
+					<!-- highlightToHtml escapes the author's text and restores only
+					     Meilisearch's <em> pair as <mark>. See lib/search/highlight.ts. -->
+					{@html highlightToHtml(quiz.title)}
+				</Card.Title>
+				<span class="shrink-0">
+					<ImportedOrNot imported={quiz.imported_from_kahoot} />
+				</span>
 			</div>
-			<div class="flex mt-4">
-				<span
-					>{#if quiz.imported_from_kahoot === true}
-						{$t('explore_page.imported_by')}
-					{:else}
-						{$t('explore_page.made_by')}
-					{/if}
-					{quiz.user}</span
-				>
-			</div>
-		</div>
-	</a>
-</div>
+			<Card.Description class="line-clamp-3 break-words">
+				{@html highlightToHtml(quiz.description)}
+			</Card.Description>
+		</Card.Header>
+		<Card.Footer class="text-muted-foreground text-sm">
+			<span class="min-w-0 truncate">
+				{#if quiz.imported_from_kahoot === true}
+					{$t('explore_page.imported_by')}
+				{:else}
+					{$t('explore_page.made_by')}
+				{/if}
+				{quiz.user}
+			</span>
+		</Card.Footer>
+	</Card.Root>
+</a>

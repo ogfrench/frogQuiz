@@ -412,7 +412,10 @@
   },
   "explore_page": {
     "made_by": "Made by",
-    "imported_by": "Imported by"
+    "imported_by": "Imported by",
+    "search_failed": "Search is unavailable right now. Try again in a moment.",
+    "nothing_here_detail": "No quiz matches that. You can make one without an account.",
+    "create_one": "Create a quiz"
   },
   "search_page": {
     "at_least_3_characters": "Enter at least 3 characters...",
@@ -579,7 +582,10 @@
     "normal_mode_description": "Question and answer will only be shown on admins screen. The players will only have colored buttons with symbols matching these on the screen of the admin.",
     "old_school_mode": "Old-School",
     "old_school_mode_description": "Questions and images will be shown on both admins screen and on the screen of the players",
-    "start_game": "Start Game"
+    "start_game": "Start Game",
+    "randomize_answers": "Randomize answers",
+    "start_failed": "Failed to start the game. Please try again.",
+    "start_failed_signed_out": "Could not start the game. Your session may have expired, or the quiz no longer exists."
   },
   "quiztivity": {
     "editor": {

@@ -45,8 +45,9 @@ SPDX-License-Identifier: MPL-2.0
 			<a class="btn-nav border-border bg-muted/60 text-foreground border" href="/play"
 				>{$t('words.play')}</a
 			>
+			<!-- One entry: Explore and Search are the same page now, and /search
+			     redirects to it. -->
 			<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
-			<a class="btn-nav" href="/search">{$t('words.search')}</a>
 			{#if $signedIn}
 				<a class="btn-nav" href="/dashboard">{$t('words.dashboard')}</a>
 			{:else}
@@ -123,7 +124,6 @@ SPDX-License-Identifier: MPL-2.0
 		{#if !menuIsClosed}
 			<div class="flex flex-col" transition:slide|global={{ duration: 400 }}>
 				<a class="btn-nav" href="/explore">{$t('words.explore')}</a>
-				<a class="btn-nav" href="/search">{$t('words.search')}</a>
 				{#if $signedIn}
 					<a class="btn-nav" href="/dashboard">{$t('words.dashboard')}</a>
 				{:else}
