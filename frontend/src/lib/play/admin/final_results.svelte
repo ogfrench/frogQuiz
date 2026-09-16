@@ -91,7 +91,7 @@ SPDX-License-Identifier: MPL-2.0
 						</p>
 						<p class="text-sm text-muted-foreground tabular-nums">
 							{p.score}
-							{$t('words.point_plural')}
+							{$t('words.point', { count: p.score })}
 						</p>
 					</div>
 
