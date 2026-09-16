@@ -54,7 +54,12 @@ SPDX-License-Identifier: MPL-2.0
 	</p>
 	<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
 
-	<h2>The one third party</h2>
+	<h2>Who else sees any of it</h2>
+	<p>
+		Confirmation and password-reset emails are sent through Resend. They handle the delivery, so
+		they see your address and the link in the message. That is all they get, and it is all they
+		are used for.
+	</p>
 	<p>
 		A host can switch on a captcha for joining a game, which loads hCaptcha or Google reCAPTCHA
 		depending on configuration. Neither is enabled by default, and with none configured nothing

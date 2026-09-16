@@ -4,6 +4,24 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Account deletion
+
+- Added a delete-account card to `/account/settings`, confirmed with the password in an `AlertDialog`. `DELETE /api/v1/users/me` had existed since upstream with nothing in the app calling it, while the terms and the privacy policy both told people they could delete their account in settings.
+- Gave `rating.user`, `rating.quiz` and `controller.user` `ON DELETE CASCADE` (migration `c3f8a1d47b62`). They were the three foreign keys `2ed6823c69b2` missed, so a single rating blocked account deletion partway through -- the quiz delete failed on `rating.quiz`, or the user delete failed on `rating.user` one step later, after the account's sessions and every one of its quizzes were already gone and committed. This also fixes `delete_quiz`, which 500'd on any quiz somebody had rated.
+- Stopped the delete handler re-reading the user from the database. `get_current_user` resolves through the Redis cache, so a double submit authenticated a user whose row was already gone; the re-read then yielded `None` and `Quiz.objects.filter(user_id=None).delete()` is not "no quizzes", it is every anonymous quiz in the database.
+- Deleting an account now clears its Redis cache entry, revokes its access token, drops its API-key cache entries and clears all four cookies. None of that happened, so a deleted account kept authenticating for up to 24 hours and the browser still believed it was signed in.
+- Wrapped the deletion in a transaction, and moved the Meilisearch removal after the commit. It ran before a delete that could fail, which left quizzes present in the database and missing from search.
+- Deleting an account now deletes its uploads. `storage_items` is `ON DELETE SET NULL` and nothing removed the blobs, so files outlived the account and the privacy policy's "takes your quizzes and uploads with it" was not true.
+- Rate-limited `DELETE /users/me` to 5 an hour per account. It was an unthrottled password check, and each attempt costs a deliberately expensive argon2 verify.
+- `DELETE /users/me` returns 400 rather than 500 for an account with no password. OAuth accounts are created without one, and `verify_password(x, None)` raises.
+- Replaced the two `alert()` calls left in the settings password form with an inline message, and gave the login page a notice for a completed deletion or password change.
+
+### Deployment
+
+- Fixed `pnpm ci` in `frontend/Dockerfile`, which is not a pnpm command and matched no script -- any rebuild of the frontend image failed at that layer.
+- Set `COMPOSE_FILE` in the deployment `.env` so a bare `docker compose` picks up `docker-compose.neon.yml`. Without it the stack comes up pointing at the empty `db` container instead of Neon.
+- Disclosed Resend in the privacy policy. It is the relay for confirmation and reset mail, and the page previously named the optional captcha as the only third party.
+
 ### Editor
 
 - Replaced the question-reorder mode with drag and drop. Reordering was a toolbar toggle that laid two invisible half-card hit areas over every question, each containing an `<svg>` with no size class -- so it stretched to fill its grid cell and turning reorder mode on painted a pair of chevrons the size of the card over the content you were trying to reorder. Each question now has a grip: drag it with a pointer, or focus it and use the arrow keys. The hit areas were `role="button"` divs with no `tabindex`, so the old control could not be reached by keyboard at all; the grip is a real button, which is the single-pointer alternative WCAG 2.5.7 asks for.
@@ -14,6 +32,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 ### i18n
 
 - Fixed every plural in the app. The locale file uses i18next's v3 `_plural` suffix, but `i18n-service.ts` initialises i18next 25 with `compatibilityJSON: 'v4'`, where counted lookups resolve to `_one` and `_other`. All fifteen were silently falling back to the singular, so the app said "3 question", "2 player", "5 point". Renamed to the v4 spelling, with the bare keys kept for the uncounted uses.
+
+### Local development
+
+- Added `STORAGE_BACKEND`/`STORAGE_PATH` to `.env.example`. `docker-compose.yml` hardcodes `STORAGE_BACKEND: "local"` for the container, but `storage_backend` has no default in `config.py`, so running the backend directly with `pipenv run uvicorn` per the README's own Development section crashed on startup with a validation error unless `.env` set it by hand.
 
 ### Registration and recovery: edge cases
 

@@ -14,6 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
+	import DeleteAccount from './delete-account.svelte';
 
 	const { t } = getLocalization();
 
@@ -23,6 +24,7 @@ SPDX-License-Identifier: MPL-2.0
 		username: string;
 		verified: boolean;
 		created_at: string;
+		auth_type: string;
 	}
 
 	interface ChangePasswordData {
@@ -36,6 +38,10 @@ SPDX-License-Identifier: MPL-2.0
 		newPassword: '',
 		newPasswordConfirm: ''
 	});
+
+	// Replaces the alert() pair this form used to end in -- the idiom the rest of
+	// the account surface dropped.
+	let passwordError = $state('');
 
 	let this_session = $state();
 	// The avatar endpoint can 404, and a failed <img> paints its alt text across the
@@ -70,10 +76,9 @@ SPDX-License-Identifier: MPL-2.0
 			})
 		});
 		if (res.status === 200) {
-			alert('Password changed');
-			window.location.assign('/account/login');
+			window.location.assign('/account/login?password_changed=true');
 		} else {
-			alert('Password change failed');
+			passwordError = $t('settings_page.password_change_failed');
 		}
 	};
 
@@ -227,6 +232,11 @@ SPDX-License-Identifier: MPL-2.0
 								</p>
 							{/if}
 						</div>
+						{#if passwordError !== ''}
+							<p class="text-destructive text-sm" aria-live="polite">
+								{passwordError}
+							</p>
+						{/if}
 						<div>
 							<Button disabled={!passwordChangeDataValid} type="submit">
 								{$t('settings_page.change_password_submit')}
@@ -320,6 +330,8 @@ SPDX-License-Identifier: MPL-2.0
 					{/await}
 				</Card.Content>
 			</Card.Root>
+
+			<DeleteAccount authType={user.auth_type} />
 		</div>
 	{/await}
 </div>

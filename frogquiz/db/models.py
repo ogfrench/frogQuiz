@@ -550,7 +550,7 @@ class UpdateStorageItem(BaseModel):
 
 class Controller(ormar.Model):
     id: uuid.UUID = ormar.UUID(primary_key=True)
-    user: uuid.UUID | User = ormar.ForeignKey(User)
+    user: uuid.UUID | User = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
     secret_key: str = ormar.String(nullable=False, max_length=24, min_length=24)
     player_name: str = ormar.Text(nullable=False)
     last_seen: datetime | None = ormar.DateTime(nullable=True)
@@ -568,10 +568,10 @@ class Controller(ormar.Model):
 
 class Rating(ormar.Model):
     id: uuid.UUID = ormar.UUID(primary_key=True)
-    user: uuid.UUID | User = ormar.ForeignKey(User)
+    user: uuid.UUID | User = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
     positive: bool = ormar.Boolean(nullable=False)
     created_at: datetime = ormar.DateTime(nullable=False, server_default=func.now())
-    quiz: uuid.UUID | Quiz = ormar.ForeignKey(Quiz)
+    quiz: uuid.UUID | Quiz = ormar.ForeignKey(Quiz, ondelete=ReferentialAction.CASCADE)
 
     ormar_config = ormar.OrmarConfig(
         tablename="rating",

@@ -13,7 +13,11 @@ SPDX-License-Identifier: MPL-2.0
 	// "expired" covers both ways a confirmation link stops working: it was already
 	// used, or asking for a new mail replaced it. Neither is an error the person
 	// can do anything about without being told what to do next.
-	let { state }: { state: 'true' | 'expired' } = $props();
+	//
+	// "deleted" and "password_changed" are the other two things that end with a
+	// redirect here, and they want the same quiet status line rather than a second
+	// component that looks almost like this one.
+	let { state }: { state: 'true' | 'expired' | 'deleted' | 'password_changed' } = $props();
 	const { t } = getLocalization();
 	const ok = $derived(state !== 'expired');
 </script>
@@ -27,7 +31,15 @@ SPDX-License-Identifier: MPL-2.0
 >
 	{#if ok}
 		<CircleCheck class="text-foreground mt-0.5 size-4 shrink-0" aria-hidden="true" />
-		<p class="text-foreground">{$t('login_page.verified')}</p>
+		<p class="text-foreground">
+			{#if state === 'deleted'}
+				{$t('login_page.account_deleted')}
+			{:else if state === 'password_changed'}
+				{$t('settings_page.password_changed')}
+			{:else}
+				{$t('login_page.verified')}
+			{/if}
+		</p>
 	{:else}
 		<CircleAlert class="text-destructive mt-0.5 size-4 shrink-0" aria-hidden="true" />
 		<p class="text-destructive">

@@ -21,7 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 	navbarVisible.visible = true;
 
 	let { data } = $props();
-	let { verified } = data;
+	let { notice } = data;
 
 	let session_data = $state({});
 	let step = $state(0);
@@ -94,8 +94,8 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz - Login</title>
 </svelte:head>
 <div class="flex min-h-screen flex-col items-center justify-center px-4">
-	{#if verified}
-		<VerifiedBadge state={verified} />
+	{#if notice}
+		<VerifiedBadge state={notice} />
 	{/if}
 
 	<Card.Root class="w-full max-w-sm overflow-hidden pt-6 pb-0 shadow-xl">

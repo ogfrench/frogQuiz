@@ -791,11 +791,68 @@ class TestDeleteStuff:
         )
         assert resp.status_code == 400
 
-    # @pytest.mark.asyncio
-    # async def test_delete_user(self, test_client: TestClient):  # noqa : F811
-    #     data = {"password": test_user_password}
-    #     resp = test_client.delete("/api/v1/users/me", cookies=ValueStorage.cookies, json=data)
-    #     assert resp.status_code == 200
+    @pytest.mark.asyncio
+    async def test_delete_user_rejects_wrong_password(self, test_client: TestClient):  # noqa : F811
+        # test_client.delete() drops the body -- httpx's convenience methods have no
+        # json= for DELETE -- which is why the original version of this test was
+        # commented out rather than fixed.
+        resp = test_client.request(
+            "DELETE",
+            "/api/v1/users/me",
+            cookies=ValueStorage.cookies,
+            json={"password": "not-the-password"},
+        )
+        assert resp.status_code == 400
+        # Still there, and still signed in.
+        resp = test_client.get("/api/v1/users/me", cookies=ValueStorage.cookies)
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_delete_user_is_not_blocked_by_a_rating(self, test_client: TestClient):  # noqa : F811
+        """The account being deleted has rated its own public quiz.
+
+        `rating.user` and `rating.quiz` had no ON DELETE action, so this row blocked
+        the delete halfway: the quiz delete failed on rating.quiz, or the user delete
+        failed on rating.user one step later -- after the sessions and every quiz were
+        already gone and committed. Without this seeded row the test passes on the
+        broken code and proves nothing. See migration c3f8a1d47b62.
+        """
+        resp = test_client.post(
+            f"/api/v1/community/rate/{ValueStorage.quiz_id}",
+            cookies=ValueStorage.cookies,
+            json={"type": "LIKE"},
+        )
+        assert resp.status_code == 200, "the seed this test depends on did not happen"
+
+        resp = test_client.request(
+            "DELETE",
+            "/api/v1/users/me",
+            cookies=ValueStorage.cookies,
+            json={"password": test_user_password},
+        )
+        assert resp.status_code == 200
+        # The cookie has to be cleared by the server: it is httponly, so the page
+        # cannot drop it, and hooks.server.ts would keep reporting the user as signed
+        # in on the next request.
+        assert "access_token" in resp.headers.get("set-cookie", "")
+
+    @pytest.mark.asyncio
+    async def test_deleted_user_session_stops_working(self, test_client: TestClient):  # noqa : F811
+        """get_current_user resolves out of Redis, and this request's own auth warmed
+        that entry, so without clear_cache_for_account a deleted account kept
+        authenticating for the full cache_expiry (24h)."""
+        resp = test_client.get("/api/v1/users/me", cookies=ValueStorage.cookies)
+        assert resp.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_can_register_again_after_delete(self, test_client: TestClient):  # noqa : F811
+        """The cleanest proof the row actually went: re-registering the same address
+        returns 200 rather than the 409 a surviving account would give."""
+        resp = test_client.post(
+            "/api/v1/users/create",
+            json={"email": test_user_email, "password": test_user_password, "username": "mawoka"},
+        )
+        assert resp.status_code == 200
 
 
 def test_check_question_scoring_is_all_or_nothing():

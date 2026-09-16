@@ -129,7 +129,8 @@
     "failed": "Couldn't sign you in. Try again.",
     "unconfirmed_hint": "Signed up recently and never confirmed your address?",
     "unconfirmed_link": "Send it again",
-    "change_account": "Change"
+    "change_account": "Change",
+    "account_deleted": "Your account and everything in it has been deleted."
   },
   "words": {
     "question": "Question",
@@ -387,7 +388,20 @@
     "sessions_description": "Devices and browsers currently signed in to your account.",
     "password_requirements": "At least 8 characters, and different from your current password.",
     "passwords_do_not_match": "The two passwords do not match.",
-    "password_section": "Password"
+    "password_section": "Password",
+    "password_changed": "Password changed. Sign in again with the new one.",
+    "password_change_failed": "Couldn't change the password. Check the current one and try again.",
+    "danger_section": "Delete account",
+    "danger_description": "Your quizzes, saved results and uploads go with it. This cannot be undone.",
+    "delete_account_button": "Delete account",
+    "delete_confirm_title": "Delete your account?",
+    "delete_confirm_body": "Everything you have made here is removed. There is no way to get it back.",
+    "delete_password_hint": "Enter your password to confirm.",
+    "delete_confirm_button": "Delete my account",
+    "delete_wrong_password": "That password isn't right.",
+    "delete_too_many": "Too many attempts. Try again later.",
+    "delete_failed": "Couldn't delete the account. Nothing was changed -- try again.",
+    "delete_oauth_account": "This account signs in with an external provider, so there's no password to confirm with."
   },
   "explore_page": {
     "made_by": "Made by",
