@@ -8,9 +8,8 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import type { Answers, Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
-	import { onMount } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import { getLocalization } from '$lib/i18n';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import X from '@lucide/svelte/icons/x';
 
@@ -27,21 +26,6 @@ SPDX-License-Identifier: MPL-2.0
 	}: Props = $props();
 
 	const { t } = getLocalization();
-	onMount(() => {
-		document.body.addEventListener('keydown', close_start_game_if_esc_is_pressed);
-		return () =>
-			document.body.removeEventListener('keydown', close_start_game_if_esc_is_pressed);
-	});
-	const close_start_game_if_esc_is_pressed = (key: KeyboardEvent) => {
-		if (key.code === 'Escape') {
-			open = false;
-		}
-	};
-	const on_parent_click = (e: Event) => {
-		if (e.target === e.currentTarget) {
-			open = false;
-		}
-	};
 
 	// RANGE, TEXT, VOTING, ORDER and SLIDE were cut from the MVP: each one multiplies the
 	// editor, the play screen, the results screen and the scoring path, and none of them is
@@ -82,30 +66,24 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<!-- w-screen/h-screen here meant 100vw, which is wider than the page whenever there is a
-     scrollbar. inset-0 is the correct way to fill a fixed overlay. -->
-<div
-	class="fixed inset-0 z-50 flex bg-black/50 p-4"
-	onclick={on_parent_click}
-	transition:fade={{ duration: 100 }}
->
-	<div
-		class="border-border bg-card m-auto flex w-full max-w-lg flex-col gap-5 rounded-xl border p-6 shadow-xl"
-		role="dialog"
-		aria-modal="true"
-		aria-label={$t('editor.add_new_question')}
-	>
+<!-- Was a hand-rolled overlay: a fixed div, a body keydown listener for Escape, and a
+     target === currentTarget check for the backdrop. The shadcn Dialog brings the
+     Escape handling, the backdrop, the focus trap and the return of focus to whatever
+     opened it -- none of which the hand-rolled version did. Its own close button is
+     turned off because its label is hardcoded English; ours is translated. -->
+<Dialog.Root bind:open>
+	<Dialog.Content showCloseButton={false} class="gap-5">
 		<div class="flex items-start justify-between gap-4">
-			<h2 class="text-lg font-semibold">{$t('editor.add_new_question')}</h2>
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				type="button"
-				aria-label={$t('words.close')}
-				onclick={() => (open = false)}
-			>
-				<X />
-			</Button>
+			<Dialog.Title class="text-lg font-semibold">
+				{$t('editor.add_new_question')}
+			</Dialog.Title>
+			<Dialog.Close>
+				{#snippet child({ props })}
+					<Button variant="ghost" size="icon-sm" aria-label={$t('words.close')} {...props}>
+						<X />
+					</Button>
+				{/snippet}
+			</Dialog.Close>
 		</div>
 
 		<div class="flex flex-col gap-2">
@@ -122,5 +100,5 @@ SPDX-License-Identifier: MPL-2.0
 				</button>
 			{/each}
 		</div>
-	</div>
-</div>
+	</Dialog.Content>
+</Dialog.Root>

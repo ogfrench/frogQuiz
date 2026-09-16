@@ -12,12 +12,14 @@ SPDX-License-Identifier: MPL-2.0
 	import QuestionStrip from '$lib/editor/question-strip.svelte';
 	import SettingsCard from '$lib/editor/settings-card.svelte';
 	import QuizCard from '$lib/editor/card.svelte';
+	import AddNewQuestionPopup from '$lib/editor/AddNewQuestionPopup.svelte';
 	import Spinner from './Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { Button } from '$lib/components/ui/button';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Save from '@lucide/svelte/icons/save';
+	import Plus from '@lucide/svelte/icons/plus';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import { getAnonSecret, setAnonSecret } from '$lib/anon_quiz';
 	import ThemeToggle from '$lib/theme-toggle.svelte';
@@ -37,6 +39,10 @@ SPDX-License-Identifier: MPL-2.0
 	// The rail collapses to a slim strip at lg and up; below that the horizontal
 	// QuestionStrip carries the same navigation. Neither ever leaves the layout.
 	let rail_collapsed = $state(false);
+	// The canvas gets its own add control, so adding a question does not mean going
+	// back to the rail first. Own state and own dialog instance, matching how the rail
+	// and the mobile strip each hold theirs.
+	let add_open = $state(false);
 
 	const validateInput = async (data: EditorData) => {
 		try {
@@ -222,11 +228,28 @@ SPDX-License-Identifier: MPL-2.0
 						{:else}
 							<QuizCard bind:data bind:selected_question bind:edit_id />
 						{/if}
+						<!-- Sits at the end of the canvas column, in the measure, the way
+						     a document editor puts "add" where the content ends. It is the
+						     scroll container's last child so it is always reachable. -->
+						<Button
+							type="button"
+							variant="outline"
+							class="border-border/70 text-muted-foreground hover:text-foreground mt-6 h-14 w-full border-dashed"
+							onclick={() => (add_open = true)}
+						>
+							<Plus />
+							{$t('editor.add_new_question')}
+						</Button>
 					</div>
 				</div>
 			</div>
 		</div>
 	</form>
+	<AddNewQuestionPopup
+		bind:questions={data.questions}
+		bind:open={add_open}
+		bind:selected_question
+	/>
 {:catch error}
 	<div class="flex min-h-dvh items-center justify-center px-6">
 		<div class="w-full max-w-sm text-center">

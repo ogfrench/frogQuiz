@@ -386,6 +386,12 @@ SPDX-License-Identifier: MPL-2.0
 				{/if}
 			</div>
 		{/each}
+	</div>
+	<!-- The add control used to be the last child of the scrolling list, so on a quiz
+	     with more than a screenful of questions it scrolled out of reach and the only
+	     way to add one was to scroll to the bottom first. It is a pinned footer of the
+	     rail now, outside the scroll container. -->
+	<div class="border-border shrink-0 border-t p-3 {collapsed ? 'hidden' : ''}">
 		<Button
 			class="w-full"
 			type="button"
@@ -399,10 +405,10 @@ SPDX-License-Identifier: MPL-2.0
 		</Button>
 	</div>
 </aside>
-{#if add_new_question_popup_open}
-	<AddNewQuestionPopup
-		bind:questions={data.questions}
-		bind:open={add_new_question_popup_open}
-		bind:selected_question
-	/>
-{/if}
+<!-- No {#if} wrapper: Dialog.Root owns its own visibility, and mounting on `open`
+     would skip the exit animation and rebuild the dialog on every open. -->
+<AddNewQuestionPopup
+	bind:questions={data.questions}
+	bind:open={add_new_question_popup_open}
+	bind:selected_question
+/>

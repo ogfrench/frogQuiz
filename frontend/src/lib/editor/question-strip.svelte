@@ -188,10 +188,5 @@ SPDX-License-Identifier: MPL-2.0
      to move, release to place" is the app explaining itself to someone already doing
      it. Screen readers still get it: the held chip carries aria-grabbed. -->
 
-{#if add_open}
-	<AddNewQuestionPopup
-		bind:questions={data.questions}
-		bind:open={add_open}
-		bind:selected_question
-	/>
-{/if}
+<!-- No {#if} wrapper: Dialog.Root owns its own visibility. -->
+<AddNewQuestionPopup bind:questions={data.questions} bind:open={add_open} bind:selected_question />
