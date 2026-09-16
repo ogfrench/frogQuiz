@@ -52,6 +52,8 @@ SPDX-License-Identifier: MPL-2.0
 	const isCorrect = (a: Answer | VotingAnswer) => !is_voting && (a as Answer).right === true;
 </script>
 
+<!-- fq-stage, like every other host surface; the inner div keeps the measure. -->
+<div class="fq-stage">
 <div class="mx-auto w-full max-w-3xl px-6">
 	<ul class="flex flex-col gap-2.5">
 		{#each answers as answer, i}
@@ -110,4 +112,5 @@ SPDX-License-Identifier: MPL-2.0
 	<p class="mt-4 text-center text-sm text-muted-foreground tabular-nums">
 		{$t('admin_page.answers_submitted', { answer_count: total })}
 	</p>
+</div>
 </div>

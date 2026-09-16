@@ -310,7 +310,8 @@ SPDX-License-Identifier: MPL-2.0
 	<Footer />
 </div>
 
-{#if start_game !== null}
-	<StartGamePopup bind:quiz_id={start_game} />
-{/if}
+<!-- No {#if} wrapper: the popup is a Dialog now and owns its own visibility from
+     `quiz_id`. Mounting it on the same condition meant it appeared already-open with
+     no enter animation, and unmounted before the exit one could run. -->
+<StartGamePopup bind:quiz_id={start_game} />
 <DownloadQuiz bind:quiz_id={download_id} />

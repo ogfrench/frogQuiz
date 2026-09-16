@@ -35,11 +35,15 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
-<div class="w-full h-full">
+<!-- fq-stage, like every other host surface. Without it this sat flush against the
+     top of the projector with the bottom half empty. -->
+<div class="fq-stage">
 	<div class="hidden">
 		<div bind:this={canvas_el} class="w-full h-full block"></div>
 	</div>
-	<div class="w-full h-full flex justify-center">
-		<img src={img_src} alt="Slide image" />
+	<div class="flex w-full justify-center">
+		<!-- h-full against fq-stage (which has no fixed height) collapsed to nothing.
+		     Cap the image instead and let the stage do the centring. -->
+		<img src={img_src} alt="Slide image" class="max-h-[70dvh] max-w-full object-contain" />
 	</div>
 </div>

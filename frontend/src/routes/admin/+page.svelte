@@ -230,8 +230,10 @@ SPDX-License-Identifier: MPL-2.0
 <svelte:head>
 	<title>frogQuiz - Host</title>
 </svelte:head>
+<!-- min-h-dvh, not min-h-screen: 100vh counts browser chrome that is not there on a
+     phone, pushing the bottom of the host shell below the fold. -->
 <div
-	class="min-h-screen min-w-full"
+	class="min-h-dvh min-w-full"
 	style="background-repeat: no-repeat;background-size: 100% 100%;background-image: {bg_image
 		? `url('${bg_image}')`
 		: `unset`}; background-color: {bg_color ? bg_color : 'transparent'}"
@@ -256,12 +258,19 @@ SPDX-License-Identifier: MPL-2.0
 						>{$t('admin_page.download_export_results')}</GrayButton
 					>
 				{/if}
-				<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
-					{#if results_saved}
-						<Check class="size-4" aria-hidden="true" />
-						<span class="sr-only">{$t('admin_page.save_results')}</span>
-					{:else}{$t('admin_page.save_results')}{/if}
-				</GrayButton>
+				<!-- Hidden for an anonymous host. The backend writes the GameResults row
+				     with user=NULL, and every read path in routers/results.py is
+				     user-scoped, so the row it saves is unreachable afterwards. The
+				     podium and the spreadsheet export both work without an account and
+				     stay. Read from `data`, not the `signedIn` store -- see +page.server.ts. -->
+				{#if data.signed_in}
+					<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
+						{#if results_saved}
+							<Check class="size-4" aria-hidden="true" />
+							<span class="sr-only">{$t('admin_page.save_results')}</span>
+						{:else}{$t('admin_page.save_results')}{/if}
+					</GrayButton>
+				{/if}
 			</div>
 		{/if}
 		<FinalResults bind:data={game_state.player_scores} {show_final_results} />

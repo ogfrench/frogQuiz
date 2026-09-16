@@ -127,8 +127,11 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 
 {#if fullscreen_open}
+	<!-- Was `w-screen h-screen`. 100vw includes the vertical scrollbar, so the overlay
+	     overflowed by its width on any page that scrolls, and 100vh is the wrong number
+	     on a phone. inset-0 is how a fixed overlay fills the viewport. -->
 	<div
-		class="fixed top-0 left-0 z-50 w-screen h-screen bg-black/50 flex p-2"
+		class="fixed inset-0 z-50 flex bg-black/50 p-2"
 		transition:fade|global={{ duration: 80 }}
 		onclick={() => (fullscreen_open = false)}
 		tabindex="0"
@@ -141,6 +144,8 @@ SPDX-License-Identifier: MPL-2.0
 					}
 				: null}
 	>
+		<!-- bg-white here and on the thumbnail above is deliberate and must not become a
+		     token: a QR code needs a light quiet zone to scan, in either theme. -->
 		<img
 			alt="QR code to join the game"
 			src="/api/v1/utils/qr/{game_pin}"

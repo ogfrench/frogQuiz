@@ -6,10 +6,11 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	// import { alertModal } from '$lib/stores';
-	import { captcha_enabled } from '$lib/config';
-	import StartGameBackground from './start_game_background.svg';
-	import { fade } from 'svelte/transition';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Switch } from '$lib/components/ui/switch';
 	import Spinner from '$lib/Spinner.svelte';
 	import { onMount } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
@@ -17,204 +18,134 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 	let { quiz_id = $bindable() } = $props();
-	let captcha_selected = $state(false);
-	let selected_game_mode = $state('kahoot');
 	let loading = $state(false);
 	let custom_field = $state('');
-	let cqcs_enabled = $state(false);
 	let randomized_answers = $state(false);
+	let error = $state<string | null>(null);
+	// Set when the failure looks like "you are not signed in" rather than a real
+	// error, so the message can offer a way back rather than just saying no.
+	let offer_login = $state(false);
 
 	onMount(() => {
 		const ls_data = localStorage.getItem('custom_field');
 		custom_field = ls_data ? ls_data : '';
 	});
 
+	// Mode picker (Normal / Old-School) was cut: Old-School was never used, and Normal
+	// is now the only option. The API still accepts game_mode=normal, so it can come
+	// back without a backend change if that's ever wanted.
 	const start_game = async (id: string) => {
-		let res;
 		loading = true;
+		error = null;
+		offer_login = false;
 		localStorage.setItem('custom_field', custom_field);
-		const cqcs_enabled_parsed = cqcs_enabled ? 'True' : 'False';
-		const randomized_answers_parsed = randomized_answers ? 'True' : 'False';
 		const anon_secret = getAnonSecret(id);
 		const headers: Record<string, string> = anon_secret ? { 'X-Anon-Secret': anon_secret } : {};
-		if (captcha_enabled && captcha_selected) {
-			res = await fetch(
-				`/api/v1/quiz/start/${id}?captcha_enabled=True&game_mode=${selected_game_mode}&custom_field=${custom_field}&cqcs_enabled=${cqcs_enabled_parsed}`,
-				{
-					method: 'POST',
-					headers
-				}
-			);
-		} else {
-			res = await fetch(
-				`/api/v1/quiz/start/${id}?captcha_enabled=False&game_mode=${selected_game_mode}&custom_field=${custom_field}&cqcs_enabled=${cqcs_enabled_parsed}&randomize_answers=${randomized_answers_parsed}`,
-				{
-					method: 'POST',
-					headers
-				}
-			);
-		}
-		if (res.status !== 200) {
-			/*			alertModal.set({
-				open: true,
-				title: 'Start failed',
-				body: `Failed to start game, ${await res.text()}`
-			});*/
-			/*alertModal.subscribe((_) => {
-				window.location.assign('/account/login?returnTo=/dashboard');
-			});*/
-			alert('Starting game failed');
-			if (!anon_secret) {
-				window.location.assign('/account/login?returnTo=/dashboard');
-			}
-		} else {
+
+		// custom_field is whatever the host typed and used to be interpolated straight
+		// into the query string. An `&` in it started a new parameter and truncated the
+		// value; a `#` made everything after it a fragment, so the server never saw it.
+		const params = new URLSearchParams({
+			captcha_enabled: 'False',
+			game_mode: 'kahoot',
+			custom_field,
+			cqcs_enabled: 'False',
+			randomize_answers: randomized_answers ? 'True' : 'False'
+		});
+		const res = await fetch(`/api/v1/quiz/start/${encodeURIComponent(id)}?${params}`, {
+			method: 'POST',
+			headers
+		});
+
+		if (res.status === 200) {
 			const data = await res.json();
 			window.location.assign(
 				`/admin?token=${data.game_id}&pin=${data.game_pin}&connect=1&cqc_code=${data.cqc_code}`
 			);
-		}
-	};
-
-	const on_parent_click = (e: Event) => {
-		if (e.target !== e.currentTarget) {
 			return;
 		}
-		quiz_id = null;
+
+		loading = false;
+
+		// This used to bounce to /account/login on *any* non-200 whenever there was no
+		// anonymous secret -- so a 500, a rate limit, or a quiz deleted in another tab
+		// all threw a signed-in host out of the page as though their session had
+		// expired. Only an explicit 401/403 means that.
+		if (res.status === 401 || res.status === 403) {
+			window.location.assign('/account/login?returnTo=/dashboard');
+			return;
+		}
+
+		// Without a secret the caller is treated as anonymous by the API, so a 404 here
+		// is ambiguous: the quiz may be gone, or the session may have lapsed and this is
+		// somebody's own quiz they can no longer prove they own. Say so and offer the
+		// way back rather than guessing and navigating away.
+		if (res.status === 404 && !anon_secret) {
+			error = $t('start_game.start_failed_signed_out');
+			offer_login = true;
+			return;
+		}
+
+		error = $t('start_game.start_failed');
 	};
-	const close_start_game_if_esc_is_pressed = (key: KeyboardEvent) => {
-		if (key.code === 'Escape') {
+
+	const open = $derived(quiz_id !== null);
+	const on_open_change = (is_open: boolean) => {
+		if (!is_open) {
 			quiz_id = null;
 		}
+		// A failure left over from the last quiz would otherwise still be showing the
+		// next time the dialog opens.
+		error = null;
+		offer_login = false;
+		loading = false;
 	};
-	onMount(() => {
-		document.body.addEventListener('keydown', close_start_game_if_esc_is_pressed);
-	});
 </script>
 
-<div
-	class="fixed top-0 left-0 flex justify-center w-screen h-screen bg-black/60 z-50 text-black"
-	transition:fade|global={{ duration: 100 }}
-	onclick={on_parent_click}
->
-	<div
-		class="w-5/6 h-5/6 bg-black m-auto rounded-lg shadow-lg p-4 flex flex-col"
-		style="background-image: url({StartGameBackground}); background-color: #DFDBE5;"
-	>
-		<div class="flex justify-center w-full">
-			<label
-				for="large-toggle"
-				class="inline-flex relative items-center cursor-pointer"
-				class:pointer-events-none={!captcha_enabled}
-				class:opacity-50={!captcha_enabled}
-			>
-				<input
-					type="checkbox"
-					bind:checked={captcha_selected}
-					id="large-toggle"
-					class="sr-only peer"
-				/>
-				<span
-					class="w-14 h-7 bg-gray-200 rounded-full
-					peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300
-					dark:peer-focus:ring-blue-800 dark:bg-gray-700
-					peer-checked:bg-blue-600
-					relative
-					after:content-['']
-					after:absolute after:top-0.5 after:start-[4px]
-					after:bg-white after:border-gray-300 after:border
-					after:rounded-full after:h-6 after:w-6
-					after:transition-all
-					peer-checked:after:translate-x-full
-					rtl:peer-checked:after:-translate-x-full"
-				></span>
-				<span class="ms-3 text-sm font-medium text-gray-900"
-					>Captcha {captcha_selected ? 'enabled' : 'disabled'}</span
-				>
-			</label>
+<Dialog.Root {open} onOpenChange={on_open_change}>
+	<Dialog.Content class="gap-5">
+		<Dialog.Header>
+			<Dialog.Title>{$t('start_game.start_game')}</Dialog.Title>
+		</Dialog.Header>
+
+		<div class="grid gap-2">
+			<Label for="custom-field">{$t('result_page.custom_field')}</Label>
+			<Input id="custom-field" bind:value={custom_field} placeholder="Phone Number or Email" />
 		</div>
-		{#if captcha_selected}
-			<div class="flex justify-center mt-2" in:fade|global>
-				<p class="w-1/3">
-					{$t('start_game.captcha_message')}
-				</p>
-				<!-- Todo: Add translation  -->
+
+		<div class="flex items-center gap-3">
+			<Switch id="randomize-answers" bind:checked={randomized_answers} />
+			<Label for="randomize-answers">{$t('start_game.randomize_answers')}</Label>
+		</div>
+
+		{#if error}
+			<div class="text-destructive text-sm" role="alert">
+				<p>{error}</p>
+				{#if offer_login}
+					<Button
+						href="/account/login?returnTo=/dashboard"
+						variant="link"
+						class="text-destructive h-auto p-0"
+					>
+						{$t('words.login')}
+					</Button>
+				{/if}
 			</div>
 		{/if}
 
-		<div class="grid grid-cols-2 gap-8 my-auto">
-			<div
-				class="rounded-lg bg-white shadow-lg cursor-pointer transition-all p-2"
-				class:opacity-50={selected_game_mode !== 'kahoot'}
+		<Dialog.Footer>
+			<Button
 				onclick={() => {
-					selected_game_mode = 'kahoot';
+					start_game(quiz_id);
 				}}
+				disabled={loading}
 			>
-				<h2 class="text-center text-2xl">{$t('words.normal')}</h2>
-				<p>
-					{$t('start_game.normal_mode_description')}
-				</p>
-			</div>
-			<div
-				class="rounded-lg bg-white shadow-lg cursor-pointer transition-all p-2"
-				class:opacity-50={selected_game_mode !== 'normal'}
-				onclick={() => {
-					selected_game_mode = 'normal';
-				}}
-			>
-				<h2 class="text-center text-2xl">{$t('start_game.old_school_mode')}</h2>
-				<p>
-					{$t('start_game.old_school_mode_description')}
-				</p>
-			</div>
-		</div>
-		<div class="flex justify-center items-center my-auto">
-			<label class="mr-4">{$t('result_page.custom_field')}</label>
-			<input
-				bind:value={custom_field}
-				class="rounded-lg p-2 outline-hidden placeholder:italic"
-				placeholder="Phone Number or Email"
-			/>
-		</div>
-		<div class="flex justify-center w-full my-auto">
-			<label
-				for="randomized-answers-toggle"
-				class="inline-flex relative items-center cursor-pointer"
-			>
-				<input
-					type="checkbox"
-					bind:checked={randomized_answers}
-					id="randomized-answers-toggle"
-					class="sr-only peer"
-				/>
-				<span
-					class="w-14 h-7 bg-gray-200 rounded-full
-					peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300
-					dark:peer-focus:ring-blue-800 dark:bg-gray-700
-					peer-checked:bg-blue-600
-					relative
-					after:content-['']
-					after:absolute after:top-0.5 after:start-[4px]
-					after:bg-white after:border-gray-300 after:border
-					after:rounded-full after:h-6 after:w-6
-					after:transition-all
-					peer-checked:after:translate-x-full
-					rtl:peer-checked:after:-translate-x-full"
-				></span>
-				<span class="ms-3 text-sm font-medium text-gray-900"> Randomize answers</span>
-			</label>
-		</div>
-
-		<button
-			class="mt-auto mx-auto bg-green-500 p-4 rounded-lg shadow-lg hover:bg-green-400 transition-all marck-script text-2xl"
-			onclick={() => {
-				start_game(quiz_id);
-			}}
-		>
-			{#if loading}
-				<Spinner my_20={false} />
-			{:else}
-				{$t('start_game.start_game')}
-			{/if}
-		</button>
-	</div>
-</div>
+				{#if loading}
+					<Spinner my_20={false} />
+				{:else}
+					{$t('start_game.start_game')}
+				{/if}
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
