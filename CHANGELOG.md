@@ -53,6 +53,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Fixed the four call sites the rename above missed. `game_not_started.svelte`, `voting_results.svelte`, `final_results.svelte` and the dashboard quiz card each spelled the `_plural` suffix into the key by hand, so once the locale entries were renamed those lookups resolved to nothing and i18next rendered the key itself: a live game showed `play_page.players_waiting_plural` on the host lobby the moment a second player joined, and `905 words.point_plural` on the podium. They now pass `count` and let i18next pick the form.
 - Added `lib/i18n/keys.test.ts`, which resolves every literal `$t('...')` key in the app against `en.json` (allowing for the `_one`/`_other` suffixes) and fails on any that no longer exists. A missing key is invisible to the build, the linter and the console -- it only shows up on the projector -- so it needs a test rather than care.
 - `play_page.players_waiting_one` said "1 player are waiting".
+- Added the missing `words.cancel`, which the account-deletion dialog asks for. The Cancel button on the confirm step rendered as the literal string `words.cancel`. Found by the test above, not by looking.
+- Registration now reports a 502 distinctly. The backend returns it when a mail relay is configured but the handoff fails, which is a deployment problem the person signing up can do nothing about; it was falling through to the generic "something went wrong creating the account".
 
 ### Local development
 

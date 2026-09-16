@@ -84,6 +84,7 @@
       "invalid": "That email address was rejected. Check it and try again.",
       "too_many": "Too many attempts from this address. Try again in an hour.",
       "failed": "Something went wrong creating the account. Nothing was saved, so try again.",
+      "mail_failed": "The server could not send the confirmation email, so nothing was saved. This is a server problem, not yours -- let the team know.",
       "no_mail": "This server can't send the confirmation email right now, so nothing was saved. Try again later.",
       "closed": "This server isn't accepting new accounts."
     },
@@ -217,6 +218,7 @@
     "point": "Point",
     "point_one": "Point",
     "point_other": "Points",
+    "cancel": "Cancel",
     "back": "Back",
     "finish": "Finish",
     "normal": "Normal",

@@ -81,6 +81,11 @@ SPDX-License-Identifier: MPL-2.0
 					responseData.data = '400';
 				} else if (res.status === 429) {
 					responseData.data = '429';
+				} else if (res.status === 502) {
+					// The relay refused the handoff. Distinct from 503, where there is no
+					// relay configured at all: 502 means one is set and did not work, which
+					// is a deployment problem the person signing up cannot do anything about.
+					responseData.data = '502';
 				} else if (res.status === 503) {
 					responseData.data = '503';
 				} else if (res.status === 423) {
@@ -299,6 +304,8 @@ SPDX-License-Identifier: MPL-2.0
 							{$t('register_page.result.invalid')}
 						{:else if responseData.data === '429'}
 							{$t('register_page.result.too_many')}
+						{:else if responseData.data === '502'}
+							{$t('register_page.result.mail_failed')}
 						{:else if responseData.data === '503'}
 							{$t('register_page.result.no_mail')}
 						{:else if responseData.data === '423'}
