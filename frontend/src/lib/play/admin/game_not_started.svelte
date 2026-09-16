@@ -91,11 +91,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	<div class="flex w-full max-w-5xl flex-col items-center gap-4">
 		<p class="text-xl text-muted-foreground" aria-live="polite">
-			{#if game_state.players.length <= 1}
-				{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
-			{:else}
-				{$t('play_page.players_waiting_plural', { count: game_state.players.length ?? 0 })}
-			{/if}
+			{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
 		</p>
 
 		{#if game_state.players.length > 0}

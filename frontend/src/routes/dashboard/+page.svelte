@@ -226,9 +226,7 @@ SPDX-License-Identifier: MPL-2.0
 								</Badge>
 								<span>
 									{question_count(quiz)}
-									{question_count(quiz) === 1
-										? $t('words.question')
-										: $t('words.question_plural')}
+									{$t('words.question', { count: question_count(quiz) })}
 								</span>
 							</div>
 						</div>

@@ -14,6 +14,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 ### i18n
 
 - Fixed every plural in the app. The locale file uses i18next's v3 `_plural` suffix, but `i18n-service.ts` initialises i18next 25 with `compatibilityJSON: 'v4'`, where counted lookups resolve to `_one` and `_other`. All fifteen were silently falling back to the singular, so the app said "3 question", "2 player", "5 point". Renamed to the v4 spelling, with the bare keys kept for the uncounted uses.
+- Fixed the four call sites the rename above missed. `game_not_started.svelte`, `voting_results.svelte`, `final_results.svelte` and the dashboard quiz card each spelled the `_plural` suffix into the key by hand, so once the locale entries were renamed those lookups resolved to nothing and i18next rendered the key itself: a live game showed `play_page.players_waiting_plural` on the host lobby the moment a second player joined, and `905 words.point_plural` on the podium. They now pass `count` and let i18next pick the form.
+- Added `lib/i18n/keys.test.ts`, which resolves every literal `$t('...')` key in the app against `en.json` (allowing for the `_one`/`_other` suffixes) and fails on any that no longer exists. A missing key is invisible to the build, the linter and the console -- it only shows up on the projector -- so it needs a test rather than care.
+- `play_page.players_waiting_one` said "1 player are waiting".
 
 ### Registration and recovery: edge cases
 
