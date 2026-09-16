@@ -32,7 +32,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Deployment
 
-- Fixed `pnpm ci` in `frontend/Dockerfile`, which is not a pnpm command and matched no script -- any rebuild of the frontend image failed at that layer.
+- Correction: an earlier entry in this section claimed `pnpm ci` in `frontend/Dockerfile` was not a pnpm command and broke the frontend image build. That was wrong -- `pnpm ci` is a real command, equivalent to a strict `install --frozen-lockfile`, and the frontend image had been building fine all along. The Dockerfile is unchanged.
 - Set `COMPOSE_FILE` in the deployment `.env` so a bare `docker compose` picks up `docker-compose.neon.yml`. Without it the stack comes up pointing at the empty `db` container instead of Neon.
 - Disclosed Resend in the privacy policy. It is the relay for confirmation and reset mail, and the page previously named the optional captcha as the only third party.
 

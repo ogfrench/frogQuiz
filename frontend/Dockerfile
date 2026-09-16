@@ -26,7 +26,7 @@ COPY pnpm-lock.yaml ./
 COPY pnpm-workspace.yaml ./
 
 # run npm install in our local machine
-RUN corepack enable && corepack prepare pnpm@11.6 --activate && pnpm install --frozen-lockfile --ignore-scripts
+RUN corepack enable && corepack prepare pnpm@11.6 --activate && pnpm ci --ignore-scripts
 
 # copy the generated modules and all other files to the container
 COPY . .
@@ -43,7 +43,7 @@ ENV CI=true
 WORKDIR /app
 COPY --from=builder /usr/src/app/package.json .
 COPY --from=builder /usr/src/app/pnpm-lock.yaml .
-RUN corepack enable && corepack prepare pnpm@11.6 --activate && pnpm install --frozen-lockfile --ignore-scripts
+RUN corepack enable && corepack prepare pnpm@11.6 --activate && pnpm ci --ignore-scripts
 # copy files from previous step
 COPY --from=builder /usr/src/app/build .
 COPY --from=builder /usr/src/app/node_modules ./node_modules
