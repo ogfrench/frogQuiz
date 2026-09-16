@@ -47,6 +47,10 @@ class User(ormar.Model):
     username: str = ormar.String(unique=True, max_length=100)
     password: Optional[str] = ormar.String(max_length=100, nullable=True)
     verified: bool = ormar.Boolean(default=False)
+    # Explicit, rather than "whoever has the oldest created_at". That rule silently
+    # handed the instance to the next-oldest account whenever the admin deleted
+    # theirs -- and account deletion is reachable from the UI now.
+    is_admin: bool = ormar.Boolean(default=False, nullable=False)
     verify_key: str = ormar.String(unique=True, max_length=100, nullable=True)
     created_at: datetime = ormar.DateTime(default=datetime.now)
     auth_type: UserAuthTypes = ormar.Enum(enum_class=UserAuthTypes, default=UserAuthTypes.LOCAL)

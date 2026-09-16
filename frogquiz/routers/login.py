@@ -31,7 +31,7 @@ from webauthn.helpers.structs import (
 )
 
 from frogquiz.oauth.authenticate_user import log_user_in
-from frogquiz.helpers.ratelimit import rate_limit
+from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 
 settings = settings()
 router = APIRouter()
@@ -105,6 +105,10 @@ def verify_webauthn(data, fidocredentialss: list[FidoCredentials], login_session
 async def start_login(data: StartLoginInput, request: Request):
     # Without this, password guessing against /step is unthrottled.
     await rate_limit(request, "login_start", limit=20, window_seconds=300)
+    # The per-IP bucket above is advisory: with TRUSTED_PROXY_HOPS > 1 the address it
+    # keys on comes from a header the caller can forge by reaching Caddy directly.
+    # This one keys on what is being attacked instead, which cannot be forged.
+    await rate_limit_key(f"login_start_addr:{data.email.strip().lower()}", limit=20, window_seconds=300)
     user = (
         await User.objects.select_related("fidocredentialss")
         .filter((User.email == data.email) | (User.username == data.email))
@@ -163,6 +167,10 @@ async def step_1_endpoint(session_id: str, data: StepInput, request: Request, re
     if redis_res is None:
         raise HTTPException(401, detail="wrong credentials")
     login_session = LoginSession.model_validate_json(redis_res)
+    # Keyed on the account being guessed at, not the source address. A password
+    # guesser who forges X-Forwarded-For gets a fresh per-IP bucket every request;
+    # they do not get a fresh account.
+    await rate_limit_key(f"login_step_user:{login_session.user_id}", limit=10, window_seconds=300)
 
     if step_id == 1:
         if data.auth_type not in {*login_session.step_1, StartLoginResponseTypes.BACKUP}:

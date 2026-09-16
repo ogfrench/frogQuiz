@@ -220,11 +220,14 @@ async def get_current_moderator(token: str = Depends(oauth2_scheme)):
 
 async def get_admin_user(token: str = Depends(oauth2_scheme)) -> User:
     user = await get_current_user(token)
-    admin_user = await User.objects.order_by(User.created_at.asc()).get()
-    if admin_user.id == user.id:
+    # Was "the account with the oldest created_at", which meant deleting the admin
+    # account quietly promoted whoever registered next -- with no record that it had
+    # happened and no way to hand the role over deliberately. Migration b5e91c7a2d38
+    # set the flag on whichever account that rule was pointing at, so nothing changed
+    # hands when it shipped.
+    if user.is_admin:
         return user
-    else:
-        raise credentials_exception
+    raise credentials_exception
 
 
 async def get_current_user_optional(token: str | None = Depends(oauth2_scheme_optional)) -> User | None:

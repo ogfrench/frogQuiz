@@ -119,6 +119,11 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     # the alternative is two accounts on what the owner considers one address --
     # with only one of them reachable by the reset and resend lookups.
     user.email = validated.normalized.strip().lower()
+    # Keyed on the canonical address, so it survives casing tricks and, unlike the
+    # per-IP bucket above, cannot be reset by forging a header or moving address.
+    # This is what stops one inbox being flooded with confirmation mail from many
+    # source addresses.
+    await rate_limit_key(f"register_addr:{user.email}", limit=5, window_seconds=3600)
     user.verify_key = str(os.urandom(16).hex())
     res = await User.objects.filter((User.email == user.email) | (User.username == user.username)).all()
     if len(res) != 0:
@@ -183,7 +188,12 @@ async def check_token(user: User = Depends(get_current_user)):
 
 
 @router.get("/verify/{verify_key}")
-async def verify_user(verify_key: str):
+async def verify_user(verify_key: str, request: Request):
+    # The key is 128 bits of os.urandom, so this is not guessable and the limit is
+    # defence in depth -- it keeps an unauthenticated endpoint from being used to
+    # hammer the database. Generous, because a real person may click the same link
+    # a few times.
+    await rate_limit(request, "verify_email", limit=30, window_seconds=3600)
     user = await User.objects.filter(verify_key=verify_key).get_or_none()
     if user is None:
         # A key is cleared the moment it is used, and asking for a new confirmation
@@ -206,6 +216,17 @@ async def change_password(
     response: Response,
     user: User = Depends(get_current_user),
 ):
+    # Same reasoning as DELETE /me: this checks a password, each check is a
+    # deliberately expensive argon2 verify, and the account is the thing under
+    # attack -- so the bucket is the account, which a caller cannot forge.
+    # Consumed on every attempt, not only failed ones, which is the simple version
+    # and means a run of typos counts against the limit. Ten an hour is chosen to be
+    # well clear of that: somebody mistyping their current password a few times in a
+    # row should never meet it, and a session-stealer grinding at the password still
+    # meets it quickly.
+    await rate_limit_key(f"password_update:{user.id}", limit=10, window_seconds=3600)
+    if user.password is None:
+        raise HTTPException(status_code=400, detail="This account has no password to change")
     if not verify_password(password_data.old_password, user.password):
         raise HTTPException(status_code=400, detail="Incorrect password")
     user.password = get_password_hash(password_data.new_password)

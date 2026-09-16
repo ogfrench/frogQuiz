@@ -86,9 +86,46 @@ def _sendMail_blocking(html_body: str, text_body: str, to: str, subject: str) ->
         server.sendmail(settings.mail_address, to, msg.as_string())
 
 
+# Three attempts total, with a short gap between them. A registration hangs on this,
+# so the ceiling matters: worst case is roughly 2 * SMTP_TIMEOUT_SECONDS plus the
+# backoff before the caller gets its failure.
+SEND_ATTEMPTS = 3
+SEND_BACKOFF_SECONDS = (1, 3)
+
+
+def _is_retryable(exc: Exception) -> bool:
+    """Whether sending again in a moment could plausibly work.
+
+    A 4xx from a relay is "not now" and a 5xx is "not ever" -- retrying a 550 for an
+    unverified sending domain just delays the same failure three times over. Network
+    and connection errors are the genuinely transient ones and are worth a retry.
+    """
+    if isinstance(exc, (MailNotConfigured, smtplib.SMTPAuthenticationError, smtplib.SMTPRecipientsRefused)):
+        return False
+    code = getattr(exc, "smtp_code", None)
+    if isinstance(code, int):
+        return 400 <= code < 500
+    return isinstance(exc, (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, OSError, TimeoutError))
+
+
 async def _sendMail(html_body: str, text_body: str, to: str, subject: str) -> None:
-    """Send mail off the event loop. Raises on failure -- callers decide what that means."""
-    await asyncio.to_thread(_sendMail_blocking, html_body, text_body, to, subject)
+    """Send mail off the event loop. Raises on failure -- callers decide what that means.
+
+    Retries transient failures. There is no queue behind this, so a relay that blips
+    for a second used to cost somebody their confirmation link outright, with the
+    endpoints reporting success because the failure is deliberately swallowed there.
+    """
+    for attempt in range(1, SEND_ATTEMPTS + 1):
+        try:
+            await asyncio.to_thread(_sendMail_blocking, html_body, text_body, to, subject)
+            return
+        except Exception as exc:
+            if attempt == SEND_ATTEMPTS or not _is_retryable(exc):
+                raise
+            LOGGER.warning(
+                "Mail send attempt %s/%s failed (%s); retrying", attempt, SEND_ATTEMPTS, exc.__class__.__name__
+            )
+            await asyncio.sleep(SEND_BACKOFF_SECONDS[attempt - 1])
 
 
 async def _render(name: str, **ctx) -> tuple[str, str]:
@@ -106,7 +143,7 @@ async def send_register_email(user: User):
         html_body=html_body,
         text_body=text_body,
         to=user.email,
-        subject="Confirm your frogQuiz address",
+        subject="Confirm your frogQuiz account",
     )
 
 

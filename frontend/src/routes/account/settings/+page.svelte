@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import DeleteAccount from './delete-account.svelte';
+	import UnverifiedBanner from './unverified-banner.svelte';
 
 	const { t } = getLocalization();
 
@@ -149,6 +150,9 @@ SPDX-License-Identifier: MPL-2.0
 		<Spinner />
 	{:then user}
 		<div class="flex flex-col gap-6">
+			{#if !user.verified}
+				<UnverifiedBanner email={user.email} />
+			{/if}
 			<Card.Root>
 				<Card.Header>
 					<Card.Title>{$t('settings_page.profile')}</Card.Title>
