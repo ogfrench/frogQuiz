@@ -120,6 +120,10 @@ SPDX-License-Identifier: MPL-2.0
 
 	const setUsername = async (e: Event) => {
 		e.preventDefault();
+		// Trim before both the check and the send. Untrimmed, four spaces passed
+		// as a nickname and the server -- which does bound and trim it -- would
+		// then reject a join the form had accepted, with nothing shown here.
+		username = username.trim();
 		if (username.length <= 3) {
 			return;
 		}
@@ -240,7 +244,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 
 			<div class="mt-2">
-				<BrownButton disabled={username.length <= 3} onclick={setUsername}
+				<BrownButton disabled={username.trim().length <= 3} onclick={setUsername}
 					>{$t('words.submit')}</BrownButton
 				>
 			</div>
