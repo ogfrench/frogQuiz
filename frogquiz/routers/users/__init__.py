@@ -119,6 +119,11 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     # the alternative is two accounts on what the owner considers one address --
     # with only one of them reachable by the reset and resend lookups.
     user.email = validated.normalized.strip().lower()
+    # Keyed on the canonical address, so it survives casing tricks and, unlike the
+    # per-IP bucket above, cannot be reset by forging a header or moving address.
+    # This is what stops one inbox being flooded with confirmation mail from many
+    # source addresses.
+    await rate_limit_key(f"register_addr:{user.email}", limit=5, window_seconds=3600)
     user.verify_key = str(os.urandom(16).hex())
     res = await User.objects.filter((User.email == user.email) | (User.username == user.username)).all()
     if len(res) != 0:
@@ -214,7 +219,12 @@ async def change_password(
     # Same reasoning as DELETE /me: this checks a password, each check is a
     # deliberately expensive argon2 verify, and the account is the thing under
     # attack -- so the bucket is the account, which a caller cannot forge.
-    await rate_limit_key(f"password_update:{user.id}", limit=5, window_seconds=3600)
+    # Consumed on every attempt, not only failed ones, which is the simple version
+    # and means a run of typos counts against the limit. Ten an hour is chosen to be
+    # well clear of that: somebody mistyping their current password a few times in a
+    # row should never meet it, and a session-stealer grinding at the password still
+    # meets it quickly.
+    await rate_limit_key(f"password_update:{user.id}", limit=10, window_seconds=3600)
     if user.password is None:
         raise HTTPException(status_code=400, detail="This account has no password to change")
     if not verify_password(password_data.old_password, user.password):
