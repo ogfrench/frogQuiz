@@ -56,11 +56,11 @@ SPDX-License-Identifier: MPL-2.0
 
 	<div class="flex flex-col items-center gap-3 text-center">
 		<h1 class="max-w-[18ch] text-balance text-4xl font-bold tracking-tight sm:text-5xl">
-			{@html title}
+			{title}
 		</h1>
 		{#if description}
 			<p class="text-muted-foreground max-w-[36ch] text-balance text-base sm:text-lg">
-				{@html description}
+				{description}
 			</p>
 		{/if}
 	</div>

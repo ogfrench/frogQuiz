@@ -105,13 +105,19 @@ SPDX-License-Identifier: MPL-2.0
 				</a>
 			</div>
 
-			<div class="mt-2 text-center text-sm">
+			<div class="mt-2 flex flex-col items-center gap-1 text-center text-sm">
 				<a
 					href="/create?anon=true"
 					class="text-muted-foreground inline-flex items-center gap-1 underline-offset-4 hover:underline"
 				>
 					{$t('index_page.create_anon')}
 					<ArrowRight class="size-3.5" aria-hidden="true" />
+				</a>
+				<a
+					href="/my-quizzes"
+					class="text-muted-foreground underline-offset-4 hover:underline"
+				>
+					{$t('device_quizzes.title')}
 				</a>
 			</div>
 		</div>

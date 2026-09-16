@@ -58,6 +58,36 @@ SPDX-License-Identifier: MPL-2.0
 		owns_anonymously = quiz.user_id === null && getAnonSecret(quiz.id) !== null;
 	});
 
+	// An anonymous quiz is swept 30 days after creation. The holder of the secret
+	// is the only person who can act on that, so they are the one who has to be
+	// told -- signing in is what makes it permanent.
+	const expires_at = $derived(quiz.expire_at ? new Date(quiz.expire_at) : null);
+	const days_until_expiry = $derived(
+		expires_at ? Math.max(0, Math.ceil((expires_at.getTime() - Date.now()) / 86400000)) : null
+	);
+
+	let deleting = $state(false);
+
+	const delete_anonymous_quiz = async () => {
+		const anon_secret = getAnonSecret(quiz.id);
+		if (!anon_secret) return;
+		if (!confirm($t('view_quiz_page.delete_confirm'))) return;
+		deleting = true;
+		const res = await fetch(`/api/v1/quiz/delete/${quiz.id}`, {
+			method: 'DELETE',
+			headers: { 'X-Anon-Secret': anon_secret }
+		});
+		deleting = false;
+		if (res.ok) {
+			clearAnonSecret(quiz.id);
+			window.location.href = '/';
+		} else {
+			delete_error = true;
+		}
+	};
+
+	let delete_error = $state(false);
+
 	const claim_quiz = async () => {
 		const anon_secret = getAnonSecret(quiz.id);
 		if (!anon_secret) return;
@@ -107,9 +137,9 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <div>
-	<h1 class="text-4xl text-center">{@html quiz.title}</h1>
+	<h1 class="text-4xl text-center">{quiz.title}</h1>
 	<div class="text-center">
-		<p>{@html quiz.description}</p>
+		<p>{quiz.description}</p>
 	</div>
 	{#if quiz.user_id}
 		<p class="text-center">
@@ -253,11 +283,54 @@ SPDX-License-Identifier: MPL-2.0
 						</GrayButton>
 					</div>
 				{/if}
-				{#if logged_in && owns_anonymously}
-					<div class="w-full">
-						<GrayButton onclick={claim_quiz} disabled={claiming} flex={true}>
-							{claiming ? 'Claiming...' : 'Claim this quiz to your account'}
-						</GrayButton>
+				{#if owns_anonymously}
+					<div
+						class="w-full rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
+					>
+						<p class="font-medium text-foreground">
+							{$t('view_quiz_page.anon_temporary')}
+						</p>
+						{#if expires_at}
+							<p class="mt-1">
+								{$t('view_quiz_page.anon_expires', {
+									count: days_until_expiry,
+									date: expires_at.toLocaleDateString()
+								})}
+							</p>
+						{/if}
+						<p class="mt-1">
+							{logged_in
+								? $t('view_quiz_page.anon_claim_hint')
+								: $t('view_quiz_page.anon_sign_in_hint')}
+						</p>
+						<div class="mt-3 flex flex-col gap-2">
+							{#if logged_in}
+								<GrayButton onclick={claim_quiz} disabled={claiming} flex={true}>
+									{claiming
+										? $t('view_quiz_page.claiming')
+										: $t('view_quiz_page.claim_quiz')}
+								</GrayButton>
+							{:else}
+								<a
+									class="w-full rounded-lg bg-primary px-4 py-2 text-center font-medium text-primary-foreground hover:opacity-90"
+									href="/account/register?returnTo=/view/{quiz.id}"
+								>
+									{$t('view_quiz_page.anon_sign_up')}
+								</a>
+							{/if}
+							<GrayButton
+								onclick={delete_anonymous_quiz}
+								disabled={deleting}
+								flex={true}
+							>
+								{deleting ? $t('view_quiz_page.deleting') : $t('view_quiz_page.delete_quiz')}
+							</GrayButton>
+						</div>
+						{#if delete_error}
+							<p class="mt-2 text-destructive">
+								{$t('view_quiz_page.delete_failed')}
+							</p>
+						{/if}
 					</div>
 				{/if}
 			</div>
@@ -269,7 +342,7 @@ SPDX-License-Identifier: MPL-2.0
 			<CollapsSection headerText={question.question} expanded={auto_expand}>
 				<div class="grid grid-cols-1 gap-2 rounded-b-lg bg-white dark:bg-gray-700 -mt-1">
 					<h3 class="text-3xl m-1 text-center">
-						{index_question + 1}: {@html question.question}
+						{index_question + 1}: {question.question}
 					</h3>
 					{#if question.image}
 						<span>

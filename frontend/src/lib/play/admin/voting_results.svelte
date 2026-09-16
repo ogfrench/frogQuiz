@@ -64,7 +64,7 @@ SPDX-License-Identifier: MPL-2.0
 				<span class="flex w-40 shrink-0 items-center gap-2 sm:w-56">
 					<AnswerShape index={i} class="size-4 shrink-0 text-muted-foreground" />
 					<span class="truncate text-base font-medium" title={answer.answer}>
-						{@html answer.answer}
+						{answer.answer}
 					</span>
 					{#if correct}
 						<svg

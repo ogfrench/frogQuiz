@@ -53,7 +53,7 @@ SPDX-License-Identifier: MPL-2.0
 <div class="fq-stage">
 	<div class="fq-section">
 		<h1 class="fq-display max-w-[22ch] text-center font-bold text-balance">
-			{@html quiz_data.questions[selected_question].question}
+			{quiz_data.questions[selected_question].question}
 		</h1>
 		<div class="flex items-center gap-10">
 			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />

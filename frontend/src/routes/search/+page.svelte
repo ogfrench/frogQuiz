@@ -23,10 +23,11 @@ SPDX-License-Identifier: MPL-2.0
 			})
 		});
 		if (res.status === 200) {
-			let resp_data_temp: string = await res.text();
-			resp_data_temp = resp_data_temp.replaceAll('<em>', '<mark>');
-			resp_data_temp = resp_data_temp.replaceAll('</em>', '</mark>');
-			resp_data = JSON.parse(resp_data_temp);
+			// The highlight markers used to be rewritten here, in the raw response
+			// text before parsing, which rewrote them anywhere in the payload and
+			// left the author-controlled fields unescaped. SearchCard now escapes
+			// each field and restores only that tag pair.
+			resp_data = await res.json();
 			// local, read back on the next line, never held as reactive state
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			const url = new URLSearchParams(window.location.search);

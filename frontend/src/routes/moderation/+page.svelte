@@ -30,9 +30,9 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 				</div>
 				<div class="my-auto mx-auto max-h-full overflow-hidden">
-					<p class="text-xl text-center">{@html quiz.title}</p>
+					<p class="text-xl text-center">{quiz.title}</p>
 					<p class="text-sm text-center text-clip overflow-hidden">
-						{@html quiz.description ?? ''}
+						{quiz.description ?? ''}
 					</p>
 				</div>
 				<div class="flex justify-center">

@@ -282,6 +282,46 @@ plainly that their work is in ClassQuiz rather than implying they translated thi
 
 ---
 
+## The account boundary: an account is what makes a quiz permanent
+
+Settled after asking whether registration and login were worth keeping in MVP1 at all.
+
+They are, and removing them is the expensive option, not the cheap one: 66
+`Depends(get_current_user)` call sites, 11 foreign keys to `User`, a socket server on its
+own auth path, and a registration/recovery flow that was just made to work end to end.
+The account-free path people actually wanted already exists — `/create?anon=true` covers
+create, host, share a PIN and play without signing up.
+
+So the boundary sits at **permanence**, not usage:
+
+- **No account** to create a quiz, host it, share the PIN, or play.
+- **An account** to make a quiz permanent, findable in search, and manageable from a
+  dashboard.
+
+Two proposals were considered and rejected:
+
+- **Letting anonymous quizzes be public and searchable** (with either a "keep forever"
+  option or a 7-day delete). The deployment is internet-facing, so this would let anyone
+  publish arbitrary content under the project's domain with no owner to ask and no
+  takedown path, plus unbounded image storage attached to nobody. The 30-day expiry
+  stays; 7 days is too short for building a quiz and running the session a fortnight
+  later.
+- **A free-text "created by" name instead of accounts.** The author string was rendered
+  with `{@html}`, so free text there was script injection on the search and explore
+  pages. Escaping fixes that, but not the deeper problem: an unverifiable name rendered
+  identically to a verified one does not add trust, it removes it from the verified ones.
+
+Deferred as a result, and not to be re-litigated without both teammates:
+
+- Email change (issue #13). No endpoint exists; it is a new verification flow.
+- Passkeys/WebAuthn, TOTP, custom avatars, and the public `/user/[user_id]` page.
+- Anonymous quizzes becoming public or searchable.
+- Changing the 30-day anonymous expiry.
+- Free-text author names.
+
+Account **deletion** is not deferred — it is treated as a bug, not a feature, because the
+deployment publishes a GDPR deletion route. See the open decisions below.
+
 ## Open decisions
 
 Collected so they can be settled in one pass rather than rediscovered:
@@ -299,3 +339,20 @@ Collected so they can be settled in one pass rather than rediscovered:
 5. **English only, and the 33 deleted locale files** — same rule, and the one cut on
    this page that removed files from the tree rather than gating them. See
    [Languages](#languages) for the argument and for how to restore any one of them.
+6. **There is no team-visible tier, and the MVP needs one.** Only `public=True` quizzes
+   are indexed, and `POST /api/v1/search/` has no auth dependency — so on an
+   internet-facing deployment "make it findable by the team" and "publish it to the
+   world" are the same switch. The requirement to find quizzes made earlier by
+   teammates cannot be met honestly until this is settled. Three ways out, ascending in
+   cost: require auth on `/api/v1/search/` and `/explore`, so `public` means "visible to
+   signed-in users"; add a third `visibility` tier (`private`/`team`/`public`) and gate
+   results on the caller; or accept that anything findable is world-findable.
+   Recommendation: the first now, the second if the app widens.
+7. **Account deletion is broken and the ToS publishes it as the GDPR route.**
+   `Controller.user` and `Rating.user` have no `ondelete`, so deleting a user with
+   either row hits a foreign-key violation, and `StorageItem` rows are orphaned rather
+   than removed, leaking the uploaded files. (Deletion succeeds today for a user with
+   neither, which is why the test suite's own cleanup passes.) The fix is a small
+   migration, but it is a schema change and needs a database to test against. The third
+   cause in issue #13 — an OAuth-only account can never satisfy the password check —
+   affects nobody, since OAuth renders nothing today by config.

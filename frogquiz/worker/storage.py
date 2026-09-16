@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
-import re
 import uuid
 from datetime import datetime
 
@@ -16,7 +15,7 @@ from frogquiz.config import redis, storage
 from tempfile import SpooledTemporaryFile
 
 from frogquiz.db.models import StorageItem, Quiz, User
-from frogquiz.helpers import extract_image_ids_from_quiz
+from frogquiz.helpers import collect_quiz_image_keys, extract_image_ids_from_quiz
 from frogquiz.storage.errors import DeletionFailedError
 from thumbhash import image_to_thumbhash
 
@@ -76,9 +75,6 @@ async def calculate_hash(ctx, file_id_as_str: str):
     await user.update()
 
 
-_PIC_NAME_REGEX = re.compile("^.*/(.{36}--.{36})$")
-
-
 # skipcq: PYL-W0613
 async def clean_expired_anonymous_quizzes(ctx):
     """Delete anonymous (accountless) quizzes past their expiry.
@@ -91,14 +87,7 @@ async def clean_expired_anonymous_quizzes(ctx):
     print("Cleaning expired anonymous quizzes up")
     expired = await Quiz.objects.filter(user_id=None, expire_at__lt=datetime.now()).all()
     for quiz in expired:
-        pics_to_delete = []
-        for question in quiz.questions:
-            image = question.get("image")
-            if image is None or str(image).startswith("https://i.imgur.com/"):
-                continue
-            match = _PIC_NAME_REGEX.match(image)
-            if match is not None:
-                pics_to_delete.append(match.group(1))
+        pics_to_delete = collect_quiz_image_keys(quiz)
         if pics_to_delete:
             try:
                 await storage.delete(pics_to_delete)

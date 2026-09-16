@@ -214,10 +214,10 @@ SPDX-License-Identifier: MPL-2.0
 						{/if}
 
 						<div class="min-w-0 flex-1">
-							<p class="truncate font-medium">{@html quiz.title}</p>
+							<p class="truncate font-medium">{quiz.title}</p>
 							{#if quiz.description}
 								<p class="text-muted-foreground line-clamp-2 text-sm">
-									{@html quiz.description}
+									{quiz.description}
 								</p>
 							{/if}
 							<div class="text-muted-foreground mt-2 flex items-center gap-2 text-xs">

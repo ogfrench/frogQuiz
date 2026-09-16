@@ -67,7 +67,7 @@ SPDX-License-Identifier: MPL-2.0
 						class="text-center underline text-xl"
 						onclick={() => {
 							toggle_dropdown(i);
-						}}>{@html question.question}</button
+						}}>{question.question}</button
 					>
 					{#if question.type !== QuizQuestionType.VOTING}
 						{@const correct_answers = get_number_of_correct_answers(i)}

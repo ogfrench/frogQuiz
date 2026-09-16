@@ -62,7 +62,7 @@ SPDX-License-Identifier: MPL-2.0
 								<a
 									href="/results/{result.id}"
 									class="font-medium underline-offset-4 hover:underline"
-									>{@html result.title}</a
+									>{result.title}</a
 								>
 							</td>
 							<td class="text-muted-foreground px-4 py-3 whitespace-nowrap">

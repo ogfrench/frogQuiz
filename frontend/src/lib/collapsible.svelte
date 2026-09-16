@@ -21,7 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 			onclick={() => (expanded = !expanded)}
 			class="bg-white dark:bg-gray-700 flex justify-between w-full border-none m-0 p-2 rounded-t-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition"
 			class:rounded-b-lg={!expanded}
-			><span>{@html headerText}</span>
+			><span>{headerText}</span>
 			<svg
 				viewBox="0 0 20 20"
 				fill="none"

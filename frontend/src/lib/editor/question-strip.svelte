@@ -163,7 +163,7 @@ SPDX-License-Identifier: MPL-2.0
 					{#if question.question === ''}
 						<span class="text-muted-foreground italic">{$t('editor.no_title')}</span>
 					{:else}
-						{@html question.question}
+						{question.question}
 					{/if}
 				</span>
 			</button>

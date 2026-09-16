@@ -93,7 +93,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
 			<section class="flex flex-col gap-[var(--fq-space-group)] p-6 sm:p-8">
 				<h2 class="text-center text-lg font-semibold tracking-tight text-balance">
-					{@html question.question}
+					{question.question}
 				</h2>
 				<VotingResults data={new_data} {question} />
 			</section>

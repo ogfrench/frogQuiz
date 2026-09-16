@@ -161,7 +161,7 @@ SPDX-License-Identifier: MPL-2.0
 					class="w-full truncate rounded-sm bg-transparent text-center whitespace-nowrap"
 				>
 					{#if data.title}
-						{@html data.title}
+						{data.title}
 					{:else}
 						<i>{$t('editor.no_title')}</i>
 					{/if}
@@ -294,7 +294,7 @@ SPDX-License-Identifier: MPL-2.0
 							<span class="text-muted-foreground italic">{$t('editor.no_title')}</span
 							>
 						{:else}
-							{@html question.question}
+							{question.question}
 						{/if}
 					</p>
 				</div>

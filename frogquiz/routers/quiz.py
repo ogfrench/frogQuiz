@@ -6,14 +6,13 @@
 
 import json
 import random
-import re
 import uuid
 from datetime import datetime
 from random import randint
 
 import ormar.exceptions
 
-from frogquiz.helpers import generate_spreadsheet, handle_import_from_excel
+from frogquiz.helpers import collect_quiz_image_keys, generate_spreadsheet, handle_import_from_excel
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError, BaseModel
@@ -61,7 +60,10 @@ class PublicQuizResponseUser(BaseModel):
     id: uuid.UUID
 
 
-class PublicQuizResponse(Quiz.get_pydantic(exclude={"questions"})):
+# `anon_secret` is excluded deliberately: the response is unauthenticated, and
+# although the stored value is a SHA-256 of 256 random bits and so not
+# reversible, it is an ownership credential and has no business being served.
+class PublicQuizResponse(Quiz.get_pydantic(exclude={"questions", "anon_secret"})):
     user_id: PublicQuizResponseUser | None
     questions: list[QuizQuestion]
     likes: int
@@ -240,25 +242,36 @@ async def import_quiz_route(quiz_id: str, user: User = Depends(get_current_user)
 
 
 @router.delete("/delete/{quiz_id}")
-async def delete_quiz(quiz_id: str, user: User = Depends(get_current_user)):
+async def delete_quiz(
+    request: Request,
+    quiz_id: str,
+    user: User | None = Depends(get_current_user_optional),
+    x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+):
+    """Delete a quiz, as its signed-in owner or as the anonymous creator.
+
+    Without the anonymous path a quiz made at /create?anon=true could be edited
+    and hosted by whoever holds its secret but never deleted by them, so the only
+    way out of a mistake was to wait for the 30-day sweep.
+
+    A wrong secret and a nonexistent quiz both 404, matching /claim, so this
+    can't be used to probe which quiz IDs exist.
+    """
     try:
         quiz_id = uuid.UUID(quiz_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="badly formed quiz id")
-    quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+    if user is not None:
+        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+    else:
+        await rate_limit(request, "quiz_delete_anon", limit=20, window_seconds=60)
+        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
+        if quiz is not None and not verify_anon_secret(x_anon_secret, quiz.anon_secret):
+            quiz = None
 
     if quiz is None:
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
-    pics_to_delete = []
-    pic_name_regex = re.compile("^.*/(.{36}--.{36})$")
-    for question in quiz.questions:
-        try:
-            if question["image"] is not None and not str(question["image"]).startswith("https://i.imgur.com/"):
-                old_image_to_delete = pic_name_regex.match(question["image"])
-                if old_image_to_delete is not None:
-                    pics_to_delete.append(old_image_to_delete.group(1))
-        except KeyError:
-            pass
+    pics_to_delete = collect_quiz_image_keys(quiz)
     if len(pics_to_delete) != 0:
         await storage.delete(pics_to_delete)
     meilisearch.index(settings.meilisearch_index).delete_document(str(quiz.id))

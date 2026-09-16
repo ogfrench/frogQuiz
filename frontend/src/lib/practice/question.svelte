@@ -103,7 +103,7 @@ SPDX-License-Identifier: MPL-2.0
 	in:fly|global={{ x: 100 }}
 	out:fly|global={{ x: -100 }}
 >
-	<h1 class="text-3xl text-center">{@html question.question}</h1>
+	<h1 class="text-3xl text-center">{question.question}</h1>
 	{#if question.image !== null}
 		<div>
 			<MediaComponent

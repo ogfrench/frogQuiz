@@ -60,6 +60,10 @@ class TestAnonymousQuiz:
         assert data["public"] is False
         # No owner to show, and the response must not crash resolving one.
         assert data["user_id"] is None
+        # The ownership hash must not ride along on an unauthenticated response.
+        assert "anon_secret" not in data
+        # The expiry does, though -- the view page shows the holder when it goes.
+        assert data["expire_at"] is not None
 
     @pytest.mark.asyncio
     async def test_edit_anonymous_quiz_requires_correct_secret(self, test_client: TestClient):  # noqa: F811
@@ -104,6 +108,45 @@ class TestAnonymousQuiz:
         data = resp.json()
         assert data["game_pin"] is not None
         assert data["user_id"] is None
+
+    @pytest.mark.asyncio
+    async def test_delete_anonymous_quiz_requires_correct_secret(self, test_client: TestClient):  # noqa: F811
+        """The anonymous creator's way out.
+
+        Delete used to require a login, so a quiz made without an account could
+        be edited and hosted by its creator but never removed by them -- the
+        only way back was waiting for the 30-day sweep.
+        """
+        # A throwaway quiz, so this does not disturb the claim flow below.
+        resp = test_client.post("/api/v1/editor/start?edit=false")
+        edit_token = resp.json()["token"]
+        resp = test_client.post(f"/api/v1/editor/finish?edit_id={edit_token}", json=example_quiz)
+        assert resp.status_code == 200
+        throwaway_id = resp.json()["id"]
+        throwaway_secret = resp.headers["X-Anon-Secret"]
+
+        resp = test_client.delete(f"/api/v1/quiz/delete/{throwaway_id}")
+        assert resp.status_code == 404  # no secret at all
+
+        resp = test_client.delete(
+            f"/api/v1/quiz/delete/{throwaway_id}", headers={"X-Anon-Secret": "not-the-right-secret"}
+        )
+        assert resp.status_code == 404
+
+        # Still there after both refusals.
+        assert test_client.get(f"/api/v1/quiz/get/public/{throwaway_id}").status_code == 200
+
+        resp = test_client.delete(
+            f"/api/v1/quiz/delete/{throwaway_id}", headers={"X-Anon-Secret": throwaway_secret}
+        )
+        assert resp.status_code == 200
+        assert test_client.get(f"/api/v1/quiz/get/public/{throwaway_id}").status_code == 404
+
+        # And the secret does not work twice.
+        resp = test_client.delete(
+            f"/api/v1/quiz/delete/{throwaway_id}", headers={"X-Anon-Secret": throwaway_secret}
+        )
+        assert resp.status_code == 404
 
     @pytest.mark.asyncio
     async def test_claim_requires_login(self, test_client: TestClient):  # noqa: F811
@@ -167,6 +210,19 @@ class TestAnonymousQuiz:
             cookies=AnonState.claimer_cookies,
         )
         assert resp.status_code == 404
+
+        # The important one: once a quiz has an owner, the anonymous delete path
+        # must not reach it. Otherwise a stale secret would be a way to destroy
+        # data inside someone's account.
+        resp = test_client.delete(
+            f"/api/v1/quiz/delete/{AnonState.quiz_id}", headers={"X-Anon-Secret": AnonState.secret}
+        )
+        assert resp.status_code == 404
+        assert test_client.get("/api/v1/quiz/list", cookies=AnonState.claimer_cookies).status_code == 200
+        assert any(
+            q["id"] == AnonState.quiz_id
+            for q in test_client.get("/api/v1/quiz/list", cookies=AnonState.claimer_cookies).json()
+        )
 
     @pytest.mark.asyncio
     async def test_cleanup_claimer_user(self, test_client: TestClient):  # noqa: F811

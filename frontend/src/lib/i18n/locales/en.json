@@ -528,9 +528,30 @@
       "do_not_forget_backup_code": "Do not forget to save your recovery-code!"
     }
   },
+  "device_quizzes": {
+    "title": "Quizzes on this device",
+    "explainer": "Quizzes you made without an account are tied to this browser, not to you. They won't appear on another device, and clearing your browser data loses them.",
+    "empty": "No quizzes saved in this browser.",
+    "create": "Create a quiz without an account",
+    "expires_one": "Expires in {{count}} day",
+    "expires_other": "Expires in {{count}} days",
+    "keep_hint": "Create an account and claim a quiz to keep it for good and make it searchable."
+  },
   "view_quiz_page": {
     "made_by": "Made by",
-    "view_on_kahoot": "View on the original"
+    "view_on_kahoot": "View on the original",
+    "anon_temporary": "This quiz isn't saved to an account",
+    "anon_expires_one": "It will be deleted in {{count}} day, on {{date}}.",
+    "anon_expires_other": "It will be deleted in {{count}} days, on {{date}}.",
+    "anon_claim_hint": "Claim it to your account to keep it, make it searchable, and manage it from your dashboard.",
+    "anon_sign_in_hint": "Create an account to keep it, make it searchable, and manage it from your dashboard. You can carry on without one — you'll just lose the quiz when it expires.",
+    "anon_sign_up": "Create an account to keep this quiz",
+    "claim_quiz": "Claim this quiz to your account",
+    "claiming": "Claiming…",
+    "delete_quiz": "Delete this quiz",
+    "deleting": "Deleting…",
+    "delete_confirm": "Delete this quiz permanently? This cannot be undone.",
+    "delete_failed": "Could not delete this quiz. It may have already expired."
   },
   "start_game": {
     "captcha_message": "If enabled, Google's ReCaptcha will load in the browser of players. Only enable if you really need it, since you need the consent of EVERY player to load the captcha.",

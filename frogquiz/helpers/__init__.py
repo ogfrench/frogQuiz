@@ -5,6 +5,7 @@
 
 
 import asyncio
+import re
 import uuid
 from datetime import datetime
 from typing import BinaryIO, Any
@@ -292,3 +293,26 @@ def extract_image_ids_from_quiz(quiz: Quiz) -> list[str | uuid.UUID]:
             continue
         quiz_images.append(question["image"])
     return quiz_images
+
+
+_QUIZ_IMAGE_KEY_REGEX = re.compile("^.*/(.{36}--.{36})$")
+
+
+def collect_quiz_image_keys(quiz: Quiz) -> list[str]:
+    """Storage keys for the images a quiz's questions own.
+
+    Both the delete endpoint and the expired-anonymous-quiz sweep need these, and
+    each used to carry its own copy of the regex and the imgur exclusion. Only
+    question images are returned, not `cover_image`/`background_image`: neither
+    caller has ever deleted those, and widening what a delete removes is not a
+    change to make in passing.
+    """
+    keys = []
+    for question in quiz.questions:
+        image = question.get("image")
+        if image is None or str(image).startswith("https://i.imgur.com/"):
+            continue
+        match = _QUIZ_IMAGE_KEY_REGEX.match(str(image))
+        if match is not None:
+            keys.append(match.group(1))
+    return keys

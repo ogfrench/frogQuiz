@@ -157,7 +157,7 @@ SPDX-License-Identifier: MPL-2.0
 			<h1
 				class="lg:text-2xl text-lg text-center text-black dark:text-white mt-2 break-normal mb-2"
 			>
-				{@html question.question}
+				{question.question}
 			</h1>
 			{#if question.image !== null && game_mode !== 'kahoot'}
 				<div class="max-h-full">

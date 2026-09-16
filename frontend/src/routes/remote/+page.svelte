@@ -239,7 +239,7 @@ SPDX-License-Identifier: MPL-2.0
 	{:else}
 		<div class="flex flex-col justify-center w-screen h-1/6">
 			<h1 class="text-6xl text-center">
-				{@html game_data.questions[selected_question].question}
+				{game_data.questions[selected_question].question}
 			</h1>
 			<!--			<span class='text-center py-2 text-lg'>{$t('admin_page.time_left')}: {timer_res}</span>-->
 			<div class="mx-auto my-2">

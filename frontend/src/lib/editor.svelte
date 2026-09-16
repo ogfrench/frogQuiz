@@ -175,7 +175,7 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<ArrowLeft />
 					</Button>
-					<p class="min-w-0 truncate font-medium">{@html data.title}</p>
+					<p class="min-w-0 truncate font-medium">{data.title}</p>
 					{#if schemaInvalid}
 						<!-- The old header showed a raw yup message, which named a field path rather
 						     than telling the author what to go and fix. The count points at the rail,

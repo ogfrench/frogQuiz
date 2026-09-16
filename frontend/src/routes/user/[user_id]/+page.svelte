@@ -71,9 +71,9 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<div class="grid grid-cols-6 h-[25vh]">
 							<div class="col-start-2 col-end-6">
-								<h3 class="text-center text-2xl">{@html quiz.title}</h3>
+								<h3 class="text-center text-2xl">{quiz.title}</h3>
 								<p class="text-center">
-									{@html quiz.description}
+									{quiz.description}
 								</p>
 								{#if quiz.cover_image}
 									<div class="flex justify-center align-middle items-center">
