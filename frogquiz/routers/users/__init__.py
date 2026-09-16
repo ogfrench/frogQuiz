@@ -30,12 +30,13 @@ from frogquiz.auth import (
     get_current_user,
 )
 from frogquiz.cache import clear_cache_for_account
-from frogquiz.config import redis, settings, meilisearch
+from frogquiz.config import redis, settings, meilisearch, storage
 from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 import uuid
 import bleach
 from pydantic import BaseModel
-from frogquiz.db.models import User, UserSession, UpdatePassword, Quiz, ApiKey
+from frogquiz.db import database
+from frogquiz.db.models import User, UserSession, UpdatePassword, Quiz, ApiKey, StorageItem
 from frogquiz.emails import send_register_email, send_forgotten_password_email
 from frogquiz.routers.users import webauthn, twofa
 
@@ -384,21 +385,86 @@ class DeleteUserInput(BaseModel):
 
 
 @router.delete("/me")
-async def delete_user_account(input_data: DeleteUserInput, user: User = Depends(get_current_user)):
+async def delete_user_account(
+    input_data: DeleteUserInput,
+    request: Request,
+    response: Response,
+    user: User = Depends(get_current_user),
+):
+    # Keyed on the account, not the source address: the caller is already
+    # authenticated, so the account is the thing being attacked, and each attempt
+    # costs a deliberately expensive argon2 verify. Unthrottled, this is both a
+    # password oracle behind a borrowed session and a cheap way to burn CPU.
+    await rate_limit_key(f"delete_account:{user.id}", limit=5, window_seconds=3600)
+    # OAuth accounts are created with no password at all (frogquiz/oauth/*), and
+    # verify_password(x, None) raises rather than returning False -- a 500 with no
+    # explanation for the one person who cannot act on it.
+    if user.password is None:
+        raise HTTPException(status_code=400, detail="This account has no password to confirm with")
     if not verify_password(input_data.password, user.password):
         raise HTTPException(status_code=400, detail="Incorrect password")
-    user = await User.objects.filter(id=user.id).get_or_none()
-    await UserSession.objects.filter(user=user).delete()
-    quizzes = await Quiz.objects.filter(user_id=user).all()
-    quizzes_to_delete = []
-    for quiz in quizzes:
-        if quiz.public:
-            quizzes_to_delete.append(str(quiz.id))
-    if len(quizzes_to_delete) > 0:
-        meilisearch.index(settings.meilisearch_index).delete_documents(quizzes_to_delete)
-    await Quiz.objects.filter(user_id=user).delete()
-    await User.objects.filter(id=user.id).delete()
-    await user.delete()
+
+    # Everything the cleanup needs, read before anything is destroyed.
+    #
+    # Deliberately NOT re-reading the user from the database first. get_current_user
+    # resolves through the Redis cache, so a double submit authenticates a user whose
+    # row is already gone; the old code re-read into a local that was then None, and
+    # `filter(user_id=None)` is not "no quizzes", it is every anonymous quiz in the
+    # database. The cached instance carries id, email and username, which is all of
+    # what is used below.
+    public_quiz_ids = [str(quiz.id) for quiz in await Quiz.objects.filter(user_id=user, public=True).all()]
+    storage_names = [
+        item.storage_path or item.id.hex
+        for item in await StorageItem.objects.filter(user=user, deleted_at=None).all()
+    ]
+    api_keys = [row.key for row in await ApiKey.objects.filter(user=user).all()]
+
+    # One commit or none. A failure partway through used to leave an account signed
+    # out everywhere with every quiz deleted and the account itself still present --
+    # the worst of the available outcomes, and the likely one before the rating and
+    # controller foreign keys were made to cascade (c3f8a1d47b62).
+    async with database.transaction():
+        await UserSession.objects.filter(user=user).delete()
+        await Quiz.objects.filter(user_id=user).delete()
+        await User.objects.filter(id=user.id).delete()
+
+    # Past this point the account is gone, so nothing below is allowed to fail the
+    # request -- a raised exception here would report failure for work that is
+    # already committed and cannot be undone.
+    #
+    # The cache clear is the load-bearing one: get_current_user reads the user out of
+    # Redis, where this very request just warmed an entry, so without it a deleted
+    # account keeps authenticating for up to cache_expiry (24h).
+    await clear_cache_for_account(user)
+    access_token = request.cookies.get("access_token")
+    if access_token is not None:
+        await revoke_token(access_token.removeprefix("Bearer "))
+    for key in api_keys:
+        await redis.delete(f"apikey:{key}")
+    response.delete_cookie("access_token")
+    response.delete_cookie("expiry")
+    response.delete_cookie("rememberme")
+    response.delete_cookie("rememberme_token")
+
+    # Both of these are best-effort, and both run after the commit on purpose.
+    # Meilisearch used to be stripped *before* a delete that could fail, which left
+    # quizzes in the database and missing from search. This way round the residue of
+    # an outage is stale documents, which the reindex job repairs.
+    if public_quiz_ids:
+        try:
+            meilisearch.index(settings.meilisearch_index).delete_documents(public_quiz_ids)
+        except Exception:
+            LOGGER.exception("Could not remove a deleted user's quizzes from the search index")
+    # storage_items is ON DELETE SET NULL, so the rows survive with no owner and the
+    # bytes outlive the account unless they are removed here. The privacy policy says
+    # deleting an account takes uploads with it; this is what makes that true.
+    if storage_names:
+        try:
+            await storage.delete(storage_names)
+        except Exception:
+            LOGGER.exception("Could not delete a deleted user's uploads")
+
+    return {"message": "Account deleted"}
 
 
 @router.get("/avatar")

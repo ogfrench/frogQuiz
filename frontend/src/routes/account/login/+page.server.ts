@@ -5,18 +5,31 @@
 import { redirect } from '@sveltejs/kit';
 
 export async function load({ parent, url }) {
-	const verified = url.searchParams.get('verified');
+	// One channel for every "something just happened to your account" notice, since
+	// they all land on this page and only one can be true at a time.
+	//
+	// The raw value, not a boolean: /api/v1/users/verify sends people here with
+	// verified=expired when the link has already been used or superseded, and
+	// `verified !== null` showed those the "confirmed!" badge.
+	let notice = url.searchParams.get('verified');
+	if (notice === null && url.searchParams.get('deleted') === 'true') {
+		notice = 'deleted';
+	}
+	if (notice === null && url.searchParams.get('password_changed') === 'true') {
+		notice = 'password_changed';
+	}
 	const returnTo =
 		url.searchParams.get('returnTo') !== null ? url.searchParams.get('returnTo') : '/dashboard';
 
 	const { email } = await parent();
-	if (email) {
+	// Deleting an account and changing a password both clear the cookies server-side,
+	// so `email` should already be gone. If one survives -- a proxy eating Set-Cookie,
+	// a partial failure -- showing the notice beats bouncing someone into a dashboard
+	// that will 401 them straight back here.
+	if (email && notice !== 'deleted' && notice !== 'password_changed') {
 		redirect(302, returnTo);
 	}
-	// The raw value, not a boolean: /api/v1/users/verify sends people here with
-	// verified=expired when the link has already been used or superseded, and
-	// `verified !== null` showed those the "confirmed!" badge.
 	return {
-		verified
+		notice
 	};
 }
