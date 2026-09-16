@@ -1,32 +1,40 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
-<div
-	class="flex items-center justify-center p-4 text-green-700 border-2 border-current rounded-lg bg-white"
-	role="alert"
->
-	<svg
-		width="24"
-		height="24"
-		viewBox="0 0 24 24"
-		class="w-6 h-6"
-		fill="none"
-		xmlns="http://www.w3.org/2000/svg"
-	>
-		<path
-			d="M10.2426 16.3137L6 12.071L7.41421 10.6568L10.2426 13.4853L15.8995 7.8284L17.3137 9.24262L10.2426 16.3137Z"
-			fill="currentColor"
-		/>
-		<path
-			fill-rule="evenodd"
-			clip-rule="evenodd"
-			d="M1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12ZM12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z"
-			fill="currentColor"
-		/>
-	</svg>
+<script lang="ts">
+	import { getLocalization } from '$lib/i18n';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 
-	<h3 class="ml-3 text-sm font-medium">You've successfully confirmed your email address.</h3>
+	// "expired" covers both ways a confirmation link stops working: it was already
+	// used, or asking for a new mail replaced it. Neither is an error the person
+	// can do anything about without being told what to do next.
+	let { state }: { state: 'true' | 'expired' } = $props();
+	const { t } = getLocalization();
+	const ok = $derived(state !== 'expired');
+</script>
+
+<div
+	class="mx-auto mb-4 flex w-full max-w-sm gap-3 rounded-lg border p-3 text-sm {ok
+		? 'border-border bg-muted/50'
+		: 'border-destructive/40 bg-destructive/10'}"
+	role="status"
+	aria-live="polite"
+>
+	{#if ok}
+		<CircleCheck class="text-foreground mt-0.5 size-4 shrink-0" aria-hidden="true" />
+		<p class="text-foreground">{$t('login_page.verified')}</p>
+	{:else}
+		<CircleAlert class="text-destructive mt-0.5 size-4 shrink-0" aria-hidden="true" />
+		<p class="text-destructive">
+			{$t('login_page.verify_link_dead')}
+			<a href="/account/resend-verification" class="font-medium underline underline-offset-4"
+				>{$t('login_page.verify_link_resend')}</a
+			>
+		</p>
+	{/if}
 </div>

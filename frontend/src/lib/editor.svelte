@@ -20,6 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Save from '@lucide/svelte/icons/save';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import { getAnonSecret, setAnonSecret } from '$lib/anon_quiz';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 
 	const { t } = getLocalization();
 
@@ -62,6 +63,9 @@ SPDX-License-Identifier: MPL-2.0
 	// watching `data`: it cannot miss an edit made through a form control, and missing one
 	// would lose someone's work.
 	let confirm_to_leave = $state(false);
+	// A failed save used to be `alert('Error')`: no status, no reason, and dismissing it
+	// left you staring at the same form with no idea whether your work had gone anywhere.
+	let save_error: string | null = $state(null);
 
 	const getEditID = async () => {
 		const anon_secret = quiz_id === null ? null : getAnonSecret(quiz_id);
@@ -81,9 +85,18 @@ SPDX-License-Identifier: MPL-2.0
 		if (res.status === 200) {
 			const json = await res.json();
 			edit_id = json.token;
-		} else {
-			alert('Error!');
+			return;
 		}
+		// Was `alert('Error!')` -- a native dialog with no status, no reason, and
+		// which left the promise resolved so the editor rendered behind it anyway.
+		// Throwing lets the {:catch} below show what actually happened.
+		let detail = '';
+		try {
+			detail = (await res.json())?.detail ?? '';
+		} catch {
+			/* not JSON; the status is still worth showing */
+		}
+		throw new Error(detail ? `${res.status}: ${detail}` : String(res.status));
 	};
 
 	const confirmUnload = (event: BeforeUnloadEvent) => {
@@ -100,6 +113,7 @@ SPDX-License-Identifier: MPL-2.0
 		if (schemaInvalid) {
 			return;
 		}
+		save_error = null;
 		const anon_secret = quiz_id === null ? null : getAnonSecret(quiz_id);
 		const res = await fetch(`/api/v1/editor/finish?edit_id=${edit_id}`, {
 			method: 'POST',
@@ -123,7 +137,13 @@ SPDX-License-Identifier: MPL-2.0
 				window.location.href = '/dashboard';
 			}
 		} else {
-			alert('Error');
+			let detail = '';
+			try {
+				detail = (await res.json())?.detail ?? '';
+			} catch {
+				/* not JSON */
+			}
+			save_error = detail ? `${res.status}: ${detail}` : `${res.status}`;
 		}
 	};
 </script>
@@ -170,12 +190,22 @@ SPDX-License-Identifier: MPL-2.0
 									: yupErrorMessage}
 							</span>
 						</p>
+					{:else if save_error}
+						<p
+							class="text-destructive ml-auto flex min-w-0 items-center gap-2 text-sm font-medium"
+							role="alert"
+						>
+							<TriangleAlert class="size-4 shrink-0" />
+							<span class="truncate">
+								{$t('editor.save_failed', { detail: save_error })}
+							</span>
+						</p>
 					{/if}
-					<Button
-						type="submit"
-						class={schemaInvalid ? 'ml-3' : 'ml-auto'}
-						disabled={schemaInvalid}
-					>
+					<!-- The editor hides the navbar, which is where the theme switch used
+					     to live and only live -- so the one screen people sit in longest
+					     was the one with no way to change it. -->
+					<ThemeToggle class={schemaInvalid || save_error ? 'ml-3' : 'ml-auto'} />
+					<Button type="submit" disabled={schemaInvalid}>
 						<Save />
 						{$t('words.save')}
 					</Button>
@@ -197,4 +227,16 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		</div>
 	</form>
+{:catch error}
+	<div class="flex min-h-dvh items-center justify-center px-6">
+		<div class="w-full max-w-sm text-center">
+			<h1 class="text-xl font-semibold tracking-tight">{$t('editor.start_failed')}</h1>
+			<p class="text-muted-foreground mt-2 text-sm">{$t('editor.start_failed_detail')}</p>
+			<p class="text-muted-foreground mt-4 font-mono text-xs break-all">{error.message}</p>
+			<div class="mt-6 flex justify-center gap-2">
+				<Button onclick={() => location.reload()}>{$t('words.retry')}</Button>
+				<Button href="/" variant="outline">{$t('words.home')}</Button>
+			</div>
+		</div>
+	</div>
 {/await}

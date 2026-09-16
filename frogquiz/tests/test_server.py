@@ -50,6 +50,15 @@ class TestUsers:
             json={"email": test_user_email, "password": test_user_password, "username": "mawoka"},
         )
         assert resp.status_code == 409
+        # Addresses are one account whatever the casing. They used to be compared
+        # byte for byte, so this was a second account -- and only one of the two was
+        # reachable by the reset and resend lookups, while both got the same neutral
+        # "a link is on its way" that exists so neither can be told apart.
+        resp = test_client.post(
+            "/api/v1/users/create",
+            json={"email": test_user_email.upper(), "password": test_user_password, "username": "mawoka2"},
+        )
+        assert resp.status_code == 409
         resp = test_client.post(
             "/api/v1/users/create",
             json={"email": "doesntexist@hidsadawadsdaads.ghsxd", "password": test_user_password, "username": "dieter"},
@@ -69,7 +78,12 @@ class TestUsers:
     @pytest.mark.asyncio
     async def test_verify_email(self, test_client: TestClient):  # noqa : F811
         user = test_client.get(f"/api/v1/internal/testing/user/{test_user_email}?secret_key={settings().secret_key}")
-        assert (test_client.get("/api/v1/users/verify/dasadsasdadsasdsaddassad")).status_code == 404
+        # A spent or superseded key is the commonest way to land here -- clicking the
+        # same link twice, or the older of two mails. It used to render a raw 404 JSON
+        # body in the browser; now it lands on the login page, which says what to do.
+        dead = test_client.get("/api/v1/users/verify/dasadsasdadsasdsaddassad", follow_redirects=False)
+        assert dead.status_code in (302, 307)
+        assert dead.headers["location"] == "/account/login?verified=expired"
 
         test_client.get(f"/api/v1/users/verify/{user.json()['verify_key']}")
         resp = test_client.post("/api/v1/login/start", json={"email": test_user_email})
@@ -157,12 +171,37 @@ class TestUsers:
 
     @pytest.mark.asyncio
     async def test_forgotten_password(self, test_client: TestClient, monkeypatch):  # noqa : F811
-        # Stub the SMTP send: this route is tested for the reset token it stores, not for delivery
-        monkeypatch.setattr("frogquiz.emails._sendMail", lambda **kwargs: None)
-        resp = test_client.post("/api/v1/users/forgot-password", json={"email": test_user_email})
-        assert resp.status_code == 200
-        resp = test_client.post("/api/v1/users/forgot-password", json={"email": "ddassad@dsa.ads"})
-        assert resp.status_code == 200
+        # Stub the SMTP send: this route is tested for the reset token it stores, not for
+        # delivery. The stub has to be awaitable -- the caller awaits it, and a plain
+        # lambda returning None raised inside the handler, which the route then swallowed.
+        async def _no_send(**kwargs):
+            return None
+
+        monkeypatch.setattr("frogquiz.emails._sendMail", _no_send)
+        known = test_client.post("/api/v1/users/forgot-password", json={"email": test_user_email})
+        assert known.status_code == 200
+        unknown = test_client.post("/api/v1/users/forgot-password", json={"email": "ddassad@dsa.ads"})
+        assert unknown.status_code == 200
+        # Byte-identical, or the endpoint tells an attacker which addresses are registered.
+        assert known.json() == unknown.json()
+
+    @pytest.mark.asyncio
+    async def test_resend_verification(self, test_client: TestClient, monkeypatch):  # noqa : F811
+        async def _no_send(**kwargs):
+            return None
+
+        monkeypatch.setattr("frogquiz.emails._sendMail", _no_send)
+        known = test_client.post("/api/v1/users/resend-verification", json={"email": test_user_email})
+        assert known.status_code == 200
+        unknown = test_client.post("/api/v1/users/resend-verification", json={"email": "nobody@dsa.ads"})
+        assert unknown.status_code == 200
+        assert known.json() == unknown.json()
+
+    @pytest.mark.asyncio
+    async def test_reset_password_rejects_short_password(self, test_client: TestClient):  # noqa : F811
+        """The one password-setting route that took no length bound used to take "a"."""
+        resp = test_client.post("/api/v1/users/reset-password", json={"token": "whatever", "password": "short"})
+        assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_reset_password_with_token(self, test_client: TestClient):  # noqa : F811
@@ -179,6 +218,10 @@ class TestUsers:
         assert resp.status_code == 400
         resp = test_client.post("/api/v1/users/reset-password", json={"token": "_1token_", "password": "new_password"})
         assert resp.status_code == 200
+        # Following the emailed link proves mailbox control, so the account is verified
+        # by it -- otherwise anyone who registered while mail was down stays locked out.
+        after = test_client.get(f"/api/v1/internal/testing/user/{test_user_email}?secret_key={settings().secret_key}")
+        assert after.json()["verified"] is True
         self.log_in(test_client, password="new_password")
         test_client.put(
             "/api/v1/users/password/update",

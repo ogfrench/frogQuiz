@@ -14,7 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Label } from '$lib/components/ui/label/index.js';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 
-	let { session_data = $bindable({}), step = $bindable() } = $props();
+	let { session_data = $bindable({}), step = $bindable(), identifier = $bindable('') } = $props();
 
 	const { t } = getLocalization();
 	let email = $state('');
@@ -36,6 +36,7 @@ SPDX-License-Identifier: MPL-2.0
 			body: JSON.stringify({ email: email })
 		});
 		session_data = await res.json();
+		identifier = email;
 		step = 1;
 	};
 </script>

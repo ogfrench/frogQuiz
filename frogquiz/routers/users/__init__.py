@@ -4,8 +4,11 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
+import logging
 import gzip
 import os
+
+import asyncpg.exceptions
 from datetime import datetime
 
 import ormar
@@ -28,7 +31,7 @@ from frogquiz.auth import (
 )
 from frogquiz.cache import clear_cache_for_account
 from frogquiz.config import redis, settings, meilisearch
-from frogquiz.helpers.ratelimit import rate_limit
+from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 import uuid
 import bleach
 from pydantic import BaseModel
@@ -37,6 +40,8 @@ from frogquiz.emails import send_register_email, send_forgotten_password_email
 from frogquiz.routers.users import webauthn, twofa
 
 settings = settings()
+LOGGER = logging.getLogger("frogquiz.users")
+
 router = APIRouter()
 
 router.include_router(webauthn.router, prefix="/webauthn")
@@ -53,6 +58,22 @@ class RouteUser(pydantic.BaseModel):
     # a one-character password.
     password: str = pydantic.Field(min_length=8, max_length=100)
     email: str
+
+
+async def find_user_by_email(email: str) -> User | None:
+    """Look an account up by address, case-insensitively.
+
+    Addresses are stored folded (see create_user), so the folded lookup is the
+    one that matters. The second query is for rows written before that rule
+    existed: without it, someone who registered as "Foo@bar.com" silently gets
+    no reset email and no way to find out why, because every response on that
+    path is deliberately identical.
+    """
+    folded = email.strip().lower()
+    user = await User.objects.filter(email=folded).get_or_none()
+    if user is None and folded != email:
+        user = await User.objects.filter(email=email).get_or_none()
+    return user
 
 
 async def _sign_out_everywhere(user: User) -> None:
@@ -72,6 +93,14 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     await rate_limit(request, "register", limit=10, window_seconds=3600)
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
+    # Checked before anything is written. Without it the row is created, the send
+    # fails, and the rollback below is the only thing standing between the caller
+    # and an account they can never verify.
+    if not settings.skip_email_verification and not settings.mail_configured:
+        raise HTTPException(
+            status_code=503,
+            detail="This server requires email verification but has no mail server configured.",
+        )
     user: User = User(
         **user.model_dump(),
         id=uuid.uuid4(),
@@ -81,9 +110,14 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     try:
         # Deliverability is a live DNS/MX lookup, so it needs outbound DNS at signup
         # and rejects internal-only mail domains. On by default; see the setting.
-        validate_email(user.email, check_deliverability=settings.validate_email_deliverability)
+        validated = validate_email(user.email, check_deliverability=settings.validate_email_deliverability)
     except EmailNotValidError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # Store one canonical form. The validator folds the domain; the local part is
+    # folded here too, because every mail provider treats it case-insensitively and
+    # the alternative is two accounts on what the owner considers one address --
+    # with only one of them reachable by the reset and resend lookups.
+    user.email = validated.normalized.strip().lower()
     user.verify_key = str(os.urandom(16).hex())
     res = await User.objects.filter((User.email == user.email) | (User.username == user.username)).all()
     if len(res) != 0:
@@ -93,13 +127,32 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     user.username = bleach.clean(user.username, tags=[], strip=True)
     if len(user.username) == 32:
         return JSONResponse({"details": "Username mustn't be 32 characters long"}, 400)
-    await user.save()
+    try:
+        await user.save()
+    except asyncpg.exceptions.UniqueViolationError:
+        # The check above is not atomic with the insert. Two submissions of the same
+        # form -- a double click, a retried request -- raced through it and the loser
+        # got a 500 rather than the 409 the first duplicate got.
+        raise HTTPException(status_code=409, detail="User already exists")
     if settings.skip_email_verification:
         user.verify_key = None
         user.verified = True
         await user.update()
     else:
-        await send_register_email(user)
+        try:
+            await send_register_email(user)
+        except Exception:
+            # The row was already committed, so a failing mail server used to leave
+            # an unverified account behind and 500 the request. The caller then saw a
+            # generic error, retried, and got 409 "user already exists" forever --
+            # locked out of an address they could never verify, with no resend
+            # endpoint to recover through. Undo the save so retrying actually works.
+            LOGGER.exception("Could not send the verification email to a new user; rolling back")
+            await user.delete()
+            raise HTTPException(
+                status_code=502,
+                detail="Could not send the verification email. Nothing was saved -- please try again.",
+            )
     await redis.delete("global_user_count")
     return user
 
@@ -132,10 +185,17 @@ async def check_token(user: User = Depends(get_current_user)):
 async def verify_user(verify_key: str):
     user = await User.objects.filter(verify_key=verify_key).get_or_none()
     if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        # A key is cleared the moment it is used, and asking for a new confirmation
+        # mail mints a fresh one -- so the two commonest ways to land here are
+        # clicking the same link twice and clicking the older of two mails. Both
+        # used to render a raw 404 JSON body in the browser. Send them to the login
+        # page, which says what to do next, rather than to a dead end.
+        return RedirectResponse(url="/account/login?verified=expired")
     user.verified = True
     user.verify_key = None
     await user.update()
+    # The cached copy still says unverified otherwise, for a full cache_expiry.
+    await clear_cache_for_account(user)
     return RedirectResponse(url="/account/login?verified=true")
 
 
@@ -191,18 +251,73 @@ class ForgotPassword(BaseModel):
     email: str
 
 
+# Deliberately identical for every outcome: address on file or not, mail sent or
+# not. Anything else turns this endpoint into a way to test whether an address has
+# an account here.
+_RESET_ACK = {"message": "If that address has an account, a reset link is on its way."}
+
+
 @router.post("/forgot-password")
 async def forgotten_password(forgot_password: ForgotPassword, request: Request):
     # Unrated, this endpoint can be used to spam a victim's inbox or hammer the DB.
     await rate_limit(request, "forgot_password", limit=5, window_seconds=3600)
-    user = await User.objects.filter(email=forgot_password.email, verified=True).get_or_none()
+    if not settings.mail_configured:
+        raise HTTPException(status_code=503, detail="This server has no mail server configured.")
+    # Limited per address as well as per source IP. The IP bucket is what stops
+    # someone walking a list of addresses; this is what stops one mailbox being
+    # flooded from a spread of addresses, and it keeps working behind a proxy that
+    # collapses every caller onto one source IP. Applied before the lookup, so a
+    # 429 says nothing about whether the address is on file.
+    await rate_limit_key(f"forgot_password_addr:{forgot_password.email.strip().lower()}", limit=3, window_seconds=3600)
+    # Unverified accounts used to be excluded, which left anyone who registered
+    # while mail was down with no way back in at all -- they could not verify and
+    # could not reset. Clicking the link proves control of the mailbox either way,
+    # so reset_password_with_token marks them verified when they do.
+    user = await find_user_by_email(forgot_password.email)
     if user is not None:
-        await send_forgotten_password_email(email=user.email)
-    return {"message": "Password reset email sent"}
+        try:
+            await send_forgotten_password_email(user)
+        except Exception:
+            # A 500 here answers the question the neutral message is there to
+            # avoid: only a real address can reach the code that fails.
+            LOGGER.exception("Could not send a password reset email")
+    return _RESET_ACK
+
+
+class ResendVerification(BaseModel):
+    email: str
+
+
+@router.post("/resend-verification")
+async def resend_verification(body: ResendVerification, request: Request):
+    """Send the confirmation mail again.
+
+    Registration had no recovery path: if the first mail was lost, filtered, or
+    sent while the relay was down, the address stayed unverified and re-registering
+    returned 409 forever.
+    """
+    await rate_limit(request, "resend_verification", limit=5, window_seconds=3600)
+    if not settings.mail_configured:
+        raise HTTPException(status_code=503, detail="This server has no mail server configured.")
+    await rate_limit_key(f"resend_verification_addr:{body.email.strip().lower()}", limit=3, window_seconds=3600)
+    user = await find_user_by_email(body.email)
+    if user is not None and not user.verified:
+        # The old key may be in a mail the user cannot find. Minting a new one
+        # keeps exactly one link live per address.
+        user.verify_key = str(os.urandom(16).hex())
+        await user.update()
+        try:
+            await send_register_email(user)
+        except Exception:
+            LOGGER.exception("Could not resend a verification email")
+    return {"message": "If that address needs confirming, a new link is on its way."}
 
 
 class ResetPassword(BaseModel):
-    password: str
+    # Registration and the change-password route both bound this; reset did not, so
+    # the one flow reachable without knowing the old password was also the one that
+    # accepted a one-character replacement.
+    password: str = pydantic.Field(min_length=8, max_length=100)
     token: str
 
 
@@ -217,7 +332,14 @@ async def reset_password_with_token(reset_password: ResetPassword, response: Res
     if user is None:
         raise HTTPException(status_code=400, detail="Invalid token")
     user.password = get_password_hash(reset_password.password)
+    # Following the link is proof of mailbox control, which is all verification
+    # ever asserted -- so an account that reset this way is verified by definition.
+    user.verified = True
+    user.verify_key = None
     await user.update()
+    # The token is already gone (GETDEL above); drop the pointer that tracks which
+    # one is current, so the next request does not try to revoke a spent token.
+    await redis.delete(f"reset_passwd_current:{user.id}")
     await _sign_out_everywhere(user)
     response.delete_cookie("access_token")
     response.delete_cookie("expiry")

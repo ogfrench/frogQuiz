@@ -59,6 +59,16 @@ async def startup() -> None:
         logging.getLogger("frogquiz").warning(
             "MeiliSearch unavailable at startup (%s); search will be degraded until it returns.", e
         )
+    # Said once, loudly, at boot: a misconfigured relay is otherwise invisible
+    # until someone can't get back into their account.
+    if not settings.mail_configured:
+        logging.getLogger("frogquiz").warning(
+            "No mail server configured (MAIL_SERVER/MAIL_ADDRESS). "
+            "Password recovery is unavailable%s.",
+            ""
+            if settings.skip_email_verification
+            else ", and registration will fail because SKIP_EMAIL_VERIFICATION is False",
+        )
 
 
 @app.on_event("shutdown")

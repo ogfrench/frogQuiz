@@ -10,7 +10,7 @@ from redis import asyncio as redis_lib
 import redis as redis_base_lib
 from pydantic import field_validator, RedisDsn, PostgresDsn, BaseModel
 import json
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 import meilisearch as MeiliSearch
@@ -50,15 +50,29 @@ class Settings(BaseSettings):
     db_url: PostgresDsn | str = "postgresql://postgres:mysecretpassword@localhost:5432/frogquiz"
     hcaptcha_key: str | None = None
     recaptcha_key: str | None = None
-    mail_address: str
-    mail_password: str
-    mail_username: str
-    mail_server: str
-    mail_port: int
+    # Mail is optional so the app boots without it -- a self-hoster trying the stack
+    # out shouldn't have to stand up an SMTP relay first. What it costs is that
+    # nothing can be verified or recovered by email; see `mail_configured`, which
+    # the endpoints that need mail check before doing anything.
+    mail_address: str = ""
+    mail_password: str = ""
+    mail_username: str = ""
+    mail_server: str = ""
+    mail_port: int = 587
+    # "starttls" is the usual 587 setup. Use "ssl" for implicit TLS on 465, and
+    # "none" only for a relay on localhost -- it sends credentials in the clear.
+    mail_security: Literal["starttls", "ssl", "none"] = "starttls"
+    # What the From line reads as. The address itself still has to be one the relay
+    # is willing to send for, or it will reject the message.
+    mail_from_name: str = "frogQuiz"
     secret_key: str
     access_token_expire_minutes: int = 30
     # Off only for test runs, which log in far more often than a real client.
     rate_limit_enabled: bool = True
+    # How many proxies sit in front of the app, counting from it outwards. 1 is the
+    # bundled Caddy. Set 2 when a CDN or Netlify proxies to Caddy, or every user
+    # shares one rate-limit bucket -- see client_ip() for what raising it costs.
+    trusted_proxy_hops: int = 1
     cache_expiry: int = 86400
     meilisearch_url: str = "http://127.0.0.1:7700"
     meilisearch_index: str = "frogquiz"
@@ -72,6 +86,11 @@ class Settings(BaseSettings):
     pixabay_api_key: str | None = None
     mods: list[str] = []
     registration_disabled: bool = False
+
+    @property
+    def mail_configured(self) -> bool:
+        """Whether there is enough here to reach a mail server at all."""
+        return bool(self.mail_server and self.mail_address)
     # Physical-buzzer hardware and the QuizTivity page builder are not used by the
     # team. Their entry points were taken out of the UI in PR #5, but the API
     # routers stayed registered and callable. Off by default; flip to re-enable.

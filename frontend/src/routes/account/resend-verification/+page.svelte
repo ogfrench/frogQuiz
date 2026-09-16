@@ -1,18 +1,15 @@
 <!--
-SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
 SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
-<!-- Step one of recovery: ask for a link. (Step two, choosing the new password,
-     is /account/password-reset -- the near-identical names are upstream's and are
-     kept because the second one is baked into every reset email already sent.)
-
-     Was four `alert()` calls over an upstream floating-label form, one of which
-     said "user not found!" -- an oracle for whether an address has an account
-     here, and a lie besides, since the API has never returned 404. Rebuilt on the
-     same Card primitives as login and register, with one neutral outcome. -->
+<!-- The way out of the one dead end in this flow. An account that has not confirmed
+     its address is refused at login with the same "wrong credentials" as a bad
+     password -- deliberately, so the login endpoint cannot be used to test which
+     addresses are registered -- which leaves the person who typed the right
+     password with no way to find out what is wrong. This page is what the login
+     error and the "already taken" case on registration both point at. -->
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
@@ -36,7 +33,7 @@ SPDX-License-Identifier: MPL-2.0
 		isSubmitting = true;
 		result = null;
 		try {
-			const res = await fetch('/api/v1/users/forgot-password', {
+			const res = await fetch('/api/v1/users/resend-verification', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email })
@@ -59,14 +56,14 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Reset your password</title>
+	<title>frogQuiz - Resend confirmation email</title>
 </svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="gap-1 text-center">
-			<Card.Title class="text-2xl">{$t('password_reset_page.reset_password')}</Card.Title>
-			<Card.Description>{$t('password_reset_page.request_subtitle')}</Card.Description>
+			<Card.Title class="text-2xl">{$t('resend_page.title')}</Card.Title>
+			<Card.Description>{$t('resend_page.subtitle')}</Card.Description>
 		</Card.Header>
 
 		<Card.Content>
@@ -86,7 +83,7 @@ SPDX-License-Identifier: MPL-2.0
 					{#if isSubmitting}
 						<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
 					{/if}
-					{$t('password_reset_page.send_link')}
+					{$t('resend_page.action')}
 				</Button>
 			</form>
 		</Card.Content>
@@ -114,13 +111,13 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 					<p class={ok ? 'text-foreground' : 'text-destructive'}>
 						{#if result === 'sent'}
-							{$t('password_reset_page.sent')}
+							{$t('resend_page.sent')}
 						{:else if result === 'too_many'}
-							{$t('password_reset_page.send_too_many')}
+							{$t('resend_page.too_many')}
 						{:else if result === 'no_mail'}
 							{$t('password_reset_page.no_mail')}
 						{:else}
-							{$t('password_reset_page.send_failed')}
+							{$t('resend_page.failed')}
 						{/if}
 					</p>
 				</div>

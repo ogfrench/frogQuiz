@@ -13,7 +13,10 @@ export async function load({ parent, url }) {
 	if (email) {
 		redirect(302, returnTo);
 	}
+	// The raw value, not a boolean: /api/v1/users/verify sends people here with
+	// verified=expired when the link has already been used or superseded, and
+	// `verified !== null` showed those the "confirmed!" badge.
 	return {
-		verified: verified !== null
+		verified
 	};
 }

@@ -25,67 +25,39 @@ SPDX-License-Identifier: MPL-2.0
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
 >
-	<h1>Privacy Policy</h1>
+	<h1>Privacy</h1>
 
-	<h2>What gets stored for how long and why</h2>
-	<table>
-		<thead>
-			<tr>
-				<th>What?</th>
-				<th>Why?</th>
-				<th>How long?</th>
-				<th>Where?</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td> The IP-Address of the user</td>
-				<td>
-					<ul>
-						<li>To prevent abuse</li>
-						<li>To provide user-sessions</li>
-					</ul>
-				</td>
-				<td> For a very long time</td>
-				<td> On the developers server, by Netcup, in Germany.</td>
-			</tr>
-			<tr>
-				<td> The data the user enters (quizzes, email, username)</td>
-				<td> Self-explaining</td>
-				<td> Maximum of 30 days after you've deleted your account</td>
-				<td> On the developers server, by Netcup, in Germany.</td>
-			</tr>
-			<tr>
-				<td>The <b>hashed</b> password of the user</td>
-				<td>Self-explaining</td>
-				<td>Maximum of 30 days after you've deleted your account</td>
-				<td>On my server, by Netcup, in Germany.</td>
-			</tr>
-		</tbody>
-	</table>
-
-	<h2>Cookies</h2>
+	<h2>We do not track you</h2>
 	<p>
-		Cookies are used to store access-tokens, user-sessions and preferences. They expire after a
-		year.
+		No analytics. No error reporting to anyone else. No advertising cookies, and nothing that
+		follows you to other sites. Upstream shipped Plausible analytics and Sentry error reporting;
+		both were removed.
 	</p>
 
-	<h2>Tracking</h2>
+	<h2>What we store</h2>
+	<ul>
+		<li>Your email, username and hashed password, so you can sign in.</li>
+		<li>The quizzes you write and the images you put in them.</li>
+		<li>Nicknames, answers and scores from games you host.</li>
+		<li>A session and a rate-limit counter, which include your IP address.</li>
+	</ul>
 	<p>
-		frogQuiz does not use analytics. No usage data is collected, and nothing is sent to an
-		analytics provider.
+		The site is served by Netlify. Everything else runs on one server we operate: Postgres for
+		the data, Redis for sessions, Meilisearch for search, and disk or object storage for images.
 	</p>
+
+	<h2>Getting rid of it</h2>
 	<p>
-		Errors are logged on the server only. No error reports, stack traces or request details are
-		sent to any third party.
+		Deleting your account in settings takes your quizzes and uploads with it. Quizzes made
+		without an account delete themselves after 30 days. If you would rather ask, email
+		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
 	</p>
-	<h3>Third-Parties</h3>
+	<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
+
+	<h2>The one third party</h2>
 	<p>
-		The quiz-admin can enable the captcha, which then loads Google's ReCaptcha which then sends
-		something to Google. Refer to Google's <a
-			href="https://policies.google.com/privacy?hl=en-GB"
-			target="_blank"
-			rel="noreferrer">Privacy policy</a
-		>.
+		A host can switch on a captcha for joining a game, which loads hCaptcha or Google reCAPTCHA
+		depending on configuration. Neither is enabled by default, and with none configured nothing
+		is sent to either.
 	</p>
 </article>
