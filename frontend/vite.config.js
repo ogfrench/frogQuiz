@@ -5,6 +5,8 @@
 
 import { sveltekit } from '@sveltejs/kit/vite';
 
+const API_PROXY_TARGET = process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:8000';
+
 /** @type {import("vite").UserConfig} */
 const config = {
 	plugins: [
@@ -27,9 +29,15 @@ const config = {
 		// needs the same proxy hand-wired back in. The backend is expected on 8000
 		// (`uvicorn frogquiz:app --port 8000`); nothing here affects the built app,
 		// which is served behind Caddy and never sees Vite.
+		//
+		// API_PROXY_TARGET overrides it, for working on the frontend without a local
+		// backend -- the data-driven routes otherwise 500 and there is nothing to look
+		// at. Pointing it at a deployed environment means every request you make is a
+		// real one, so treat that as read-only: creating, editing or deleting through it
+		// writes to that environment's database.
 		proxy: {
-			'/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-			'/socket.io': { target: 'http://127.0.0.1:8000', ws: true, changeOrigin: true }
+			'/api': { target: API_PROXY_TARGET, changeOrigin: true },
+			'/socket.io': { target: API_PROXY_TARGET, ws: true, changeOrigin: true }
 		}
 	},
 	preview: {

@@ -4,6 +4,108 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Host start-game modal rebuilt on shadcn
+
+- Rebuilt `lib/dashboard/start_game.svelte` on shadcn `Dialog`/`Button`/`Input`/`Label`/`Switch` (the last newly added to `frontend/src/lib/components/ui/`). It was the last pre-redesign surface in the host path: a hand-rolled `<div>` overlay with its own Escape/backdrop handling, hardcoded `w-screen`/`h-screen`/`text-black`/`bg-white`/`bg-green-500`, and `marck-script` on the CTA.
+- Dropped the Normal/Old-School game-mode picker — Old-School was never used, so the modal now always sends `game_mode=kahoot`; the API still accepts `normal` if that's ever wanted back. Also dropped the captcha toggle, which was dead UI while hCaptcha is off at the config level.
+- The start request built its query string by interpolating `custom_field` directly, so an `&` in it silently truncated the value and a `#` dropped everything after it from the request entirely. Now built with `URLSearchParams`.
+- The failure path was a bare `alert()` that then bounced to `/account/login` on *any* non-200 whenever there was no anonymous secret — so a 500, a rate limit, or a quiz deleted in another tab all threw a signed-in host out of the page as though their session had expired. Now only an explicit 401/403 redirects; other failures show an inline message, with a sign-in link when a 404 for a non-anonymous caller suggests an expired session.
+- Tracked as [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16). Not yet driven in a browser at 390/834/1440 — no local backend and no headless-browser tooling in this environment; batched into the standing visual-pass item ([#19](https://github.com/ogfrench/frogQuiz/issues/19)).
+
+
+### Security: quiz text was rendered as HTML
+
+- Quiz titles, descriptions, question text and answer text were rendered with `{@html}` in 28 places across 19 components, so anything an author typed ran as markup. This reached every surface that shows a quiz: the search and explore cards, the public quiz view page, the dashboard, the player's phone and the host's projector during a live game, the practice and remote modes, and the results history. Since `/create?anon=true` needs no account, planting it needed no account either. All 28 now use plain interpolation, which Svelte escapes.
+- The four `{@html}` calls left are deliberate and none render author text: the QuizTivity markdown components (which render markdown on purpose, and are behind a disabled feature), a popover that is only ever passed a translation string, and an i18n sentence with interpolation.
+- The search and explore cards are the one place that genuinely needs markup, because Meilisearch marks matched terms with `<em>`. `lib/search/highlight.ts` now escapes the field first and restores only that one tag pair as `<mark>`; the author-controlled half cannot survive as markup. The old code rewrote `<em>` in the raw response text before parsing, which rewrote it anywhere in the payload and escaped nothing.
+- Removed the author name from `{@html}` entirely -- it never contained highlights.
+- `GET /api/v1/quiz/get/public/{id}` returned `anon_secret`, the stored ownership hash, on an unauthenticated response. It is a SHA-256 of 256 random bits so it was not reversible, but it is a credential and is now excluded from the response model.
+
+
+### Player nicknames were unbounded
+
+- `JoinGameData.username` was a plain `str`. The join form caps it at 17 characters, but the socket server is reachable without the form, so nothing server-side bounded what arrived -- a crafted client could join with a 100,000-character nickname, an empty one, or one containing newlines and null bytes. A nickname becomes a Redis key, a member of the player set and a line on the host's projector, so that was a way to bloat Redis and break the display for everyone else in the room. Nicknames are now trimmed, stripped of control characters, required to be non-empty and capped at 50 characters; `custom_field` is capped at 200. The server bound is deliberately looser than the form's so it can never reject someone the UI let through.
+- `RejoinGameData.username` is cleaned identically, or a rejoin would look up a key the join path could never have written.
+- The join form now trims before its own length check. Untrimmed, four spaces passed as a nickname, which the new server-side rule would then reject with nothing shown to the player.
+
+
+### Anonymous quizzes
+
+- `DELETE /api/v1/quiz/delete/{quiz_id}` now accepts `X-Anon-Secret` in place of a login. Delete was the one thing the anonymous creator could not do -- they could edit and host a quiz made at `/create?anon=true` but never remove it, so the only way back from a mistake was to wait out the 30-day sweep. A wrong secret and an unknown quiz both 404, matching `/claim`, and the anonymous path is scoped to `user_id=None` so a stale secret can never delete a quiz that has since been claimed.
+- The quiz view page now tells the anonymous holder when the quiz expires and what to do about it: claim it if signed in, create an account if not, or delete it now. Previously the expiry was invisible and the quiz simply vanished.
+- Added `/my-quizzes`, a per-browser list built from the stored secrets, linked from the landing page. `localStorage` was the only record of an anonymous quiz, so closing the tab left it unreachable until the sweep. Dead entries are pruned when the quiz 404s.
+- Extracted `collect_quiz_image_keys` in `frogquiz/helpers`; the delete endpoint and the expired-quiz sweep each carried their own copy of the storage-key regex and the imgur exclusion. Deliberately unchanged: only question images are collected, not `cover_image`/`background_image`, because neither caller has ever deleted those and widening what a delete removes is not a change to make in passing.
+
+
+### Scope
+
+- Added an "MVP1 working set" section to `BACKLOG.md`, ahead of the MVP2 list: the anonymous host's login wall (P0), the Explore/Search merge and play/host UX (P1), and the dashboard merge, play modal, view-page design and editor add-button (P2). Records Gonçalo's position on feature consolidation as his position, since `CLAUDE.md` makes the blanket form a joint call with François.
+
+- Settled that an account is what makes a quiz permanent, not what lets you use the app: no account to create, host, share a PIN or play; an account to make a quiz permanent, searchable and manageable. Recorded in `docs/mvp-scope.md` along with the two rejected alternatives (public searchable anonymous quizzes, and free-text author names) and what each would have cost.
+- Settled that `public` keeps meaning world-visible for MVP1. Marking a quiz public publishes its title and description to anyone on the internet; quizzes are private by default, so this only affects ones somebody deliberately made public. Recorded as a known property with the two ways out if it stops being acceptable.
+
+
+### Hosting a game: the modal, and parity between the two kinds of host
+
+- The start-game modal was rebuilt on the shadcn `Dialog`, `Switch`, `Input` and `Label`, dropping the `w-screen h-screen … text-black` overlay, the hardcoded white/green/blue, the untranslated strings and the `alert()` failure path. It also drops the Normal/Old-School mode picker (game mode is hardcoded to `kahoot`; the API still accepts `normal`, so it can come back without a backend change) and the captcha toggle, which was dead UI while hCaptcha is off at config level.
+- **The custom field was not URL-encoded.** It was interpolated straight into the query string, so an `&` typed into it started a new parameter and truncated the value, and a `#` made everything after it a fragment the server never saw. It goes through `URLSearchParams` now.
+- **Failing to start a game logged you out.** Any non-200 response sent the host to `/account/login` whenever there was no anonymous secret — so a 500, a rate limit, or a quiz deleted in another tab all threw a signed-in host out of the page as though their session had expired. Only an explicit 401/403 does that now; a 404 without a secret says the session may have lapsed and offers a sign-in link, and everything else shows the inline error.
+- The modal is no longer wrapped in `{#if quiz_id !== null}` at its call site. It is a `Dialog` and owns its own visibility, so the wrapper meant it appeared already-open with no enter animation and unmounted before the exit one could run. A stale error from a previous quiz no longer survives into the next open either.
+- **The lobby's fullscreen QR overlay was `w-screen h-screen`** — 100vw includes the vertical scrollbar, so it overflowed by that width on any page that scrolls, and 100vh is the wrong number on a phone. Now `inset-0`. The two `bg-white` uses around the QR code are deliberate and now say so in the file: a QR code needs a light quiet zone to scan in either theme.
+- The host shell used `min-h-screen`, which is `100vh` and has the same phone problem as `h-screen`. Now `min-h-dvh`.
+- `slide.svelte` and `voting_results.svelte` were the last two host surfaces outside `fq-stage`, so they sat flush against the top of the projector with the bottom half empty. Both are in it now. The slide image was sized `h-full` against a parent that no longer has a fixed height, so it is capped at `70dvh` and centred by the stage instead.
+- Recorded the anonymous-versus-signed-in host differences in `docs/redesign-status.md`, each checked against the endpoint rather than assumed. One assumed difference turned out not to exist: there is no "resume lobby" card for anyone, so anonymous hosts are not missing one.
+
+
+### Issue tracker
+
+- Recorded the MVP1 working-set progress on GitHub. Status comment on the MVP1 umbrella (#3), and three new sub-issues: #17 (view page), #18 (dashboard merge), #19 (the outstanding 390/834/1440 visual pass).
+- The "play modal front-end fix" that `BACKLOG.md` carried as blocked on a decision is **#16**, which specifies it as the host's start-game modal — the same component the play/host UX item has to rebuild. The two are one piece of work now. #16 also carries a scope cut this backlog entry did not: drop the Normal/Old-School mode picker and the dead captcha toggle.
+- #13 already described the account-deletion foreign-key and storage-leak bugs fixed here, which were found independently while auditing foreign keys. Commented rather than duplicating, noting that the fix also covers `rating.quiz` — which #13 missed, and which broke ordinary quiz deletion for any rated quiz, not just account deletion.
+
+
+### Backlog
+
+- `BACKLOG.md`'s MVP1 working set now opens with a status table — three items done, one next, three open, one blocked on a decision — and records the two verification constraints that shaped how each was checked: there is no local backend, and the Vite proxy cannot reach the deployed one from this environment because TLS interception breaks the certificate chain. The play/host and view-page items were filled in with what reading the files actually turned up, so neither starts from a one-line description.
+
+
+### Docs corrected
+
+- `docs/redesign-status.md` claimed `/view/[quiz_id]` had been "reviewed and needed no change". It had not: the page still carries `bg-white dark:bg-gray-700`, hardcoded blue and yellow shadows, a hand-rolled collapsible and an icon-only Play button with no accessible name. Corrected, and the two surfaces touched here are listed as redesigned-but-not-yet-driven rather than promoted to Done, which on that page means a real browser at 390/834/1440.
+- `CLAUDE.md`'s note that Explore and Search are coupled through `search-card.svelte`'s use of `explore_page.*` is no longer true and says so. The removal surface below it is unchanged, and deleting either remains a joint call.
+
+
+### Explore and Search are one page
+
+- `/explore` and `/search` were two pages posting to the same Meilisearch endpoint with two different bodies — Explore sent `{q:'*', sort:['created_at:desc']}`, Search sent `{q, attributesToHighlight:['*']}`. They are one page now, and `?q=` picks the mode: absent or empty browses the newest quizzes, three characters or more searches, and one or two characters sends no request at all. The URL is the state, so Back, Forward, reload and a shared link all work — the old page kept the term in component state and pushed history by hand, so Back changed the address bar and left the results alone.
+- `/search` still exists and 302s to `/explore`, carrying `?q=` across, because those links have been shared. Its 119 lines — a client fetch, an `onMount`, a hand-rolled `pushState` and a hardcoded English empty state pointing at `/import`, which needs an account — were deleted rather than ported. The empty state now offers `/create?anon=true`, which does not.
+- The branching and the hit normalisation are in `lib/search/query.ts` with 14 tests, since that is the whole of the merge and none of it was covered. Confirmed each can fail: a naive `{...raw, ..._formatted}` and an untrimmed query each break three of them.
+- **Fixed in passing**: Meilisearch stringifies every value inside `_formatted`, so `imported_from_kahoot` arrived as the string `"true"` and the card's `=== true` test never matched — every Kahoot import read as "Made by" on the search page while reading "Imported by" on explore. Only `title` and `description` are taken from `_formatted` now; the rest of the hit keeps its real types.
+- **Fixed in passing**: Explore called `response.json()` without checking the status, so a 500 from Meilisearch reached the template as an error object and threw on `.hits`. A failed search is now an empty page with a message.
+- `search-card.svelte` rebuilt on the shadcn `Card`. It was `bg-white`/`dark:bg-slate-800` with `text-gray-800`/`text-gray-600`, and carried `my-20` on every card — which is where the huge vertical gaps came from, since the grid had no gap and each card paid for its own spacing. `min-w-0` on the link, because a grid item defaults to `min-width: auto` and a long unbroken title pushed the card out of its column. `highlightToHtml` and `lib/search/highlight.ts` are untouched.
+- One Explore entry in the navbar, desktop and mobile, in place of the Explore/Search pair.
+
+
+### Adding a question in the editor
+
+- The rail's "Add question" button was the last child of the scrolling question list, so on a quiz with more than a screenful of questions it scrolled out of reach — you had to scroll to the bottom of the list before you could add anything. It is now a pinned footer of the rail, outside the scroll container.
+- Added a second add control at the end of the canvas column, inside the reading measure, where a document editor puts it. Both open the same picker; the rail keeps its own.
+- `AddNewQuestionPopup` is now the shadcn `Dialog`. It was a hand-rolled overlay with a `document.body` keydown listener for Escape and a `target === currentTarget` check for the backdrop, and no focus trap or focus return — so tabbing out of it landed behind the overlay. The question types, their descriptions and `add_question` are unchanged. Its own close button is turned off because the generated label is hardcoded English; the translated one is kept.
+
+
+### Hosting without an account
+
+- `/admin`, the screen that runs a live game, no longer redirects to the login page. The account-free path was built end to end on the backend -- an anonymous user can create a quiz at `/create?anon=true` and the server will start a game for them -- but the one screen that hosts it bounced them, so the path dead-ended at the moment of use. The wall was not access control either: `register_as_admin` accepts any valid game pin + game id pair from anyone, signed in or not, which is what it has always done.
+- The "Save results" button is hidden for an anonymous host. The backend writes the `GameResults` row with `user=NULL` and every read path in `routers/results.py` is user-scoped, so the saved row would be unreachable. The podium and the spreadsheet export both work without an account and are unchanged.
+- The loader returns `signed_in` and the page renders from it, rather than reading the `signedIn` store -- the store is module-scope state mutated during SSR, so it is shared across concurrent requests under adapter-node and is not safe to base this on.
+
+
+### UI foundations
+
+- The `brown.svelte` and `gray.svelte` button wrappers now forward `class`, `variant` and `size`, and `gray` gained the `label` prop `brown` already had. They hardcoded `w-full` and forwarded nothing, so a destructive button, or an accessible name on an icon-only button, was unreachable without abandoning the wrappers. `w-full` is still the default and is merged with `cn()`, so all ~30 existing call sites are untouched.
+- Added the shadcn `dialog` and `collapsible` components. Four surfaces hand-roll an overlay with their own Escape, backdrop and focus behaviour; these land first so each can be converted on its own.
+- The shadcn CLI's `-o` flag also rewrote `ui/button` and bumped the pinned `@lucide/svelte` from 1.42.0 to 1.46.0. Both were reverted -- the rewrite had dropped the `fq-touch-target relative` minimum-touch-target utility from the button base, which matters on the player's phone.
+
 ### Auth hardening
 
 - Rate-limited every endpoint that checks a credential, keyed on something the caller cannot forge. `/login/step` now buckets on the account being guessed at, `/login/start` and registration on the address, and `PUT /users/password/update` on the account -- all of them previously had a per-IP bucket or none. The per-IP bucket became advisory the moment `TRUSTED_PROXY_HOPS` went above 1: the address it keys on comes from a header anyone can forge by reaching the backend directly, which is publicly reachable. Per-account and per-address buckets are not forgeable.

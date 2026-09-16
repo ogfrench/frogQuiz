@@ -339,20 +339,28 @@ Collected so they can be settled in one pass rather than rediscovered:
 5. **English only, and the 33 deleted locale files** — same rule, and the one cut on
    this page that removed files from the tree rather than gating them. See
    [Languages](#languages) for the argument and for how to restore any one of them.
-6. **There is no team-visible tier, and the MVP needs one.** Only `public=True` quizzes
-   are indexed, and `POST /api/v1/search/` has no auth dependency — so on an
-   internet-facing deployment "make it findable by the team" and "publish it to the
-   world" are the same switch. The requirement to find quizzes made earlier by
-   teammates cannot be met honestly until this is settled. Three ways out, ascending in
-   cost: require auth on `/api/v1/search/` and `/explore`, so `public` means "visible to
-   signed-in users"; add a third `visibility` tier (`private`/`team`/`public`) and gate
-   results on the caller; or accept that anything findable is world-findable.
-   Recommendation: the first now, the second if the app widens.
-7. **Account deletion is broken and the ToS publishes it as the GDPR route.**
-   `Controller.user` and `Rating.user` have no `ondelete`, so deleting a user with
-   either row hits a foreign-key violation, and `StorageItem` rows are orphaned rather
-   than removed, leaking the uploaded files. (Deletion succeeds today for a user with
-   neither, which is why the test suite's own cleanup passes.) The fix is a small
-   migration, but it is a schema change and needs a database to test against. The third
-   cause in issue #13 — an OAuth-only account can never satisfy the password check —
-   affects nobody, since OAuth renders nothing today by config.
+6. **There is no team-visible tier. Settled: leave it as-is for MVP1.** Only
+   `public=True` quizzes are indexed, and `POST /api/v1/search/` has no auth dependency,
+   so on an internet-facing deployment "make it findable by the team" and "publish it to
+   the world" are the same switch. This is now a known and accepted property, not an
+   oversight: **marking a quiz public publishes its title and description to anyone on
+   the internet**, and the team should not put anything sensitive in either. Quizzes are
+   private by default, so this only affects quizzes somebody deliberately made public.
+   If that stops being acceptable, the two ways out, ascending in cost, are: require auth
+   on `/api/v1/search/` and `/explore`, so `public` means "visible to signed-in users";
+   or add a third `visibility` tier (`private`/`team`/`public`) and gate results on the
+   caller.
+7. **Account deletion. Fixed in code, not yet verified against a database.**
+   `controller.user`, `rating.user` and `rating.quiz` were created without ON DELETE, so
+   Postgres defaulted them to NO ACTION and deleting an account that had rated a quiz or
+   registered a controller hit a foreign-key violation. `rating.quiz` is the same bug one
+   level down: a quiz carrying a rating could not be deleted either. Migration
+   `b7c4a1f9e2d3` recreates all three as CASCADE, the ormar models now declare the same,
+   and `DELETE /api/v1/users/me` deletes the user's `StorageItem` rows and their files
+   rather than orphaning them (`StorageItem.user` is SET_NULL by design, so the rows
+   outlived the account and the uploads leaked). `frogquiz/tests/test_account_deletion.py`
+   covers both paths. **None of it has been run against a real database** -- it was
+   written in an environment with no Postgres, so `alembic upgrade head` and the suite
+   must both pass before this is merged. The third cause in issue #13 -- an OAuth-only
+   account can never satisfy the password check -- is untouched and affects nobody, since
+   OAuth renders nothing today by config.

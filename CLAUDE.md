@@ -130,7 +130,17 @@ The app carries a lot of features aimed at a public multi-tenant SaaS. For an in
 
 **Nothing is removed today. Both Explore and Search are live and kept.** This section exists so that if the question comes up again it can be answered with the real cost rather than a guess — it is not a plan to remove them.
 
-They are also coupled: `frontend/src/lib/search-card.svelte` renders the `explore_page.*` strings when showing **Search** results, so Explore's i18n cannot be deleted while Search exists. Search is a documented keep (see Feature triage above).
+**They are now one page.** `/explore` does both jobs — no `?q=` browses the newest
+quizzes, `?q=` with three characters or more searches — and `/search` is a 302 into it
+that carries the query across. Nothing was removed: the route still resolves, both
+`explore_page.*` and `search_page.*` are still used, the backend and Meilisearch are
+untouched, and the navbar shows one entry instead of two. The old coupling
+(`search-card.svelte` rendering `explore_page.*` strings while showing Search results)
+is dissolved rather than fixed, because there is only one page left to render.
+
+The removal surface below is unchanged in substance and still the thing to read before
+deleting anything — merging two pages is not deleting a feature, and deleting either
+one remains a joint François/Gonçalo decision.
 
 If the team ever does decide to delete either, this is the full surface. Do it in this order and do not stop halfway — a half-removal is what leaves reachable-but-broken routes and live endpoints behind a dead UI.
 

@@ -57,8 +57,26 @@ Two cross-cutting systems came out of this and now apply to every surface above:
 
 ## In scope, not done
 
-Nothing. Every MVP surface a host or player passes through has been brought up and
-verified. `/view/[quiz_id]` and `/edit/files` were reviewed and needed no change.
+- **Explore** (`/explore`) — rebuilt on shadcn `Card` and theme tokens when Explore and
+  Search were merged into it, and its four render modes (browse, too-short, results with
+  highlights, empty) were verified server-side against a stub carrying the deployed
+  backend's real payload. It is here rather than in Done because it has **not** been
+  driven in a browser at 390/834/1440, which is what this page means by verified.
+  `/search` is now a 302 into it and renders nothing of its own.
+- **Editor add-question control** — the rail's button moved out of the scroll container
+  and a second one added at the end of the canvas; the type picker is the shadcn
+  `Dialog` now. Same gap: compiles and lints, not yet driven at the three widths.
+- **Host start-game modal** (`lib/dashboard/start_game.svelte`, opened from `/dashboard`)
+  — rebuilt on shadcn `Dialog`/`Button`/`Card`/`Input`/`Label`/`Switch`; the Old-School
+  mode picker and the (already-inert) captcha toggle were dropped in the same pass, see
+  [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16). Not yet driven
+  at the three widths.
+
+`/edit/files` was reviewed and needed no change. **`/view/[quiz_id]` was previously
+listed here as reviewed and needing no change; that was wrong** — it still carries
+`bg-white dark:bg-gray-700`, hardcoded blue and yellow shadows, a hand-rolled
+collapsible and an icon-only Play button with no accessible name. It is an open MVP1
+item in `BACKLOG.md`.
 
 ## Skipped, because the feature is cut
 
@@ -81,11 +99,38 @@ are not flag-gated and are not redesigned. Deciding what to do with them is open
 
 | Surface          | Route                        | Why                                                                                                                                                                                                                                                                                                                                                       |
 | ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Explore, Search  | `/explore`, `/search`        | `CLAUDE.md` is explicit that removing either is a joint François/Gonçalo decision and never Claude's. Both are live and unchanged. Redesigning them would be arguing for keeping them, which is not a call to make in a frontend branch                                                                                                                   |
 | Docs             | `/docs` and 7 pages under it | Layout untouched, but the copy was not left alone: all eight carried upstream's "the open-source quiz-application" description and two described a different page entirely, two told you to `git clone mawoka-myblock/ClassQuiz`, and the attribution page credited nine named people for work on frogQuiz they never did. See the identity section below |
 | Public user page | `/user/[user_id]`            | Nobody links to it internally                                                                                                                                                                                                                                                                                                                             |
 | OAuth error      | `/account/oauth-error`       | Layout untouched — OAuth renders nothing today, by config. Its "open an issue" link pointed at upstream's tracker and now points at ours                                                                                                                                                                                                                  |
 | Video editor     | `/edit/videos`               | Reachable only from the uploader's video path                                                                                                                                                                                                                                                                                                             |
+
+---
+
+## Hosting with and without an account
+
+Both are supported end to end. The differences below are deliberate, and each was
+checked against the endpoint rather than assumed — so if one of them ever looks like a
+bug, this is the reason it is not.
+
+| Capability | Signed in | Anonymous | Why |
+| --- | --- | --- | --- |
+| Start a game | yes | yes | `start_quiz` takes an optional user and accepts `X-Anon-Secret` in its place |
+| Run the game over the socket | yes | yes | `register_as_admin` checks no user at all — admin rights come from holding the right `game_pin` + `game_id` |
+| Join QR code | yes | yes | `GET /utils/qr/{pin}` has no auth dependency |
+| Spreadsheet export of answers | yes | yes | `export_quiz_answers(export_token, game_pin)` has no auth dependency |
+| **Save results** | yes | **no, hidden** | Every route in `routers/results.py` requires `get_current_user`, and `GameResults.user` is nullable — so an anonymous save succeeds and writes a row nobody can ever read |
+| **Analytics** | yes | **no** | Same: reads go through the user-scoped results routes |
+
+Two notes on the Save-results case. The socket handler itself only checks
+`session["admin"]`, so the backend still accepts the emit — hiding the button is a
+frontend decision about not writing unreachable rows, not an authorisation boundary.
+And an anonymous host still gets the podium and the export, which is most of what the
+save was for.
+
+**A difference that turned out not to exist.** Planning assumed anonymous hosts would
+lack a "resume lobby" card that signed-in hosts had. There is no such card for anyone —
+`grep` for it across `routes/dashboard/` and `lib/dashboard/` returns nothing. Recorded
+so the assumption does not come back.
 
 ---
 
