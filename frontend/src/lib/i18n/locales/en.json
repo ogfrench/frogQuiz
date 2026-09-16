@@ -401,7 +401,14 @@
     "delete_wrong_password": "That password isn't right.",
     "delete_too_many": "Too many attempts. Try again later.",
     "delete_failed": "Couldn't delete the account. Nothing was changed -- try again.",
-    "delete_oauth_account": "This account signs in with an external provider, so there's no password to confirm with."
+    "delete_oauth_account": "This account signs in with an external provider, so there's no password to confirm with.",
+    "delete_scope_one": "This also deletes the {{count}} quiz you have made, and its results.",
+    "delete_scope_other": "This also deletes the {{count}} quizzes you have made, and their results.",
+    "unverified_title": "Confirm your email address",
+    "unverified_body": "Your address has not been confirmed yet. Until it is, you cannot recover this account if you forget the password.",
+    "unverified_resend": "Send a new confirmation email",
+    "unverified_sent": "Sent. Check your inbox.",
+    "unverified_failed": "Couldn't send it just now. Try again in a moment."
   },
   "explore_page": {
     "made_by": "Made by",

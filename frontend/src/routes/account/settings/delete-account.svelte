@@ -27,10 +27,29 @@ SPDX-License-Identifier: MPL-2.0
 	let password = $state('');
 	let error = $state('');
 	let isSubmitting = $state(false);
+	// How much is about to go. Fetched when the dialog opens rather than on page
+	// load, so the settings page costs nothing extra for the people who never open
+	// it. null means "not known" -- the line is simply left out rather than
+	// guessing at a number on a screen about an irreversible action.
+	let quizCount: number | null = $state(null);
 
 	const reset = () => {
 		password = '';
 		error = '';
+	};
+
+	const loadScope = async () => {
+		try {
+			const res = await fetch('/api/v1/quiz/list?page_size=100');
+			if (res.status !== 200) {
+				return;
+			}
+			const body = await res.json();
+			quizCount = Array.isArray(body) ? body.length : null;
+		} catch {
+			// Not worth surfacing: the dialog still works without the count.
+			quizCount = null;
+		}
 	};
 
 	const deleteAccount = async () => {
@@ -87,7 +106,7 @@ SPDX-License-Identifier: MPL-2.0
 	</Card.Header>
 	<Card.Content>
 		{#if isLocal}
-			<AlertDialog.Root bind:open onOpenChange={(o) => !o && reset()}>
+			<AlertDialog.Root bind:open onOpenChange={(o) => (o ? loadScope() : reset())}>
 				<AlertDialog.Trigger class={buttonVariants({ variant: 'destructive' })}>
 					<TriangleAlert class="size-4" aria-hidden="true" />
 					{$t('settings_page.delete_account_button')}
@@ -99,6 +118,11 @@ SPDX-License-Identifier: MPL-2.0
 						>
 						<AlertDialog.Description>
 							{$t('settings_page.delete_confirm_body')}
+							{#if quizCount !== null && quizCount > 0}
+								<span class="mt-2 block"
+									>{$t('settings_page.delete_scope', { count: quizCount })}</span
+								>
+							{/if}
 						</AlertDialog.Description>
 					</AlertDialog.Header>
 

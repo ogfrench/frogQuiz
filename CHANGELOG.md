@@ -4,6 +4,20 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Auth hardening
+
+- Rate-limited every endpoint that checks a credential, keyed on something the caller cannot forge. `/login/step` now buckets on the account being guessed at, `/login/start` and registration on the address, and `PUT /users/password/update` on the account -- all of them previously had a per-IP bucket or none. The per-IP bucket became advisory the moment `TRUSTED_PROXY_HOPS` went above 1: the address it keys on comes from a header anyone can forge by reaching the backend directly, which is publicly reachable. Per-account and per-address buckets are not forgeable.
+- Added a limit to `GET /users/verify/{key}`, which was unauthenticated and unthrottled. The key is 128 bits of `os.urandom` so this is defence in depth, not a hole being closed.
+- `PUT /users/password/update` returns 400 rather than 500 for an account with no password, matching the delete endpoint.
+- Mail sends now retry transient failures twice before giving up, and never retry permanent ones. There is no queue behind the sender, so a relay that blipped for a second cost somebody their confirmation link outright -- while the endpoint reported success, because it swallows send failures by design to avoid leaking which addresses exist. A 4xx from a relay is "not now" and a 5xx is "not ever": retrying a 550 for an unverified sending domain just delays the same failure three times over.
+- Replaced "the account with the oldest `created_at`" as the definition of the instance admin with an explicit `users.is_admin` flag (migration `b5e91c7a2d38`). The old rule silently promoted the next-oldest account whenever the admin deleted theirs, which account deletion in the UI makes a thing a person can do by accident. The migration sets the flag on exactly the account the old rule was already pointing at, so the role did not change hands.
+- Game results survive the host deleting their account mid-game. `game_results.user` is a foreign key, so saving results for a host who is no longer there failed the whole save at podium time and lost the game; the column is nullable and an ownerless row is worth more than none. The save is also wrapped now -- a missing history entry should not take the podium down.
+
+### Account settings
+
+- Added an unverified-address banner with a resend button. The page fetched `verified` and never rendered it, so someone whose confirmation mail was lost had no way to learn that from the one page about their account.
+- The delete dialog now says how many quizzes are about to go with the account.
+
 ### Account deletion
 
 - Added a delete-account card to `/account/settings`, confirmed with the password in an `AlertDialog`. `DELETE /api/v1/users/me` had existed since upstream with nothing in the app calling it, while the terms and the privacy policy both told people they could delete their account in settings.
@@ -28,6 +42,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Reordering now moves rather than swaps. Dragging question 1 to the end used to trade it with the last one, scrambling everything in between.
 - The selection follows the question that moved. Both reorder paths now share `moveItem` and `selectionAfterMove` in `lib/editor/reorder.ts`, with a property test asserting the selected index still points at the same question after every possible move.
 - Added the theme switch to the editor header. It lived inside `navbar.svelte` as four near-identical copies, and the editor hides the navbar -- so the one screen people sit in longest had no way to change theme. It is now one `theme-toggle.svelte` used in both places, and switching toggles the class the boot script in `app.html` already looks for instead of calling `window.location.reload()`, which in the editor meant a round trip through the unsaved-changes prompt to change a colour.
+
+### Emails
+
+- Fixed the registration confirmation email's subject: "Confirm your frogQuiz address" read as confirming an email address, when the link actually confirms the account.
 
 ### i18n
 
