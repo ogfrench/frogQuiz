@@ -78,9 +78,12 @@ class TestUsers:
     @pytest.mark.asyncio
     async def test_verify_email(self, test_client: TestClient):  # noqa : F811
         user = test_client.get(f"/api/v1/internal/testing/user/{test_user_email}?secret_key={settings().secret_key}")
-        # A spent or superseded key is the commonest way to land here -- clicking the
-        # same link twice, or the older of two mails. It used to render a raw 404 JSON
-        # body in the browser; now it lands on the login page, which says what to do.
+        # A wrong or superseded key is the commonest way to land here with an actual
+        # error -- resend_verification mints a new one, which is what invalidates the
+        # old link (see test_verify_email_repeat_click_and_supersede for that case and
+        # for the same-link-twice case, which is *not* an error). This used to render
+        # a raw 404 JSON body in the browser; now it lands on the login page, which
+        # says what to do.
         dead = test_client.get("/api/v1/users/verify/dasadsasdadsasdsaddassad", follow_redirects=False)
         assert dead.status_code in (302, 307)
         assert dead.headers["location"] == "/account/login?verified=expired"
@@ -94,6 +97,104 @@ class TestUsers:
         )
         ValueStorage.cookies = resp.cookies
         assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_verify_email_repeat_click_and_supersede(self, test_client: TestClient, monkeypatch):  # noqa : F811
+        """Clicking the same live confirmation link twice is not an error; a link a
+        resend has since replaced is.
+
+        verify_key used to be nulled the moment it verified an account, which made a
+        second click on the same link indistinguishable from a dead one -- both landed
+        on "verified=expired" with an offer to resend, and resending an already-verified
+        address silently does nothing (resend_verification only sends when
+        `not user.verified`), so that offer went nowhere. A self-contained user here so
+        this doesn't depend on where test_verify_email above leaves the shared one.
+
+        The suite runs with SKIP_EMAIL_VERIFICATION=True, which verifies a new user
+        immediately and never mints a verify_key at all -- so this flips that off for
+        just this test to exercise the actual confirmation-link path it is testing.
+        """
+        import frogquiz.routers.users as users_router
+
+        monkeypatch.setattr(users_router.settings, "skip_email_verification", False)
+
+        async def _no_send(**kwargs):
+            return None
+
+        monkeypatch.setattr("frogquiz.emails._sendMail", _no_send)
+        # byom.de, not example.com: registration runs the real deliverability check
+        # (VALIDATE_EMAIL_DELIVERABILITY defaults to True and .env.ci doesn't turn it
+        # off), and example.com is the RFC 2606 documentation domain -- genuinely
+        # undeliverable, so it 400s. byom.de is the domain every other test that needs
+        # a real successful registration already uses (test_user_email, anon_user_email).
+        email = f"{uuid.uuid4().hex}@byom.de"
+        created = test_client.post(
+            "/api/v1/users/create",
+            json={"email": email, "password": test_user_password, "username": uuid.uuid4().hex[:12]},
+        )
+        assert created.status_code == 200
+        first_key = test_client.get(
+            f"/api/v1/internal/testing/user/{email}?secret_key={settings().secret_key}"
+        ).json()["verify_key"]
+
+        # The same link, clicked more than once: every visit after the first still
+        # says "verified", not "expired".
+        for _ in range(3):
+            resp = test_client.get(f"/api/v1/users/verify/{first_key}", follow_redirects=False)
+            assert resp.status_code in (302, 307)
+            assert resp.headers["location"] == "/account/login?verified=true"
+        assert test_client.get(
+            f"/api/v1/internal/testing/user/{email}?secret_key={settings().secret_key}"
+        ).json()["verified"] is True
+
+        # A second, unverified user whose confirmation mail is replaced by a resend:
+        # the old link stops working, the new one verifies.
+        email2 = f"{uuid.uuid4().hex}@byom.de"
+        created2 = test_client.post(
+            "/api/v1/users/create",
+            json={"email": email2, "password": test_user_password, "username": uuid.uuid4().hex[:12]},
+        )
+        assert created2.status_code == 200
+        old_key = test_client.get(
+            f"/api/v1/internal/testing/user/{email2}?secret_key={settings().secret_key}"
+        ).json()["verify_key"]
+        resend = test_client.post("/api/v1/users/resend-verification", json={"email": email2})
+        assert resend.status_code == 200
+        new_key = test_client.get(
+            f"/api/v1/internal/testing/user/{email2}?secret_key={settings().secret_key}"
+        ).json()["verify_key"]
+        assert new_key != old_key
+
+        dead = test_client.get(f"/api/v1/users/verify/{old_key}", follow_redirects=False)
+        assert dead.headers["location"] == "/account/login?verified=expired"
+        alive = test_client.get(f"/api/v1/users/verify/{new_key}", follow_redirects=False)
+        assert alive.headers["location"] == "/account/login?verified=true"
+
+        # TestStats below hardcodes the global user count as 1 (the single
+        # test_user_email account), which byom.de made real again -- this test
+        # used to register on example.com, which the deliverability check
+        # rejected before either row was ever written. Delete both through the
+        # real endpoint, the way every other test in this file touches the DB
+        # -- calling the ormar model directly from here hit a "different event
+        # loop" error, because TestClient runs the ASGI app (and so the DB
+        # pool) on its own loop, not this async test function's.
+        for cleanup_email in (email, email2):
+            login = test_client.post("/api/v1/login/start", json={"email": cleanup_email})
+            session_id = login.json()["session_id"]
+            step = test_client.post(
+                f"/api/v1/login/step/1?session_id={session_id}",
+                json={"auth_type": "PASSWORD", "data": test_user_password},
+            )
+            assert step.status_code == 200
+            # test_client.delete() has no json= -- httpx's convenience methods drop
+            # the body on DELETE (see test_delete_user_rejects_wrong_password above).
+            deleted = test_client.request(
+                "DELETE",
+                "/api/v1/users/me",
+                cookies=step.cookies,
+                json={"password": test_user_password},
+            )
+            assert deleted.status_code == 200
 
     @pytest.mark.asyncio
     async def test_check(self, test_client: TestClient):  # noqa : F811

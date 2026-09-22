@@ -5,9 +5,12 @@
 
 import hashlib
 import hmac
+import os
 from datetime import datetime, timedelta
 from typing import Tuple, BinaryIO, Generator
 
+import certifi
+import urllib3
 from aiohttp import ClientSession
 import minio
 from pydantic import BaseModel
@@ -16,6 +19,19 @@ from frogquiz.storage.errors import (
     SavingFailedError,
     DownloadingFailedError,
 )
+
+# minio.Minio's own default is a 5-minute connect *and* read timeout with 5
+# retries -- so a backend that accepts the TCP connection and then simply
+# never answers (rather than refusing or erroring) can block __init__'s
+# synchronous bucket_exists()/make_bucket() call, and every later request,
+# for up to that long. __init__ is called with no `await` from inside async
+# code, so that's not a slow request -- it's the whole event loop stalled.
+# This is exactly what happened with test_minio's public play.min.io
+# endpoint, which ate a CI job's entire 10-minute timeout twice in a row.
+# Any real S3-compatible backend answers in milliseconds; this is generous
+# for production and turns an unreachable one into a fast, clear failure
+# instead of a silent multi-minute hang.
+_S3_CLIENT_TIMEOUT_SECONDS = 15
 
 
 class S3Storage:
@@ -38,7 +54,14 @@ class S3Storage:
         self.region = region
         self.DATE_FORMAT = "%a, %d %b %Y %H:%M:%S GMT"
         self.host = base_url.replace("http://", "").replace("https://", "")
-        self.client = minio.Minio(self.host, access_key=access_key, secret_key=secret_key)
+        http_client = urllib3.PoolManager(
+            timeout=urllib3.Timeout(connect=_S3_CLIENT_TIMEOUT_SECONDS, read=_S3_CLIENT_TIMEOUT_SECONDS),
+            maxsize=10,
+            cert_reqs="CERT_REQUIRED",
+            ca_certs=os.environ.get("SSL_CERT_FILE") or certifi.where(),
+            retries=urllib3.Retry(total=3, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]),
+        )
+        self.client = minio.Minio(self.host, access_key=access_key, secret_key=secret_key, http_client=http_client)
         if not self.client.bucket_exists(self.bucket_name):
             self.client.make_bucket(self.bucket_name)
 

@@ -196,17 +196,25 @@ async def verify_user(verify_key: str, request: Request):
     await rate_limit(request, "verify_email", limit=30, window_seconds=3600)
     user = await User.objects.filter(verify_key=verify_key).get_or_none()
     if user is None:
-        # A key is cleared the moment it is used, and asking for a new confirmation
-        # mail mints a fresh one -- so the two commonest ways to land here are
-        # clicking the same link twice and clicking the older of two mails. Both
-        # used to render a raw 404 JSON body in the browser. Send them to the login
-        # page, which says what to do next, rather than to a dead end.
+        # A wrong or superseded key -- asking for a new confirmation mail mints a
+        # fresh one, which is what makes the old one stop resolving here. Send them
+        # to the login page, which says what to do next, rather than to a dead end.
         return RedirectResponse(url="/account/login?verified=expired")
-    user.verified = True
-    user.verify_key = None
-    await user.update()
-    # The cached copy still says unverified otherwise, for a full cache_expiry.
-    await clear_cache_for_account(user)
+    # Deliberately NOT clearing verify_key on success. The commonest way back to
+    # this same URL is clicking the same link twice -- a double click, a mail
+    # client that pre-fetches links, opening the confirmation mail again days
+    # later -- and nulling the key made every one of those look identical to a
+    # dead link: "verified=expired" with an offer to resend, which silently does
+    # nothing because resend_verification only sends when `not user.verified`.
+    # An already-verified account is told to log in, not sent looking for a mail
+    # that was never going to arrive. The key still dies the moment a *new* one is
+    # minted (resend_verification overwrites this column), which is the other
+    # thing "expired" needs to mean -- the older of two mails.
+    if not user.verified:
+        user.verified = True
+        await user.update()
+        # The cached copy still says unverified otherwise, for a full cache_expiry.
+        await clear_cache_for_account(user)
     return RedirectResponse(url="/account/login?verified=true")
 
 
