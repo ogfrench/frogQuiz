@@ -122,9 +122,15 @@ class TestUsers:
             return None
 
         monkeypatch.setattr("frogquiz.emails._sendMail", _no_send)
-        email = f"{uuid.uuid4().hex}@example.com"
+        # byom.de, not example.com: registration runs the real deliverability check
+        # (VALIDATE_EMAIL_DELIVERABILITY defaults to True and .env.ci doesn't turn it
+        # off), and example.com is the RFC 2606 documentation domain -- genuinely
+        # undeliverable, so it 400s. byom.de is the domain every other test that needs
+        # a real successful registration already uses (test_user_email, anon_user_email).
+        email = f"{uuid.uuid4().hex}@byom.de"
         created = test_client.post(
-            "/api/v1/users/create", json={"email": email, "password": test_user_password, "username": uuid.uuid4().hex[:12]}
+            "/api/v1/users/create",
+            json={"email": email, "password": test_user_password, "username": uuid.uuid4().hex[:12]},
         )
         assert created.status_code == 200
         first_key = test_client.get(
@@ -143,7 +149,7 @@ class TestUsers:
 
         # A second, unverified user whose confirmation mail is replaced by a resend:
         # the old link stops working, the new one verifies.
-        email2 = f"{uuid.uuid4().hex}@example.com"
+        email2 = f"{uuid.uuid4().hex}@byom.de"
         created2 = test_client.post(
             "/api/v1/users/create",
             json={"email": email2, "password": test_user_password, "username": uuid.uuid4().hex[:12]},
