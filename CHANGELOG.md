@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### CI: an unresponsive S3 backend could hang a job for its full 10-minute timeout
+
+- `S3Storage.__init__` built its `minio.Minio` client with the library's own default -- a 5-minute connect *and* read timeout, 5 retries -- and called `bucket_exists()`/`make_bucket()` on it synchronously, with no `await`, straight out of `__init__`. A backend that accepts the connection and then simply never answers (rather than refusing or erroring, which fail fast) blocks the whole event loop for as long as that takes. `test_minio` hits a public demo endpoint, `play.min.io`, for exactly this reason, and twice in a row it ate an entire CI job's 10-minute timeout before the runner killed it -- not a test failure, a stall with no error message. Gave the client an explicit 15-second connect/read timeout instead (production S3-compatible backends answer in milliseconds; this is generous) so an unreachable backend now fails fast and clearly, in test or in production, instead of hanging silently.
+
 ### Account management: verification, password change, and a delete-cascade audit
 
 - **Clicking an already-used confirmation link told a verified account its link was dead.** `GET /verify/{key}` nulled `verify_key` on success, so any second visit to the same link -- a double click, a mail client that pre-fetches links, reopening the confirmation email days later -- was indistinguishable from a genuinely bogus one and landed on "that link isn't valid, request a new one." Worse, following that advice did nothing: `resend_verification` only sends when the account isn't already verified. The key now survives a successful verify (idempotent: revisiting it just redirects to the "verified" state) and is only invalidated by `resend_verification` actually minting a new one, so a superseded link still correctly expires. Verified with a live server: registering, clicking the link three times, and confirming each visit -- and a genuinely superseded link -- behave correctly; covered by a new test, `test_verify_email_repeat_click_and_supersede`.
