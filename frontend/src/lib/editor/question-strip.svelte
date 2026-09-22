@@ -9,6 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 	import type { EditorData } from '../quiz_types';
 	import { getLocalization } from '$lib/i18n';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
+	import { htmlToPlainText } from '$lib/sanitize';
 	import AddNewQuestionPopup from '$lib/editor/AddNewQuestionPopup.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Settings2 from '@lucide/svelte/icons/settings-2';
@@ -163,7 +164,10 @@ SPDX-License-Identifier: MPL-2.0
 					{#if question.question === ''}
 						<span class="text-muted-foreground italic">{$t('editor.no_title')}</span>
 					{:else}
-						{question.question}
+						<!-- Plain text, not {@html}: the title is rich text from the same editor as
+						     the quiz title, and its <p> wrapper is a block element that would break
+						     this one-line chip out of its truncate. Nothing is lost at text-xs. -->
+						{htmlToPlainText(question.question)}
 					{/if}
 				</span>
 			</button>

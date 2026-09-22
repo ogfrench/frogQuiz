@@ -14,6 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { moveItem, selectionAfterMove } from '$lib/editor/reorder';
+	import { sanitizeTitleHtml, htmlToPlainText } from '$lib/sanitize';
 	import AddNewQuestionPopup from '$lib/editor/AddNewQuestionPopup.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import GripVertical from '@lucide/svelte/icons/grip-vertical';
@@ -151,7 +152,9 @@ SPDX-License-Identifier: MPL-2.0
 				{$t('editor.quiz_setup')}
 			</p>
 			<div
-				use:tippy={{ content: data.title === '' ? "It's empty!" : data.title }}
+				use:tippy={{
+					content: data.title === '' ? "It's empty!" : htmlToPlainText(data.title)
+				}}
 				class="border-border m-1 rounded-md border p-1 transition"
 				class:ring-2={!reach(dataSchema, 'title').isValidSync(data.title)}
 				class:ring-destructive={!reach(dataSchema, 'title').isValidSync(data.title)}
@@ -161,7 +164,7 @@ SPDX-License-Identifier: MPL-2.0
 					class="w-full truncate rounded-sm bg-transparent text-center whitespace-nowrap"
 				>
 					{#if data.title}
-						{data.title}
+						{@html sanitizeTitleHtml(data.title)}
 					{:else}
 						<i>{$t('editor.no_title')}</i>
 					{/if}
@@ -253,7 +256,10 @@ SPDX-License-Identifier: MPL-2.0
 				</button>
 				<div
 					use:tippy={{
-						content: question.question === '' ? 'No title' : question.question
+						content:
+							question.question === ''
+								? 'No title'
+								: htmlToPlainText(question.question)
 					}}
 					class="mb-2 flex items-center gap-2"
 				>
@@ -294,7 +300,7 @@ SPDX-License-Identifier: MPL-2.0
 							<span class="text-muted-foreground italic">{$t('editor.no_title')}</span
 							>
 						{:else}
-							{question.question}
+							{@html sanitizeTitleHtml(question.question)}
 						{/if}
 					</p>
 				</div>

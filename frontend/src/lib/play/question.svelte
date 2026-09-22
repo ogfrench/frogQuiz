@@ -20,6 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { get_foreground_color } from '../helpers';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
+	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const { t } = getLocalization();
 
@@ -157,7 +158,7 @@ SPDX-License-Identifier: MPL-2.0
 			<h1
 				class="lg:text-2xl text-lg text-center text-black dark:text-white mt-2 break-normal mb-2"
 			>
-				{question.question}
+				{@html sanitizeTitleHtml(question.question)}
 			</h1>
 			{#if question.image !== null && game_mode !== 'kahoot'}
 				<div class="max-h-full">
@@ -432,12 +433,6 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 
 <style>
-	.answer-tile {
-		box-shadow:
-			0 10px 20px -8px rgb(0 0 0 / 0.35),
-			inset 0 -4px 0 0 rgb(0 0 0 / 0.18);
-	}
-
 	.waiting-dot {
 		animation: waiting-pulse 1.1s ease-in-out infinite;
 	}
@@ -468,9 +463,6 @@ SPDX-License-Identifier: MPL-2.0
 	   phone shows what you picked without reading anything. */
 	.answer-tile.is-picked {
 		transform: scale(1.03);
-		box-shadow:
-			0 16px 32px -10px rgb(0 0 0 / 0.45),
-			inset 0 -4px 0 0 rgb(0 0 0 / 0.18);
 	}
 
 	.answer-tile.is-waiting {

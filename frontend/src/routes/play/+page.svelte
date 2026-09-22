@@ -57,6 +57,8 @@ SPDX-License-Identifier: MPL-2.0
 	let question: Question = $state();
 
 	let preventReload = true;
+	// The joined_game cookie's contents while a rejoin is in flight.
+	let rejoining: { sid: string; username: string; game_pin: string } | undefined;
 
 	// Functions
 	function restart() {
@@ -86,25 +88,42 @@ SPDX-License-Identifier: MPL-2.0
 			return;
 		}
 		const data = JSON.parse(cookie_data);
+		rejoining = data;
 		socket.emit('rejoin_game', {
 			old_sid: data.sid,
 			username: data.username,
 			game_pin: data.game_pin
 		});
-		const res = await fetch(`/api/v1/quiz/play/check_captcha/${game_pin}`);
+		const res = await fetch(`/api/v1/quiz/play/check_captcha/${data.game_pin}`);
 		const json = await res.json();
 		game_mode = json.game_mode;
 	});
 
+	// js-cookie's `expires` is in days; this was 3600, about ten years. A game lives
+	// in Redis for five hours, so there is nothing to rejoin after that.
+	const JOINED_GAME_COOKIE_DAYS = 5 / 24;
+	const rememberJoinedGame = () =>
+		Cookies.set('joined_game', JSON.stringify({ sid: socket.id, username, game_pin }), {
+			expires: JOINED_GAME_COOKIE_DAYS
+		});
+
 	// Socket-events
 	socket.on('joined_game', (data) => {
 		gameData = data;
-		Cookies.set('joined_game', JSON.stringify({ sid: socket.id, username, game_pin }), {
-			expires: 3600
-		});
+		rememberJoinedGame();
 	});
 	socket.on('rejoined_game', (data) => {
+		// A reload starts with the nickname and PIN empty. Restore them only now the
+		// server has taken us back -- set earlier, the join form would look the PIN up
+		// itself and alert "Game not found" on top of our own handling of a dead game.
+		if (rejoining) {
+			username = rejoining.username;
+			game_pin = rejoining.game_pin;
+		}
 		gameData = data;
+		// The server has moved this player to the new socket id. Without this the
+		// cookie keeps the first one, and a second reload is refused.
+		rememberJoinedGame();
 		if (data.started) {
 			gameMeta.started = true;
 		}
@@ -145,6 +164,7 @@ SPDX-License-Identifier: MPL-2.0
 		preventReload = false;
 		game_pin = '';
 		username = '';
+		Cookies.remove('joined_game');
 		Cookies.set('kicked', 'value', { expires: 1 });
 		window.location.reload();
 	});
@@ -167,7 +187,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz - Play</title>
 </svelte:head>
 <div
-	class="min-h-screen min-w-full"
+	class="min-h-dvh w-full"
 	style="background: {bg_color ? bg_color : 'transparent'}"
 	class:text-black={bg_color}
 >
@@ -193,17 +213,24 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			{/key}
 		{:else if gameMeta.started && answer_results !== undefined}
+			<!-- Both of these were bare divs with no stage, so the heading sat flush
+			     against the top edge of the phone with the bottom half of the screen
+			     empty. fq-stage (and not a second one nested inside: the wrapper above
+			     is a plain min-h-dvh block, exactly as it is for the join and title
+			     screens which already render their own stage here) gives them the same
+			     vertical rhythm and centring as every other game surface. Its
+			     section gap replaces the heading's own mb-8. -->
 			{#if answer_results === null}
-				<div class="w-full flex justify-center">
-					<h1 class="text-3xl">{$t('admin_page.no_answers')}</h1>
+				<div class="fq-stage">
+					<h1 class="text-center text-3xl text-balance">{$t('admin_page.no_answers')}</h1>
 				</div>
 			{:else}
-				<div>
-					<h2 class="text-center text-3xl mb-8">{$t('words.result', { count: 2 })}</h2>
+				<div class="fq-stage">
+					<h2 class="text-center text-3xl">{$t('words.result', { count: 2 })}</h2>
+					{#key unique}
+						<KahootResults {username} question_results={answer_results} bind:scores />
+					{/key}
 				</div>
-				{#key unique}
-					<KahootResults {username} question_results={answer_results} bind:scores />
-				{/key}
 			{/if}
 		{/if}
 	</div>

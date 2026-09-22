@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import QuestionTab from './question_tab_dropdown.svelte';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { getLocalization } from '$lib/i18n';
+	import { htmlToPlainText } from '$lib/sanitize';
 
 	const { t } = getLocalization();
 
@@ -63,11 +64,14 @@ SPDX-License-Identifier: MPL-2.0
 				<div
 					class="w-full bg-white/60 p-2 rounded-sm grid grid-cols-3 z-40 dark:bg-gray-700/80"
 				>
+					<!-- Plain text, not {@html}: the title is rich text, and the editor's <p>
+					     wrapper is a block element that would break out of this underlined
+					     button label. The row is a control, not the question itself. -->
 					<button
 						class="text-center underline text-xl"
 						onclick={() => {
 							toggle_dropdown(i);
-						}}>{question.question}</button
+						}}>{htmlToPlainText(question.question)}</button
 					>
 					{#if question.type !== QuizQuestionType.VOTING}
 						{@const correct_answers = get_number_of_correct_answers(i)}

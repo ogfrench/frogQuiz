@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, Request
 from fastapi.responses import StreamingResponse, RedirectResponse
 from pydantic import BaseModel
 
-from frogquiz.auth import get_current_user
+from frogquiz.auth import get_current_user, get_current_user_optional
 from frogquiz.config import settings, storage, arq, ALLOWED_MIME_TYPES
 from frogquiz.db.models import User, StorageItem, PublicStorageItem, UpdateStorageItem, PrivateStorageItem
 from frogquiz.helpers import check_image_string
@@ -118,10 +118,16 @@ async def download_file_head(file_name: str) -> Response:
 
 
 @router.post("/")
-async def upload_file(file: UploadFile = File(), user: User = Depends(get_current_user)) -> PublicStorageItem:
+async def upload_file(
+    file: UploadFile = File(), user: User | None = Depends(get_current_user_optional)
+) -> PublicStorageItem:
+    # Cover/background/question images are uploaded from the quiz editor, which an
+    # anonymous host can use end to end (see routers/editor.py). Requiring a login
+    # here made every upload from that flow fail silently in the UI -- there is no
+    # per-user quota to check without a user, so anonymous uploads skip it.
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(status_code=422, detail="Unsupported")
-    if user.storage_used > settings.free_storage_limit:
+    if user is not None and user.storage_used > settings.free_storage_limit:
         raise HTTPException(status_code=409, detail="Storage limit reached")
     file_id = uuid4()
     file_size = 0

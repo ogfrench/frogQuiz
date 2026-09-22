@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
 //
 // SPDX-License-Identifier: MPL-2.0
 
 import { redirect } from '@sveltejs/kit';
+import { safeReturnTo } from '$lib/return_to';
 
 export async function load({ parent, url }) {
 	// One channel for every "something just happened to your account" notice, since
@@ -18,8 +20,7 @@ export async function load({ parent, url }) {
 	if (notice === null && url.searchParams.get('password_changed') === 'true') {
 		notice = 'password_changed';
 	}
-	const returnTo =
-		url.searchParams.get('returnTo') !== null ? url.searchParams.get('returnTo') : '/dashboard';
+	const returnTo = safeReturnTo(url.searchParams.get('returnTo'), '/dashboard');
 
 	const { email } = await parent();
 	// Deleting an account and changing a password both clear the cookies server-side,

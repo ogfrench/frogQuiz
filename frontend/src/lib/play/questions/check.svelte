@@ -107,12 +107,6 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 
 <style>
-	.answer-tile {
-		box-shadow:
-			0 10px 20px -8px rgb(0 0 0 / 0.35),
-			inset 0 -4px 0 0 rgb(0 0 0 / 0.18);
-	}
-
 	/* Ticked tiles lift; unticked ones recede, so a glance shows the current set. */
 	.answer-tile:not(.is-picked) {
 		opacity: 0.5;
@@ -122,8 +116,5 @@ SPDX-License-Identifier: MPL-2.0
 
 	.answer-tile.is-picked {
 		transform: scale(1.03);
-		box-shadow:
-			0 16px 32px -10px rgb(0 0 0 / 0.45),
-			inset 0 -4px 0 0 rgb(0 0 0 / 0.18);
 	}
 </style>

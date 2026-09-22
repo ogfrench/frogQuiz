@@ -13,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { flip } from 'svelte/animate';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
+	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	interface Props {
 		question: Question;
@@ -103,7 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 	in:fly|global={{ x: 100 }}
 	out:fly|global={{ x: -100 }}
 >
-	<h1 class="text-3xl text-center">{question.question}</h1>
+	<h1 class="text-3xl text-center">{@html sanitizeTitleHtml(question.question)}</h1>
 	{#if question.image !== null}
 		<div>
 			<MediaComponent

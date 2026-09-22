@@ -12,6 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { getLocalization } from '$lib/i18n';
+	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	interface Props {
 		quiz_data: QuizData;
@@ -53,12 +54,12 @@ SPDX-License-Identifier: MPL-2.0
 <div class="fq-stage">
 	<div class="fq-section">
 		<h1 class="fq-display max-w-[22ch] text-center font-bold text-balance">
-			{quiz_data.questions[selected_question].question}
+			{@html sanitizeTitleHtml(quiz_data.questions[selected_question].question)}
 		</h1>
 		<div class="flex items-center gap-10">
 			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 			<p class="fq-meta text-muted-foreground font-medium tabular-nums" aria-live="polite">
-				{$t('admin_page.answers_submitted', { answer_count: answer_count })}
+				{$t('admin_page.answers_submitted', { count: answer_count })}
 			</p>
 		</div>
 	</div>
@@ -119,13 +120,3 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 </div>
 
-<style>
-	/* Same body treatment as the player tiles so the two screens read as one
-	   system: gloss on top, a floor shadow underneath, no hard black outline. */
-	.answer-row {
-		box-shadow:
-			0 10px 20px -8px rgb(0 0 0 / 0.3),
-			inset 0 1px 0 0 rgb(255 255 255 / 0.25),
-			inset 0 -3px 0 0 rgb(0 0 0 / 0.15);
-	}
-</style>

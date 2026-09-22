@@ -11,6 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import { getAnonSecret } from '$lib/anon_quiz';
 
 	navbarVisible.visible = false;
 
@@ -39,10 +40,20 @@ SPDX-License-Identifier: MPL-2.0
 	let quiz_data: Data = $state();
 
 	const get_quiz = async (): Promise<void> => {
-		const response = await fetch(`/api/v1/quiz/get/${quiz_id}`);
+		// A quiz made without an account is proven ours by the secret this browser
+		// kept, not by a login. Without it the request 401'd for every anonymous
+		// author, and the page, which only handled 200 and 404, rendered blank.
+		const anon_secret = getAnonSecret(quiz_id);
+		const response = await fetch(`/api/v1/quiz/get/${quiz_id}`, {
+			headers: anon_secret ? { 'X-Anon-Secret': anon_secret } : {}
+		});
 		if (response.status === 404) {
 			throw new Error('Quiz not found');
-		} else if (response.status === 200) {
+		} else if (response.status === 401) {
+			throw new Error('Sign in to edit this quiz');
+		} else if (response.status !== 200) {
+			throw new Error(`Couldn't load this quiz (${response.status})`);
+		} else {
 			let temp_data = await response.json();
 			for (let i = 0; i < temp_data.questions.length; i++) {
 				let question = temp_data.questions[i];

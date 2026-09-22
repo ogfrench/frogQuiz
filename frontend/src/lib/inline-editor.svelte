@@ -11,9 +11,10 @@ SPDX-License-Identifier: MPL-2.0
 	// ckeditor5 touches `document` while its modules initialise, which crashes any
 	// server-side render. It is only ever used in onMount, so load it there.
 	import 'ckeditor5/ckeditor5.css';
+	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const triggerChange = () => {
-		text = editor.getData();
+		text = sanitizeTitleHtml(editor.getData());
 	};
 
 	import { onMount } from 'svelte';
@@ -26,8 +27,11 @@ SPDX-License-Identifier: MPL-2.0
 
 	let html_el = $state();
 
+	// Sanitizes on every assignment, not just our own triggerChange, so a value
+	// coming in from the parent (e.g. legacy unsanitized data loaded from the
+	// server) is cleaned up too.
 	run(() => {
-		text = text.replace('<p>', '').replace('</p>', '');
+		text = sanitizeTitleHtml(text);
 	});
 	let editor;
 	onMount(async () => {

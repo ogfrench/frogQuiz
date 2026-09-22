@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -27,8 +28,22 @@ SPDX-License-Identifier: MPL-2.0
 		username = $bindable()
 	}: Props = $props();
 	let custom_field = $state();
-	let custom_field_value = $state();
+	// '' rather than undefined: this is bound to a text input, and an undefined
+	// value there makes Svelte render the box with the literal string "undefined"
+	// the first time a keystroke is undone, and sends undefined on submit even
+	// though the server distinguishes "" (not supplied) from a real answer.
+	let custom_field_value = $state('');
 	let captcha_enabled = $state();
+
+	// Mirrors MAX_CUSTOM_FIELD_LENGTH in frogquiz/socket_server/models.py. Without
+	// it a player could type past the server's cap and only find out by having the
+	// join rejected, with nothing shown on this screen to say why.
+	const MAX_CUSTOM_FIELD_LENGTH = 200;
+
+	// The three inputs on this screen are identical apart from their bindings, and
+	// were three hand-copied class lists that had already drifted.
+	const input_class =
+		'border-input bg-background text-foreground w-full min-w-0 self-center border text-center ring-0 outline-hidden p-2 rounded-lg focus:shadow-2xl transition-all';
 
 	let hcaptchaSitekey = hcaptcha_site_key;
 
@@ -203,54 +218,74 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 </svelte:head>
 
-{#if game_pin === '' || game_pin.length < 6}
-	<div class="flex flex-col justify-center align-center w-full min-h-screen">
-		<form class="flex-col flex justify-center align-center mx-auto">
-			<h1 class="text-lg text-center">{$t('words.game_pin')}</h1>
-			<input
-				class="border-input bg-background text-foreground self-center border text-center ring-0 outline-hidden p-2 rounded-lg focus:shadow-2xl transition-all"
-				bind:value={game_pin}
-				maxlength="6"
-				inputmode="numeric"
-				pattern="[0-9]*"
-				autocomplete="one-time-code"
-				aria-label={$t('words.game_pin')}
-				autofocus
-			/>
+<!-- fq-stage, not min-h-screen: 100vh counts browser chrome that is not there on a
+     phone, which is where every player is, and pushed the submit button below the
+     fold. The measure is capped so the column does not stretch on a laptop, and each
+     input is a real labelled control rather than an <h1> floating above a box. -->
+<div class="fq-stage">
+	{#if game_pin === '' || game_pin.length < 6}
+		<form class="flex w-full max-w-xs flex-col gap-4">
+			<div class="flex flex-col gap-1.5">
+				<label class="text-center text-lg" for="game-pin">{$t('words.game_pin')}</label>
+				<input
+					id="game-pin"
+					class={input_class}
+					bind:value={game_pin}
+					maxlength="6"
+					inputmode="numeric"
+					pattern="[0-9]*"
+					autocomplete="one-time-code"
+					autofocus
+				/>
+			</div>
 			<!--				use:tippy={{content: "Please enter the game pin", sticky: true, placement: 'top'}}-->
 
-			<br />
-			<div class="mt-2">
+			<div class="flex justify-center">
 				<BrownButton disabled={game_pin.length < 6}>{$t('words.submit')}</BrownButton>
 			</div>
 		</form>
-	</div>
-{:else}
-	<div class="flex flex-col justify-center align-center w-full min-h-screen">
-		<form onsubmit={setUsername} class="flex-col flex justify-center align-center mx-auto">
-			<h1 class="text-lg text-center">{$t('words.username')}</h1>
-			<input
-				class="border-input bg-background text-foreground self-center border text-center ring-0 outline-hidden p-2 rounded-lg focus:shadow-2xl transition-all"
-				bind:value={username}
-				maxlength="17"
-				aria-label={$t('words.username')}
-			/>
-			{#if custom_field}
-				<h1 class="text-lg text-center">{custom_field}</h1>
+	{:else}
+		<form onsubmit={setUsername} class="flex w-full max-w-xs flex-col gap-4">
+			<div class="flex flex-col gap-1.5">
+				<label class="text-center text-lg" for="join-username">{$t('words.username')}</label>
+				<!-- autocomplete="nickname", not the browser default of guessing: with no
+				     token at all Chrome and Safari read this as an account field and
+				     offered the player's saved email address for what is a game nickname
+				     shown to the whole room. -->
 				<input
-					class="border-input bg-background text-foreground self-center border text-center ring-0 outline-hidden p-2 rounded-lg focus:shadow-2xl transition-all"
-					bind:value={custom_field_value}
+					id="join-username"
+					class={input_class}
+					bind:value={username}
+					maxlength="17"
+					autocomplete="nickname"
 				/>
+			</div>
+			{#if custom_field}
+				<div class="flex flex-col gap-1.5">
+					<!-- The label text is whatever the host typed when starting the game,
+					     so it is tied to the input with for/id rather than left as a
+					     heading that happens to sit above it. -->
+					<label class="text-center text-lg text-balance" for="join-custom-field">
+						{custom_field}
+					</label>
+					<input
+						id="join-custom-field"
+						class={input_class}
+						bind:value={custom_field_value}
+						maxlength={MAX_CUSTOM_FIELD_LENGTH}
+						autocomplete="off"
+					/>
+				</div>
 			{/if}
 
-			<div class="mt-2">
+			<div class="flex justify-center">
 				<BrownButton disabled={username.trim().length <= 3} onclick={setUsername}
 					>{$t('words.submit')}</BrownButton
 				>
 			</div>
 		</form>
-	</div>
-{/if}
+	{/if}
+</div>
 <div
 	id="hcaptcha"
 	class="h-captcha"

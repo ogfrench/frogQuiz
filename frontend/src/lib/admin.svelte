@@ -15,6 +15,8 @@ SPDX-License-Identifier: MPL-2.0
 	import Question from '$lib/play/admin/question.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
+	import { totalsFromResults } from '$lib/play/admin/totals';
+	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const { t } = getLocalization();
 	const default_colors = ANSWER_COLORS;
@@ -53,6 +55,10 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('final_results', (data) => {
 		final_results_clicked = true;
 		game_state.timer_res = '0';
+		// The podium reads player_scores. Rebuild it from the server's record rather
+		// than trusting the per-question tally, which misses any question whose
+		// results screen was skipped or left in under a second.
+		game_state.player_scores = totalsFromResults(data, Object.keys(game_state.player_scores));
 		game_state.final_results = data;
 	});
 
@@ -157,7 +163,7 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 	{#if game_state.selected_question === -1}
 		<div class="fq-stage justify-center">
-			<h1 class="text-7xl text-center">{game_state.quiz_data.title}</h1>
+			<h1 class="text-7xl text-center">{@html sanitizeTitleHtml(game_state.quiz_data.title)}</h1>
 			<p class="text-3xl pt-8 text-center">{game_state.quiz_data.description}</p>
 			{#if game_state.quiz_data.cover_image}
 				<div class="flex justify-center align-middle items-center">

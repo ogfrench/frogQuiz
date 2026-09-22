@@ -13,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
+	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const data = {
 		game_pin: page.url.searchParams.get('game_pin'),
@@ -239,7 +240,7 @@ SPDX-License-Identifier: MPL-2.0
 	{:else}
 		<div class="flex flex-col justify-center w-screen h-1/6">
 			<h1 class="text-6xl text-center">
-				{game_data.questions[selected_question].question}
+				{@html sanitizeTitleHtml(game_data.questions[selected_question].question)}
 			</h1>
 			<!--			<span class='text-center py-2 text-lg'>{$t('admin_page.time_left')}: {timer_res}</span>-->
 			<div class="mx-auto my-2">

@@ -26,6 +26,7 @@
 		"@fontsource/marck-script": "^5.2.8",
 		"@internationalized/date": "^3.12.4",
 		"@lucide/svelte": "1.42.0",
+		"@playwright/test": "^1.63.0",
 		"@sentry/browser": "^10.22.0",
 		"@sentry/tracing": "^7.120.4",
 		"@simplewebauthn/browser": "^13.2.2",

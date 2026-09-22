@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -12,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import type { Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
+	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const { t } = getLocalization();
 
@@ -78,7 +80,10 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	onMount(() => {
-		setTimeout(show_new_score, 1000);
+		// Cancelled on unmount: left running, it would add this question's points
+		// after the host had moved on, on top of the final podium's rebuilt totals.
+		const pending = setTimeout(show_new_score, 1000);
+		return () => clearTimeout(pending);
 	});
 
 	// https://svelte.dev/repl/96a58afdea2248a5b7e489160ffba887?version=3.44.2
@@ -86,23 +91,27 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="fq-stage">
 	<!-- One composition, in the order the room cares about: what the answer was
-	     and how the room split, then where that leaves the standings. -->
+	     and how the room split, then where that leaves the standings.
+	     This card is a fixed light "paper" surface rather than the bg-card token --
+	     it sits on the quiz author's own background colour, not the app's theme, so
+	     in dark mode bg-card made it near-black with equally dark text, unreadable
+	     regardless of what colour the game background happened to be. -->
 	<div
-		class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
+		class="w-full max-w-2xl overflow-hidden rounded-2xl border border-neutral-200 bg-white text-neutral-900 shadow-sm"
 	>
 		{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
 			<section class="flex flex-col gap-[var(--fq-space-group)] p-6 sm:p-8">
 				<h2 class="text-center text-lg font-semibold tracking-tight text-balance">
-					{question.question}
+					{@html sanitizeTitleHtml(question.question)}
 				</h2>
 				<VotingResults data={new_data} {question} />
 			</section>
 		{/if}
 
-		<section class="border-t border-border">
+		<section class="border-t border-neutral-200">
 			<table class="w-full text-left text-base">
 				<thead
-					class="bg-muted/50 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+					class="bg-neutral-100 text-xs font-medium uppercase tracking-wider text-neutral-500"
 				>
 					<tr>
 						<th class="px-6 py-3">{$t('words.name')}</th>
@@ -114,7 +123,7 @@ SPDX-License-Identifier: MPL-2.0
 						{/if}
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-border">
+				<tbody class="divide-y divide-neutral-200">
 					{#each top_players as player (player)}
 						<tr animate:flip={{ duration: 400 }}>
 							<td class="px-6 py-3 font-medium">{player}</td>
@@ -123,7 +132,7 @@ SPDX-License-Identifier: MPL-2.0
 								<td
 									in:fly|global={{ x: 80 }}
 									class="px-6 py-3 text-right font-medium tabular-nums"
-									class:text-muted-foreground={!score_by_username[player]}
+									class:text-neutral-500={!score_by_username[player]}
 								>
 									+{score_by_username[player] ?? '0'}
 								</td>

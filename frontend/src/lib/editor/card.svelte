@@ -232,10 +232,11 @@ SPDX-License-Identifier: MPL-2.0
 				{:then c}
 					<c.default
 						bind:modalOpen={uppyOpen}
-						bind:edit_id
 						bind:data
 						bind:selected_question
-						video_upload={true}
+						video_upload={false}
+						library_enabled={false}
+						pixabay_enabled={false}
 					/>
 				{/await}
 			{/if}

@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
 	import ImportedOrNot from '$lib/view_quiz/imported_or_not.svelte';
-	import { highlightToHtml } from '$lib/search/highlight';
+	import { highlightToHtml, highlightTitleToHtml } from '$lib/search/highlight';
 	import * as Card from '$lib/components/ui/card/index.js';
 
 	const { t } = getLocalization();
@@ -33,9 +33,10 @@ SPDX-License-Identifier: MPL-2.0
 		<Card.Header>
 			<div class="flex min-w-0 items-start gap-2">
 				<Card.Title class="min-w-0 flex-1 truncate text-xl">
-					<!-- highlightToHtml escapes the author's text and restores only
+					<!-- Title is sanitized HTML, not plain text -- highlightTitleToHtml
+					     allow-lists the same tags the title editor can produce and restores
 					     Meilisearch's <em> pair as <mark>. See lib/search/highlight.ts. -->
-					{@html highlightToHtml(quiz.title)}
+					{@html highlightTitleToHtml(quiz.title)}
 				</Card.Title>
 				<span class="shrink-0">
 					<ImportedOrNot imported={quiz.imported_from_kahoot} />

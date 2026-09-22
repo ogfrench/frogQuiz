@@ -4,6 +4,15 @@
 
 // skipcq: JS-C1003
 import * as yup from 'yup';
+import { htmlToPlainText } from './sanitize';
+
+// The title is HTML (bold/italic/etc. from its rich-text editor), so its length has
+// to be measured on the visible text, not the markup -- otherwise the budget gets
+// eaten by tags a reader never sees. Description is plain text, so its own length
+// check needs no such conversion. Exported so settings-card.svelte's live character
+// counters share this exact number instead of a second hardcoded copy.
+export const TITLE_MAX_LENGTH = 100;
+export const DESCRIPTION_MAX_LENGTH = 500;
 
 export const ABCDQuestionSchema = yup
 	.array()
@@ -51,21 +60,42 @@ export const dataSchema = yup.object({
 	title: yup
 		.string()
 		.required('A title is required')
-		.min(3, 'The title has to be longer than 3 characters')
-		.max(300, 'The title has to be shorter than 300 characters'),
+		.test(
+			'min-length',
+			'The title has to be longer than 3 characters',
+			(value) => htmlToPlainText(value ?? '').length >= 3
+		)
+		.test(
+			'max-length',
+			`The title has to be shorter than ${TITLE_MAX_LENGTH} characters`,
+			(value) => htmlToPlainText(value ?? '').length <= TITLE_MAX_LENGTH
+		),
 	description: yup
 		.string()
 		.required('The description is required!')
 		.min(3, 'The description has to be longer than 3 characters')
-		.max(500, 'The description has to be shorter than 500 characters'),
+		.max(DESCRIPTION_MAX_LENGTH, `The description has to be shorter than ${DESCRIPTION_MAX_LENGTH} characters`),
 	questions: yup
 		.array()
 		.of(
 			yup.object({
-				// trim() before required(): yup counts '   ' as three characters, so a
-				// question whose title is nothing but spaces passed validation, saved, and
-				// went up on the projector blank.
-				question: yup.string().trim().required('A question-title is required').max(299),
+				// The question title comes out of the same rich-text editor as the quiz
+				// title, so it is HTML and has to be measured on its visible text. A
+				// trim() does not help: an emptied editor still hands back '<p></p>',
+				// which is six non-blank characters to yup and blank on the projector.
+				question: yup
+					.string()
+					.required('A question-title is required')
+					.test(
+						'not-blank',
+						'A question-title is required',
+						(value) => htmlToPlainText(value ?? '').length > 0
+					)
+					.test(
+						'max-length',
+						'The question-title has to be shorter than 299 characters',
+						(value) => htmlToPlainText(value ?? '').length <= 299
+					),
 				time: yup.number().required().positive('The time has to be positive'),
 				image: yup.string().nullable().lowercase(),
 				answers: yup.lazy((v) => {

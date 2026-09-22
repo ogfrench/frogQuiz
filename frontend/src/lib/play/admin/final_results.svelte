@@ -91,7 +91,7 @@ SPDX-License-Identifier: MPL-2.0
 						</p>
 						<p class="text-sm text-muted-foreground tabular-nums">
 							{p.score}
-							{$t('words.point_plural')}
+							{$t('words.point', { count: p.score })}
 						</p>
 					</div>
 
@@ -132,7 +132,8 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	</div>
 
-	{#if data[username]}
+	<!-- Not `data[username]`: a player on 0 points is falsy, and lost this line. -->
+	{#if username && username in data}
 		{@const me = ranked.find((p) => p.name === username)}
 		<div class="fixed bottom-0 left-0 mb-6 flex w-full justify-center px-4">
 			<div

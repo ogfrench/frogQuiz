@@ -117,6 +117,15 @@ SPDX-License-Identifier: MPL-2.0
 					title={$t('editor.mark_correct')}
 					aria-label="{$t('editor.mark_correct')}: {answer.answer || $t('words.answer')}"
 					onclick={() => {
+						// ABCD (check_choice false) is meant to be single-correct-answer, but
+						// nothing enforced that -- marking a second answer correct left every
+						// previously-marked one correct too. CHECK (multi-select) keeps its
+						// independent toggle.
+						if (!check_choice && !answer.right) {
+							for (const other of data.questions[selected_question].answers) {
+								other.right = false;
+							}
+						}
 						answer.right = !answer.right;
 					}}
 				>

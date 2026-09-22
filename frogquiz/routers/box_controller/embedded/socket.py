@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -12,8 +13,8 @@ from pydantic import BaseModel, ValidationError
 
 from frogquiz.config import redis
 from frogquiz.db.models import AnswerData, GamePlayer, PlayGame, QuizQuestionType
-from frogquiz.socket_server import calculate_score, set_answer, sio
-from frogquiz.socket_server.helpers import check_answer, has_already_answered
+from frogquiz.socket_server import calculate_score, sio
+from frogquiz.socket_server.helpers import check_answer, has_already_answered, record_answer_once
 from frogquiz.socket_server.models import SubmitAnswerData
 
 router = APIRouter()
@@ -49,23 +50,25 @@ async def submit_answer_fn(data_answer: int, game_pin: str, player_id: str, now:
         )
         if score > 1000:
             score = 1000
-    await redis.set(f"answer_given:{player_id}:{game.current_question}", "True", ex=600)
-    await redis.hincrby(f"game_session:{game_pin}:player_scores", username, score)
     answer_data = AnswerData(
         username=username,
         answer=stored_answer,
         right=answer_right,
         time_taken=abs(diff),
-        score=score,
+        score=max(0, score),
     )
-    answers = await redis.get(f"game_session:{game_pin}:{game.current_question}")
-    answers = await set_answer(answers, game_pin=game_pin, data=answer_data, q_index=game.current_question)
+    # Same atomic append as the socket path; see record_answer_once.
+    answers = await record_answer_once(game_pin, game.current_question, answer_data)
+    if answers is None:
+        return
+    await redis.set(f"answer_given:{player_id}:{game.current_question}", "True", ex=600)
+    await redis.hincrby(f"game_session:{game_pin}:player_scores", username, max(0, score))
     player_count = await redis.scard(f"game_session:{game_pin}:players")
-    await sio.emit("player_answer", {})
-    if len(answers) == player_count:
+    await sio.emit("player_answer", {}, room=f"admin:{game_pin}")
+    if len(answers) >= player_count:
         game.question_show = False
         await game.save(game_pin)
-        await sio.emit("everyone_answered", {})
+        await sio.emit("everyone_answered", {}, room=game_pin)
 
 
 button_to_index_map = {"b": 0, "y": 1, "g": 2, "r": 3}

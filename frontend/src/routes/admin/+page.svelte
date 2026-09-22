@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import Check from '@lucide/svelte/icons/check';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import { socket } from '$lib/socket';
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
@@ -247,6 +248,12 @@ SPDX-License-Identifier: MPL-2.0
 			     magic numbers. One stack, below the h-12 controls bar, both the same
 			     width. -->
 			<div class="fixed top-16 right-4 z-30 flex w-44 flex-col items-stretch gap-2">
+				<!-- "Download results" used to be the only action here, which left the host
+				     stuck on the podium with nowhere to go once a game ended. -->
+				<GrayButton href={data.signed_in ? '/dashboard' : '/'} flex={true}>
+					<ArrowLeft class="size-4" aria-hidden="true" />
+					{$t('words.back')}
+				</GrayButton>
 				{#if export_token === undefined}
 					<GrayButton onclick={request_answer_export}
 						>{$t('admin_page.request_export_results')}</GrayButton

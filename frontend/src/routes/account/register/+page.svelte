@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -17,8 +18,18 @@ SPDX-License-Identifier: MPL-2.0
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
+	import { page } from '$app/state';
+	import { safeReturnTo } from '$lib/return_to';
 
 	const { t } = getLocalization();
+
+	// "Create an account to keep this quiz" sends people here with returnTo=/view/{id}.
+	// This page ignored it, so a new account had no route back to the quiz it was made
+	// to claim. Registering does not sign you in, so it is carried on to the login link.
+	const return_to = $derived(safeReturnTo(page.url.searchParams.get('returnTo'), ''));
+	const login_href = $derived(
+		return_to ? `/account/login?returnTo=${encodeURIComponent(return_to)}` : '/account/login'
+	);
 	import reporter from '@felte/reporter-tippy';
 
 	navbarVisible.visible = true;
@@ -350,9 +361,7 @@ SPDX-License-Identifier: MPL-2.0
 
 		<Card.Footer class="justify-center gap-1.5 text-sm">
 			<span class="text-muted-foreground">{$t('register_page.already_have_account?')}</span>
-			<a
-				href="/account/login"
-				class="text-primary font-medium underline-offset-4 hover:underline"
+			<a href={login_href} class="text-primary font-medium underline-offset-4 hover:underline"
 				>{$t('words.login')}</a
 			>
 		</Card.Footer>

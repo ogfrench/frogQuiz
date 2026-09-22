@@ -52,8 +52,9 @@ SPDX-License-Identifier: MPL-2.0
 	const isCorrect = (a: Answer | VotingAnswer) => !is_voting && (a as Answer).right === true;
 </script>
 
-<!-- fq-stage, like every other host surface; the inner div keeps the measure. -->
-<div class="fq-stage">
+<!-- This renders inside results.svelte's own fq-stage + card, not as its own host
+     screen -- an fq-stage here nested a second min-height:100dvh block inside the
+     results card, which is what stretched that card far taller than its content. -->
 <div class="mx-auto w-full max-w-3xl px-6">
 	<ul class="flex flex-col gap-2.5">
 		{#each answers as answer, i}
@@ -64,13 +65,13 @@ SPDX-License-Identifier: MPL-2.0
 				class:opacity-70={!correct && !is_voting}
 			>
 				<span class="flex w-40 shrink-0 items-center gap-2 sm:w-56">
-					<AnswerShape index={i} class="size-4 shrink-0 text-muted-foreground" />
+					<AnswerShape index={i} class="size-4 shrink-0 text-neutral-500" />
 					<span class="truncate text-base font-medium" title={answer.answer}>
 						{answer.answer}
 					</span>
 					{#if correct}
 						<svg
-							class="size-4 shrink-0 text-foreground"
+							class="size-4 shrink-0 text-neutral-900"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -88,9 +89,9 @@ SPDX-License-Identifier: MPL-2.0
 				</span>
 
 				<span
-					class="relative h-8 flex-1 overflow-hidden rounded-md bg-muted"
+					class="relative h-8 flex-1 overflow-hidden rounded-md bg-neutral-100"
 					class:ring-2={correct}
-					class:ring-foreground={correct}
+					class:ring-neutral-900={correct}
 				>
 					<span
 						class="absolute inset-y-0 left-0 rounded-r-md transition-[width] duration-700 ease-out"
@@ -109,8 +110,7 @@ SPDX-License-Identifier: MPL-2.0
 		{/each}
 	</ul>
 
-	<p class="mt-4 text-center text-sm text-muted-foreground tabular-nums">
-		{$t('admin_page.answers_submitted', { answer_count: total })}
+	<p class="mt-4 text-center text-sm text-neutral-500 tabular-nums">
+		{$t('admin_page.answers_submitted', { count: total })}
 	</p>
-</div>
 </div>

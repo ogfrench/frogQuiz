@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: 2025 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 import aiohttp
-from frogquiz.config import settings
+from redis.exceptions import WatchError
+
+from frogquiz.config import settings, redis
 from frogquiz.db.models import (
     PlayGame,
     QuizQuestionType,
@@ -11,6 +14,7 @@ from frogquiz.db.models import (
     VotingQuizAnswer,
     RangeQuizAnswer,
     AnswerDataList,
+    AnswerData,
 )
 from frogquiz.socket_server.models import SubmitAnswerData
 from .models import SubmitAnswerDataOrderType
@@ -134,6 +138,39 @@ def check_check_question(answer: str, answers: list[ABCDQuizAnswer]) -> bool:
         if a.right:
             correct_string += str(i)
     return bool(correct_string == answer)
+
+
+async def record_answer_once(game_pin: str, q_index: int, data: AnswerData) -> AnswerDataList | None:
+    """Append one player's answer to a question, unless they already have one there.
+
+    Returns the updated list, or None if this player had already answered.
+
+    The list is one JSON value per question, read by eight places, so it is updated in
+    a WATCH/MULTI transaction rather than changed to a Redis list. The old code read it,
+    appended and wrote it back with nothing in between, so answers arriving together
+    overwrote each other: 50 players answering at once kept one or two of them. The
+    duplicate check has to be inside the same transaction, or two quick taps from one
+    player both pass it.
+    """
+    key = f"game_session:{game_pin}:{q_index}"
+    async with redis.pipeline(transaction=True) as pipe:
+        while True:
+            try:
+                await pipe.watch(key)
+                raw = await pipe.get(key)
+                answers = AnswerDataList([]) if raw is None else AnswerDataList.model_validate_json(raw)
+                if any(a.username == data.username for a in answers):
+                    await pipe.unwatch()
+                    return None
+                answers.append(data)
+                pipe.multi()
+                pipe.set(key, answers.model_dump_json(), ex=7200)
+                await pipe.execute()
+                return answers
+            except WatchError:
+                # Somebody else's answer landed between our read and our write. Read
+                # again; nothing of ours was written.
+                continue
 
 
 async def has_already_answered(game_pin: str, q_index: int, username: str) -> bool:

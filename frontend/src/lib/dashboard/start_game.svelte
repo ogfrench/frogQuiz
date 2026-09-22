@@ -7,12 +7,12 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
 	import Spinner from '$lib/Spinner.svelte';
-	import { onMount } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { getAnonSecret } from '$lib/anon_quiz';
 
@@ -20,16 +20,37 @@ SPDX-License-Identifier: MPL-2.0
 	let { quiz_id = $bindable() } = $props();
 	let loading = $state(false);
 	let custom_field = $state('');
+	// The custom field is an extra question every player is asked on the join screen,
+	// and the host's answer to it is shown to them as the heading above that box. It
+	// used to be pre-filled from localStorage on mount, so a value typed once -- in
+	// practice somebody's own email -- silently re-applied to every game started in
+	// that browser from then on, and every player saw it labelling a mystery input.
+	// It is now an explicit opt-in that starts empty for every game, and nothing is
+	// persisted: the only thing the stored value was ever used for was that
+	// auto-prefill, so keeping the write would leave a value nothing reads. The
+	// feature itself, and its whole wire path, is untouched.
+	let custom_field_enabled = $state(false);
 	let randomized_answers = $state(false);
 	let error = $state<string | null>(null);
 	// Set when the failure looks like "you are not signed in" rather than a real
 	// error, so the message can offer a way back rather than just saying no.
 	let offer_login = $state(false);
 
-	onMount(() => {
-		const ls_data = localStorage.getItem('custom_field');
-		custom_field = ls_data ? ls_data : '';
-	});
+	// Clearing on the way out keeps the value that gets sent equal to the value that
+	// is visible: a host who types something and then changes their mind would
+	// otherwise still ship it, since the input is only hidden, not unmounted.
+	const on_custom_field_toggle = (enabled: boolean) => {
+		custom_field_enabled = enabled;
+		if (!enabled) {
+			custom_field = '';
+		}
+	};
+
+	// This string is rendered to every player as the heading above the extra box, so
+	// bound it. The same 200 as MAX_CUSTOM_FIELD_LENGTH in
+	// frogquiz/socket_server/models.py, which bounds the players' answers -- the
+	// server does not bound the prompt itself, hence the client-side cap.
+	const MAX_CUSTOM_FIELD_LENGTH = 200;
 
 	// Mode picker (Normal / Old-School) was cut: Old-School was never used, and Normal
 	// is now the only option. The API still accepts game_mode=normal, so it can come
@@ -38,7 +59,6 @@ SPDX-License-Identifier: MPL-2.0
 		loading = true;
 		error = null;
 		offer_login = false;
-		localStorage.setItem('custom_field', custom_field);
 		const anon_secret = getAnonSecret(id);
 		const headers: Record<string, string> = anon_secret ? { 'X-Anon-Secret': anon_secret } : {};
 
@@ -99,6 +119,10 @@ SPDX-License-Identifier: MPL-2.0
 		error = null;
 		offer_login = false;
 		loading = false;
+		// Every game starts from the same blank slate, including the next one opened
+		// from this same dashboard without a reload.
+		custom_field_enabled = false;
+		custom_field = '';
 	};
 </script>
 
@@ -108,10 +132,32 @@ SPDX-License-Identifier: MPL-2.0
 			<Dialog.Title>{$t('start_game.start_game')}</Dialog.Title>
 		</Dialog.Header>
 
-		<div class="grid gap-2">
-			<Label for="custom-field">{$t('result_page.custom_field')}</Label>
-			<Input id="custom-field" bind:value={custom_field} placeholder="Phone Number or Email" />
-		</div>
+		<!-- The switch is the only thing that opens this, so the collapsible is driven
+		     rather than self-controlled; onOpenChange keeps the two in step if bits-ui
+		     ever closes it itself (escape, a forced remount). -->
+		<Collapsible.Root open={custom_field_enabled} onOpenChange={on_custom_field_toggle}>
+			<div class="flex items-center gap-3">
+				<Switch
+					id="custom-field-enabled"
+					checked={custom_field_enabled}
+					onCheckedChange={on_custom_field_toggle}
+				/>
+				<Label for="custom-field-enabled">{$t('result_page.custom_field')}</Label>
+			</div>
+			<Collapsible.Content>
+				<div class="grid min-w-0 gap-2 pt-3">
+					<Label for="custom-field" class="sr-only">
+						{$t('result_page.custom_field')}
+					</Label>
+					<Input
+						id="custom-field"
+						bind:value={custom_field}
+						maxlength={MAX_CUSTOM_FIELD_LENGTH}
+						placeholder="Phone Number or Email"
+					/>
+				</div>
+			</Collapsible.Content>
+		</Collapsible.Root>
 
 		<div class="flex items-center gap-3">
 			<Switch id="randomize-answers" bind:checked={randomized_answers} />

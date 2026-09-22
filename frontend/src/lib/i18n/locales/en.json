@@ -309,7 +309,9 @@
     "move_question_right": "Move right",
     "start_failed": "The editor could not be opened",
     "start_failed_detail": "The server turned down the request to start an editing session. If this keeps happening, the quiz may no longer exist, or you may not have permission to edit it.",
-    "save_failed": "Could not save: {{detail}}"
+    "save_failed": "Could not save: {{detail}}",
+    "title_too_long": "The title has to be shorter than {{max}} characters",
+    "description_too_long": "The description has to be shorter than {{max}} characters"
   },
   "import_page": {
     "need_help": "Need help?",
@@ -341,7 +343,8 @@
     "show_results": "Show results",
     "stop_time_and_solutions": "Stop time and show solutions",
     "enter_answer_into_field": "Enter your answer into the input field!",
-    "answers_submitted": "{{answer_count}} Answers submitted",
+    "answers_submitted_one": "{{count}} answer submitted",
+    "answers_submitted_other": "{{count}} answers submitted",
     "request_export_results": "Request result download",
     "download_export_results": "Download results",
     "export_results": "Export results"
@@ -439,7 +442,7 @@
     "points_added": "Points added",
     "your_place": "You're on place {{place}}!",
     "players_waiting": "{{count}} player are waiting",
-    "players_waiting_one": "{{count}} player are waiting",
+    "players_waiting_one": "{{count}} player is waiting",
     "players_waiting_other": "{{count}} players are waiting",
     "youre_in": "You're in, {{username}}",
     "waiting_for_host": "Waiting for the host to start"
@@ -466,6 +469,7 @@
   },
   "uploader": {
     "add_image": "Add Media",
+    "upload_failed": "The upload did not go through. Please try again.",
     "select_upload_type": "Select the Upload Type",
     "upload_a_video": "Upload a Video",
     "upload_video_popup_notice": "The popup is open; have a look at it for further information",

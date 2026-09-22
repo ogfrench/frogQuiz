@@ -109,7 +109,9 @@ path that is otherwise built), P1, P2.
 | 5 | Design the view page `/view/[quiz_id]` | P2 | Open — [#17](https://github.com/ogfrench/frogQuiz/issues/17) |
 | 6 | Merge `/my-quizzes` into `/dashboard` | P2 | Open — [#18](https://github.com/ogfrench/frogQuiz/issues/18), blocked on 4 |
 | 7 | Play modal front-end fix | P2 | **Done** — was the same component as 4, landed with it |
-| 8 | Visual pass at 390/834/1440 | P1 | Open — [#19](https://github.com/ogfrench/frogQuiz/issues/19) |
+| 8 | Visual pass at 390/834/1440 | P1 | Open — [#19](https://github.com/ogfrench/frogQuiz/issues/19); overflow half now automated (`responsive` e2e spec, all pages pass) |
+| 9 | Fix the live-game bugs the e2e suite found | P0 | **Done** 2026-09-18, all 63 e2e green; see [`docs/e2e-findings.md`](docs/e2e-findings.md) |
+| 10 | Fix the ownership/editor bugs the e2e suite found | P1 | **Done** 2026-09-18, same doc |
 
 Tracked on GitHub under the MVP1 umbrella, [#3](https://github.com/ogfrench/frogQuiz/issues/3).
 
@@ -117,14 +119,46 @@ Items 2 and 3 are code-complete and green (tests, eslint, production build) but 
 **not** been driven in a browser at 390/834/1440. That check is batched and still owed;
 until it happens neither is promoted to Done in `docs/redesign-status.md`.
 
-Two verification constraints worth knowing before picking anything up:
+Verification constraints worth knowing before picking anything up:
 
-- **There is no local backend**, so `/explore`, `/view/[id]`, `/dashboard` and the editor
-  render empty or 500 locally. `/admin` is the exception — its loader does no `fetch`.
+- **There is now a full local stack.** `bash e2e/run.sh` brings up Postgres, Redis
+  (fakeredis), Meilisearch, the API and the frontend on Windows with no Docker or WSL, and
+  runs the Playwright suite against it; `KEEP_UP=1` leaves it running for manual checks.
+  Items 2–4 can now be driven in a browser locally, live games included. (Before
+  2026-09-18 there was no local backend, which is why those items say "visual pass
+  outstanding".)
 - **The Vite proxy cannot reach the deployed backend from this environment**: TLS
-  interception makes it fail with `self-signed certificate in certificate chain`. Item 3
-  was verified against a local stub carrying the deployed backend's real payload instead.
-  Anything needing a real socket connection still has to be checked on the deployed site.
+  interception makes it fail with `self-signed certificate in certificate chain`. The local
+  stack above is the way around it.
+
+### ~~P0 — Live-game bugs found by the e2e suite~~ (done)
+
+All fixed on 2026-09-18, along with every Low item. How each one was fixed, and the two
+found and deliberately left open (the un-awaited captcha check, and the editor's
+question-cap message), are in [`docs/e2e-findings.md`](docs/e2e-findings.md). The plan
+as it stood is kept below. In the order they were done:
+
+1. **H1 — Concurrent answers overwrite each other.** Make `set_answer` atomic (an `RPUSH`
+   per answer, or a Lua/`WATCH` transaction). This also fixes the knock-on effects on
+   "everyone answered", the double-answer check and the projector podium.
+2. **H2 — A reloaded player can never score again.** Save the session before emitting
+   `time_sync` in `rejoin_game`, and default `ping` to 0 in `submit_answer`.
+3. **H4 / H5 — Players can take host control.** Gate `register_as_remote` (or remove it
+   with the box-controller feature it serves), and delete or authenticate
+   `GET /quiz/join/{pin}`.
+4. **H3 — The projector podium tallies scores client-side.** Read the server's
+   `player_scores` instead.
+5. **M1 / M2 / M5 / M6 — Server-side validation.** Bound the timer, require answers,
+   reject empty quizzes, and enforce the timer and `question_show` in `submit_answer`.
+6. **M3 / M4 / M11 / M12** — kick, room-less broadcasts, the rejoin cookie, and the
+   nickname race.
+
+### ~~P1 — Ownership and editor bugs found by the e2e suite~~ (done)
+
+H6 (anonymous quizzes can't be edited; blank page), M7 (Save allows a question with no
+correct answer), M8 (signing in hides your unclaimed quiz), M9 (sign-up drops
+`returnTo`), M10 (the editor's Back link leads to a login wall). Details in
+[`docs/e2e-findings.md`](docs/e2e-findings.md).
 
 ### ~~P0 — An anonymous host hits a login wall when starting a game~~ (done)
 
@@ -307,6 +341,7 @@ Scoped for FrogQuiz as an **internal team tool** — prioritizing the gaps that 
 - [ ] **Word cloud question type.** New `QuizQuestionType.WORDCLOUD` (or extend `TEXT`) whose live host/results view renders submitted words as a reshaping cloud instead of a scored answer list. This is Menti's single most requested and most legible feature, and FrogQuiz already has the text-submission plumbing (`TextQuizAnswer`) to build on.
 - [ ] **Rating/scale question type.** A 1–5 or 1–10 subjective scale (distinct from `RANGE`'s "guess the right number" game mechanic) with a simple average/distribution result view — useful for team retros and feedback sessions, not just quizzes.
 - [ ] **"Anonymous session" mode toggle.** A per-session flag that suppresses nicknames on the host screen and skips scoring/podium entirely, reusing the existing `VOTING`/poll machinery but changing the *session framing* — turns FrogQuiz into a genuine Menti-style feedback tool for meetings, not just a quiz with an ungraded question type.
+- [ ] **Quiz-style picker at create/host time: "game" vs "presentation" mode (naming TBD).** Let the host choose a Kahoot-style scored game vs a Menti-style unscored presentation/feedback session, with clearer labels than the old "Normal/Old-School" picker that was dropped from `start_game.svelte` during the P2 play-modal rebuild (game mode is currently hardcoded to `kahoot`, though the API still accepts `normal`). Overlaps with the anonymous-session-mode item above — worth designing as one choice (style + framing together) rather than two separate toggles.
 
 ### Medium value, medium effort
 - [ ] **Live Q&A / upvote queue.** A session mode where attendees submit questions instead of answers, others upvote, and the host sees a ranked list to work through live — the single biggest missing all-hands/workshop use case Menti covers and Kahoot doesn't.

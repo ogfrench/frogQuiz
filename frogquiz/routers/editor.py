@@ -173,6 +173,17 @@ async def finish_edit(
             question.image = None
         if image is not None and not check_image_string(image)[0]:
             raise HTTPException(status_code=400, detail="Image URL(s) aren't valid!")
+        # ABCD is single-correct-answer by definition (CHECK is the multi-select type).
+        # The editor now enforces this when marking an answer, but a crafted or legacy
+        # payload could still carry more than one `right: true` -- keep the first and
+        # unmark the rest rather than reject the whole save.
+        if question.type == QuizQuestionType.ABCD:
+            seen_correct = False
+            for answer in question.answers:
+                if answer.right and seen_correct:
+                    answer.right = False
+                elif answer.right:
+                    seen_correct = True
 
     if quiz_input.cover_image == "":
         quiz_input.cover_image = None

@@ -518,11 +518,10 @@ class TestPlayQuiz:
 
     @pytest.mark.asyncio
     async def test_join_game_route(self, test_client: TestClient):  # noqa : F811
+        # Retired: it handed the host's game_id to anyone with the PIN.
         res = test_client.get(f"/api/v1/quiz/join/{ValueStorage.game_pin}")
-        assert res.status_code == 200
-        assert res.text == f'"{ValueStorage.game_id}"'
-        res = test_client.get("/api/v1/quiz/join/dsadasdasdas")
-        assert res.status_code == 404
+        assert res.status_code == 410
+        assert ValueStorage.game_id not in res.text
 
 
 # skipcq: PYL-W0105

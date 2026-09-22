@@ -1,0 +1,109 @@
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
+//
+// SPDX-License-Identifier: MPL-2.0
+
+import { expect, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+
+export const ANON_KEY = 'frogquiz_anon_secrets';
+export const PHONE = { width: 390, height: 844 };
+
+export type Answer = { answer: string; right: boolean };
+export type Question = {
+	question: string;
+	time: string;
+	type?: 'ABCD' | 'CHECK';
+	answers: Answer[] | unknown;
+};
+export type QuizInput = {
+	title: string;
+	description: string;
+	public?: boolean;
+	questions: Question[];
+};
+
+export const mc = (question: string, answers: [string, boolean][], time = '20'): Question => ({
+	question,
+	time,
+	type: 'ABCD',
+	answers: answers.map(([answer, right]) => ({ answer, right }))
+});
+
+/** Saves a quiz through the same two calls the editor makes. Anonymous unless a token is given. */
+export async function saveQuiz(request: APIRequestContext, quiz: QuizInput, bearer?: string) {
+	const headers: Record<string, string> = bearer ? { Authorization: `Bearer ${bearer}` } : {};
+	const start = await request.post('/api/v1/editor/start?edit=false', { headers });
+	expect(start.status(), await start.text()).toBe(200);
+	const { token } = await start.json();
+	const res = await request.post(`/api/v1/editor/finish?edit_id=${token}`, {
+		headers,
+		data: { public: false, ...quiz }
+	});
+	const body = res.status() === 200 ? await res.json() : await res.text();
+	return {
+		status: res.status(),
+		body,
+		secret: res.headers()['x-anon-secret'] as string | undefined
+	};
+}
+
+export async function rememberAnonQuiz(page: Page, id: string, secret: string) {
+	await page.goto('/');
+	await page.evaluate(
+		([key, quizId, s]) => {
+			const all = JSON.parse(localStorage.getItem(key) ?? '{}');
+			all[quizId] = s;
+			localStorage.setItem(key, JSON.stringify(all));
+		},
+		[ANON_KEY, id, secret]
+	);
+}
+
+/** From the quiz view page, through the start modal, into the host lobby. Returns the PIN. */
+export async function hostFromViewPage(page: Page, quizId: string): Promise<string> {
+	await page.goto(`/view/${quizId}`);
+	// The Play button is icon-only with no accessible name, so it is found by position.
+	await page
+		.getByRole('link', { name: 'Practice' })
+		.locator('xpath=preceding::button[1]')
+		.click();
+	const dialog = page.getByRole('dialog', { name: 'Start Game' });
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole('button', { name: 'Start Game' }).click();
+	await page.waitForURL(/\/admin\?/);
+	const pin = new URL(page.url()).searchParams.get('pin');
+	expect(pin).toMatch(/^\d{6}$/);
+	return pin!;
+}
+
+/**
+ * The PIN box is server-rendered and autofocused, so it accepts input before the page
+ * hydrates -- and anything entered then is lost. /play logs "Connected!" once its
+ * socket is up, which is after hydration.
+ */
+export async function gotoPlayHydrated(page: Page) {
+	const connected = page.waitForEvent('console', {
+		predicate: (m) => m.text() === 'Connected!',
+		timeout: 15_000
+	});
+	await page.goto('/play');
+	await connected;
+}
+
+export async function joinAsPlayer(browser: Browser, pin: string, username: string) {
+	const context = await browser.newContext({ viewport: PHONE });
+	const page = await context.newPage();
+	await gotoPlayHydrated(page);
+	// The PIN form has no submit handler: the sixth digit advances it on its own.
+	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await page.getByRole('textbox', { name: 'Username' }).fill(username);
+	await page.getByRole('button', { name: 'Submit' }).click();
+	return { context, page };
+}
+
+/** Horizontal overflow is a recurring bug here (w-screen); assert it wherever a page is visited. */
+export async function expectNoHorizontalOverflow(page: Page) {
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow, 'page scrolls horizontally').toBeLessThanOrEqual(0);
+}

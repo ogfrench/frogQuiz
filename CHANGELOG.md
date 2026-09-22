@@ -20,6 +20,78 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Audited the delete-account cascade end to end: read every `ON DELETE` rule referencing `users` (all `CASCADE` except `storage_items`, which is deliberately `SET NULL` plus an explicit app-level file delete -- see `delete_user_account`), then verified live against a running server that deleting an account with a quiz, an API key and a session attached leaves zero rows behind in `users`, `quiz`, `api_keys` and `user_sessions`. No gaps found.
 - Everything else on this surface -- registration (duplicate email/username, case folding, the 32-character username trap, rate limits), forgot/reset password, resend-verification, sign-out-everywhere, and the delete-account confirmation flow itself -- was reviewed against the running app and found already correct; no changes needed there.
 
+### Second round of manual-testing fixes
+
+- Fixed image uploads still doing nothing after the previous round's backend fix. The fix itself was correct; `e2e/run.sh` starts uvicorn without `--reload`, so the API process was serving two-hour-old code and every upload was still answering 401. Documented the trap in `docs/e2e-findings.md`.
+- Fixed the uploader closing its dialog and reporting success on a failed upload. It wrote `undefined` into the quiz and closed regardless of `result.failed`, which is what made the 401 above invisible three times over. It now only commits when an upload actually succeeded and an id arrived, and otherwise leaves the dialog open showing the error.
+- Fixed the uploader's file restrictions never being applied: the options were passed as `properties`, which `@uppy/svelte` does not read (it is `props`). Narrowed the accepted types from `image/*` to the four the server accepts, so the picker stops admitting files it will answer 422 to.
+- Removed a duplicate Uppy Dashboard instance. The plugin was installed manually as well as by the Svelte component, leaving three to four dashboards in the DOM, two upload buttons, and the image editor attached to an invisible one.
+- Moved the editor header's error message back to the right of the row. The previous round gave it `flex-1` so a long title could not squeeze it out, which fixed the width but left it reading as trailing the title rather than sitting at the end of the header.
+- Fixed per-question titles rendering their raw HTML (`<p>test</p>`) in ten places. They come from the same rich-text editor as the quiz title, but only the quiz title had been sanitized — the editor rail, the filmstrip, the player and host question screens, per-question results, practice, remote and results history were all showing markup.
+- Fixed a blank question passing validation: `questions[].question` was length-checked on raw HTML, and an emptied rich-text editor hands back `<p></p>`, which `trim().required()` accepted as six characters. A question that was blank on the projector could be saved.
+- Rebuilt the post-save page's bento grid. The anonymous-quiz notice was a grid tile, so its ~350px of prose dictated the row heights, spreading Practice and Download ~360px apart, and its "Create an account" button clipped inside a too-narrow track. The grid now holds actions only, with fixed row heights, and the notice sits below it.
+- Stopped the host's start-game "custom field" inheriting a stale value from `localStorage`. A value typed once re-applied to every later game, so players were shown the host's email address as the heading over a second, unexplained input box. The field is now an explicit opt-in that starts empty.
+- Gave the join screen real `<label>`s, a length cap on the custom field matching the server's, and `autocomplete="nickname"` on the nickname input — with no autocomplete token browsers offered a saved email address for it.
+- Fixed the player's per-question results screen sitting flush against the top of the phone. The score card was centring itself inside its own `h-screen` block while the heading sat above it; the card now only draws itself and the route's `fq-stage` places it.
+- Replaced the remaining `min-h-screen` on the play route and the join screen with the `dvh` equivalent, so the submit button and score card are above the fold with mobile browser chrome present.
+
+### Fixed a batch of bugs found by manual testing (anonymous create/edit/play flow)
+
+- Sanitized the quiz title (a rich-text field) instead of storing/displaying its raw HTML unfiltered. A pasted `<p>`/`&nbsp;` or foreign markup used to show up as literal text in the editor sidebar and header; bold/italic/etc. now render correctly everywhere the title is shown (editor, live host screen, search results), while non-toolbar tags and pasted CSS text are stripped.
+- Trimmed the "Select the Upload Type" modal (cover image, background image, and question media) down to Image only. Video, Library, and Pixabay are hidden, not deleted, per the feature-triage rule — clicking "Add Media" now skips straight to the uploader instead of showing a picker with one real option.
+- Fixed image uploads doing nothing for an anonymous host: `POST /api/v1/storage/` required a logged-in user, with no allowance for the anonymous-quiz flow that already works everywhere else in the editor.
+- Redesigned the post-save quiz page's action area as a bento-style grid, with Play as the large primary tile (now labeled "Play" instead of icon-only) and Practice/Download/account-status as smaller tiles.
+- Removed the drop-shadow/glow under answer-option tiles on both the host and player live-question screens.
+- Fixed the host's live per-question results card: it used the dark-mode-following `bg-card` token on a card meant to sit on the quiz's own background colour, making it unreadable in dark mode. It's now a fixed light "paper" surface. Also fixed the card's oversized empty space, caused by a redundant `fq-stage` nested a second time inside the results card.
+- Added a "Back" button to the podium/final-results screen, routing to the dashboard (signed in) or home (anonymous) — previously "Download results" was the only action, leaving the host stuck.
+- Tightened the quiz title limit from 300 to 100 characters (measured on visible text, not markup) and added a live character counter with an inline warning for both title and description, instead of only failing at Save.
+- Fixed the editor header's error indicator being squeezed unreadable next to a long title by giving the title a width cap and the error message its own share of the row.
+- Fixed single-correct-answer (ABCD) questions allowing more than one answer to be marked correct; marking a new one now unmarks the rest, with the same normalization applied server-side as defense in depth.
+
+### Fixed every bug the e2e suite found
+
+Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests pass. The backend suite's failures are identical to a clean-HEAD baseline in the same environment.
+
+- Fixed lost answers when players answer together. Answers are appended in a Redis transaction, and the duplicate check runs inside it. 50 simultaneous answers now keep all 50, where they used to keep 1–2. The box-controller path uses the same helper.
+- Fixed players who reload being unable to score: `rejoin_game` saves the session before it syncs time.
+- Closed two ways for a player to take host control. `register_as_remote` now needs the host's `game_id`. `GET /quiz/join/{pin}`, which handed that `game_id` to anyone with the PIN, now answers 410. `game_id` is no longer sent to players in the game object.
+- `submit_answer` refuses answers after the timer (plus 1.5 s of grace) or once results are showing, and a score can no longer go negative.
+- Kicked players can no longer rejoin, and a nickname is claimed atomically, so two players can't join under the same name.
+- Game events are scoped to their game's rooms. They used to broadcast to every connected client.
+- The server rejects quizzes that can't be played: no questions, a question with no answers, more than 10 answers, or a timer that isn't a number between 1 and 999 s. Starting an empty quiz returns 400.
+- Anonymous quizzes can be reopened in the editor (`/quiz/get` accepts the anonymous secret). The edit page shows an error instead of going blank.
+- Signing in no longer locks you out of a quiz you made anonymously: start, delete and get check the account and the secret independently.
+- The projector podium rebuilds its totals from the server's final results.
+- The editor blocks Save while a question is incomplete and says how many. Its Back link goes to `/my-quizzes` for someone without an account, and saving an anonymous quiz returns to its view page.
+- Signing up from "keep this quiz" now leads back to the quiz, because `returnTo` is carried through to the login link.
+- The login page only follows a `returnTo` that stays on this site. It used to follow any URL, an open redirect.
+- A player can reload more than once (the rejoin cookie is refreshed), gets the current question back after a reload, and the cookie now lasts 5 hours instead of about 10 years.
+- The end screen shows "Your score" for a player on 0 points. The podium no longer shows the raw key `words.point_plural`. Fixed "1 Answers submitted" and "1 player are waiting".
+- Removed every `test.fail` marker. The tests stay as regression guards, and new unit tests cover the podium totals and `returnTo` handling.
+
+### Local end-to-end test harness (no Docker, no WSL)
+
+- Made the E2E launcher resolve the Pipenv environment correctly from Git Bash on Windows.
+- Added `bash e2e/run.sh`, which brings up the whole stack on Windows from what is already installed: a throwaway Postgres cluster on 5433, fakeredis on 6380, a portable Meilisearch exe (downloaded once into `e2e/.tools`), the API on 8010 and vite on 3000. It then runs Playwright against the installed Edge and tears everything down afterwards. All state goes in `e2e/.data` (gitignored) and is wiped on the next run.
+- Added `@playwright/test`, `frontend/playwright.config.ts`, and seven specs under `frontend/e2e/` (`*.e2e.ts`, so vitest ignores them):
+  - `anon-game`: a full anonymous game in real browsers.
+  - `api-edge`: malformed and extreme API input, and anonymous ownership.
+  - `live-socket`: a 50-player crowd, and join, answer and host-control rules at the socket level.
+  - `editor`: building, validating, editing and saving a quiz by hand.
+  - `account`: register, log in, dashboard, claim, Explore, saved results.
+  - `game-reload`: player and host reloads mid-game.
+  - `responsive`: the overflow sweep at 390/834/1440 and the theme toggle.
+- Added `e2e/stop.sh` for stacks left up with `KEEP_UP=1`, and a Playwright global setup that warms Vite's on-demand route compiles so a slow first compile doesn't read as a test failure.
+- Wrote up every bug the suite found in `docs/e2e-findings.md`: 6 high, 12 medium, 6 low, plus UX notes and what held up. Each bug a test can reach is a `test.fail`, so the run stays green and a test flips red once its bug is fixed. Nothing in the app was changed. The worst:
+  - concurrent answers overwrite each other;
+  - a player who reloads can never score again;
+  - any player can take host control, through `register_as_remote` or the `game_id` from `/quiz/join/{pin}`;
+  - anonymous quizzes open to a blank editor.
+- Added P0/P1 items for those bugs to `BACKLOG.md`, and replaced its "there is no local backend" constraint, which no longer holds.
+- CLAUDE.md: added a section on running the e2e suite. Also corrected the background check in "Verifying UI changes", which read `body` (transparent by design) instead of `html`.
+- Added `e2e/shims/magic.py`, a test-only stand-in for python-magic, whose Windows DLL crashes on import.
+- `e2e/e2e.env` turns off the signup email deliverability check (a live MX lookup), so runs need no DNS.
+
 ### Host start-game modal rebuilt on shadcn
 
 - Rebuilt `lib/dashboard/start_game.svelte` on shadcn `Dialog`/`Button`/`Input`/`Label`/`Switch` (the last newly added to `frontend/src/lib/components/ui/`). It was the last pre-redesign surface in the host path: a hand-rolled `<div>` overlay with its own Escape/backdrop handling, hardcoded `w-screen`/`h-screen`/`text-black`/`bg-white`/`bg-green-500`, and `marck-script` on the CTA.

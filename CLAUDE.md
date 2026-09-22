@@ -72,15 +72,32 @@ projector or laptop, every player on a phone. Neither is the secondary case.
 
 ## Verifying UI changes
 
-Check in a browser, don't assume. The dev server binds IPv6-only — use `http://localhost:3000`, not `127.0.0.1`. The backend usually is not running locally, so `/explore`, `/view/[id]` and `/user/[id]` return 500 and data-driven pages render empty; that is the environment, not a regression.
+Check in a browser, don't assume. The dev server binds IPv6-only — use `http://localhost:3000`, not `127.0.0.1`. Without a backend, `/explore`, `/view/[id]` and `/user/[id]` return 500 and data-driven pages render empty; that is the environment, not a regression — use `KEEP_UP=1 bash e2e/run.sh --list` (below) to get a real one.
 
 Assert on these three, since all three have regressed before:
 
 ```js
 document.documentElement.classList.contains("dark"); // the class toggle, not the OS media query
 document.documentElement.scrollWidth > clientWidth; // the w-screen overflow
-getComputedStyle(document.body).backgroundColor; // tokens actually applied
+getComputedStyle(document.documentElement).backgroundColor; // tokens actually applied
 ```
+
+The ground is on `html`, not `body`: `app.css` keeps `body` transparent on purpose so it
+does not paint over the fixed ambient layer. Checking `body` always reads transparent.
+
+### Running the end-to-end suite
+
+`bash e2e/run.sh` (Git Bash, from the repo root) starts the whole stack locally — a
+throwaway Postgres cluster, fakeredis, a portable Meilisearch, the API and Vite — with no
+Docker or WSL, runs Playwright against the installed Edge, and tears it all down.
+`KEEP_UP=1 bash e2e/run.sh --list` leaves the stack up for manual browser checks at
+`http://localhost:3000`, including real live games; `bash e2e/stop.sh` stops it. Specs are
+in `frontend/e2e/*.e2e.ts`.
+
+Known bugs are encoded as `test.fail(...)`, so the run is green while they exist and a
+test turns red when its bug is fixed — delete the marker then. What each one is, and
+what has already been checked and holds up, is in
+[`docs/e2e-findings.md`](docs/e2e-findings.md). Read it before touching the socket server.
 
 ### Running the frontend suite
 

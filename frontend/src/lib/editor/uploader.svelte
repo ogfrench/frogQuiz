@@ -9,7 +9,6 @@ SPDX-License-Identifier: MPL-2.0
 	import DropTarget from '@uppy/drop-target';
 	import XHRUpload from '@uppy/xhr-upload';
 	import ImageEditor from '@uppy/image-editor';
-	import Dashboard from '@uppy/dashboard';
 	import Compressor from '@uppy/compressor';
 	import { fade } from 'svelte/transition';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
@@ -30,16 +29,20 @@ SPDX-License-Identifier: MPL-2.0
 	const { t } = getLocalization();
 	let {
 		modalOpen = $bindable(),
-		data,
-		selected_question,
+		// card.svelte passes these with `bind:`, and this file passes `data` on to
+		// Library/Pixabay the same way, so they have to be declared bindable.
+		data = $bindable(),
+		selected_question = $bindable(),
 		video_upload = false,
-		library_enabled = true
+		library_enabled = true,
+		pixabay_enabled = true
 	}: {
 		modalOpen: boolean;
 		data: EditorData;
 		selected_question?: number;
 		video_upload: boolean;
 		library_enabled?: boolean;
+		pixabay_enabled?: boolean;
 	} = $props();
 
 	// eslint-disable-next-line no-undef
@@ -59,13 +62,17 @@ SPDX-License-Identifier: MPL-2.0
 		Pixabay
 	}
 
+	// The Dashboard plugin is installed by @uppy/svelte's <Dashboard> component below
+	// (under the id "svelte:Dashboard", with our `dashboard_options` spread in). This
+	// file used to ALSO call `.use(Dashboard)` here with no target, which left a second,
+	// never-mounted Dashboard in the instance and -- because ImageEditor was targeted at
+	// the Dashboard *class* -- attached the image editor to that dead one instead of the
+	// visible one. Install ImageEditor untargeted and let the visible Dashboard list it.
 	const uppy = new Uppy()
 		.use(DropTarget, {
 			target: document.body
 		})
-		.use(Dashboard)
 		.use(ImageEditor, {
-			target: Dashboard,
 			quality: 0.8
 		})
 		.use(Compressor, {
@@ -74,20 +81,44 @@ SPDX-License-Identifier: MPL-2.0
 		.use(XHRUpload, {
 			endpoint: `/api/v1/storage/`
 		});
-	const properties = {
-		inline: true,
+	// @uppy/svelte v4's Dashboard prop for the plugin's options is `props` -- this was
+	// passed as `properties`, which the component ignores, so none of these restrictions
+	// were ever applied. `inline: true` is the component's own default.
+	const dashboard_options = {
+		plugins: ['ImageEditor'],
 		restrictions: {
 			maxFileSize: 10_490_000,
 			maxNumberOfFiles: 1,
-			allowedFileTypes: ['image/*']
-			// allowedFileTypes: ['.gif', '.jpg', '.jpeg', '.png', '.svg', '.webp']
+			// Matches ALLOWED_MIME_TYPES in frogquiz/config.py. 'image/*' let SVGs through
+			// the picker only for the server to answer 422.
+			allowedFileTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
 		}
 	};
-	let image_id: string;
-	uppy.on('upload-success', (file, response) => {
-		image_id = response.body.id;
+	// Read eagerly rather than inside the `complete` callback: that fires from Uppy, not
+	// from the component, and `$t` is a store read that wants component context.
+	const upload_failed_msg = $derived($t('uploader.upload_failed'));
+	let image_id: string | undefined;
+	uppy.on('upload', () => {
+		// Don't let an id from an earlier attempt stand in for this one.
+		image_id = undefined;
 	});
-	uppy.on('complete', (_) => {
+	uppy.on('upload-success', (file, response) => {
+		image_id = (response.body as { id?: string } | undefined)?.id;
+	});
+	// A failed upload used to look exactly like a successful one: `complete` wrote
+	// `undefined` into the quiz and closed the modal either way, which is why a 401 from
+	// the storage endpoint showed up as "the dialog closes and nothing happens". Only
+	// close on an upload that actually produced an id; otherwise leave the Dashboard up,
+	// where Uppy's own status bar shows the error.
+	uppy.on('complete', (result) => {
+		const ok = result.failed.length === 0 && result.successful.length > 0;
+		if (!ok || image_id === undefined) {
+			if (ok) {
+				uppy.info(upload_failed_msg, 'error', 8000);
+			}
+			return;
+		}
+
 		if (selected_question === undefined) {
 			data.cover_image = image_id;
 		} else if (selected_question === -1) {
@@ -183,20 +214,22 @@ SPDX-License-Identifier: MPL-2.0
 							</BrownButton>
 						</div>
 					{/if}
-					<div class="w-full">
-						<BrownButton
-							onclick={() => {
-								selected_type = AvailableUploadTypes.Pixabay;
-							}}
-							>Pixabay
-						</BrownButton>
-					</div>
+					{#if pixabay_enabled}
+						<div class="w-full">
+							<BrownButton
+								onclick={() => {
+									selected_type = AvailableUploadTypes.Pixabay;
+								}}
+								>Pixabay
+							</BrownButton>
+						</div>
+					{/if}
 				</div>
 			</div>
 		{:else if selected_type === AvailableUploadTypes.Image}
 			<div class="m-auto w-full max-w-3xl" transition:fade={{ duration: 100 }}>
 				<div>
-					<SvelteDashboard {uppy} width="100%" {properties} />
+					<SvelteDashboard {uppy} props={dashboard_options} />
 				</div>
 			</div>
 		{:else if selected_type === AvailableUploadTypes.Video}
@@ -238,6 +271,12 @@ SPDX-License-Identifier: MPL-2.0
 		class="w-full gap-2"
 		onclick={() => {
 			modalOpen = true;
+			// Image is the only enabled type at every call site today (video/library/
+			// Pixabay are hidden, not deleted, per CLAUDE.md's feature-triage rule) --
+			// skip straight to the uploader instead of showing a picker with one option.
+			if (!video_upload && !library_enabled && !pixabay_enabled) {
+				selected_type = AvailableUploadTypes.Image;
+			}
 		}}
 	>
 		<ImagePlus class="size-4 shrink-0" />

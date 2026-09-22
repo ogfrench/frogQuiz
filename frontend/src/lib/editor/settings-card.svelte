@@ -13,6 +13,9 @@ SPDX-License-Identifier: MPL-2.0
 	import Globe from '@lucide/svelte/icons/globe';
 	import Lock from '@lucide/svelte/icons/lock';
 	import X from '@lucide/svelte/icons/x';
+	import { htmlToPlainText } from '$lib/sanitize';
+	import { TITLE_MAX_LENGTH, DESCRIPTION_MAX_LENGTH } from '$lib/yupSchemas';
+	import { cn } from '$lib/utils';
 
 	const { t } = getLocalization();
 
@@ -31,6 +34,12 @@ SPDX-License-Identifier: MPL-2.0
 	$effect(() => {
 		data.background_color = custom_bg_color ? data.background_color : undefined;
 	});
+
+	// Length was only ever enforced at Save, so a long paste blew up the title box and
+	// the editor header (see editor.svelte) long before the author got any feedback.
+	// Measuring the title on its visible text, not its HTML, matches the yup schema.
+	let title_length = $derived(htmlToPlainText(data.title).length);
+	let description_length = $derived(data.description.length);
 </script>
 
 <div class="mx-auto w-full max-w-3xl">
@@ -50,6 +59,19 @@ SPDX-License-Identifier: MPL-2.0
 					<c.default bind:text={data.title} />
 				</div>
 			{/await}
+			<span
+				class={cn(
+					'self-end text-xs tabular-nums',
+					title_length > TITLE_MAX_LENGTH ? 'text-destructive font-medium' : 'text-muted-foreground'
+				)}
+			>
+				{title_length}/{TITLE_MAX_LENGTH}
+			</span>
+			{#if title_length > TITLE_MAX_LENGTH}
+				<p class="text-destructive text-sm" role="alert">
+					{$t('editor.title_too_long', { max: TITLE_MAX_LENGTH })}
+				</p>
+			{/if}
 		</div>
 
 		<label class="flex flex-col gap-2">
@@ -58,6 +80,21 @@ SPDX-License-Identifier: MPL-2.0
 				bind:value={data.description}
 				class="border-input bg-background focus-visible:ring-ring h-24 w-full resize-none rounded-lg border p-3 focus-visible:ring-2 focus-visible:outline-none"
 			></textarea>
+			<span
+				class={cn(
+					'self-end text-xs tabular-nums',
+					description_length > DESCRIPTION_MAX_LENGTH
+						? 'text-destructive font-medium'
+						: 'text-muted-foreground'
+				)}
+			>
+				{description_length}/{DESCRIPTION_MAX_LENGTH}
+			</span>
+			{#if description_length > DESCRIPTION_MAX_LENGTH}
+				<p class="text-destructive text-sm" role="alert">
+					{$t('editor.description_too_long', { max: DESCRIPTION_MAX_LENGTH })}
+				</p>
+			{/if}
 		</label>
 
 		<div class="flex flex-col gap-2">
@@ -85,7 +122,13 @@ SPDX-License-Identifier: MPL-2.0
 				{#await import('$lib/editor/uploader.svelte')}
 					<Spinner my_20={false} />
 				{:then c}
-					<c.default bind:modalOpen={uppyOpen} {data} video_upload={false} />
+					<c.default
+						bind:modalOpen={uppyOpen}
+						bind:data
+						video_upload={false}
+						library_enabled={false}
+						pixabay_enabled={false}
+					/>
 				{/await}
 			{/if}
 		</div>
@@ -161,9 +204,11 @@ SPDX-License-Identifier: MPL-2.0
 				{:then c}
 					<c.default
 						bind:modalOpen={bg_uppy_open}
-						{data}
+						bind:data
 						selected_question={-1}
 						video_upload={false}
+						library_enabled={false}
+						pixabay_enabled={false}
 					/>
 				{/await}
 			{/if}

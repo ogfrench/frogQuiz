@@ -1,0 +1,202 @@
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
+//
+// SPDX-License-Identifier: MPL-2.0
+
+// Building a quiz by hand in the editor, the way somebody without an account would,
+// then checking what actually reached the server and that it plays.
+
+import { expect, test, type Page } from '@playwright/test';
+import { ANON_KEY, PHONE, expectNoHorizontalOverflow } from './helpers';
+import { closeAll, connect, finalResults, joinAll, next, showQuestion } from './sockets';
+
+test.afterEach(closeAll);
+
+const titleBox = (page: Page) => page.getByRole('textbox', { name: /Rich Text Editor/ });
+const saveButton = (page: Page) => page.getByRole('button', { name: 'Save' });
+
+async function addQuestion(page: Page, kind: RegExp, title: string, answers: [string, boolean][]) {
+	await page.getByRole('button', { name: 'Add new question' }).first().click();
+	await page.getByRole('button', { name: kind }).click();
+	await titleBox(page).fill(title);
+	for (let i = 0; i < answers.length; i++)
+		await page.getByRole('button', { name: 'Add an answer' }).click();
+	const inputs = page.getByRole('textbox', { name: 'Enter an answer' });
+	for (const [i, [text, right]] of answers.entries()) {
+		await inputs.nth(i).fill(text);
+		if (right)
+			await page
+				.getByRole('button', { name: `Mark as correct: ${text}`, exact: true })
+				.click();
+	}
+}
+
+async function startNewQuiz(page: Page, title: string) {
+	await page.goto('/create?anon=true');
+	await titleBox(page).fill(title);
+	await page.getByRole('textbox', { name: 'Description' }).fill('Made in the editor');
+}
+
+async function anonSecret(page: Page, id: string) {
+	return page.evaluate(
+		([k, i]) => JSON.parse(localStorage.getItem(k) ?? '{}')[i],
+		[ANON_KEY, id]
+	);
+}
+
+test('build a quiz by hand, save it, and play it', async ({ page, request }) => {
+	const title = `Handmade ${Date.now()}`;
+	await startNewQuiz(page, title);
+	await addQuestion(page, /^Multiple-Choice/, 'Which is a frog?', [
+		['Tree frog', true],
+		['Gecko', false],
+		['Newt', false]
+	]);
+	await addQuestion(page, /^Check Choice/, 'Which are amphibians?', [
+		['Frog', true],
+		['Lizard', false],
+		['Salamander', true]
+	]);
+	await expect(page.getByText('2 questions').first()).toBeVisible();
+	await saveButton(page).click();
+	await page.waitForURL(/\/view\//);
+	const id = page.url().split('/view/')[1];
+	await expect(page.getByText("This quiz isn't saved to an account")).toBeVisible();
+	const secret = await anonSecret(page, id);
+	expect(secret, 'the editor remembered the anonymous secret').toBeTruthy();
+
+	// What reached the server is what was typed.
+	const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+	test.info().annotations.push({
+		type: 'stored',
+		description: JSON.stringify(stored.questions).slice(0, 400)
+	});
+	expect(stored.questions.map((q: { type: string }) => q.type)).toEqual(['ABCD', 'CHECK']);
+	expect(
+		stored.questions[0].answers
+			.filter((a: { right: boolean }) => a.right)
+			.map((a: { answer: string }) => a.answer)
+	).toEqual(['Tree frog']);
+
+	// And it plays: the multiple-answer question scores the exact set, and nothing else.
+	const start = await request.post(
+		`/api/v1/quiz/start/${id}?game_mode=kahoot&captcha_enabled=False`,
+		{
+			headers: { 'X-Anon-Secret': secret }
+		}
+	);
+	expect(start.status()).toBe(200);
+	const { game_pin, game_id } = await start.json();
+	const host = await connect();
+	const registered = next(host, 'registered_as_admin');
+	host.emit('register_as_admin', { game_pin, game_id });
+	expect(await registered).not.toBeNull();
+	const [right, partial] = await joinAll(String(game_pin), ['exactset', 'halfset']);
+	host.emit('start_game', {});
+	await showQuestion(host, 0);
+	// Spaced out on purpose: simultaneous answers hit the lost-update race that
+	// live-socket.e2e.ts records, and this test is about scoring, not that.
+	right.emit('submit_answer', { question_index: 0, answer: 'Tree frog' });
+	await new Promise((r) => setTimeout(r, 200));
+	partial.emit('submit_answer', { question_index: 0, answer: 'Gecko' });
+	await new Promise((r) => setTimeout(r, 300));
+	await showQuestion(host, 1);
+	right.emit('submit_answer', { question_index: 1, answer: '02' });
+	await new Promise((r) => setTimeout(r, 200));
+	partial.emit('submit_answer', { question_index: 1, answer: '0' });
+	await new Promise((r) => setTimeout(r, 300));
+	const results = await finalResults(host);
+	const row = (q: string, u: string) => results[q].find((r) => r.username === u)!;
+	expect(row('0', 'exactset').right).toBe(true);
+	expect(row('0', 'halfset').right).toBe(false);
+	expect(row('1', 'exactset').right).toBe(true);
+	expect(row('1', 'halfset').right).toBe(false);
+});
+
+test('Save stays off with no questions, and with a blank answer', async ({ page }) => {
+	await startNewQuiz(page, `Guard ${Date.now()}`);
+	await expect(saveButton(page)).toBeDisabled();
+	await expect(page.getByText('You need at least one question')).toBeVisible();
+	await addQuestion(page, /^Multiple-Choice/, 'Complete', [
+		['One', false],
+		['Two', true]
+	]);
+	await expect(saveButton(page)).toBeEnabled();
+	await page.getByRole('textbox', { name: 'Enter an answer' }).first().fill('');
+	await expect(saveButton(page)).toBeDisabled();
+});
+
+test('the timer field cannot produce a timer the game cannot run', async ({ page, request }) => {
+	await startNewQuiz(page, `Timer ${Date.now()}`);
+	await addQuestion(page, /^Multiple-Choice/, 'Timed', [
+		['A', true],
+		['B', false]
+	]);
+	const timer = page.getByRole('spinbutton', { name: /Time in seconds/ });
+	for (const bad of ['0', '-5']) {
+		await timer.fill(bad);
+		const saveable = await saveButton(page).isEnabled();
+		if (saveable) {
+			await saveButton(page).click();
+			await page.waitForURL(/\/view\//);
+			const id = page.url().split('/view/')[1];
+			const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+			test.info().annotations.push({
+				type: `timer ${bad} stored as`,
+				description: stored.questions[0].time
+			});
+			expect(Number(stored.questions[0].time), `timer "${bad}" was saved`).toBeGreaterThan(0);
+			return;
+		}
+	}
+});
+
+test('an existing anonymous quiz can be reopened, edited and saved', async ({ page, request }) => {
+	await startNewQuiz(page, `Before ${Date.now()}`);
+	await addQuestion(page, /^Multiple-Choice/, 'Q', [
+		['A', true],
+		['B', false]
+	]);
+	await saveButton(page).click();
+	await page.waitForURL(/\/view\//);
+	const id = page.url().split('/view/')[1];
+
+	await page.goto(`/edit?quiz_id=${id}`);
+	await expect(titleBox(page).first()).toContainText('Before', { timeout: 20_000 });
+	await page.getByRole('textbox', { name: 'Description' }).first().fill('Edited description');
+	await saveButton(page).click();
+	await page.waitForURL(/\/view\//);
+	const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+	expect(stored.description).toBe('Edited description');
+});
+
+test('the editor fits a phone', async ({ browser }) => {
+	const ctx = await browser.newContext({ viewport: PHONE });
+	const page = await ctx.newPage();
+	await startNewQuiz(page, `Phone ${Date.now()}`);
+	await expectNoHorizontalOverflow(page);
+	await ctx.close();
+});
+
+test.describe('regressions', () => {
+	test('a question with no correct answer blocks Save', async ({ page }) => {
+		await startNewQuiz(page, `No right ${Date.now()}`);
+		await addQuestion(page, /^Multiple-Choice/, 'No right answer', [
+			['One', false],
+			['Two', false]
+		]);
+		await expect(saveButton(page)).toBeDisabled({ timeout: 3000 });
+		// And says why, rather than a greyed-out button with no reason.
+		await expect(page.getByText('1 question needs attention')).toBeVisible();
+	});
+
+	test("the editor's Back link does not send an anonymous user to a login wall", async ({
+		page
+	}) => {
+		await startNewQuiz(page, `Back ${Date.now()}`);
+		page.on('dialog', (d) => d.accept());
+		await page.getByRole('link', { name: 'Back' }).click();
+		await page.waitForURL((u) => !u.pathname.startsWith('/create'), { timeout: 15_000 });
+		test.info().annotations.push({ type: 'landed on', description: page.url() });
+		expect(page.url()).not.toMatch(/\/account\/login/);
+	});
+});

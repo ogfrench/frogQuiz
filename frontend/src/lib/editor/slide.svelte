@@ -210,6 +210,10 @@ SPDX-License-Identifier: MPL-2.0
 				</svg>
 			</button>
 			{#if settings_menu_open}
+				<!-- Not sanitized on the way in, unlike every other question title: a slide's
+				     title is only ever typed into SettingsMenu's plain <input>, never the rich
+				     text editor, and this is a two-way bind -- transforming it here would write
+				     the transformed value straight back into the quiz. -->
 				<SettingsMenu bind:time={data.time} bind:title={data.question} />
 			{/if}
 		</div>

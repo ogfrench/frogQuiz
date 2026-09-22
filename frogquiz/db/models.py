@@ -164,6 +164,10 @@ class QuizQuestion(BaseModel):
 
     @field_validator("answers")
     def answers_not_none_if_abcd_type(cls, v, info: ValidationInfo):
+        # Every branch below reads v[0]. An empty list used to reach it and raise
+        # IndexError, which is not a validation error, so the API answered 500.
+        if isinstance(v, list) and len(v) == 0:
+            raise ValueError("A question needs at least one answer")
         if info.data["type"] == QuizQuestionType.ABCD and not isinstance(v[0], ABCDQuizAnswer):
             raise ValueError("Answers can't be none if type is ABCD")
         if info.data["type"] == QuizQuestionType.RANGE and not isinstance(v, RangeQuizAnswer):
@@ -181,6 +185,18 @@ class QuizQuestion(BaseModel):
         return v
 
 
+# Bounds for what a client may save. They live on QuizInput rather than QuizQuestion on
+# purpose: QuizQuestion also parses quizzes already in the database and in live games,
+# and tightening it would make an old quiz with an odd value unloadable instead of just
+# unsaveable-until-fixed. The editor's own timer field is 1-999.
+MAX_QUESTION_SECONDS = 999
+# Not the editor's cap of four. A Kahoot import can bring six answers, and a cap of four
+# would make such a quiz impossible to re-save. Ten is the real limit: multiple-answer
+# questions are scored by concatenating option indices ("02"), which is only
+# unambiguous while every index is one digit.
+MAX_ANSWERS_PER_QUESTION = 10
+
+
 class QuizInput(BaseModel):
     public: bool | None = False
     title: str
@@ -189,6 +205,24 @@ class QuizInput(BaseModel):
     background_color: str | None = None
     questions: list[QuizQuestion]
     background_image: str | None = None
+
+    @field_validator("questions")
+    def questions_are_playable(cls, questions: list[QuizQuestion]) -> list[QuizQuestion]:
+        # A quiz with no questions saved and then started a live game with nothing in it.
+        if len(questions) == 0:
+            raise ValueError("A quiz needs at least one question")
+        for i, q in enumerate(questions, start=1):
+            # The game does int(float(time)) when scoring, so a non-numeric timer used to
+            # save fine and then make every correct answer to that question score nothing.
+            try:
+                seconds = float(q.time)
+            except ValueError:
+                raise ValueError(f"Question {i}: the time must be a number of seconds")
+            if not 1 <= seconds <= MAX_QUESTION_SECONDS:
+                raise ValueError(f"Question {i}: the time must be between 1 and {MAX_QUESTION_SECONDS} seconds")
+            if isinstance(q.answers, list) and len(q.answers) > MAX_ANSWERS_PER_QUESTION:
+                raise ValueError(f"Question {i}: at most {MAX_ANSWERS_PER_QUESTION} answers")
+        return questions
 
 
 class Quiz(ormar.Model):
@@ -280,7 +314,10 @@ class PlayGame(BaseModel):
     def to_player_data(self) -> dict:
         return (
             {
-                **json.loads(self.model_dump_json(exclude={"quiz_id", "questions", "user_id"})),
+                # game_id is the host's credential: register_as_admin and
+                # register_as_remote hand the game to whoever presents it. It was
+                # sent to every player on join, which made any player a host.
+                **json.loads(self.model_dump_json(exclude={"quiz_id", "questions", "user_id", "game_id"})),
                 "question_count": len(self.questions),
             },
         )
@@ -347,7 +384,7 @@ class AnswerDataList(RootModel):
         return iter(self.root)
 
     def __getitem__(self, item):
-        return self.root(item)
+        return self.root[item]
 
     def append(self, item):
         self.root.append(item)

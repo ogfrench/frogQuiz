@@ -22,6 +22,10 @@ SPDX-License-Identifier: MPL-2.0
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
 	import { getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
+	import { sanitizeTitleHtml, htmlToPlainText } from '$lib/sanitize';
+	import Play from '@lucide/svelte/icons/play';
+	import Download from '@lucide/svelte/icons/download';
+	import Repeat from '@lucide/svelte/icons/repeat';
 
 	const default_colors = ANSWER_COLORS;
 
@@ -133,11 +137,11 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - View {quiz.title}</title>
+	<title>frogQuiz - View {htmlToPlainText(quiz.title)}</title>
 </svelte:head>
 
 <div>
-	<h1 class="text-4xl text-center">{quiz.title}</h1>
+	<h1 class="text-4xl text-center">{@html sanitizeTitleHtml(quiz.title)}</h1>
 	<div class="text-center">
 		<p>{quiz.description}</p>
 	</div>
@@ -166,183 +170,124 @@ SPDX-License-Identifier: MPL-2.0
 			<ModComponent autoReturn={auto_return} quiz_id={quiz.id} />
 		{/if}
 	</div>
-	<div class="flex flex-col justify-center">
-		<div class="mx-auto flex flex-col gap-2 justify-center w-fit">
-			{#if quiz.imported_from_kahoot && quiz.kahoot_id}
-				<div class="w-full">
-					<GrayButton
-						href="https://create.kahoot.it/details/{quiz.kahoot_id}"
-						target="_blank"
-					>
-						{$t('view_quiz_page.view_on_kahoot')}
-					</GrayButton>
-				</div>
-			{/if}
+	<div class="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4">
+		{#if quiz.imported_from_kahoot && quiz.kahoot_id}
+			<GrayButton href="https://create.kahoot.it/details/{quiz.kahoot_id}" target="_blank">
+				{$t('view_quiz_page.view_on_kahoot')}
+			</GrayButton>
+		{/if}
+
+		<!-- Bento layout: one large primary tile for the main action (Play) beside two
+		     smaller ones. Actions only -- the row heights are fixed on md+ so no tile's
+		     content can dictate them. Prose (the anonymous-quiz notice) lives below,
+		     outside the grid; nesting it here blew the rows out to its own height. -->
+		<div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:grid-rows-[5rem_5rem]">
 			{#if logged_in || owns_anonymously}
-				<div class="w-full">
+				<GrayButton
+					onclick={() => {
+						start_game = quiz.id;
+					}}
+					variant="default"
+					class="min-w-0 min-h-40 flex-col justify-center gap-3 rounded-3xl text-lg font-semibold md:row-span-2 md:h-full md:min-h-0"
+				>
+					<Play class="size-10" aria-hidden="true" />
+					{$t('words.play')}
+				</GrayButton>
+			{:else}
+				<div
+					use:tippy={{ content: 'You need to be logged in to start a game' }}
+					class="min-w-0 md:row-span-2 md:h-full"
+				>
 					<GrayButton
-						onclick={() => {
-							start_game = quiz.id;
-						}}
-						flex={true}
+						disabled={true}
+						variant="default"
+						class="h-full min-h-40 w-full flex-col justify-center gap-3 rounded-3xl text-lg font-semibold md:min-h-0"
 					>
-						<!-- heroicons/legacy-outline/Play -->
-						<svg
-							class="w-5 h-5"
-							aria-hidden="true"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-							<path
-								d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
+						<Play class="size-10" aria-hidden="true" />
+						{$t('words.play')}
 					</GrayButton>
 				</div>
-			{:else}
-				<div use:tippy={{ content: 'You need to be logged in to start a game' }}>
-					<div class="w-full">
-						<GrayButton disabled={true} flex={true}>
-							<!-- heroicons/legacy-outline/Play -->
-							<svg
-								class="w-5 h-5"
-								aria-hidden="true"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-								<path
-									d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</GrayButton>
-					</div>
-				</div>
 			{/if}
-			<div class="w-full">
-				<GrayButton href="/practice?quiz_id={quiz.id}">
-					{$t('words.practice')}
+
+			<GrayButton
+				href="/practice?quiz_id={quiz.id}"
+				class="min-w-0 gap-2 rounded-3xl md:h-full"
+			>
+				<Repeat class="size-5" aria-hidden="true" />
+				{$t('words.practice')}
+			</GrayButton>
+
+			{#if logged_in}
+				<GrayButton
+					onclick={() => (download_id = quiz.id)}
+					class="min-w-0 gap-2 rounded-3xl md:h-full"
+				>
+					<Download class="size-5" aria-hidden="true" />
+					{$t('words.download')}
 				</GrayButton>
-			</div>
-			<div class="w-full">
-				{#if logged_in}
-					<GrayButton flex={true} onclick={() => (download_id = quiz.id)}>
-						<svg
-							class="w-5 h-5 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-							/>
-						</svg>
+			{:else}
+				<div
+					use:tippy={{ content: 'You need to be logged in to download a game' }}
+					class="min-w-0 md:h-full"
+				>
+					<GrayButton disabled={true} class="h-full w-full gap-2 rounded-3xl">
+						<Download class="size-5" aria-hidden="true" />
 						{$t('words.download')}
 					</GrayButton>
-				{:else}
-					<div use:tippy={{ content: 'You need to be logged in to download a game' }}>
-						<GrayButton disabled={true} flex={true}>
-							<svg
-								class="w-5 h-5 inline-block"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-								/>
-							</svg>
-							{$t('words.download')}
-						</GrayButton>
-					</div>
+				</div>
+			{/if}
+		</div>
+
+		{#if owns_anonymously}
+			<div class="rounded-3xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+				<p class="font-medium text-foreground">
+					{$t('view_quiz_page.anon_temporary')}
+				</p>
+				{#if expires_at}
+					<p class="mt-1">
+						{$t('view_quiz_page.anon_expires', {
+							count: days_until_expiry,
+							date: expires_at.toLocaleDateString()
+						})}
+					</p>
 				{/if}
-				{#if owns_anonymously}
-					<div
-						class="w-full rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
-					>
-						<p class="font-medium text-foreground">
-							{$t('view_quiz_page.anon_temporary')}
-						</p>
-						{#if expires_at}
-							<p class="mt-1">
-								{$t('view_quiz_page.anon_expires', {
-									count: days_until_expiry,
-									date: expires_at.toLocaleDateString()
-								})}
-							</p>
-						{/if}
-						<p class="mt-1">
-							{logged_in
-								? $t('view_quiz_page.anon_claim_hint')
-								: $t('view_quiz_page.anon_sign_in_hint')}
-						</p>
-						<div class="mt-3 flex flex-col gap-2">
-							{#if logged_in}
-								<GrayButton onclick={claim_quiz} disabled={claiming} flex={true}>
-									{claiming
-										? $t('view_quiz_page.claiming')
-										: $t('view_quiz_page.claim_quiz')}
-								</GrayButton>
-							{:else}
-								<a
-									class="w-full rounded-lg bg-primary px-4 py-2 text-center font-medium text-primary-foreground hover:opacity-90"
-									href="/account/register?returnTo=/view/{quiz.id}"
-								>
-									{$t('view_quiz_page.anon_sign_up')}
-								</a>
-							{/if}
-							<GrayButton
-								onclick={delete_anonymous_quiz}
-								disabled={deleting}
-								flex={true}
-							>
-								{deleting ? $t('view_quiz_page.deleting') : $t('view_quiz_page.delete_quiz')}
-							</GrayButton>
-						</div>
-						{#if delete_error}
-							<p class="mt-2 text-destructive">
-								{$t('view_quiz_page.delete_failed')}
-							</p>
-						{/if}
-					</div>
+				<p class="mt-1">
+					{logged_in
+						? $t('view_quiz_page.anon_claim_hint')
+						: $t('view_quiz_page.anon_sign_in_hint')}
+				</p>
+				<div class="mt-3 flex flex-col gap-2">
+					{#if logged_in}
+						<GrayButton onclick={claim_quiz} disabled={claiming}>
+							{claiming ? $t('view_quiz_page.claiming') : $t('view_quiz_page.claim_quiz')}
+						</GrayButton>
+					{:else}
+						<GrayButton href="/account/register?returnTo=/view/{quiz.id}" variant="default">
+							{$t('view_quiz_page.anon_sign_up')}
+						</GrayButton>
+					{/if}
+					<GrayButton onclick={delete_anonymous_quiz} disabled={deleting}>
+						{deleting ? $t('view_quiz_page.deleting') : $t('view_quiz_page.delete_quiz')}
+					</GrayButton>
+				</div>
+				{#if delete_error}
+					<p class="mt-2 text-destructive">
+						{$t('view_quiz_page.delete_failed')}
+					</p>
 				{/if}
 			</div>
-		</div>
+		{/if}
 	</div>
 
 	{#each quiz.questions as question, index_question}
 		<div class="px-4 py-1">
-			<CollapsSection headerText={question.question} expanded={auto_expand}>
+			<CollapsSection
+				headerText={htmlToPlainText(question.question)}
+				expanded={auto_expand}
+			>
 				<div class="grid grid-cols-1 gap-2 rounded-b-lg bg-white dark:bg-gray-700 -mt-1">
-					<h3 class="text-3xl m-1 text-center">
-						{index_question + 1}: {question.question}
+					<h3 class="text-3xl m-1 text-center [&_p]:inline">
+						{index_question + 1}: {@html sanitizeTitleHtml(question.question)}
 					</h3>
 					{#if question.image}
 						<span>

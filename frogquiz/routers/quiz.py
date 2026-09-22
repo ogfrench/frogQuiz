@@ -30,29 +30,52 @@ def _quiz_expired(quiz: Quiz) -> bool:
     return quiz.expire_at is not None and quiz.expire_at < datetime.now()
 
 
+async def _find_own_quiz(quiz_id: uuid.UUID, user: User | None, anon_secret: str | None) -> Quiz | None:
+    """The quiz if the caller owns it, by account or by anonymous secret.
+
+    The two are checked independently rather than as either/or. Someone who makes
+    a quiz without an account and then signs in, without claiming it first, still
+    holds its secret, and used to find their own quiz 404ing on start and delete.
+    """
+    if user is not None:
+        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+        if quiz is not None:
+            return quiz
+    if anon_secret is None:
+        return None
+    quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
+    if quiz is None or _quiz_expired(quiz) or not verify_anon_secret(anon_secret, quiz.anon_secret):
+        return None
+    return quiz
+
+
 settings = settings()
 
 router = APIRouter()
 
 
 @router.get("/get/{quiz_id}")
-async def get_quiz_from_id(quiz_id: str, user: User | None = Depends(get_current_user)):
+async def get_quiz_from_id(
+    quiz_id: str,
+    user: User | None = Depends(get_current_user_optional),
+    x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+):
     try:
         quiz_id = uuid.UUID(quiz_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="badly formed quiz id")
-    if user is None:
-        quiz = await Quiz.objects.get_or_none(id=quiz_id, public=True)
-    else:
-        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
-    if quiz is None:
-        public_quiz = await Quiz.objects.get_or_none(id=quiz_id, public=True)
-        if public_quiz is None:
-            return JSONResponse(status_code=404, content={"detail": "quiz not found"})
-        else:
-            return public_quiz
-    else:
-        return quiz
+    if user is None and x_anon_secret is None:
+        # Kept as it was: signed out and without a secret, this route has only
+        # ever served public quizzes, and a caller with neither got a 401.
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    quiz = await _find_own_quiz(quiz_id, user, x_anon_secret)
+    if quiz is not None:
+        # The secret is a credential, not quiz content; the editor has it already.
+        return quiz.model_dump(exclude={"anon_secret"})
+    public_quiz = await Quiz.objects.get_or_none(id=quiz_id, public=True)
+    if public_quiz is None:
+        return JSONResponse(status_code=404, content={"detail": "quiz not found"})
+    return public_quiz
 
 
 class PublicQuizResponseUser(BaseModel):
@@ -99,20 +122,19 @@ async def start_quiz(
         quiz_id = uuid.UUID(quiz_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="badly formed quiz id")
-    if user is not None:
-        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
-        if quiz is None:
-            quiz = await Quiz.objects.get_or_none(id=quiz_id, public=True)
-    else:
-        # No public-quiz fallback here: hosting without an account is only
-        # allowed for a quiz that was itself created anonymously and whose
-        # secret the caller holds, not for hosting someone else's quiz.
+    if user is None:
         await rate_limit(request, "quiz_start_anon", limit=20, window_seconds=60)
-        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
-        if quiz is not None and not verify_anon_secret(x_anon_secret, quiz.anon_secret):
-            quiz = None
+    quiz = await _find_own_quiz(quiz_id, user, x_anon_secret)
+    if quiz is None and user is not None:
+        # Signed-out callers get no public-quiz fallback: hosting without an
+        # account is only allowed for a quiz that was itself created anonymously
+        # and whose secret the caller holds, not for hosting someone else's quiz.
+        quiz = await Quiz.objects.get_or_none(id=quiz_id, public=True)
     if quiz is None or _quiz_expired(quiz):
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
+    if not quiz.questions:
+        # An empty quiz used to open a live game with nothing in it.
+        return JSONResponse(status_code=400, content={"detail": "quiz has no questions"})
     quiz.plays += 1
     await quiz.update()
     game_pin = randint(100000, 999999)
@@ -207,11 +229,12 @@ async def check_if_captcha_enabled(game_pin: str):
 
 @router.get("/join/{game_pin}", deprecated=True)
 async def get_game_id(game_pin: str):
-    redis_res = await redis.get(f"game:{game_pin}")
-    if redis_res is None:
-        raise HTTPException(status_code=404, detail="game not found")
-    else:
-        return json.loads(redis_res)["game_id"]
+    # This used to hand the game_id -- the host's credential -- to anyone who knew
+    # the PIN, which is to say every player in the room; with it they could take the
+    # host seat or drive the game from register_as_remote. Nothing in the frontend
+    # calls it. The route stays, answering 410, so an old client gets a clear answer
+    # rather than a 404 that looks like a typo'd PIN.
+    raise HTTPException(status_code=410, detail="this endpoint has been retired")
 
 
 @router.get("/list")
@@ -261,13 +284,9 @@ async def delete_quiz(
         quiz_id = uuid.UUID(quiz_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="badly formed quiz id")
-    if user is not None:
-        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
-    else:
+    if user is None:
         await rate_limit(request, "quiz_delete_anon", limit=20, window_seconds=60)
-        quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
-        if quiz is not None and not verify_anon_secret(x_anon_secret, quiz.anon_secret):
-            quiz = None
+    quiz = await _find_own_quiz(quiz_id, user, x_anon_secret)
 
     if quiz is None:
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
