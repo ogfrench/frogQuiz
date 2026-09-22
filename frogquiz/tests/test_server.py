@@ -170,6 +170,32 @@ class TestUsers:
         alive = test_client.get(f"/api/v1/users/verify/{new_key}", follow_redirects=False)
         assert alive.headers["location"] == "/account/login?verified=true"
 
+        # TestStats below hardcodes the global user count as 1 (the single
+        # test_user_email account), which byom.de made real again -- this test
+        # used to register on example.com, which the deliverability check
+        # rejected before either row was ever written. Delete both through the
+        # real endpoint, the way every other test in this file touches the DB
+        # -- calling the ormar model directly from here hit a "different event
+        # loop" error, because TestClient runs the ASGI app (and so the DB
+        # pool) on its own loop, not this async test function's.
+        for cleanup_email in (email, email2):
+            login = test_client.post("/api/v1/login/start", json={"email": cleanup_email})
+            session_id = login.json()["session_id"]
+            step = test_client.post(
+                f"/api/v1/login/step/1?session_id={session_id}",
+                json={"auth_type": "PASSWORD", "data": test_user_password},
+            )
+            assert step.status_code == 200
+            # test_client.delete() has no json= -- httpx's convenience methods drop
+            # the body on DELETE (see test_delete_user_rejects_wrong_password above).
+            deleted = test_client.request(
+                "DELETE",
+                "/api/v1/users/me",
+                cookies=step.cookies,
+                json={"password": test_user_password},
+            )
+            assert deleted.status_code == 200
+
     @pytest.mark.asyncio
     async def test_check(self, test_client: TestClient):  # noqa : F811
         resp = test_client.get("/api/v1/users/check", cookies=ValueStorage.cookies)
