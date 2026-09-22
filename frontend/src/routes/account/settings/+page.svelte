@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Label } from '$lib/components/ui/label/index.js';
 	import DeleteAccount from './delete-account.svelte';
 	import UnverifiedBanner from './unverified-banner.svelte';
+	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 
 	const { t } = getLocalization();
 
@@ -43,6 +44,11 @@ SPDX-License-Identifier: MPL-2.0
 	// Replaces the alert() pair this form used to end in -- the idiom the rest of
 	// the account surface dropped.
 	let passwordError = $state('');
+	// Every other form on this surface (register, reset-password, delete-account)
+	// disables its submit button and shows a spinner while the request is in
+	// flight; this one didn't, so a double click fired the change twice and there
+	// was no feedback at all while a slow request was pending.
+	let isSubmittingPassword = $state(false);
 
 	let this_session = $state();
 	// The avatar endpoint can 404, and a failed <img> paints its alt text across the
@@ -63,21 +69,48 @@ SPDX-License-Identifier: MPL-2.0
 
 	const changePassword = async (e: Event) => {
 		e.preventDefault();
-		if (!passwordChangeDataValid) {
+		// The client half of the double-submit guard, same as delete-account: the
+		// server has its own via rate_limit_key, but this is what stops an
+		// impatient double click from spending two of those attempts on one click.
+		if (!passwordChangeDataValid || isSubmittingPassword) {
 			return;
 		}
-		const res = await fetch('/api/v1/users/password/update', {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				old_password: changePasswordData.oldPassword,
-				new_password: changePasswordData.newPassword
-			})
-		});
+		isSubmittingPassword = true;
+		passwordError = '';
+		let res: Response;
+		try {
+			res = await fetch('/api/v1/users/password/update', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					old_password: changePasswordData.oldPassword,
+					new_password: changePasswordData.newPassword
+				})
+			});
+		} catch {
+			// A network failure used to leave the button live with no feedback at
+			// all -- the fetch above was never wrapped, so it rejected into nothing
+			// and the form just sat there looking like it hadn't been submitted.
+			isSubmittingPassword = false;
+			passwordError = $t('settings_page.password_change_failed');
+			return;
+		}
 		if (res.status === 200) {
+			// A full document load, not goto(): the redirect below relies on the
+			// server having just cleared the session cookies for this response.
 			window.location.assign('/account/login?password_changed=true');
+			return;
+		}
+		isSubmittingPassword = false;
+		if (res.status === 400) {
+			// Also the response for an OAuth account with no password to confirm
+			// with, but the form is hidden for those accounts below, so a caller
+			// only reaches this from the UI by way of a wrong current password.
+			passwordError = $t('settings_page.password_change_wrong');
+		} else if (res.status === 429) {
+			passwordError = $t('settings_page.password_change_too_many');
 		} else {
 			passwordError = $t('settings_page.password_change_failed');
 		}
@@ -93,7 +126,10 @@ SPDX-License-Identifier: MPL-2.0
 		if (response.status === 200) {
 			return await response.json();
 		} else {
-			window.location.assign('/account/login');
+			// Same returnTo as getSessions() below, so whichever of the two 401s
+			// first -- this one fires first in practice -- sends the visitor back
+			// here after signing in again instead of dropping them on /dashboard.
+			window.location.assign('/account/login?returnTo=/account/settings');
 		}
 	};
 
@@ -119,7 +155,13 @@ SPDX-License-Identifier: MPL-2.0
 	const getFormattedUserAgent = (userAgent: string): string => {
 		const parser = new UAParser(userAgent);
 		const result = parser.getResult();
-		return `${result.browser.name} ${result.browser.version} (${result.os.name})`;
+		// A session created without an ordinary browser User-Agent -- a script, an
+		// API key, curl -- leaves every field undefined, and this used to print the
+		// literal string "undefined undefined (undefined)" into the sessions table.
+		if (!result.browser.name && !result.os.name) {
+			return $t('settings_page.unknown_browser');
+		}
+		return `${result.browser.name ?? '?'} ${result.browser.version ?? ''} (${result.os.name ?? '?'})`;
 	};
 
 	const deleteSession = async (session_id: string) => {
@@ -198,55 +240,71 @@ SPDX-License-Identifier: MPL-2.0
 					<Card.Description>{$t('settings_page.password_requirements')}</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					<!-- Stacked, not md:flex-row: three password fields side by side is cramped
-					     at every width and gives each one about a word of room. -->
-					<form class="grid max-w-sm gap-4" onsubmit={changePassword}>
-						<div class="grid gap-2">
-							<Label for="old-password">{$t('settings_page.old_password')}</Label>
-							<Input
-								id="old-password"
-								type="password"
-								autocomplete="current-password"
-								bind:value={changePasswordData.oldPassword}
-							/>
-						</div>
-						<div class="grid gap-2">
-							<Label for="new-password">{$t('settings_page.new_password')}</Label>
-							<Input
-								id="new-password"
-								type="password"
-								autocomplete="new-password"
-								bind:value={changePasswordData.newPassword}
-							/>
-						</div>
-						<div class="grid gap-2">
-							<Label for="repeat-password"
-								>{$t('settings_page.repeat_password')}</Label
-							>
-							<Input
-								id="repeat-password"
-								type="password"
-								autocomplete="new-password"
-								aria-invalid={mismatch}
-								bind:value={changePasswordData.newPasswordConfirm}
-							/>
-							{#if mismatch}
-								<p class="text-destructive text-sm">
-									{$t('settings_page.passwords_do_not_match')}
+					{#if user.auth_type !== 'LOCAL'}
+						<!-- OAuth accounts are created with no password at all (frogquiz/oauth/*),
+						     so PUT /password/update 400s for them. Same reasoning as
+						     delete-account.svelte: say so up front rather than after a submit
+						     that can never succeed. -->
+						<p class="text-muted-foreground text-sm">
+							{$t('settings_page.password_change_oauth')}
+						</p>
+					{:else}
+						<!-- Stacked, not md:flex-row: three password fields side by side is
+						     cramped at every width and gives each one about a word of room. -->
+						<form class="grid max-w-sm gap-4" onsubmit={changePassword}>
+							<div class="grid gap-2">
+								<Label for="old-password">{$t('settings_page.old_password')}</Label>
+								<Input
+									id="old-password"
+									type="password"
+									autocomplete="current-password"
+									bind:value={changePasswordData.oldPassword}
+								/>
+							</div>
+							<div class="grid gap-2">
+								<Label for="new-password">{$t('settings_page.new_password')}</Label>
+								<Input
+									id="new-password"
+									type="password"
+									autocomplete="new-password"
+									bind:value={changePasswordData.newPassword}
+								/>
+							</div>
+							<div class="grid gap-2">
+								<Label for="repeat-password"
+									>{$t('settings_page.repeat_password')}</Label
+								>
+								<Input
+									id="repeat-password"
+									type="password"
+									autocomplete="new-password"
+									aria-invalid={mismatch}
+									bind:value={changePasswordData.newPasswordConfirm}
+								/>
+								{#if mismatch}
+									<p class="text-destructive text-sm">
+										{$t('settings_page.passwords_do_not_match')}
+									</p>
+								{/if}
+							</div>
+							{#if passwordError !== ''}
+								<p class="text-destructive text-sm" aria-live="polite">
+									{passwordError}
 								</p>
 							{/if}
-						</div>
-						{#if passwordError !== ''}
-							<p class="text-destructive text-sm" aria-live="polite">
-								{passwordError}
-							</p>
-						{/if}
-						<div>
-							<Button disabled={!passwordChangeDataValid} type="submit">
-								{$t('settings_page.change_password_submit')}
-							</Button>
-						</div>
-					</form>
+							<div>
+								<Button
+									disabled={!passwordChangeDataValid || isSubmittingPassword}
+									type="submit"
+								>
+									{#if isSubmittingPassword}
+										<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+									{/if}
+									{$t('settings_page.change_password_submit')}
+								</Button>
+							</div>
+						</form>
+					{/if}
 				</Card.Content>
 			</Card.Root>
 
