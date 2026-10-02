@@ -52,6 +52,8 @@ SPDX-License-Identifier: MPL-2.0
 		public game_started: boolean;
 		public quiz_data: QuizData;
 		public control_visible: boolean;
+		/** Host-side only: the scoreboard step between the answers and the next question. */
+		public scoreboard_open: boolean;
 
 		constructor(game_id: string) {
 			this.game_id = game_id;
@@ -66,6 +68,7 @@ SPDX-License-Identifier: MPL-2.0
 			this.game_started = $state(false);
 			this.question_results = $state(null);
 			this.answer_count = $state(0);
+			this.scoreboard_open = $state(false);
 		}
 
 		is_game_ready_to_start(): boolean {
@@ -110,7 +113,6 @@ SPDX-License-Identifier: MPL-2.0
 	let success = $state(false);
 	let dataexport_download_a = $state();
 	let warnToLeave = true;
-	let export_token = $state(undefined);
 
 	const socket_game_controls: SocketGameControls = new SocketGameControls(socket);
 	let game_state: GameState = $state(new GameState(game_token));
@@ -175,8 +177,15 @@ SPDX-License-Identifier: MPL-2.0
         question_results = int_data;
     });*/
 	socket.on('export_token', (int_data) => {
+		// The token is minted over the socket and spent by the download, so the click has
+		// to wait for it. Starting the download here is what turns two presses into one.
 		warnToLeave = false;
-		export_token = int_data;
+		// The token is never held in state: the href below is the only thing that uses it.
+		if (dataexport_download_a) {
+			dataexport_download_a.href = `/api/v1/quiz/export_data/${int_data}?ts=${Date.now()}&game_pin=${game_pin}`;
+			dataexport_download_a.click();
+		}
+		export_pending = false;
 
 		setTimeout(() => {
 			warnToLeave = true;
@@ -196,8 +205,10 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 
+	let export_pending = $state(false);
 	const request_answer_export = (e: Event) => {
 		e.preventDefault();
+		export_pending = true;
 		socket.emit('get_export_token');
 	};
 	const save_quiz = () => {
@@ -260,26 +271,40 @@ SPDX-License-Identifier: MPL-2.0
 			     rendered as two misaligned pills of different widths hand-placed with
 			     magic numbers. One stack, below the h-12 controls bar, both the same
 			     width. -->
-			<div class="fixed top-16 right-4 z-30 flex w-44 flex-col items-stretch gap-2">
+			<!-- A host can run a game from a phone, where a 176px panel pinned top-right covers
+			     the podium it is sitting on. Below sm it is a row along the bottom instead,
+			     clear of the safe area. -->
+			<div
+				class="fixed inset-x-3 bottom-3 z-30 flex flex-row items-stretch gap-2 pb-[env(safe-area-inset-bottom,0px)] sm:inset-x-auto sm:top-16 sm:right-4 sm:bottom-auto sm:w-44 sm:flex-col sm:pb-0"
+			>
 				<!-- "Download results" used to be the only action here, which left the host
 				     stuck on the podium with nowhere to go once a game ended. -->
 				<!-- /my-quizzes for everyone: it lists account quizzes when signed in and
 				     this browser's quizzes when not (D1 in MVP.md). -->
-				<GrayButton href="/my-quizzes" flex={true}>
+				<!-- Outline, not secondary: the podium is a white screen and the secondary
+				     token is near-white on it, so "Request result download" read as a line of
+				     text rather than a control. -->
+				<GrayButton
+					href="/my-quizzes"
+					flex={true}
+					variant="outline"
+					class="flex-1 min-w-0 sm:w-full"
+				>
 					<ArrowLeft class="size-4" aria-hidden="true" />
 					{$t('words.back')}
 				</GrayButton>
-				{#if export_token === undefined}
-					<GrayButton onclick={request_answer_export}
-						>{$t('admin_page.request_export_results')}</GrayButton
-					>
-				{:else}
-					<GrayButton
-						target="_blank"
-						href="/api/v1/quiz/export_data/{export_token}?ts={new Date().getTime()}&game_pin={game_pin}"
-						>{$t('admin_page.download_export_results')}</GrayButton
-					>
-				{/if}
+				<!-- The token is one-shot and the server deletes it on download, so pressing
+				     again simply mints another one. -->
+				<GrayButton
+					variant="outline"
+					class="flex-1 min-w-0 sm:w-full"
+					disabled={export_pending}
+					onclick={request_answer_export}
+				>
+					{export_pending
+						? $t('admin_page.requesting_export_results')
+						: $t('admin_page.download_export_results')}
+				</GrayButton>
 				<!-- Hidden for an anonymous host. The backend writes the GameResults row
 				     with user=NULL, and every read path in routers/results.py is
 				     user-scoped, so the row it saves is unreachable afterwards. The
@@ -323,10 +348,10 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 </div>
 <a
-	onclick={request_answer_export}
 	href="#"
-	target="_blank"
 	bind:this={dataexport_download_a}
 	download=""
+	tabindex="-1"
+	aria-hidden="true"
 	class="absolute size-px overflow-hidden whitespace-nowrap opacity-0">Download</a
 >

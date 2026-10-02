@@ -8,7 +8,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import { PASSWORD, apiLogin, registerUser, signedInContext } from './accounts';
 import { expectNoHorizontalOverflow, mc, rememberAnonQuiz, saveQuiz } from './helpers';
-import { closeAll, finalResults, hostGame, joinAll, next, showQuestion } from './sockets';
+import {
+	closeAll,
+	finalResults,
+	hostGame,
+	joinAll,
+	next,
+	showQuestion,
+	startGame
+} from './sockets';
 
 const quiz = (title: string, extra: Record<string, unknown> = {}) => ({
 	title,
@@ -166,7 +174,7 @@ test('saving results still works, but the results page is hidden', async ({ brow
 	const title = `Results ${Date.now()}`;
 	const { host, pin } = await hostGame(owner.context.request, quiz(title));
 	const [p] = await joinAll(pin, ['scorer']);
-	host.emit('start_game', {});
+	await startGame(host);
 	await showQuestion(host, 0);
 	p.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
 	await new Promise((r) => setTimeout(r, 300));
@@ -227,4 +235,30 @@ test.describe('regressions', () => {
 		expect(del.status()).toBeLessThan(300);
 		await ctx.close();
 	});
+});
+
+// routers/quiz.py start_quiz only lets a signed-in visitor host a quiz that is public.
+// The view page offered Play regardless, so hosting somebody else's unlisted quiz got a
+// button that answered "quiz not found".
+test('Play is not offered on somebody else’s unlisted quiz', async ({ browser, request }) => {
+	const owner = await signedInContext(browser, request);
+	const unlisted = await saveQuiz(owner.context.request, quiz(`Unlisted ${Date.now()}`));
+	const open = await saveQuiz(owner.context.request, {
+		...quiz(`Public ${Date.now()}`),
+		public: true
+	});
+
+	const other = await signedInContext(browser, request);
+	await other.page.goto(`/view/${unlisted.body.id}`);
+	await expect(other.page.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
+	await expect(other.page.getByText('only the person who made it can host it')).toBeVisible();
+
+	await other.page.goto(`/view/${open.body.id}`);
+	await expect(other.page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+
+	// Its owner can still host it.
+	await owner.page.goto(`/view/${unlisted.body.id}`);
+	await expect(owner.page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+	await owner.context.close();
+	await other.context.close();
 });

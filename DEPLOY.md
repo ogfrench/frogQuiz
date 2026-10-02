@@ -74,18 +74,33 @@ What is actually free:
 | ---------------------------------- | --------------------------- | -------------------------------------- |
 | Frontend                           | Netlify                     | 100 GB bandwidth/month                 |
 | Postgres                           | Neon                        | 0.5 GB storage, autosuspend            |
-| API + worker + Redis + Meilisearch | Oracle Cloud Always Free VM | 4 ARM cores / 24 GB RAM, no time limit |
+| API + worker + Redis + Meilisearch | Oracle Cloud Always Free VM | 2 ARM cores / 12 GB RAM, no time limit |
 
 Oracle's Always Free ARM instance runs this whole compose stack with room to spare, and
 the images are all multi-arch. Signup needs a card for verification (not charged) and ARM
 capacity is often unavailable in busy regions -- retry or pick another region. If that
-fails, a Hetzner CX22 is about EUR 4/month and takes ten minutes.
+fails, a Hetzner CX23 is EUR 5.49/month plus EUR 0.50 for the IPv4 and takes ten minutes.
+
+**The Always Free ARM allowance was halved.** It is now 1,500 OCPU hours and 9,000 GB
+hours a month, which Oracle states as **2 OCPUs and 12 GB** for an Always Free tenancy --
+this file said 4 OCPU / 24 GB until 2026-10-02, which was right when it was written and is
+now double the limit. That is not a soft cap: if a tenancy has more A1 provisioned than the
+allowance permits, **every** A1 instance in it is disabled and then deleted after 30 days,
+not trimmed to fit. Oracle gave no notice of the change. Check the current figure on
+[Oracle's own page](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
+before you create anything, rather than trusting this paragraph either.
+
+Also worth knowing before you rely on it: Oracle reclaims *idle* Always Free instances,
+and for ARM shapes the test is all three of CPU p95, network and memory under 20% over
+seven days. A quiz tool used once a week meets all three. See issue #22.
 
 ### Oracle Cloud Always Free, step by step
 
 1. Create the instance: Compute > Instances > Create.
-   - Image: **Ubuntu 24.04**. Shape: **VM.Standard.A1.Flex**, 4 OCPUs / 24 GB (the whole
-     Always Free ARM allowance). Region: **eu-frankfurt-1**, next to the Neon project.
+   - Image: **Ubuntu 24.04**. Shape: **VM.Standard.A1.Flex**, 2 OCPUs / 12 GB (the whole
+     Always Free ARM allowance -- confirm it against Oracle's page above, it has changed
+     once already). It must be in your tenancy's **home region**, or neither the instance
+     nor its volumes are Always Free; `eu-frankfurt-1` is next to the Neon project.
    - Paste your public SSH key.
    - Show advanced options > Cloud-init script: paste `deploy/oracle-cloud-init.yaml`.
    - "Out of capacity" is the usual failure. Retry, or try another availability domain.
@@ -172,6 +187,27 @@ To run without mail at all, leave the block blank and set
 `SKIP_EMAIL_VERIFICATION=True`. Registration then works and recovery does not;
 the API says so with a 503 rather than pretending, and the app logs a warning at
 startup.
+
+### Testing it for real
+
+The mail path cannot be proved by the test suite: the suite registers
+`*@example.com` addresses and never reads an inbox. Somebody has to run it once
+against a live relay.
+
+Use **francois.prevot@hotmail.com** as the test recipient (François, 2026-10-02) --
+an external address on a provider that is strict about SPF and DKIM, which is the
+point: a relay misconfiguration that an internal address would wave through gets
+caught here.
+
+Three things to check, in this order:
+
+1. Register a new account with that address. The confirmation mail should arrive,
+   the link in it should open the real site (`ROOT_ADDRESS`, not the API host), and
+   the account should come out verified.
+2. Request a password reset for it. The mail should arrive and the link should let a
+   new password be set.
+3. Check the spam folder on both. Landing in spam is a pass for the code and a fail
+   for the deployment, and it is the most likely outcome on a fresh sender domain.
 
 ## Managed Postgres (Neon)
 

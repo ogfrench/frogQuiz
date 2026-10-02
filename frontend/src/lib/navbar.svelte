@@ -13,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { registration_disabled } from './config';
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import ThemeToggle from '$lib/theme-toggle.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import Menu from '@lucide/svelte/icons/menu';
 	import X from '@lucide/svelte/icons/x';
 	import { page } from '$app/state';
@@ -79,12 +80,19 @@ SPDX-License-Identifier: MPL-2.0
 				>
 				<a class="btn-nav" href="/api/v1/users/logout">{$t('words.logout')}</a>
 			{:else}
-				{#if registration_disabled}
-					<a class="btn-nav" href="/account/register">{$t('words.register')}</a>
-				{/if}
-
+				<!-- Making a quiz needs no account, so it sits at the same level as Log in
+				     rather than below it. Outline, so Log in stays the plainer of the two. -->
+				<Button href="/create" variant="outline" size="sm" class="mr-1">
+					{$t('index_page.create_cta')}
+				</Button>
 				<a class="btn-nav" href="/account/login?returnTo={$pathname}">{$t('words.login')}</a
 				>
+				<!-- Inherited inverted from upstream: this read `{#if registration_disabled}`,
+				     so the only sign-up link in the navbar appeared exactly when signing up was
+				     turned off. A visitor had to find it on the login page. -->
+				{#if !registration_disabled}
+					<a class="btn-nav" href="/account/register">{$t('words.register')}</a>
+				{/if}
 			{/if}
 
 			<div class="fit-content flex items-center justify-center gap-2">
@@ -147,19 +155,23 @@ SPDX-License-Identifier: MPL-2.0
 				<!-- Docs and GitHub hidden for the MVP; see the desktop navbar above. -->
 
 				<hr class="my-1 border" />
+				{#if !$signedIn}
+					<Button href="/create" variant="outline" size="sm" class="my-1 justify-center">
+						{$t('index_page.create_cta')}
+					</Button>
+				{/if}
 				{#if $signedIn}
 					<a class={nav_class('/account/settings')} href="/account/settings"
 						>{$t('words.my_account')}</a
 					>
 					<a class="btn-nav" href="/api/v1/users/logout">{$t('words.logout')}</a>
 				{:else}
-					{#if registration_disabled}
-						<a class="btn-nav" href="/account/register">{$t('words.register')}</a>
-					{/if}
-
 					<a class="btn-nav" href="/account/login?returnTo={$pathname}"
 						>{$t('words.login')}</a
 					>
+					{#if !registration_disabled}
+						<a class="btn-nav" href="/account/register">{$t('words.register')}</a>
+					{/if}
 				{/if}
 			</div>
 		{/if}

@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	// import AudioPlayer from '$lib/play/audio_player.svelte';
+	import LobbyMusic from '$lib/play/lobby_music.svelte';
 	import ControllerCodeDisplay from '$lib/components/controller/code.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { fade, fly } from 'svelte/transition';
@@ -53,6 +53,11 @@ SPDX-License-Identifier: MPL-2.0
 		{$t('admin_page.cancel_game')}
 	</ConfirmAction>
 </div>
+
+<!-- The lobby is the one screen with nothing to do on it: people are walking in and
+     reading a PIN off a wall. Music belongs here and nowhere else, and it stops when the
+     component goes, which is the moment the first question appears. -->
+<LobbyMusic />
 
 <div class="fq-stage">
 	<!-- The join details are the whole point of this screen, so they get the
@@ -109,11 +114,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	<div class="flex w-full max-w-5xl flex-col items-center gap-4">
 		<p class="text-xl text-muted-foreground" aria-live="polite">
-			{#if game_state.players.length <= 1}
-				{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
-			{:else}
-				{$t('play_page.players_waiting_plural', { count: game_state.players.length ?? 0 })}
-			{/if}
+			<!-- i18next picks _one / _other from the count; the old _plural suffix was
+			     i18next v20's and printed the raw key on the projector. -->
+			{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
 		</p>
 
 		{#if game_state.players.length > 0}
@@ -135,7 +138,12 @@ SPDX-License-Identifier: MPL-2.0
 								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
 							in:fly|global={{ y: 8, duration: 220 }}
 						>
-							<span class="group-hover:line-through">{player.username}</span>
+							<!-- Wraps inside the pill rather than stretching it past the projector: the
+						     list is flex-wrap, so a chip that is wider than the screen overflows
+						     the page instead of going to the next line. -->
+							<span class="block max-w-[20ch] wrap-anywhere group-hover:line-through"
+								>{player.username}</span
+							>
 						</button>
 					</li>
 				{/each}
@@ -167,7 +175,7 @@ SPDX-License-Identifier: MPL-2.0
 		<img
 			alt="QR code to join the game"
 			src="/api/v1/utils/qr/{game_pin}"
-			class="object-contain rounded-sm m-auto h-full bg-white"
+			class="object-contain rounded-lg m-auto h-full bg-white"
 		/>
 	</div>
 {/if}

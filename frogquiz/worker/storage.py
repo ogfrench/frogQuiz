@@ -15,7 +15,11 @@ from frogquiz.config import redis, storage
 from tempfile import SpooledTemporaryFile
 
 from frogquiz.db.models import StorageItem, Quiz, User
-from frogquiz.helpers import collect_quiz_image_keys, extract_image_ids_from_quiz
+from frogquiz.helpers import (
+    delete_storage_item_if_unreferenced,
+    extract_image_ids_from_quiz,
+    release_quiz_images,
+)
 from frogquiz.storage.errors import DeletionFailedError
 from thumbhash import image_to_thumbhash
 
@@ -87,13 +91,13 @@ async def clean_expired_anonymous_quizzes(ctx):
     print("Cleaning expired anonymous quizzes up")
     expired = await Quiz.objects.filter(user_id=None, expire_at__lt=datetime.now()).all()
     for quiz in expired:
-        pics_to_delete = collect_quiz_image_keys(quiz)
-        if pics_to_delete:
-            try:
-                await storage.delete(pics_to_delete)
-            except DeletionFailedError:
-                print("Deletion Error", pics_to_delete)
+        # Ids first, delete, then release: see release_quiz_images. This used to go
+        # through collect_quiz_image_keys, whose regex only matched upstream's old
+        # double-key form, so a modern upload was never freed and an expired anonymous
+        # quiz left its images in storage for good.
+        image_ids = extract_image_ids_from_quiz(quiz)
         await quiz.delete()
+        await release_quiz_images(image_ids)
 
 
 # skipcq: PYL-W0613
@@ -122,6 +126,12 @@ async def quiz_update(ctx, old_quiz: Quiz, quiz_id: uuid.UUID):
             except ormar.exceptions.NoMatch:
                 continue
             change_made = True
+            # Unlinking was all this did, so taking an image off a question left the file
+            # in storage for good and left its bytes counted against the owner's quota
+            # forever -- `storage_used` is only ever incremented. The editor's own X on a
+            # question image is how people "manage the file that's there", so it has to
+            # be what reclaims the space, not a media library we deliberately do not have.
+            await delete_storage_item_if_unreferenced(item)
     for image in added_images:
         if "--" not in image:
             item = await StorageItem.objects.get_or_none(id=uuid.UUID(image))

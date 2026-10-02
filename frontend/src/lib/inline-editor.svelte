@@ -21,9 +21,15 @@ SPDX-License-Identifier: MPL-2.0
 	interface Props {
 		// import Autoformat from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 		text?: string;
+		/**
+		 * Accessible name for the editable. CKEditor labels every instance "Rich Text
+		 * Editor", so with the quiz title and every question's text on one page they were
+		 * indistinguishable to a screen reader -- and to anything else driving the page.
+		 */
+		label?: string;
 	}
 
-	let { text = $bindable('') }: Props = $props();
+	let { text = $bindable(''), label = '' }: Props = $props();
 
 	let html_el = $state();
 
@@ -86,6 +92,9 @@ SPDX-License-Identifier: MPL-2.0
 		})
 			.then((newEditor) => {
 				editor = newEditor;
+				if (label) {
+					newEditor.ui.getEditableElement()?.setAttribute('aria-label', label);
+				}
 				editor.setData(text);
 				editor.model.document.on('change:data', () => {
 					triggerChange();
@@ -102,7 +111,7 @@ SPDX-License-Identifier: MPL-2.0
 <div
 	bind:this={html_el}
 	contenteditable="true"
-	class="border-input bg-background focus-within:ring-ring min-w-[5rem] resize-none rounded-lg border px-3 py-2 text-center focus-within:ring-2 focus-within:outline-none"
+	class="border-input bg-background focus-within:ring-ring min-w-[5rem] resize-none rounded-md border px-3 py-2 text-center focus-within:ring-2 focus-within:outline-none"
 ></div>
 
 <style>
@@ -125,7 +134,7 @@ SPDX-License-Identifier: MPL-2.0
 		min-height: 2.75rem;
 		padding: 0.5rem 0.75rem;
 		border: 1px solid var(--input);
-		border-radius: var(--radius);
+		border-radius: var(--radius-md);
 		background: var(--background);
 	}
 

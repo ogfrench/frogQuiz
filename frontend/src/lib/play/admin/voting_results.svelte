@@ -55,7 +55,7 @@ SPDX-License-Identifier: MPL-2.0
 <!-- This renders inside results.svelte's own fq-stage + card, not as its own host
      screen -- an fq-stage here nested a second min-height:100dvh block inside the
      results card, which is what stretched that card far taller than its content. -->
-<div class="mx-auto w-full max-w-3xl px-6">
+<div class="mx-auto w-full max-w-3xl px-6 lg:max-w-4xl">
 	<ul class="flex flex-col gap-2.5">
 		{#each answers as answer, i}
 			{@const count = counts[i]}
@@ -64,14 +64,14 @@ SPDX-License-Identifier: MPL-2.0
 				class="flex items-center gap-3 transition-opacity duration-300"
 				class:opacity-70={!correct && !is_voting}
 			>
-				<span class="flex w-40 shrink-0 items-center gap-2 sm:w-56">
-					<AnswerShape index={i} class="size-4 shrink-0 text-neutral-500" />
-					<span class="truncate text-base font-medium" title={answer.answer}>
+				<span class="flex w-40 shrink-0 items-center gap-2 sm:w-56 lg:w-72">
+					<AnswerShape index={i} class="size-4 shrink-0 text-neutral-500 lg:size-6" />
+					<span class="truncate text-base font-medium lg:text-2xl" title={answer.answer}>
 						{answer.answer}
 					</span>
 					{#if correct}
 						<svg
-							class="size-4 shrink-0 text-neutral-900"
+							class="size-4 shrink-0 text-neutral-900 lg:size-6"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -89,28 +89,28 @@ SPDX-License-Identifier: MPL-2.0
 				</span>
 
 				<span
-					class="relative h-8 flex-1 overflow-hidden rounded-md bg-neutral-100"
+					class="relative h-8 flex-1 overflow-hidden rounded-md bg-neutral-100 lg:h-11"
 					class:ring-2={correct}
 					class:ring-neutral-900={correct}
 				>
 					<span
-						class="absolute inset-y-0 left-0 rounded-r-md transition-[width] duration-700 ease-out"
-						style="width: {(count / max) * 100}%; background-color: {answer.color ??
+						class="absolute inset-y-0 left-0 w-full origin-left rounded-r-md transition-transform ease-out"
+						style="transform: scaleX({count / max}); transition-duration: var(--fq-dur-reveal); background-color: {answer.color ??
 							answerColor(i)}"
 					></span>
 				</span>
 
-				<span class="w-14 shrink-0 text-right text-base font-semibold tabular-nums">
+				<span class="w-14 shrink-0 text-right text-base font-semibold tabular-nums lg:text-2xl">
 					{count}
 					<span class="sr-only">
-						{$t('play_page.players_waiting_plural', { count })}
+						{$t('play_page.players_waiting', { count })}
 					</span>
 				</span>
 			</li>
 		{/each}
 	</ul>
 
-	<p class="mt-4 text-center text-sm text-neutral-500 tabular-nums">
+	<p class="mt-4 text-center text-sm text-neutral-500 tabular-nums lg:text-lg">
 		{$t('admin_page.answers_submitted', { count: total })}
 	</p>
 </div>

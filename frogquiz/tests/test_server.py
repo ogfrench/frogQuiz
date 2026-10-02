@@ -8,7 +8,7 @@ import uuid
 
 import pytest
 from redis import Redis
-from frogquiz.config import settings
+from frogquiz.config import settings, UPLOAD_LIMITS
 from frogquiz.tests import test_user_email, test_user_password, example_quiztivity
 from frogquiz.tests import test_client, example_quiz, ValueStorage  # noqa : F401
 from fastapi.testclient import TestClient
@@ -133,9 +133,9 @@ class TestUsers:
             json={"email": email, "password": test_user_password, "username": uuid.uuid4().hex[:12]},
         )
         assert created.status_code == 200
-        first_key = test_client.get(
-            f"/api/v1/internal/testing/user/{email}?secret_key={settings().secret_key}"
-        ).json()["verify_key"]
+        first_key = test_client.get(f"/api/v1/internal/testing/user/{email}?secret_key={settings().secret_key}").json()[
+            "verify_key"
+        ]
 
         # The same link, clicked more than once: every visit after the first still
         # says "verified", not "expired".
@@ -143,9 +143,12 @@ class TestUsers:
             resp = test_client.get(f"/api/v1/users/verify/{first_key}", follow_redirects=False)
             assert resp.status_code in (302, 307)
             assert resp.headers["location"] == "/account/login?verified=true"
-        assert test_client.get(
-            f"/api/v1/internal/testing/user/{email}?secret_key={settings().secret_key}"
-        ).json()["verified"] is True
+        assert (
+            test_client.get(f"/api/v1/internal/testing/user/{email}?secret_key={settings().secret_key}").json()[
+                "verified"
+            ]
+            is True
+        )
 
         # A second, unverified user whose confirmation mail is replaced by a resend:
         # the old link stops working, the new one verifies.
@@ -155,14 +158,14 @@ class TestUsers:
             json={"email": email2, "password": test_user_password, "username": uuid.uuid4().hex[:12]},
         )
         assert created2.status_code == 200
-        old_key = test_client.get(
-            f"/api/v1/internal/testing/user/{email2}?secret_key={settings().secret_key}"
-        ).json()["verify_key"]
+        old_key = test_client.get(f"/api/v1/internal/testing/user/{email2}?secret_key={settings().secret_key}").json()[
+            "verify_key"
+        ]
         resend = test_client.post("/api/v1/users/resend-verification", json={"email": email2})
         assert resend.status_code == 200
-        new_key = test_client.get(
-            f"/api/v1/internal/testing/user/{email2}?secret_key={settings().secret_key}"
-        ).json()["verify_key"]
+        new_key = test_client.get(f"/api/v1/internal/testing/user/{email2}?secret_key={settings().secret_key}").json()[
+            "verify_key"
+        ]
         assert new_key != old_key
 
         dead = test_client.get(f"/api/v1/users/verify/{old_key}", follow_redirects=False)
@@ -510,9 +513,31 @@ class TestPlayQuiz:
 
     @pytest.mark.asyncio
     async def test_check_captcha_enabled(self, test_client: TestClient):  # noqa : F811
+        """A game has no captcha unless one was asked for AND a provider is configured.
+
+        `captcha_enabled` defaulted to True on /quiz/start, which only looked harmless
+        because the one caller sends 'False' explicitly. Any other caller opened a game
+        demanding a captcha the join page cannot render (no sitekey) and the server
+        cannot verify (no secret) -- and `check_captcha` did not even fail open there, it
+        raised AttributeError, because `settings` is config.py's lru_cached function and
+        every read in it was on the uncalled wrapper. This test asserted the True.
+        """
         res = test_client.get(f"/api/v1/quiz/play/check_captcha/{ValueStorage.game_pin}")
         assert res.status_code == 200
-        assert res.json()["enabled"] is True
+        # The game above was started without the parameter.
+        assert res.json()["enabled"] is False
+
+        # Asking for one anyway still gets a game without it, because this suite's
+        # settings configure neither hcaptcha nor recaptcha. Storing it would be storing
+        # a check nothing could ever satisfy.
+        started = test_client.post(
+            f"/api/v1/quiz/start/{ValueStorage.quiz_id}?game_mode=kahoot&captcha_enabled=true",
+            cookies=ValueStorage.cookies,
+        )
+        assert started.status_code == 200
+        res = test_client.get(f"/api/v1/quiz/play/check_captcha/{started.json()['game_pin']}")
+        assert res.status_code == 200
+        assert res.json()["enabled"] is False
 
         res = test_client.get("/api/v1/quiz/play/check_captcha/dsadsadas")
         assert res.status_code == 404
@@ -584,15 +609,295 @@ class TestStorage:
         ValueStorage.file_id = data["id"]
 
     @pytest.mark.asyncio
+    async def test_upload_file_records_its_size(self, test_client: TestClient):  # noqa : F811
+        """The row carries the real byte count, not 0.
+
+        The route used to pass size=0 into storage and save 0, so nothing in the request
+        path knew how big the file was and the per-account quota could only ever be
+        reconciled afterwards by the worker.
+        """
+        body = b"a" * 4096
+        resp = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("img.png", body, "image/png")},
+        )
+        assert resp.status_code == 200
+        # The response is the stored row, so this is the saved value, not the request's.
+        assert resp.json()["size"] == len(body)
+
+    @pytest.mark.asyncio
+    async def test_upload_file_too_large_is_refused(self, test_client: TestClient):  # noqa : F811
+        oversize = b"a" * (UPLOAD_LIMITS["image/png"] + 1)
+        resp = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("big.png", oversize, "image/png")},
+        )
+        # One byte over, so the Content-Length guard's slack does not catch it: this is
+        # the route's own check on the counted bytes.
+        assert resp.status_code == 413
+
+    @pytest.mark.asyncio
+    async def test_oversized_body_is_refused_before_it_is_parsed(self, test_client: TestClient):  # noqa : F811
+        """Comfortably over the ceiling, so the middleware answers rather than the route.
+
+        It matters which one answers. Starlette spools a multipart part past 1MB to a temp
+        file, so without the Content-Length check a 2GB upload is 2GB written to disk
+        before any of our code runs.
+        """
+        way_over = b"a" * (UPLOAD_LIMITS["image/png"] + 256 * 1024)
+        resp = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("huge.png", way_over, "image/png")},
+        )
+        assert resp.status_code == 413
+        assert "too large" in resp.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_upload_file_at_the_limit_is_accepted(self, test_client: TestClient):  # noqa : F811
+        """The boundary is inclusive, so the limit is a limit and not limit-minus-one."""
+        exact = b"a" * UPLOAD_LIMITS["image/png"]
+        resp = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("exact.png", exact, "image/png")},
+        )
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_upload_empty_file_is_refused(self, test_client: TestClient):  # noqa : F811
+        resp = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("empty.png", b"", "image/png")},
+        )
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_upload_limits_are_published(self, test_client: TestClient):  # noqa : F811
+        """The editor reads these rather than carrying its own copy."""
+        resp = test_client.get("/api/v1/storage/limits")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["per_type"] == UPLOAD_LIMITS
+        assert data["max_file_size"] == min(UPLOAD_LIMITS.values())
+        assert set(data["accepted_types"]) == set(UPLOAD_LIMITS)
+        # Video upload is off for the MVP: /edit/videos is hidden and the editor passes
+        # video_upload={false}, so accepting video/mp4 would be an upload path with no UI.
+        assert "video/mp4" not in data["accepted_types"]
+        # SVG is a script-injection vector and is never accepted.
+        assert "image/svg+xml" not in data["accepted_types"]
+
+    @staticmethod
+    def _bomb_png(width: int, height: int) -> bytes:
+        """A PNG of one colour: tiny on disk, enormous in pixels. The decompression bomb a
+        byte cap does not catch -- 20000x20000 is under 400KiB but ~1.6GB as a bitmap."""
+        import struct
+        import zlib
+
+        def chunk(tag: bytes, body: bytes) -> bytes:
+            return struct.pack(">I", len(body)) + tag + body + struct.pack(">I", zlib.crc32(tag + body) & 0xFFFFFFFF)
+
+        ihdr = struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0)
+        co = zlib.compressobj(9)
+        row = b"\x00" + b"\x00" * width
+        idat = b"".join(co.compress(row) for _ in range(height)) + co.flush()
+        sig = b"\x89PNG\r\n\x1a\n"
+        return sig + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b"")
+
+    @pytest.mark.asyncio
+    async def test_a_quiz_with_too_many_questions_is_refused(self, test_client: TestClient):  # noqa : F811
+        """A DoS ceiling, not a product limit: with no bound a quiz JSON could be arbitrarily
+        large. 1000 is the cap (api-edge.e2e.ts proves 500 still saves and starts), so 1001
+        is refused. 5000 used to be accepted."""
+        q = {
+            "question": "Q?",
+            "time": "20",
+            "type": "ABCD",
+            "answers": [{"answer": "a", "right": True}, {"answer": "b", "right": False}],
+        }
+        start = test_client.post("/api/v1/editor/start?edit=false")
+        over = test_client.post(
+            f"/api/v1/editor/finish?edit_id={start.json()['token']}",
+            json={"public": False, "title": "Too many", "description": "d", "questions": [q] * 1001},
+        )
+        assert over.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_oversized_pixels_are_refused(self, test_client: TestClient):  # noqa : F811
+        """A pixel bomb is 413, not stored, even though it is well under the byte cap.
+
+        The server never decodes an image, so this protects the browsers -- every player's
+        phone -- that would. The dimension is read from the header; see
+        test_image_dimensions.py for the parser.
+        """
+        bomb = TestStorage._bomb_png(20000, 20000)
+        assert len(bomb) < 5_000_000  # under max_image_upload_size: the whole point
+        resp = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("bomb.png", bomb, "image/png")},
+        )
+        assert resp.status_code == 413
+        assert "pixels" in resp.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_oversized_pixels_are_refused_on_the_raw_route_too(self, test_client: TestClient):  # noqa : F811
+        bomb = TestStorage._bomb_png(20000, 20000)
+        resp = test_client.request(
+            "POST",
+            "/api/v1/storage/raw",
+            data=bomb,
+            headers={"Content-Type": "image/png"},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 413
+
+    @pytest.mark.asyncio
+    async def test_an_image_at_the_dimension_cap_is_accepted(self, test_client: TestClient):  # noqa : F811
+        """The boundary is inclusive, so a legitimate large image is not collateral."""
+        edge = TestStorage._bomb_png(8000, 10)
+        resp = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("edge.png", edge, "image/png")},
+        )
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
     async def test_upload_raw_file(self, test_client: TestClient):  # noqa : F811
         resp = test_client.request(
             "POST",
             "/api/v1/storage/raw",
             data=b"data!",
-            headers={"Content-Type": "image/svg+xml"},
+            headers={"Content-Type": "image/png"},
             cookies=ValueStorage.cookies,
         )
         assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_upload_raw_file_rejects_unaccepted_type(self, test_client: TestClient):  # noqa : F811
+        """This endpoint used to take any Content-Type, SVG included.
+
+        The multipart route refused what was not in the allow-list while /raw next to it
+        accepted anything, which made the allow-list advisory.
+        """
+        resp = test_client.request(
+            "POST",
+            "/api/v1/storage/raw",
+            data=b"<svg onload=alert(1)>",
+            headers={"Content-Type": "image/svg+xml"},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_upload_raw_file_stops_mid_stream(self, test_client: TestClient):  # noqa : F811
+        """Unlike the multipart route this one reads the body itself, so it can stop."""
+        resp = test_client.request(
+            "POST",
+            "/api/v1/storage/raw",
+            data=b"a" * (UPLOAD_LIMITS["image/png"] + 1),
+            headers={"Content-Type": "image/png"},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 413
+
+    @pytest.mark.asyncio
+    async def test_deleting_a_file_releases_its_bytes(self, test_client: TestClient):  # noqa : F811
+        """Deleting gives the quota back, and never drives it negative.
+
+        `storage_used` was only ever incremented -- by the calculate_hash worker job, once
+        per upload -- and nothing anywhere decremented it: not this endpoint, not the
+        quiz-update job that unlinks a replaced image, not account deletion. The figure
+        was a lifetime upload counter, and the quota built on it a lifetime cap: swap a
+        cover image enough times and you are locked out for good with nothing to reclaim.
+        Harmless while the quota went unenforced, which it no longer is.
+
+        The release is clamped at zero, and this is the case that needs it: the worker is
+        not running in the suite, so nothing has billed these uploads and `used` is 0
+        while the row's `size` is 2048. An unclamped subtraction would go negative and the
+        column declares `minimum=0`, so it would raise rather than no-op. The decrement
+        against a billed account cannot be asserted here -- no test in this suite can
+        reach the database (the TestClient runs its own event loop), and a write route
+        for it would be test-only code in a production app. It is verified against a live
+        stack instead; see docs/uploads.md.
+        """
+        up = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("reclaim.png", b"z" * 2048, "image/png")},
+        )
+        assert up.status_code == 200
+        assert up.json()["size"] == 2048
+
+        gone = test_client.delete(f"/api/v1/storage/meta/{up.json()['id']}", cookies=ValueStorage.cookies)
+        assert gone.status_code == 200
+
+        limit = test_client.get("/api/v1/storage/limit", cookies=ValueStorage.cookies)
+        assert limit.status_code == 200
+        assert limit.json()["used"] >= 0
+        assert limit.json()["limit_reached"] is False
+
+        # Deleting twice is a 404, so a release can never be applied to one row twice.
+        again = test_client.delete(f"/api/v1/storage/meta/{up.json()['id']}", cookies=ValueStorage.cookies)
+        assert again.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_deleting_a_quiz_frees_its_images(self, test_client: TestClient):  # noqa : F811
+        """Deleting a quiz took its images with it only for upstream's old key form.
+
+        Both delete paths went through `collect_quiz_image_keys`, whose regex was
+        `^.*/(.{36}--.{36})$`. A modern upload stores the bare StorageItem UUID that
+        `POST /api/v1/storage/` returns -- no slash, no `--` -- so it matched nothing:
+        deleting a quiz, or sweeping an expired anonymous one, left every image in storage
+        for good and still charged to the owner's quota. Unreachable as a complaint until
+        the quota was enforced.
+        """
+        up = test_client.post(
+            "/api/v1/storage/",
+            cookies=ValueStorage.cookies,
+            files={"file": ("on-a-quiz.png", b"q" * 1024, "image/png")},
+        )
+        assert up.status_code == 200
+        image_id = up.json()["id"]
+
+        start = test_client.post("/api/v1/editor/start?edit=false", cookies=ValueStorage.cookies)
+        assert start.status_code == 200
+        finish = test_client.post(
+            f"/api/v1/editor/finish?edit_id={start.json()['token']}",
+            cookies=ValueStorage.cookies,
+            json={
+                "public": False,
+                "title": "Has an image",
+                "description": "d",
+                "cover_image": image_id,
+                "questions": [
+                    {
+                        "question": "Q?",
+                        "time": "20",
+                        "type": "ABCD",
+                        "image": image_id,
+                        "answers": [{"answer": "a", "right": True}, {"answer": "b", "right": False}],
+                    }
+                ],
+            },
+        )
+        assert finish.status_code == 200
+        quiz_id = finish.json()["id"]
+
+        # Still referenced, so still there.
+        assert test_client.get(f"/api/v1/storage/meta/{image_id}", cookies=ValueStorage.cookies).status_code == 200
+
+        gone = test_client.delete(f"/api/v1/quiz/delete/{quiz_id}", cookies=ValueStorage.cookies)
+        assert gone.status_code == 200
+
+        # Nothing references it now, so it is soft-deleted and the meta lookup 404s --
+        # it filters on deleted_at=None. Before the fix this stayed 200 forever.
+        after = test_client.get(f"/api/v1/storage/meta/{image_id}", cookies=ValueStorage.cookies)
+        assert after.status_code == 404
 
     @pytest.mark.asyncio
     async def test_get_file_info(self, test_client: TestClient):  # noqa : F811
@@ -604,7 +909,9 @@ class TestStorage:
         assert resp.status_code == 404
         resp = test_client.get(f"/api/v1/storage/meta/{ValueStorage.file_id}", cookies=ValueStorage.cookies)
         data = resp.json()
-        assert data["size"] == 0
+        # The bytes test_upload_file sent. This asserted 0, which was the upload route
+        # storing size=0 on every row -- the assertion was pinning the bug in place.
+        assert data["size"] == len(b"png_content")
         assert data["imported"] is False
         assert data["alt_text"] is None
         assert data["filename"] is None
@@ -784,9 +1091,7 @@ class TestQuizivity:
         # request proves the object survived the unauthenticated attempt.
         resp = test_client.delete(f"/api/v1/quiztivity/{ValueStorage.quiztivity_id}")
         assert resp.status_code == 401
-        resp = test_client.get(
-            f"/api/v1/quiztivity/{ValueStorage.quiztivity_id}", cookies=ValueStorage.cookies
-        )
+        resp = test_client.get(f"/api/v1/quiztivity/{ValueStorage.quiztivity_id}", cookies=ValueStorage.cookies)
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
@@ -873,6 +1178,50 @@ class TestExImport:
             "/api/v1/eximport/", files={"file": ValueStorage.exported_quiz_data}, cookies=ValueStorage.cookies
         )
         assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_excel_export_is_owner_only(self, test_client: TestClient):  # noqa : F811
+        """The owner gets the sheet; anybody else gets a 404.
+
+        The spreadsheet contains the answer key, and the view page already hides the
+        answers from a non-owner on screen (`show_answers = is_owner`). It used to be any
+        signed-in user, so a teammate could read the answers to a quiz they were about to
+        play. Closed on 2026-10-02 (MVP.md D18).
+
+        404 and not 403, matching `quiz/start`, so the response says nothing about whether
+        the id exists.
+        """
+        resp = test_client.get(f"/api/v1/eximport/excel/{ValueStorage.quiz_id}", cookies=ValueStorage.cookies)
+        assert resp.status_code == 200
+        assert resp.headers["content-type"].startswith("application/vnd.openxmlformats")
+
+        # A quiz this user does not own. Saved with no cookies, so it belongs to nobody.
+        start = test_client.post("/api/v1/editor/start?edit=false")
+        assert start.status_code == 200
+        finish = test_client.post(
+            f"/api/v1/editor/finish?edit_id={start.json()['token']}",
+            json={
+                "public": False,
+                "title": "Somebody else's",
+                "description": "d",
+                "questions": [
+                    {
+                        "question": "Q?",
+                        "time": "20",
+                        "type": "ABCD",
+                        "answers": [{"answer": "a", "right": True}, {"answer": "b", "right": False}],
+                    }
+                ],
+            },
+        )
+        assert finish.status_code == 200
+        resp = test_client.get(f"/api/v1/eximport/excel/{finish.json()['id']}", cookies=ValueStorage.cookies)
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_excel_export_needs_a_login(self, test_client: TestClient):  # noqa : F811
+        resp = test_client.get(f"/api/v1/eximport/excel/{ValueStorage.quiz_id}")
+        assert resp.status_code == 401
 
 
 class TestDeleteStuff:

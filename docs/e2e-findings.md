@@ -47,9 +47,39 @@ Also fixed along the way:
 - **The login page followed any `returnTo`**, including `https://elsewhere`, which is an open redirect right after a password prompt. `safeReturnTo` (unit-tested) now only allows paths on this site.
 
 Found, not fixed:
-- `join_game` calls `check_captcha(...)` without `await`, so the coroutine is always truthy and the check never refuses anyone. Captcha is off in this deployment, so it has no effect today. Fix it before anybody turns captcha back on.
+- ~~`join_game` calls `check_captcha(...)` without `await`~~ — **fixed 2026-10-01**, and it
+  was worse than filed. The `await` was added earlier; the remaining bug was that every
+  `settings.hcaptcha_key` read inside `check_captcha` was on config.py's *uncalled*
+  `lru_cache` wrapper, so it raised `AttributeError` out of `join_game` rather than
+  passing anyone. It now fails closed with a logged reason when no provider key is set,
+  and `captcha_enabled` (which defaulted to **True** on `/quiz/start`) defaults off and
+  is refused outright without a key — so a game demanding an uncheckable captcha cannot
+  be opened.
 - The editor's yup schema caps a quiz at 50 questions, but its message says 32. The server has no cap (500 questions tested fine).
-- **Host events race on the stored game** (found 2026-09-29 writing the exit tests). python-socketio runs each event in its own task, and `start_game`, `set_question_number` and `get_question_results` all read `game:{pin}`, change one field and write the whole thing back. Sent back to back, `set_question_number` can read the game before `start_game` has saved it and then write `started=False` back over it. The host UI can't do this -- it offers "next" only after the server's `start_game` arrives -- so it is a protocol-level gap, not a live bug. A crafted or scripted host could hit it. The fix is per-field storage (`HSET`) or a `WATCH` transaction like `record_answer_once`. The socket specs wait for `start_game` before showing a question for this reason.
+- **Host events race on the stored game** (found 2026-09-29 writing the exit tests). python-socketio runs each event in its own task, and `start_game`, `set_question_number` and `get_question_results` all read `game:{pin}`, change one field and write the whole thing back. Sent back to back, `set_question_number` can read the game before `start_game` has saved it and then write `started=False` back over it. The host UI can't do this -- it offers "next" only after the server's `start_game` arrives -- so it is a protocol-level gap, not a live bug. A crafted or scripted host could hit it. The fix is per-field storage (`HSET`) or a `WATCH` transaction like `record_answer_once`.
+
+  **This paragraph used to end "the socket specs wait for `start_game` before showing a question for this reason". They did not** -- all ten `start_game` emits in `live-socket.e2e.ts` were fire-and-forget. That is what made *an answer after the host showed the results is refused* flaky: when `current_question` is the field lost to the race, `submit_answer` sees the wrong index, answers `question_not_active` and never emits `player_answer`, so the test failed on its **first** assertion. Measured 2 failures in 10 runs in isolation, which also disproves the earlier note that it only failed under full-suite load. `startGame()` in `e2e/sockets.ts` now waits for the echo, and the test passes 12/12. The server-side race is still there and still worth the `WATCH` transaction; the specs simply no longer provoke it. (Checked whether the new `disconnect` handler contributed: 8/10 with it, 9/10 without -- a one-run difference at n=10, i.e. noise, and it failed with the handler disabled too.)
+
+  **Two specs outside `live-socket.e2e.ts` were still fire-and-forget** and that sweep did
+  not reach them: `editor.e2e.ts:103` and `account.e2e.ts:169`. Both `await startGame(host)`
+  now. `live-socket.e2e.ts:217` keeps its raw emit deliberately -- there an *attacker*
+  emits `start_game` and the test asserts nothing happens.
+
+  **A second failure of *build a quiz by hand, save it, and play it*, 2026-10-02, is
+  unexplained.** It failed once in a full-suite run (118/119) with
+  `TypeError: Cannot read properties of undefined (reading 'find')`, i.e. `final_results`
+  came back with no key for question `0`. That looks exactly like this race, so it was
+  attributed to it -- wrongly: measured afterwards, the **unfixed** spec passed 10 out of
+  10 in isolation. So the `startGame` conversion above is a correctness tidy-up, not a
+  proven fix for that failure, and the cause is still open. Note this is the opposite
+  profile to the flake above, which failed 2 in 10 *in isolation*; do not assume the two
+  share a cause just because they share a symptom.
+
+  What made it hard to read is a harness defect worth knowing about: `next()` resolves a
+  falsy payload to `{}` rather than `null`, so `finalResults`' own
+  `expect(r).not.toBeNull()` passes on an empty result and the real failure surfaces one
+  line later as an opaque `TypeError`. The spec now asserts which question keys came back,
+  and prints the payload, before indexing it.
 
 Severity is for an internal quiz tool used live in a room: **High** means a real game
 gives wrong scores, loses answers, or can be taken over by a player. **Medium** breaks
@@ -179,3 +209,5 @@ once into `e2e/.tools`. Logs, the HTML report, and traces of failed tests go to
 | `account` | Register, log in, dashboard, claim, Explore, saved results. |
 | `game-reload` | Player and host reloads mid-game. |
 | `responsive` | The overflow sweep at three widths, and the theme toggle. |
+| `disconnect` | A closed tab stops blocking the question; a reload keeps the player on the host's list. |
+| `uploads` | The editor's picker: the size rule, an oversized file, a type the server refuses, and a real upload. |

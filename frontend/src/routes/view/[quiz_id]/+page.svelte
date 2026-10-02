@@ -85,8 +85,10 @@ SPDX-License-Identifier: MPL-2.0
 	const visitor_order = (answers: { answer: string }[]) =>
 		[...answers].sort((a, b) => a.answer.localeCompare(b.answer));
 
-	// Anyone signed in can host a public quiz; signed out, only its anonymous creator.
-	const can_start = $derived(logged_in || owns_anonymously);
+	// What the server actually allows (routers/quiz.py, start_quiz): its own creator, or
+	// anyone signed in if the quiz is public. Offering Play on somebody else's unlisted
+	// quiz gave a signed-in visitor a button that answered "quiz not found".
+	const can_start = $derived(owns_anonymously || (logged_in && (quiz.public || owns_on_account)));
 
 	// A draft is a quiz with at least one unfinished question -- the same rule the
 	// server uses (frogquiz/helpers/completeness.py) to refuse POST /quiz/start.
@@ -355,16 +357,22 @@ SPDX-License-Identifier: MPL-2.0
 					<Repeat />
 					{$t('words.practice')}
 				</Button>
-				<Button
-					variant="outline"
-					size="lg"
-					disabled={!logged_in}
-					onclick={() => (download_id = quiz.id)}
-					aria-describedby={logged_in ? undefined : 'signed-out-hint'}
-				>
-					<Download />
-					{$t('words.download')}
-				</Button>
+				<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`
+				     above already hides it from a non-owner on screen. Still disabled while
+				     signed out, because the endpoint needs a session -- an anonymous owner
+				     holds the quiz in this browser, not in an account. -->
+				{#if is_owner}
+					<Button
+						variant="outline"
+						size="lg"
+						disabled={!logged_in}
+						onclick={() => (download_id = quiz.id)}
+						aria-describedby={logged_in ? undefined : 'signed-out-hint'}
+					>
+						<Download />
+						{$t('words.download')}
+					</Button>
+				{/if}
 				{#if quiz.imported_from_kahoot && quiz.kahoot_id}
 					<Button
 						href="https://create.kahoot.it/details/{quiz.kahoot_id}"
@@ -441,6 +449,10 @@ SPDX-License-Identifier: MPL-2.0
 						? $t('view_quiz_page.download_signed_out_hint')
 						: $t('view_quiz_page.start_signed_out_hint')}
 				</p>
+			{:else if !can_start && !is_draft}
+				<p id="signed-out-hint" class="text-muted-foreground -mt-2 px-6 text-sm">
+					{$t('view_quiz_page.unlisted_not_yours')}
+				</p>
 			{/if}
 		</Card.Root>
 
@@ -502,7 +514,7 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 
 					<div
-						class="border-border bg-card flex flex-col gap-6 rounded-xl border p-4 shadow-sm sm:p-6"
+						class="border-border bg-card flex flex-col gap-6 rounded-2xl border p-4 shadow-sm sm:p-6"
 					>
 						{#if question.type === QuizQuestionType.SLIDE}
 							{#await import('$lib/play/admin/slide.svelte')}
@@ -522,7 +534,7 @@ SPDX-License-Identifier: MPL-2.0
 							{#if question.image}
 								<div class="mx-auto h-56 max-w-full">
 									<MediaComponent
-										css_classes="h-full w-auto max-w-full rounded-md"
+										css_classes="h-full w-auto max-w-full rounded-lg"
 										src={question.image}
 										muted={true}
 									/>
