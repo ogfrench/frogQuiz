@@ -164,7 +164,18 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
 
 
 @router.get("/logout")
+async def logout_link():
+    # Logging out used to be this GET, so any page could sign a user out just by
+    # sending them here: a link or a redirect is a top-level navigation, and the
+    # session cookies are SameSite=Lax, which carries them on exactly that. Old links
+    # and bookmarks now land on My Account, where Log out is a button.
+    return RedirectResponse("/account/settings", status_code=303)
+
+
+@router.post("/logout")
 async def logout(request: Request, response: Response):
+    # A POST, from the button on My Account. A cross-site form post does not carry
+    # SameSite=Lax cookies, so another site cannot trigger it.
     remember_token = request.cookies.get("rememberme_token")
     if remember_token is not None:
         await UserSession.objects.filter(session_key=hash_session_key(remember_token)).delete()
@@ -177,7 +188,9 @@ async def logout(request: Request, response: Response):
     response.delete_cookie("expiry")
     response.delete_cookie("rememberme")
     response.delete_cookie("rememberme_token")
-    response.status_code = 302
+    # 303, not 302: the browser follows it with a GET of the home page rather than
+    # re-posting the form there.
+    response.status_code = 303
     response.headers["Location"] = "/"
     return response
 
@@ -190,7 +203,7 @@ async def check_token(user: User = Depends(get_current_user)):
 @router.get("/verify/{verify_key}")
 async def verify_user(verify_key: str, request: Request):
     # The key is 128 bits of os.urandom, so this is not guessable and the limit is
-    # defence in depth -- it keeps an unauthenticated endpoint from being used to
+    # defense in depth -- it keeps an unauthenticated endpoint from being used to
     # hammer the database. Generous, because a real person may click the same link
     # a few times.
     await rate_limit(request, "verify_email", limit=30, window_seconds=3600)

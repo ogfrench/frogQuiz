@@ -177,7 +177,7 @@ test('somebody signs up, forgets their password, and gets back in through the em
 		// "//" of any URL and passed at once, so the next navigation aborted the logout
 		// request and the user was still signed in (the trace of the 3 Oct failure).
 		await page.goto('/account/settings');
-		await page.getByRole('link', { name: 'Log out' }).click();
+		await page.getByRole('button', { name: 'Log out' }).click();
 		await page.waitForURL((u) => u.pathname === '/');
 
 		await logInThroughUI(page, email, OLD_PASSWORD);

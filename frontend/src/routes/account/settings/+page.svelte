@@ -210,11 +210,15 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 
 					<!-- Log out lives here now, not in the navbar: the avatar brings you to this
-					     page, and this is where you leave from (François, 2026-10-03). -->
-					<Button href="/api/v1/users/logout" variant="outline">
-						<LogOut />
-						{$t('words.logout')}
-					</Button>
+					     page, and this is where you leave from (François, 2026-10-03). A form
+					     post, not a link: the API only logs out on POST, so another site cannot
+					     sign you out by sending you to a URL. -->
+					<form method="POST" action="/api/v1/users/logout">
+						<Button type="submit" variant="outline">
+							<LogOut />
+							{$t('words.logout')}
+						</Button>
+					</form>
 
 					<!-- Change avatar (/account/settings/avatar) and Public profile (/user/[id])
 					     are hidden for the MVP (MVP.md D15); both routes 404. -->

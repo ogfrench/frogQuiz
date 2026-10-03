@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Logging out is a POST now, from the button on My Account. As a GET, any page could sign
+  a user out by sending them to the URL (a link or redirect carries SameSite=Lax
+  cookies). The old GET URL now redirects to My Account instead of logging out.
 - Fixed logging out revoking more than your own session: tokens were `{sub, exp}` with exp
   in whole seconds, so one user's logins in the same second got identical tokens, and the
   logout denylist is keyed on the token. Logging out on one device could end a session
