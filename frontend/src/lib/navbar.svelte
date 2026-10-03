@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
 	import Menu from '@lucide/svelte/icons/menu';
 	import { page } from '$app/state';
+	import { building } from '$app/environment';
 
 	const { t } = getLocalization();
 
@@ -50,8 +51,12 @@ SPDX-License-Identifier: MPL-2.0
 	// app load and never again, so landing on / and browsing to a quiz still sent you
 	// back to / after logging in. On the account pages themselves, pass on whatever
 	// returnTo is already there rather than pointing back at the login form.
+	// While prerendering (the legal pages are static files) SvelteKit forbids reading the
+	// query string at all, and reading it here failed the whole production build. A
+	// prerendered page has no query to carry, so its link is built from the path alone.
 	const login_href = $derived.by(() => {
 		const here = page.url.pathname;
+		if (building) return `/account/login?returnTo=${encodeURIComponent(here)}`;
 		if (here.startsWith('/account/')) {
 			const kept = page.url.searchParams.get('returnTo');
 			return kept ? `/account/login?returnTo=${encodeURIComponent(kept)}` : '/account/login';

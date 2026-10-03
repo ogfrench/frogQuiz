@@ -6,6 +6,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Fixed the production build, which the new navbar had broken: it read the query string
+  for the Log in link, and SvelteKit forbids that while prerendering the legal pages, so
+  every Netlify deploy preview since the navbar commit failed. Prerendered pages build
+  the link from the path alone.
 - Logging out is a POST now, from the button on My Account. As a GET, any page could sign
   a user out by sending them to the URL (a link or redirect carries SameSite=Lax
   cookies). The old GET URL now redirects to My Account instead of logging out.
