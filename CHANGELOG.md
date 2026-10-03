@@ -6,6 +6,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Joining a game no longer drops focus between the PIN and the name. The sixth digit
+  swaps the forms and the name field had no autofocus, so a phone's keyboard closed
+  between the two fields and a name typed from a keyboard went nowhere. `join.e2e`
+  joins with the keyboard alone.
+- Player answer tiles show focus in light mode. Their ring was white at 80%, on a
+  near-white page; it is a foreground outline now, in both the single- and the
+  multiple-answer tiles.
 - In the editor, the answer fields and the timer now show focus. Both dropped the
   browser outline with nothing in its place, so tabbing into an answer showed nothing;
   answers get an outline set off past the "correct" ring, the timer the shadcn Input's

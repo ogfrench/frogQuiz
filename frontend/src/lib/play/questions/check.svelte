@@ -58,13 +58,15 @@ SPDX-License-Identifier: MPL-2.0
 	<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-3 w-full p-4 h-full">
 		{#each question.answers as answer, i}
 			{@const picked = _selected_answers[i]}
+			<!-- Focus is a foreground outline. It was ring-white/80, a white ring on a near-white
+			     page, so tabbing between answers showed nothing in light mode. -->
 			<button
 				type="button"
 				class="answer-tile group relative overflow-hidden rounded-2xl h-full
 					flex items-center justify-center
 					transition-[transform,opacity,filter] duration-200 ease-out
 					motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95
-					focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80
+					focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-foreground
 					active:scale-[0.96] hover:scale-[1.02]"
 				class:is-picked={picked}
 				style="background-color: {answerColor(i)}; color: {get_foreground_color(

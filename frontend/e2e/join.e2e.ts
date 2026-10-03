@@ -141,3 +141,21 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 	// And the two are genuinely different surfaces, not one color at two opacities.
 	expect(await bg(submit)).not.toEqual(disabledBg);
 });
+
+// The sixth PIN digit swaps the PIN form for the name form and removes the field that had
+// focus. The name field had no autofocus, so focus fell to <body>: on a phone the keyboard
+// closed between the two fields, and from a keyboard the name went nowhere.
+test('a player can join with the keyboard alone', async ({ page, request }) => {
+	const saved = await saveQuiz(request, QUIZ);
+	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+	const pin = await hostFromViewPage(page, saved.body.id);
+
+	const phone = await page.context().browser()!.newPage({ viewport: PHONE });
+	await gotoPlayHydrated(phone);
+	await phone.keyboard.type(pin);
+	await expect(phone.getByRole('textbox', { name: 'Username' })).toBeFocused();
+	await phone.keyboard.type('Keys');
+	await phone.keyboard.press('Enter');
+	await expect(phone.getByText("You're in, Keys")).toBeVisible();
+	await phone.close();
+});

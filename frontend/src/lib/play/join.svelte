@@ -291,7 +291,10 @@ SPDX-License-Identifier: MPL-2.0
 				<!-- autocomplete="nickname", not the browser default of guessing: with no
 				     token at all Chrome and Safari read this as an account field and
 				     offered the player's saved email address for what is a game nickname
-				     shown to the whole room. -->
+				     shown to the whole room. autofocus because the sixth PIN digit swaps
+				     this form in and removes the field that had focus: without it focus fell
+				     to <body>, a phone's keyboard closed between the two fields, and a
+				     typed name went nowhere. -->
 				<Input
 					id="join-username"
 					bind:value={username}
@@ -299,6 +302,7 @@ SPDX-License-Identifier: MPL-2.0
 					autocomplete="nickname"
 					aria-describedby="join-username-hint"
 					class="mt-4 h-12 text-center text-lg"
+					autofocus
 				/>
 
 				{#if custom_field}

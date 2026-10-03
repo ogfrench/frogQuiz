@@ -214,12 +214,14 @@ SPDX-License-Identifier: MPL-2.0
 					{#each question.answers as answer, i}
 						{@const picked = selected_answer === answer.answer}
 						{@const waiting = selected_answer !== undefined && !picked}
+						<!-- Focus is a foreground outline. It was ring-white/80, a white ring on a near-white
+						     page, so tabbing between answers showed nothing in light mode. -->
 						<button
 							class="answer-tile group relative overflow-hidden rounded-2xl h-full
 								flex items-center justify-center
 								transition-[transform,opacity,filter] duration-200 ease-out
 								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95
-								focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80
+								focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-foreground
 								not-disabled:active:scale-[0.96] not-disabled:hover:scale-[1.02]"
 							class:is-picked={picked}
 							class:is-waiting={waiting}
