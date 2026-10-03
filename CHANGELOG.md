@@ -6,6 +6,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Fixed logging out revoking more than your own session: tokens were `{sub, exp}` with exp
+  in whole seconds, so one user's logins in the same second got identical tokens, and the
+  logout denylist is keyed on the token. Logging out on one device could end a session
+  another device had just started, and logging straight back in could hand you a token
+  already revoked. Every token now carries a unique `jti`.
 - Fixed the server-side session hook storing the API's whole JSON reply (`{"email": …}`)
   as the user's email after every token refresh. Only "is anyone signed in" read it, so
   nothing visibly broke; a unit test now pins the email and fails on the old code.

@@ -109,7 +109,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+    # jti makes every token unique. Without it a token was {sub, exp} with exp in whole
+    # seconds, so two logins by one user in the same second got the identical string,
+    # and the denylist is keyed on that string: logging out on one device revoked a
+    # session another device had just been given, and logging straight back in after
+    # logging out handed you a token that was already revoked.
+    to_encode.update({"exp": expire, "jti": uuid.uuid4().hex})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
     return encoded_jwt
 
