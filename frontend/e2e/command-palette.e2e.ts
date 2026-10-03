@@ -41,3 +41,22 @@ test('the palette does not scroll the page sideways', async ({ page }) => {
 	);
 	expect(overflow).toBeLessThanOrEqual(0);
 });
+
+// The palette's keys are bound to window for good, and they did not check whether it was
+// open: with it closed, Tab still called preventDefault on every page, so focus could
+// never leave <body>, and Enter ran whichever action had last been selected.
+test('with the palette closed, Tab moves focus and Enter runs nothing', async ({ page }) => {
+	await page.goto('/account/login');
+	await page.waitForTimeout(800);
+	await page.keyboard.press('Tab');
+	await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
+
+	// Leave the palette with "Create Quiz" selected, then press Enter outside it.
+	await page.keyboard.press('Control+k');
+	await page.getByRole('textbox').last().fill('create');
+	await page.waitForTimeout(400);
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Enter');
+	await page.waitForTimeout(800);
+	await expect(page).toHaveURL(/\/account\/login/);
+});

@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -77,7 +78,12 @@ This should be okay, right?
 		open = !open;
 	};
 
+	// Every binding below is on `window` for the life of the app, so each one has to
+	// stand down while the palette is closed. They did not: Tab and the arrow keys called
+	// preventDefault on every page, so focus could never leave <body> and the arrows
+	// could not scroll, and Enter ran whichever action had last been selected.
 	const close_cp = (e: KeyboardEvent | undefined) => {
+		if (!open) return;
 		if (e) {
 			e.preventDefault();
 		}
@@ -147,11 +153,13 @@ This should be okay, right?
 	};
 
 	const autocomplete_on_tab = (e: KeyboardEvent) => {
+		if (!open) return;
 		e.preventDefault();
 		input = bg_text;
 	};
 
 	const on_arrow_down = (e: KeyboardEvent) => {
+		if (!open) return;
 		e.preventDefault();
 		if (visible_items.length < 1) {
 			return;
@@ -162,6 +170,7 @@ This should be okay, right?
 		selected += 1;
 	};
 	const on_arrow_up = (e: KeyboardEvent) => {
+		if (!open) return;
 		e.preventDefault();
 		if (visible_items.length < 1) {
 			return;
@@ -173,7 +182,7 @@ This should be okay, right?
 	};
 
 	const on_enter = (_e: KeyboardEvent) => {
-		if (selected === null) {
+		if (!open || selected === null) {
 			return;
 		}
 		execute_action();

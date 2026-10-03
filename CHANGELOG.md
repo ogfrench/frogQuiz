@@ -6,6 +6,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Fixed Tab doing nothing on every page. The command palette binds its keys to the
+  window for the life of the app and never checked whether it was open, so Tab and the
+  arrow keys were swallowed everywhere: focus could not leave the page body and the
+  arrows could not scroll. Enter, meanwhile, ran the palette's last selected action
+  even after it was closed (search "create", press Escape, then Enter in a form, and
+  you were sent to /create). The bindings now stand down while it is closed.
+  `command-palette.e2e` covers both and fails on the old code.
 - Fixed the alt text of every uploaded image, which screen readers announced as "��e".
   Uploads carry no alt text, the server then leaves the header out, and `atob(null)`
   decodes the string "null" instead of failing. Images without a description now have
