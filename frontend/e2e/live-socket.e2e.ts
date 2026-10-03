@@ -299,7 +299,7 @@ test.describe('leaving', () => {
 		host.close();
 	});
 
-	test('a started game is not cancelled by end_game; it ends through the final results', async ({
+	test('a started game is not canceled by end_game; it ends through the final results', async ({
 		request
 	}) => {
 		const { host, pin } = await hostGame(request, QUIZ);
@@ -313,7 +313,7 @@ test.describe('leaving', () => {
 		await showQuestion(host, 0);
 		const ended = next(p, 'game_ended', 1500);
 		host.emit('end_game', {});
-		expect(await ended, 'a running game was cancelled').toBeNull();
+		expect(await ended, 'a running game was canceled').toBeNull();
 
 		// "End game" mid-game on the host screen is get_final_results.
 		p.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });

@@ -64,17 +64,17 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <!-- This laid itself out with `h-screen` + `m-auto`, which did two wrong things at
-     once: 100vh is the wrong number on a phone, and a second full-height centring
-     block inside the route's stage is what left the card visually off-centre with a
+     once: 100vh is the wrong number on a phone, and a second full-height centering
+     block inside the route's stage is what left the card visually off-center with a
      dead half-screen under it. The card now only draws itself and lets the stage
      place it.
      Fixed light "paper" rather than the bg-card token, for the same reason the host
-     results card is: it sits on the quiz author's own background colour, not the
+     results card is: it sits on the quiz author's own background color, not the
      app theme, so in dark mode bg-card made it near-black on near-black. -->
 <div
 	class="mx-auto flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-8 py-7 text-center text-neutral-900 shadow-sm"
 >
-	<!-- Shape as well as colour: about one man in twelve cannot tell the green from the
+	<!-- Shape as well as color: about one man in twelve cannot tell the green from the
 	     red, and this is the one moment of the game that has to land. -->
 	<div
 		in:scale|global={{ duration: dur(DUR.surface), start: 0.6, easing: backOut }}

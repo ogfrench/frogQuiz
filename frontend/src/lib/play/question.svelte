@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
-	import { ANSWER_COLORS } from '$lib/play/answer_colors';
+	import { answerColor } from '$lib/play/answer_colors';
 	import Check from '@lucide/svelte/icons/check';
 	import Clock from '@lucide/svelte/icons/clock';
 	import { QuizQuestionType } from '$lib/quiz_types';
@@ -177,7 +177,6 @@ SPDX-License-Identifier: MPL-2.0
 			return '100';
 		}
 	};
-	const default_colors = ANSWER_COLORS;
 </script>
 
 <div class="h-screen w-screen">
@@ -224,9 +223,8 @@ SPDX-License-Identifier: MPL-2.0
 								not-disabled:active:scale-[0.96] not-disabled:hover:scale-[1.02]"
 							class:is-picked={picked}
 							class:is-waiting={waiting}
-							style="background-color: {answer.color ??
-								default_colors[i]}; color: {get_foreground_color(
-								answer.color ?? default_colors[i]
+							style="background-color: {answerColor(i)}; color: {get_foreground_color(
+								answerColor(i)
 							)}; animation-delay: {i * 70}ms"
 							disabled={selected_answer !== undefined}
 							aria-label={answer.answer}

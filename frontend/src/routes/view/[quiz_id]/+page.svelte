@@ -199,7 +199,7 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <div class="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
-	<!-- fq-section's rhythm, but stretched: fq-section centres its children, which
+	<!-- fq-section's rhythm, but stretched: fq-section centers its children, which
 	     would shrink every card to its content width. -->
 	<div class="flex flex-col gap-(--fq-space-group)">
 		{#if mod_view}
@@ -484,7 +484,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 
 			<!-- Each question is the editor's canvas, read-only: the same toolbar facts above
-			     it, the same centred title and the same answer tiles, so a quiz looks the same
+			     it, the same centered title and the same answer tiles, so a quiz looks the same
 			     here as it did to the person who built it. Always open -- a list of bars you
 			     have to click one by one hid the only content on the page. -->
 			{#each quiz.questions as question, index_question}
@@ -558,7 +558,7 @@ SPDX-License-Identifier: MPL-2.0
 							{#if is_tile_question(question)}
 								<ul class="grid w-full gap-3 sm:grid-cols-2">
 									{#each question.answers as answer, index_answer}
-										{@const bg = answer.color ?? answerColor(index_answer)}
+										{@const bg = answerColor(index_answer)}
 										{@const ink = get_foreground_color(bg)}
 										<!-- min-w-0: a grid item won't shrink below its content otherwise. -->
 										<li

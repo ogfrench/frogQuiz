@@ -6,11 +6,10 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
-	import { ANSWER_COLORS } from '$lib/play/answer_colors';
+	import { answerColor } from '$lib/play/answer_colors';
 	import { get_foreground_color } from '$lib/helpers';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
-	const default_colors = ANSWER_COLORS;
 
 	interface Props {
 		question: Question;
@@ -68,9 +67,8 @@ SPDX-License-Identifier: MPL-2.0
 					focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80
 					active:scale-[0.96] hover:scale-[1.02]"
 				class:is-picked={picked}
-				style="background-color: {answer.color ??
-					default_colors[i]}; color: {get_foreground_color(
-					answer.color ?? default_colors[i]
+				style="background-color: {answerColor(i)}; color: {get_foreground_color(
+					answerColor(i)
 				)}; animation-delay: {i * 70}ms"
 				aria-label={answer.answer}
 				aria-pressed={picked}

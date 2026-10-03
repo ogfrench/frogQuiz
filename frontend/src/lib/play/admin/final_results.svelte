@@ -123,9 +123,9 @@ SPDX-License-Identifier: MPL-2.0
 								<Crown class="size-8 sm:size-10" aria-hidden="true" />
 							</span>
 						{/if}
-						<!-- Kahoot's podium is the recognisable shape, and the winner is the
+						<!-- Kahoot's podium is the recognizable shape, and the winner is the
 						     point of it: their name is the largest thing on the screen and their
-						     score sits in the gold, rather than all three being labelled the same
+						     score sits in the gold, rather than all three being labeled the same
 						     way and the gold doing all the work. -->
 						<p
 							class="w-full truncate font-semibold tracking-tight {p.place === 1
@@ -153,7 +153,7 @@ SPDX-License-Identifier: MPL-2.0
 
 					<!-- Gold, silver and bronze rather than the theme's primary. The brand has
 					     one accent and the rainbow is spent on the wordmark and the answer
-					     bars (CLAUDE.md), but a podium is not branding: medal colours are what
+					     bars (CLAUDE.md), but a podium is not branding: medal colors are what
 					     a podium means, and the winner's block was otherwise a black slab. -->
 					<div
 						class="podium-block {medal(p.place)} flex w-full {p.height} flex-col items-center
@@ -236,7 +236,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <style>
 	/* The podium had gold, silver and bronze gradients with a white inset highlight, which
-	   is a lot of colour for a screen whose job is to say who won -- and it put a third
+	   is a lot of color for a screen whose job is to say who won -- and it put a third
 	   accent in an identity that is "zinc neutrals plus one loud element" (CLAUDE.md).
 	   One loud block instead: the winner is flat gold, second and third are the page's own
 	   surfaces, and the rank is carried by height, numeral and label rather than by three

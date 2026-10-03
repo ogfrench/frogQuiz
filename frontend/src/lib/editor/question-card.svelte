@@ -304,7 +304,7 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 				</div>
 			{:else}
-				<!-- Collapsed: enough to recognise the question and see whether it is finished. -->
+				<!-- Collapsed: enough to recognize the question and see whether it is finished. -->
 				<button
 					type="button"
 					class="focus-visible:ring-ring w-full rounded-lg px-1 py-2 text-left focus-visible:ring-2 focus-visible:outline-none"

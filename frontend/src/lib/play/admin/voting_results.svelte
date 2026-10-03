@@ -23,8 +23,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	// Horizontal bars, because answer text is long and the previous vertical
 	// layout had to rotate its labels 45 degrees, where they collided with each
-	// other. Colour matches the tile the player tapped, and the shape repeats it
-	// so identity never rests on colour alone.
+	// other. Color matches the tile the player tapped, and the shape repeats it
+	// so identity never rests on color alone.
 	// Question.answers is a union covering every question type, including a range
 	// object and a slide string. This component is only rendered for the choice
 	// types, so narrow once here rather than casting at each use.
@@ -95,8 +95,7 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					<span
 						class="absolute inset-y-0 left-0 w-full origin-left rounded-r-md transition-transform ease-out"
-						style="transform: scaleX({count / max}); transition-duration: var(--fq-dur-reveal); background-color: {answer.color ??
-							answerColor(i)}"
+						style="transform: scaleX({count / max}); transition-duration: var(--fq-dur-reveal); background-color: {answerColor(i)}"
 					></span>
 				</span>
 

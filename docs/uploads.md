@@ -105,7 +105,7 @@ restarted. Compare the process start time against the file mtime.
 `image/svg+xml` is not accepted and should not be: an SVG is a script-injection vector
 and nothing in a quiz needs one.
 
-**The pixel cap is not the byte cap.** A 20000×20000 PNG of one solid colour is under
+**The pixel cap is not the byte cap.** A 20000×20000 PNG of one solid color is under
 400 KiB on disk — inside the 5 MB limit — and about 1.6 GB as a bitmap in every browser
 that draws it: every player's phone, and the projector. The server never decodes an image
 (there is no Pillow; the worker only hashes bytes), so the clients are what fall over. The

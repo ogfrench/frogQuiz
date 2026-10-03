@@ -45,7 +45,7 @@ def test_matches_a_real_encoder(fmt, size, kw):
 
 
 def test_a_bomb_is_measured_without_being_decoded():
-    # 20000x20000 greyscale of one colour: ~380KiB on disk, ~1.6GB as a bitmap. The parser
+    # 20000x20000 greyscale of one color: ~380KiB on disk, ~1.6GB as a bitmap. The parser
     # must report its real size from the header alone -- decoding it here would be the very
     # allocation the parser exists to prevent.
     import struct

@@ -93,7 +93,7 @@ class Settings(BaseSettings):
     # compresses before it uploads anyway. Kahoot's own per-file ceiling is 5MB for a
     # cover image, so this is not a tighter rule than people are used to.
     max_image_upload_size: int = 5_000_000
-    # The byte cap is not a pixel cap. A 20000x20000 PNG of one solid colour compresses
+    # The byte cap is not a pixel cap. A 20000x20000 PNG of one solid color compresses
     # to under 400KiB -- inside the 5MB limit -- and becomes a ~1.6GB bitmap in every
     # browser that renders it: every player's phone in the room, and the projector. The
     # server never decodes an image (no Pillow; the worker only hashes bytes), so it is

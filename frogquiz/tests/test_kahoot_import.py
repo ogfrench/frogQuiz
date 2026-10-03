@@ -35,15 +35,15 @@ def _kahoot_question(choices: list[tuple[str, bool]], question: str = "Q?") -> _
 
 
 def test_imported_answers_carry_no_colour():
-    """The importer used to stamp a fixed four-colour palette onto every answer, which
-    overrode the app's own palette. Leaving colour unset lets the play screen colour by
+    """The importer used to stamp a fixed four-color palette onto every answer, which
+    overrode the app's own palette. Leaving color unset lets the play screen color by
     position, the same as a quiz written in the editor."""
     mapped = map_question(_kahoot_question([("a", True), ("b", False)]), None)
     assert [a["color"] for a in mapped["answers"]] == [None, None]
 
 
 def test_more_than_four_choices_import():
-    """Indexing a four-entry colour list by choice position raised IndexError here."""
+    """Indexing a four-entry color list by choice position raised IndexError here."""
     choices = [(f"answer {i}", i == 0) for i in range(6)]
     mapped = map_question(_kahoot_question(choices), None)
     assert len(mapped["answers"]) == 6

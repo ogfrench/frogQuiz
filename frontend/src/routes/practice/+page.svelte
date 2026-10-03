@@ -203,7 +203,7 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 					<ul class="grid w-full gap-3 sm:grid-cols-2">
 						{#each tiles as answer, i (i)}
-							{@const bg = answer.color ?? answerColor(i)}
+							{@const bg = answerColor(i)}
 							{@const ink = get_foreground_color(bg)}
 							{@const show_right = revealed && isScored(question) && answer.right}
 							{@const missed =

@@ -5,7 +5,7 @@
 """Pixel dimensions read from an image header, without decoding the image.
 
 The point is never to allocate an attacker's raster. A 20000x20000 PNG of one solid
-colour is under 400KiB on disk but ~1.6GB as a bitmap, so a byte cap does not bound what
+color is under 400KiB on disk but ~1.6GB as a bitmap, so a byte cap does not bound what
 a browser is asked to render -- and the browsers are the clients here, on phones. This
 reads the handful of header bytes each format states its size in, and nothing else.
 
@@ -22,7 +22,7 @@ HEADER_BYTES = 65536
 
 
 def image_dimensions(head: bytes) -> tuple[int, int] | None:
-    """(width, height), or None if `head` is not a recognised image or is truncated."""
+    """(width, height), or None if `head` is not a recognized image or is truncated."""
     # PNG: signature then IHDR, which is always the first chunk; dimensions big-endian.
     if head[:8] == b"\x89PNG\r\n\x1a\n":
         if len(head) >= 24 and head[12:16] == b"IHDR":

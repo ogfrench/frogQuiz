@@ -54,7 +54,7 @@ test('a teammate finds a colleague’s quiz, runs it, and never sees the answers
 		// D12 hides WHICH answer is right, not the answers themselves -- a visitor is meant
 		// to see what the quiz asks, in a shuffled order, so they can decide whether to
 		// play it. The first version of this test asserted the answer text was absent
-		// entirely, and failed against correct behaviour.
+		// entirely, and failed against correct behavior.
 		await expect(mate.page.getByText('Lisbon')).toBeVisible();
 		// The marker is a ring plus a tick carrying an sr-only "Correct". That label is
 		// the thing a visitor must never get.

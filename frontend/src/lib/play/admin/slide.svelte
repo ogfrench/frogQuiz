@@ -43,7 +43,7 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 	<div class="flex w-full justify-center">
 		<!-- h-full against fq-stage (which has no fixed height) collapsed to nothing.
-		     Cap the image instead and let the stage do the centring. -->
+		     Cap the image instead and let the stage do the centering. -->
 		<img src={img_src} alt="Slide image" class="max-h-[70dvh] max-w-full object-contain" />
 	</div>
 </div>

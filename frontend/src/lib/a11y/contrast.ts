@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: MPL-2.0
 
 /**
- * WCAG contrast maths, in a module rather than a throwaway script, so the colour
+ * WCAG contrast maths, in a module rather than a throwaway script, so the color
  * decisions this project has already made can be asserted in CI instead of re-checked
  * by eye every time somebody nudges a token.
  *
  * Everything here is pure and runs in Node: no canvas, no browser. That matters,
- * because a colour guard that needs a browser is a guard that gets skipped.
+ * because a color guard that needs a browser is a guard that gets skipped.
  */
 
 export type RGB = [number, number, number];
@@ -23,7 +23,7 @@ export const hexToRgb = (hex: string): RGB => {
 					.map((c) => c + c)
 					.join('')
 			: h;
-	if (!/^[0-9a-fA-F]{6}$/.test(full)) throw new Error(`not a hex colour: ${hex}`);
+	if (!/^[0-9a-fA-F]{6}$/.test(full)) throw new Error(`not a hex color: ${hex}`);
 	return [
 		parseInt(full.slice(0, 2), 16),
 		parseInt(full.slice(2, 4), 16),
@@ -41,7 +41,7 @@ export const hexToRgb = (hex: string): RGB => {
  */
 export const oklchToRgb = (css: string): RGB => {
 	const m = css.match(/oklch\(\s*([\d.]+%?)\s+([\d.]+)\s+([\d.]+)/i);
-	if (!m) throw new Error(`not an oklch colour: ${css}`);
+	if (!m) throw new Error(`not an oklch color: ${css}`);
 	const L = m[1].endsWith('%') ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
 	const C = parseFloat(m[2]);
 	const H = (parseFloat(m[3]) * Math.PI) / 180;
@@ -98,7 +98,7 @@ export const contrastRatio = (a: string | RGB, b: string | RGB): number => {
 export const aaThreshold = (px: number, weight = 400): number =>
 	px >= 24 || (px >= 18.66 && weight >= 700) ? 3 : 4.5;
 
-/** Perceptual distance in OKLab, for telling two answer colours apart. */
+/** Perceptual distance in OKLab, for telling two answer colors apart. */
 export const deltaE = (a: string, b: string): number => {
 	const lab = (css: string) => {
 		const m = css.match(/oklch\(\s*([\d.]+%?)\s+([\d.]+)\s+([\d.]+)/i);
@@ -135,8 +135,8 @@ export const deltaE = (a: string, b: string): number => {
  * asserted rather than assumed. Viénot, Brettel and Mollon's linear-RGB projection,
  * which is the standard approximation and is what the usual online simulators use.
  *
- * Answer identity does not rest on colour alone -- every tile also carries a distinct
- * shape -- but colour is what people actually use, so it has to survive on its own.
+ * Answer identity does not rest on color alone -- every tile also carries a distinct
+ * shape -- but color is what people actually use, so it has to survive on its own.
  */
 const CVD: Record<'protanopia' | 'deuteranopia' | 'tritanopia', number[]> = {
 	protanopia: [
@@ -165,6 +165,6 @@ export const simulateCvd = (css: string, kind: keyof typeof CVD): RGB => {
 	return out as RGB;
 };
 
-/** Straight-line distance in sRGB, for comparing two simulated colours. */
+/** Straight-line distance in sRGB, for comparing two simulated colors. */
 export const rgbDistance = (a: RGB, b: RGB): number =>
 	Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);

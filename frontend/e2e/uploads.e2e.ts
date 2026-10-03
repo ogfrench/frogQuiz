@@ -24,7 +24,7 @@ async function serverLimit(request): Promise<number> {
 	return (await res.json()).max_file_size as number;
 }
 
-/** A valid single-colour PNG of a given size, built with zlib so the bytes stay small.
+/** A valid single-color PNG of a given size, built with zlib so the bytes stay small.
  *  Used to get an image past Uppy's byte cap and the client-side Compressor while being
  *  over the server's pixel cap. */
 function pngOfSize(width: number, height: number): Buffer {
@@ -41,7 +41,7 @@ function pngOfSize(width: number, height: number): Buffer {
 	ihdr.writeUInt32BE(width, 0);
 	ihdr.writeUInt32BE(height, 4);
 	ihdr[8] = 8; // bit depth
-	ihdr[9] = 2; // colour type: truecolour
+	ihdr[9] = 2; // color type: truecolour
 	const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(width * 3, 0)]);
 	const raw = Buffer.concat(Array.from({ length: height }, () => row));
 	const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -163,7 +163,7 @@ test('an image over the pixel cap is refused, with advice about dimensions not b
 	page,
 	request
 }) => {
-	// A decompression bomb: a 20000x20000 PNG of one colour is under the byte cap but a
+	// A decompression bomb: a 20000x20000 PNG of one color is under the byte cap but a
 	// ~1.6GB bitmap in every browser that renders it -- every player's phone and the
 	// projector. The server rejects it on dimensions (see TestStorage); this checks the
 	// editor turns that 413 into advice a person can act on, which is different from the

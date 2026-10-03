@@ -7,7 +7,7 @@ bug a test could reach was first written as a `test.fail(...)`. Those markers ar
 now, and the same tests stand as regression guards. The UX list and "Worth a look" are
 still open.
 
-Convention for new findings: write the test for the behaviour you want, wrapped in
+Convention for new findings: write the test for the behavior you want, wrapped in
 `test.fail(true, reason)`. The run stays green while the bug exists, and the test turns
 red ("expected to fail, but passed") once somebody fixes it. That is the signal to
 delete the marker.
@@ -18,7 +18,7 @@ delete the marker.
 |---|-----|
 | H1 | `record_answer_once` in `socket_server/helpers.py` appends in a Redis `WATCH`/`MULTI` transaction and runs the duplicate check inside it. It's Redis-side rather than an in-process lock, because production can run several gunicorn workers. 50 simultaneous answers: 50 of 50 stored. The box-controller path uses it too. |
 | H2 | `rejoin_game` saves the session and enters the room before it emits `time_sync`, and `submit_answer` reads `ping` with a default. |
-| H3 | When the final results arrive, the host podium rebuilds its totals from them (`lib/play/admin/totals.ts`, unit-tested). The per-question tally timer is cancelled on unmount, so it can't add a question twice. |
+| H3 | When the final results arrive, the host podium rebuilds its totals from them (`lib/play/admin/totals.ts`, unit-tested). The per-question tally timer is canceled on unmount, so it can't add a question twice. |
 | H4 | `register_as_remote` requires the game's `game_id` (the host credential), not just the PIN. |
 | H5 | `GET /quiz/join/{pin}` now answers 410. `register_as_admin` checks the `game_id` against the stored game. Found while fixing: `PlayGame.to_player_data` was also sending the `game_id` to every player. It's excluded now. |
 | H6 | `GET /quiz/get/{id}` accepts `X-Anon-Secret`, and `/edit` sends it. The page shows a message for any status other than 200 instead of rendering blank. After saving, an anonymous quiz returns to its view page. |

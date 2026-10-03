@@ -23,7 +23,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	// This is now the only way to registration: the navbar offers Log in alone. So the
 	// link carries returnTo on (the register page hands it back to its own Log in link)
-	// and honours registration_disabled, which the navbar used to do for it.
+	// and honors registration_disabled, which the navbar used to do for it.
 	const return_to = $derived(safeReturnTo(page.url.searchParams.get('returnTo'), ''));
 	const register_href = $derived(
 		return_to

@@ -30,6 +30,11 @@ SPDX-License-Identifier: MPL-2.0
 		default_colors
 	}: Props = $props();
 
+	// The palette by slot, wrapping: a question can have ten answers and the palette has
+	// four, so indexing the array directly left answers five to ten with no color. A color
+	// stored on the answer is not consulted -- see answer_colors.ts.
+	const tile_color = (i: number) => default_colors[i % default_colors.length];
+
 	const { t } = getLocalization();
 
 	let circular_progress = $derived.by(() => {
@@ -81,8 +86,7 @@ SPDX-License-Identifier: MPL-2.0
 				<div
 					class="answer-row relative flex min-h-20 items-center overflow-hidden rounded-2xl transition-all duration-300
 					motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
-					style="background-color: {answer.color ??
-						default_colors[i]}; animation-delay: {i * 70}ms"
+					style="background-color: {tile_color(i)}; animation-delay: {i * 70}ms"
 					class:opacity-50={!answer.right &&
 						timer_res === '0' &&
 						quiz_data.questions[selected_question].type === QuizQuestionType.ABCD}
@@ -90,11 +94,11 @@ SPDX-License-Identifier: MPL-2.0
 					<AnswerShape
 						index={i}
 						class="w-7 h-7 ml-4 shrink-0 self-center"
-						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
+						style="color: {get_foreground_color(tile_color(i))}"
 					/>
 					<span
 						class="fq-answer w-full px-3 py-5 text-center font-semibold wrap-anywhere"
-						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
+						style="color: {get_foreground_color(tile_color(i))}"
 						>{answer.answer}</span
 					>
 					<span class="pl-4 w-10"></span>

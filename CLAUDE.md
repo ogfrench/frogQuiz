@@ -10,7 +10,7 @@ Internal Kahoot-style quiz tool, forked from the open-source **ClassQuiz** proje
 
 ## Redesign: shadcn-svelte
 
-Config lives in `frontend/components.json`: style `vega`, base colour `zinc`, Lucide icons, Inter. **`--primary` is zinc, not green** — the preset's `green` theme is not in `app.css` and `components.json` carries no `theme` key, so every primary control is black in light mode and near-white in dark. That was checked and kept on 2026-10-01 (MVP.md D17); the doc used to claim the opposite. Components land in `frontend/src/lib/components/ui/`, the `cn` helper in `frontend/src/lib/utils.ts`.
+Config lives in `frontend/components.json`: style `vega`, base color `zinc`, Lucide icons, Inter. **`--primary` is zinc, not green** — the preset's `green` theme is not in `app.css` and `components.json` carries no `theme` key, so every primary control is black in light mode and near-white in dark. That was checked and kept on 2026-10-01 (MVP.md D17); the doc used to claim the opposite. Components land in `frontend/src/lib/components/ui/`, the `cn` helper in `frontend/src/lib/utils.ts`.
 
 - **Adding components**: `node ./node_modules/shadcn-svelte/dist/index.mjs add <name> -y -o` from `frontend/`. The `-y -o` flags matter — without them the CLI opens a TUI that cannot be driven from a piped stdin, and it will hang.
 - **There is no shadcn-svelte MCP server.** The `shadcn-svelte` CLI has no `mcp` command, and the generic shadcn (React) MCP cannot read this registry: it requests an index at `/registry/registry.json` (shadcn-svelte serves `index.json`), and its item schema requires `files[].path` where shadcn-svelte emits `target`. Don't re-litigate this — use the CLI. For docs and usage examples, the Context7 MCP covers shadcn-svelte.
@@ -22,7 +22,7 @@ pm`. The `build` script uses `NODE_ENV=production vite build`, POSIX syntax that
 
 ## Visual identity
 
-The look is deliberately breathy: generous whitespace, a single accent, and one loud element rather than colour everywhere.
+The look is deliberately breathy: generous whitespace, a single accent, and one loud element rather than color everywhere.
 
 - **Wordmark**: `frontend/src/lib/components/Wordmark.svelte` — a rainbow-gradient rounded square plus "frogQuiz" set in Inter. It replaced a Marck Script cursive wordmark. The `.marck-script` class still exists in `app.css` because 14 call sites use it, but it no longer loads a script face; it is now the Inter display treatment (semibold, `-0.03em`). Don't reintroduce a cursive face.
 - **The rainbow is spent once.** The frogConvert palette (`#ff6b6b #ffb347 #ffd93d #6bcf7f #4fc3f7 #9775fa #ff6b9d`) lives in the mark, and is reserved for the answer-distribution series. Everything else is zinc neutrals plus `--primary`. Adding a third accent is what makes this look generic.

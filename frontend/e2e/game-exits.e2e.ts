@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-// Every way out of a live game, driven through the UI: the host cancelling from the
+// Every way out of a live game, driven through the UI: the host canceling from the
 // lobby or ending mid-game, a player leaving, and the join screen's own way home.
 // Before these existed the only exit from any of them was closing the tab.
 

@@ -237,7 +237,7 @@ async def meilisearch_init():
         meilisearch.index(settings.meilisearch_index).add_documents(meili_data)
     # --- END ---
     meilisearch.index(settings.meilisearch_index).update_settings({"sortableAttributes": ["created_at"]})
-    LOGGER.info("Finished MeiliSearch synchronisation")
+    LOGGER.info("Finished MeiliSearch synchronization")
 
 
 def check_hashcash(data: str, input_data: str, claim_in: str | None = "19") -> bool:

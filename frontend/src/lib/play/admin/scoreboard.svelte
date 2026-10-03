@@ -76,7 +76,7 @@ SPDX-License-Identifier: MPL-2.0
 						{player.name}
 					</span>
 					<!-- Up, down or held. Shape as well as direction, so it does not rest on
-					     a colour nobody can see from four metres away. -->
+					     a color nobody can see from four meters away. -->
 					<span
 						class="flex w-10 shrink-0 items-center justify-center text-neutral-500"
 						aria-label={moved > 0

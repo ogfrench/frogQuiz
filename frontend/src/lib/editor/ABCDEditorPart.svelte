@@ -42,16 +42,17 @@ SPDX-License-Identifier: MPL-2.0
 	data.questions[selected_question].type =
 		check_choice === true ? QuizQuestionType.CHECK : QuizQuestionType.ABCD;
 
-	// Slot colour comes from the palette, which was derived for colour-vision separation
+	// Slot color comes from the palette, which was derived for color-vision separation
 	// against both surfaces. It belongs to the slot, not to the answer: there is no
-	// per-answer colour picker any more, because an author picking two near-identical hues
+	// per-answer color picker any more, because an author picking two near-identical hues
 	// is exactly what the palette work was meant to prevent. Deriving it from the index
-	// rather than storing it also keeps the order correct after an answer is deleted, and
-	// it matches what every play surface already does (`answer.color ?? default_colors[i]`).
-	// Quizzes authored before this still carry a hand-picked colour, which is honoured,
-	// and is why the ink is measured rather than assumed.
-	const slot_color = (answer: Answer, index: number): string =>
-		answer.color ?? ANSWER_COLORS[index % ANSWER_COLORS.length];
+	// rather than storing it also keeps the order correct after an answer is deleted.
+	// A color stored on the answer is ignored here and on every play surface (2026-10-03,
+	// François: "the pastel colors I want back"). Quizzes from upstream ClassQuiz carry
+	// its brown and green defaults, and API clients can store anything, so honoring the
+	// field meant the pastel palette held only for quizzes nobody had touched.
+	const slot_color = (_answer: Answer, index: number): string =>
+		ANSWER_COLORS[index % ANSWER_COLORS.length];
 
 	const remove_answer = (index: number) => {
 		data.questions[selected_question].answers.splice(index, 1);

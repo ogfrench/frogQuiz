@@ -46,7 +46,7 @@ def _sendMail_blocking(html_body: str, text_body: str, to: str, subject: str) ->
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     # A bare address in From reads as "noreply@..." in every client. The display
-    # name costs nothing and makes the message recognisable in a crowded inbox.
+    # name costs nothing and makes the message recognizable in a crowded inbox.
     local, _, domain = settings.mail_address.partition("@")
     msg["From"] = str(Address(settings.mail_from_name, local, domain)) if domain else settings.mail_address
     msg["To"] = to
@@ -161,7 +161,7 @@ async def send_forgotten_password_email(user: User):
         await redis.delete(f"reset_passwd:{previous}")
     await redis.expire(f"reset_passwd_current:{user.id}", RESET_TOKEN_TTL_SECONDS)
     # Written before the send, not after: the alternative leaves a window in which
-    # the recipient holds a link the server does not yet honour. On a failed send
+    # the recipient holds a link the server does not yet honor. On a failed send
     # the token is dropped again, so nothing usable is left behind.
     await redis.set(f"reset_passwd:{token}", str(user.id), ex=RESET_TOKEN_TTL_SECONDS)
     try:

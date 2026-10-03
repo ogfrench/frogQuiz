@@ -27,7 +27,7 @@ unit 126 passed, `flake8 .` 0, `eslint .` 0 errors
 | 5 | **Host results scale for a projector**; podium side buttons outlined; export anchor out of the a11y tree | `lib/play/admin/`, `routes/admin` |
 | 6 | **Play is not offered on somebody else's unlisted quiz**, which the server refuses | `routes/view/[quiz_id]`, `e2e/account.e2e.ts` |
 | 7 | **Join screen rebuilt** on the landing page's PIN card | `lib/play/join.svelte` |
-| 8 | **Copy, nav and hygiene**: inverted Register link, Explore→Discover, "Forgot password?" off the register form, the empty My Quizzes banner, "This session?", the empty colour input, upstream's false landing copy and its dead component | several |
+| 8 | **Copy, nav and hygiene**: inverted Register link, Explore→Discover, "Forgot password?" off the register form, the empty My Quizzes banner, "This session?", the empty color input, upstream's false landing copy and its dead component | several |
 | 9 | **Docs match reality**: D7 closed with its deviation, D16 and D17 added, the six missing lines in, `CLAUDE.md` no longer claims `--primary` is green | `MVP.md`, `CLAUDE.md`, `docs/audit-2026-10-01.md` |
 | 10 | **Podium**: builds up third → second → first, 1.4s apart, crown and confetti, nothing under reduced motion. Flat gold winner, 2nd and 3rd on theme surfaces — the medal gradients are gone | `lib/play/admin/final_results.svelte`, `e2e/podium.e2e.ts` |
 | 11 | **`e2e/run.sh` runs on Linux and macOS** as well as Windows: finds Postgres wherever it lives, drops to the `postgres` user when run as root, uses the real `redis-server` when there is one, fetches the right Meilisearch build, and picks Edge or Chromium per platform | `e2e/run.sh`, `e2e/stop.sh`, `frontend/playwright.config.ts` |
@@ -169,7 +169,7 @@ actually owns. Kahoot's own music is copyrighted and is not an option.
 | | Decision | Who |
 | - | --- | --- |
 | D17 | `--primary` stays zinc; `CLAUDE.md` corrected rather than the palette | François |
-| — | Only the podium's colours were wrong; the answer tiles, ambient background and neutral scheme stay | François |
+| — | Only the podium's colors were wrong; the answer tiles, ambient background and neutral scheme stay | François |
 | — | Player feedback shows correct/wrong, points **and** place | François |
 | — | The editor needs no drawer below `lg`: the column of cards is the navigation, as in Forms and Kahoot | François |
 | — | True / False added as a preset over ABCD | François |

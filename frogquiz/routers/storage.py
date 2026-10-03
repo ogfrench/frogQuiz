@@ -218,7 +218,7 @@ async def upload_file(
         )
     if file_size == 0:
         raise HTTPException(status_code=422, detail="File is empty")
-    # Pixels, not just bytes: a 20000x20000 PNG of one colour is under the byte cap and a
+    # Pixels, not just bytes: a 20000x20000 PNG of one color is under the byte cap and a
     # ~1.6GB bitmap in every browser that renders it. Read from the spooled file and seek
     # back, so nothing is re-read and nothing is decoded.
     header = file.file.read(HEADER_BYTES)

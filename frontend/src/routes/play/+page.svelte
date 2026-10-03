@@ -62,7 +62,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	// Why the player is back on the join screen, if they were sent there.
 	let join_error = $state('');
-	// The host cancelled the game from its lobby.
+	// The host canceled the game from its lobby.
 	let game_ended = $state(false);
 
 	// Back to an empty join screen without a reload, so a reason can be shown there.
@@ -276,7 +276,7 @@ SPDX-License-Identifier: MPL-2.0
 			{#key unique}
 				<!-- This wrapper forced black text on the whole question screen, which made the
 				     post-answer and time-up states unreadable in dark mode. The answer tiles set
-				     their own ink inline from the tile colour, so they never needed it. -->
+				     their own ink inline from the tile color, so they never needed it. -->
 				<div>
 					<Question bind:game_mode bind:question {question_index} {solution} />
 				</div>
@@ -287,7 +287,7 @@ SPDX-License-Identifier: MPL-2.0
 			     empty. fq-stage (and not a second one nested inside: the wrapper above
 			     is a plain min-h-dvh block, exactly as it is for the join and title
 			     screens which already render their own stage here) gives them the same
-			     vertical rhythm and centring as every other game surface. Its
+			     vertical rhythm and centering as every other game surface. Its
 			     section gap replaces the heading's own mb-8. -->
 			{#if answer_results === null}
 				<div class="fq-stage">

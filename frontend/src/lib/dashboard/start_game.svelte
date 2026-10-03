@@ -24,7 +24,7 @@ SPDX-License-Identifier: MPL-2.0
 	// and the host's answer to it is shown to them as the heading above that box. It
 	// used to be pre-filled from localStorage on mount, so a value typed once -- in
 	// practice somebody's own email -- silently re-applied to every game started in
-	// that browser from then on, and every player saw it labelling a mystery input.
+	// that browser from then on, and every player saw it labeling a mystery input.
 	// It is now an explicit opt-in that starts empty for every game, and nothing is
 	// persisted: the only thing the stored value was ever used for was that
 	// auto-prefill, so keeping the write would leave a value nothing reads. The
@@ -32,7 +32,7 @@ SPDX-License-Identifier: MPL-2.0
 	let custom_field_enabled = $state(false);
 	let randomized_answers = $state(false);
 	// Kahoot's own "Show questions & answers on participants' devices", which is free on
-	// every Kahoot plan and off by default. Off, the phone shows four coloured shapes and
+	// every Kahoot plan and off by default. Off, the phone shows four colored shapes and
 	// the question lives on the shared screen; on, the phone carries the question text,
 	// its image and the answer text too. That is the difference between a room with a
 	// projector and a video call, which is why it is the host's choice per game and not a
@@ -61,7 +61,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	// `game_mode` is what carries the switch above. Both render paths already existed and
 	// both work -- upstream exposed them as two game modes, a choice made before the game
-	// started and labelled "Normal" and "Old-School", which told a host nothing about what
+	// started and labeled "Normal" and "Old-School", which told a host nothing about what
 	// it did. Same wire value, named after its effect.
 	const start_game = async (id: string) => {
 		loading = true;

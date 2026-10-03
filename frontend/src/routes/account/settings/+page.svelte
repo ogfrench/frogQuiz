@@ -182,7 +182,7 @@ SPDX-License-Identifier: MPL-2.0
      nested grid-rows-2 / grid-cols-2. On a phone that collapsed into a broken image
      with its alt text wrapping round the heading, a clipped "change avatar", and three
      password fields squeezed into a row. Settings pages are a single column of
-     labelled sections -- one concern per card, its own description, its own action --
+     labeled sections -- one concern per card, its own description, its own action --
      which is what every tool that does this well looks like and what survives a narrow
      screen without any reflow guesswork. -->
 <div class="mx-auto w-full max-w-3xl px-4 py-8">

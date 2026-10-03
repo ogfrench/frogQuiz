@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
  *
  * 1. `question_not_active` and `already_replied` had no listener anywhere in the
  *    frontend. The screen sets `selected_answer` the moment a tile is tapped, so a
- *    refused answer still read "Answer locked in" and the player learnt the truth only
+ *    refused answer still read "Answer locked in" and the player learned the truth only
  *    from a +0 on the results screen -- which looks like a bug, not a wrong answer.
  * 2. `socket.on('everyone_answered', ...)` was registered at component init with no
  *    cleanup, and the play page recreates this component per question (`{#key unique}`).

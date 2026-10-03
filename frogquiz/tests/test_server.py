@@ -692,7 +692,7 @@ class TestStorage:
 
     @staticmethod
     def _bomb_png(width: int, height: int) -> bytes:
-        """A PNG of one colour: tiny on disk, enormous in pixels. The decompression bomb a
+        """A PNG of one color: tiny on disk, enormous in pixels. The decompression bomb a
         byte cap does not catch -- 20000x20000 is under 400KiB but ~1.6GB as a bitmap."""
         import struct
         import zlib
@@ -1096,7 +1096,7 @@ class TestQuizivity:
 
     @pytest.mark.asyncio
     async def test_totp_can_be_switched_off_while_the_flag_is_off(self, test_client: TestClient):  # noqa : F811
-        # ENABLE_TOTP is off for the MVP, but the login flow still honours a secret that
+        # ENABLE_TOTP is off for the MVP, but the login flow still honors a secret that
         # is already set. If the whole 2fa router were gated, anyone who enabled TOTP
         # before the cut would be stuck behind a factor they cannot remove. Setting it
         # up must 404; reading the status and switching it off must not.

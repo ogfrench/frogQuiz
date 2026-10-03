@@ -185,7 +185,7 @@ SPDX-License-Identifier: MPL-2.0
 			const json = await res.json();
 			edit_id = json.token;
 			// The baseline is what the editor was given, taken now. It used to be taken
-			// 500ms later, to let the rich-text fields normalise what they loaded -- but an
+			// 500ms later, to let the rich-text fields normalize what they loaded -- but an
 			// edit typed inside that window was swallowed by the baseline, so `unsaved` read
 			// false, Save sent nothing, and the editor went to the quiz page saying "Saved".
 			// Normalisation now costs one no-op save instead of somebody's work.
@@ -449,7 +449,7 @@ SPDX-License-Identifier: MPL-2.0
 				</header>
 				<!-- The canvas had no measure. Content stretched to whatever the panel
 				     was, so on a wide screen the settings form ran to 900px of label and
-				     field with a lake ofdead space between them. Cap it and centre it, the
+				     field with a lake ofdead space between them. Cap it and center it, the
 				     way any document editor does. -->
 				<div class="flex min-h-0 flex-1">
 					<!-- The outline is a convenience on a wide screen, not the navigation:

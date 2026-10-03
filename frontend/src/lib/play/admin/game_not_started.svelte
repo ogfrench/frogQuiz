@@ -61,7 +61,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="fq-stage">
 	<!-- The join details are the whole point of this screen, so they get the
-	     centre and the largest type rather than being split across three
+	     center and the largest type rather than being split across three
 	     unaligned columns. -->
 	<div class="flex flex-col items-center gap-8 md:flex-row md:items-center md:gap-12">
 		<div class="flex flex-col items-center gap-3 md:items-start">

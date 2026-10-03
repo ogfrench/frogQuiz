@@ -49,7 +49,7 @@ test('practice runs a quiz end to end and scores it like the game', async ({ pag
 	await expect(page.getByText('3 questions.')).toBeVisible();
 	await expectNoHorizontalOverflow(page);
 
-	await page.getByRole('button', { name: 'Start practising' }).click();
+	await page.getByRole('button', { name: 'Start practicing' }).click();
 
 	// ABCD: one click reveals. The title is rendered, not shown as raw HTML.
 	await expect(page.getByRole('heading', { name: 'Capital of France?' })).toBeVisible();

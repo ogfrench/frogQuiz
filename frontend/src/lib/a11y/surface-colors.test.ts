@@ -7,11 +7,11 @@ import { describe, expect, it } from 'vitest';
 import { contrastRatio, toRgb } from './contrast';
 
 /**
- * Colours that are written into a component rather than into app.css.
+ * Colors that are written into a component rather than into app.css.
  *
  * `theme-tokens.test.ts` guards the palette; this guards the handful of surfaces that
  * deliberately sit outside it. They exist because they are drawn on the quiz author's
- * own background colour rather than on the app's theme — a token surface there went
+ * own background color rather than on the app's theme — a token surface there went
  * near-black on near-black in dark mode — so nothing in app.css can check them, and
  * nobody would notice them drifting until a room of people was looking at it.
  */
@@ -29,11 +29,11 @@ describe('the podium', () => {
 	const css = read('../play/admin/final_results.svelte');
 
 	it('puts readable ink on the winner', () => {
-		// The one block that carries a colour of its own. Everything else on the podium is
+		// The one block that carries a color of its own. Everything else on the podium is
 		// a theme surface, which theme-tokens.test.ts already covers.
 		const gold = hexesIn(css, '.podium-block.is-gold');
 		const [bg, , ink] = gold;
-		expect(gold.length, 'is-gold should set background, border and colour').toBe(3);
+		expect(gold.length, 'is-gold should set background, border and color').toBe(3);
 		const ratio = contrastRatio(toRgb(ink), toRgb(bg));
 		expect(ratio, `${ink} on ${bg} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
 	});
@@ -50,7 +50,7 @@ describe('the podium', () => {
 describe('the player result card', () => {
 	const css = read('../play/results_kahoot.svelte');
 
-	it('never says right or wrong with colour alone', () => {
+	it('never says right or wrong with color alone', () => {
 		// About one man in twelve cannot separate the green from the red, and this is the
 		// one screen of the game that has to land.
 		expect(css).toContain('answer_correct');

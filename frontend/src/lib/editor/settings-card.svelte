@@ -33,7 +33,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	let custom_bg_color = $state(Boolean(data.background_color));
 	// An <input type="color"> rejects an empty value and logs a format warning for it on
-	// every editor load, so the swatch always holds a real colour and the checkbox decides
+	// every editor load, so the swatch always holds a real color and the checkbox decides
 	// whether the quiz keeps it.
 	let bg_color_value = $state(data.background_color || '#d6edc9');
 
@@ -189,7 +189,7 @@ SPDX-License-Identifier: MPL-2.0
 				{/if}
 			</Button>
 			<!-- "Private" was never private: the view page loads any quiz by link. It is
-			     labelled Unlisted now, and says so (MVP.md D13). -->
+			     labeled Unlisted now, and says so (MVP.md D13). -->
 			<p class="text-muted-foreground text-sm">{$t('editor.visibility_hint')}</p>
 		</div>
 

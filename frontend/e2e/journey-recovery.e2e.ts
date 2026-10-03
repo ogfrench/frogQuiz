@@ -62,7 +62,7 @@ function mailbox(): string[] {
 			.sort()
 			.reverse()
 			// SMTP is CRLF on the wire and the sink writes what it is handed, so every blank
-			// line is \r\n\r\n. Normalised here, or the part split below never matches and
+			// line is \r\n\r\n. Normalized here, or the part split below never matches and
 			// every part comes back empty.
 			.map((f) => fs.readFileSync(path.join(MAIL_DIR, f), 'utf8').replace(/\r\n/g, '\n'))
 	);
@@ -119,7 +119,11 @@ test('somebody signs up, forgets their password, and gets back in through the em
 	let resetUrl = '';
 	await test.step('they ask for a reset and the email arrives', async () => {
 		// Reached the way a person reaches it, from the login page, not by URL.
-		await page.getByRole('link', { name: /Forgot/i }).click();
+		// The login card slides between its two steps, and both carry this link, so for
+		// the length of the slide there are two. A fast 401 lands inside it.
+		const forgot = page.getByRole('link', { name: /Forgot/i });
+		await expect(forgot).toHaveCount(1);
+		await forgot.click();
 		await expect(page).toHaveURL(/\/account\/reset-password/);
 		await page.getByRole('textbox', { name: 'Email' }).fill(email);
 		await page.getByRole('button', { name: 'Send reset link' }).click();
@@ -153,6 +157,13 @@ test('somebody signs up, forgets their password, and gets back in through the em
 		await page.getByRole('textbox', { name: 'Repeat password' }).fill(NEW_PASSWORD);
 		await page.getByRole('button', { name: 'Set password' }).click();
 		await expect(page.getByText(/That link has expired/i)).toHaveCount(0);
+		// Wait for the page's own redirect, which comes only once the API has answered.
+		// Moving on sooner aborted the request in the browser while the server carried on:
+		// it saves the password, then signs the user out everywhere, so a login made in
+		// between (which the new password already allows) was signed out under the test.
+		// The trace of the 3 Oct failure shows exactly that: reset -1, login 200, then a
+		// page that had quietly gone signed-out.
+		await expect(page).toHaveURL(/\/account\/login/);
 	});
 
 	await test.step('the new password works and the old one does not', async () => {
@@ -162,9 +173,17 @@ test('somebody signs up, forgets their password, and gets back in through the em
 		await page.waitForURL((u) => !u.pathname.startsWith('/account/login'), { timeout: 15_000 });
 
 		// Log out lives under the account menu, as a menu item that links to the API route.
+		// A menu needs the page hydrated before a click opens it, so retry the open until
+		// the item is there rather than assuming the first click landed after hydration.
 		await page.goto('/my-quizzes');
-		await page.getByRole('button', { name: 'My Account' }).click();
-		await page.getByRole('menuitem', { name: 'Log out' }).click();
+		const logOut = page.getByRole('menuitem', { name: 'Log out' });
+		await expect(async () => {
+			if (!(await logOut.isVisible())) {
+				await page.getByRole('button', { name: 'My Account' }).click();
+			}
+			await expect(logOut).toBeVisible({ timeout: 1000 });
+		}).toPass({ timeout: 10_000 });
+		await logOut.click();
 		await page.waitForURL(/\/(?!my-quizzes)/);
 
 		await logInThroughUI(page, email, OLD_PASSWORD);

@@ -69,7 +69,7 @@ SPDX-License-Identifier: MPL-2.0
 		// This question's points land as soon as the answers are up, because the
 		// scoreboard is the next screen and it reads these totals -- a host who advances
 		// quickly used to arrive at standings that had not been added up yet. Still
-		// cancelled on unmount: left running it would add the points after the host had
+		// canceled on unmount: left running it would add the points after the host had
 		// moved on, on top of the podium's rebuilt totals.
 		const pending = setTimeout(show_new_score, 0);
 		return () => clearTimeout(pending);
@@ -80,9 +80,9 @@ SPDX-License-Identifier: MPL-2.0
 	<!-- What the answer was and how the room split. Where that leaves the standings is
 	     the next screen (scoreboard.svelte), which the host advances into.
 	     This card is a fixed light "paper" surface rather than the bg-card token --
-	     it sits on the quiz author's own background colour, not the app's theme, so
+	     it sits on the quiz author's own background color, not the app's theme, so
 	     in dark mode bg-card made it near-black with equally dark text, unreadable
-	     regardless of what colour the game background happened to be. -->
+	     regardless of what color the game background happened to be. -->
 	<div
 		class="w-full max-w-2xl overflow-hidden rounded-2xl border border-neutral-200 bg-white text-neutral-900 shadow-sm lg:max-w-4xl"
 	>

@@ -11,7 +11,7 @@ SPDX-License-Identifier: MPL-2.0
      screen, and it is the one people sit in longest.
 
      Switching also used to be `window.location.reload()`. In the editor that is a
-     round trip through the unsaved-changes prompt to change a colour. Toggling the
+     round trip through the unsaved-changes prompt to change a color. Toggling the
      class the boot script in app.html already looks for does the same job with no
      navigation, so it is safe to offer anywhere. -->
 <script lang="ts">

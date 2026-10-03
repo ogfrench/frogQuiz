@@ -122,7 +122,7 @@ This is a monorepo:
 | `Pipfile`                                            | The backend project, at the repository root                                     |
 | [`docs/mvp-scope.md`](docs/mvp-scope.md)             | What the MVP includes, what was cut, and how to restore it                      |
 | [`docs/redesign-status.md`](docs/redesign-status.md) | Which surfaces have been redesigned, which have not, and why                    |
-| [`CLAUDE.md`](CLAUDE.md)                             | Conventions: changelog discipline, licence headers, feature triage, UI baseline |
+| [`CLAUDE.md`](CLAUDE.md)                             | Conventions: changelog discipline, license headers, feature triage, UI baseline |
 
 ### Tech stack
 

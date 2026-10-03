@@ -29,12 +29,12 @@ const QUIZ = {
 };
 
 /**
- * A control's painted colour as sRGB.
+ * A control's painted color as sRGB.
  *
  * `getComputedStyle` hands back `oklch(...)` verbatim for a token defined in oklch, so
  * parsing the numbers out of the string gives lightness and chroma, not channels -- the
  * first version of this file did exactly that and read `oklch(0.967 ...)` as a luminance
- * of 0.9. Painting the colour onto a canvas makes the browser resolve it, whatever the
+ * of 0.9. Painting the color onto a canvas makes the browser resolve it, whatever the
  * notation.
  */
 function painted(prop: 'backgroundColor' | 'color') {
@@ -110,7 +110,7 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 	const disabledBg = await bg(join);
 	const disabledFg = await fg(join);
 
-	// `disabled:opacity-50` over a near-black primary gave a flat mid-grey with pale
+	// `disabled:opacity-50` over a near-black primary gave a flat mid-gray with pale
 	// text, which is what a player stares at for the whole time they are typing. The
 	// waiting state has to be a light, inert surface in light mode -- not a dark button
 	// turned down.
@@ -128,16 +128,16 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 	await expect(nickname).toBeVisible({ timeout: 15_000 });
 	await nickname.fill('ana');
 	// The nickname step's button: the same component and classes as the PIN step's, so
-	// its enabled colour is the one the PIN button reaches too.
+	// its enabled color is the one the PIN button reaches too.
 	const submit = page.getByRole('button', { name: 'Join game' });
 	await expect(submit).toBeEnabled();
 
 	// Polled, not read once: the button carries `transition-all`, so the background
 	// animates from the disabled surface to the primary one. Reading it immediately after
-	// the state flips returns a colour partway between the two -- this test first failed
+	// the state flips returns a color partway between the two -- this test first failed
 	// on rgb(236,236,237), which is neither token and looked like a bug in the app.
 	await expect.poll(async () => luminance(await bg(submit)), { timeout: 5000 }).toBeLessThan(100);
 
-	// And the two are genuinely different surfaces, not one colour at two opacities.
+	// And the two are genuinely different surfaces, not one color at two opacities.
 	expect(await bg(submit)).not.toEqual(disabledBg);
 });

@@ -16,7 +16,7 @@ against `master`.
 | --- | --- |
 | e2e | **E2E_RESULT** |
 | Backend | **163 passed**, 1 skipped |
-| Unit | **135 passed** |
+| Unit | **142 passed** |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
 
@@ -103,7 +103,7 @@ a real finding closed with a test that fails against the old code:
   and the host's screen by 7736 px. Now bounded (title 100, description 500, question 250,
   answer 100, measured on visible text), with `wrap-anywhere` at every render site because
   a quiz saved before the bounds is never revalidated.
-- **A decompression bomb.** A 20000×20000 PNG of one colour is under 400 KiB — inside the
+- **A decompression bomb.** A 20000×20000 PNG of one color is under 400 KiB — inside the
   5 MB byte cap — and ~1.6 GB as a bitmap in every browser that draws it. The server never
   decodes an image, so the clients (phones, projector) are what fall over. Now rejected by
   a header-only dimension read (no decode, no dependency) at 8000 px per side.
@@ -128,6 +128,12 @@ and 1440 and walked the screenshots; every route is now axe-clean. Real bugs it 
 "Questions" with no number, the footer existed on four pages of ten, and the editor's
 question list was a critical ARIA error.
 
+**Answer tiles are always pastel.** Every screen used to draw a color stored on the answer
+instead of the palette, so quizzes from the ClassQuiz days (the one public quiz on
+frogquiz.xyz) came out brown and green, and anything written through the API could be pure
+red. The palette is now the only source, by slot, and wraps past four, which also fixes
+answers five to ten having no color at all on the host and phone screens.
+
 Everything else is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
@@ -135,7 +141,7 @@ Everything else is in [`CHANGELOG.md`](CHANGELOG.md).
 ## 3. The test suites, and why they are worth trusting
 
 115 → **132 e2e tests**, and six of the new ones are *user journeys* rather than feature
-tests. The distinction matters: the existing suite was organised by mechanism — sockets,
+tests. The distinction matters: the existing suite was organized by mechanism — sockets,
 editor, uploads, exits — and was thorough at it, but a journey fails for a different
 reason. Not "this control is wrong" but **"you cannot get from here to there."**
 
@@ -184,7 +190,7 @@ measured it and found the unfixed code passed 10/10. The retraction is in the gi
 Oct; D2 and D16 he answered with "like Kahoot"; D8, D9, D17 and D18 are his. Each row
 records what was decided and why.
 
-Two judgement calls left open on purpose, neither blocking:
+Two judgment calls left open on purpose, neither blocking:
 
 - **The README still links to Mawoka's Ko-fi and Liberapay.** `CLAUDE.md` lists it as a
   leftover, but the same file says credits to real upstream people are kept because they
@@ -215,7 +221,7 @@ Two judgement calls left open on purpose, neither blocking:
 bash e2e/run.sh                      # whole stack + 132 e2e tests, no Docker needed
 KEEP_UP=1 bash e2e/run.sh --list     # leave it up at localhost:3000 to click around
 bash e2e/stop.sh                     # stop it
-cd frontend && pnpm test             # 135 unit tests, about a second
+cd frontend && pnpm test             # 142 unit tests, about a second
 ```
 
 The backend suite needs a Python env (`pipenv sync --dev`, or point `E2E_VENV` at one) and

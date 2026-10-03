@@ -264,9 +264,9 @@ because they may reorder everything else.
 
 **Landed 2026-10-01**, from the full visual audit (`docs/audit-2026-10-01.md`):
 
-- [x] After each question a player is told **Correct!** or **Not this time**, with an icon as well as the colour, then the points, their total and their place. It was a bare "+760", so scoring 0 read as a broken game. Nothing new crosses the socket
+- [x] After each question a player is told **Correct!** or **Not this time**, with an icon as well as the color, then the points, their total and their place. It was a bare "+760", so scoring 0 read as a broken game. Nothing new crosses the socket
 - [x] The **podium builds up** — third, second, first, 1.4s apart — in gold, silver and bronze with a crown and confetti, and does none of that under `prefers-reduced-motion`
-- [x] The **join screen** is the landing page's PIN card rather than a floating label, an unlabelled box and a grey Submit
+- [x] The **join screen** is the landing page's PIN card rather than a floating label, an unlabeled box and a gray Submit
 - [x] The host's per-question **results scale for a projector**; they were set at laptop size behind a question screen set at 90px
 - [x] **Play** is no longer offered to a signed-in visitor on somebody else's unlisted quiz, which `quiz/start` answers with a 404
 

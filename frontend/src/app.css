@@ -98,7 +98,7 @@ SPDX-License-Identifier: MPL-2.0
 	--secondary: oklch(0.967 0.001 286.375);
 	--secondary-foreground: oklch(0.21 0.006 285.885);
 	--muted: oklch(0.967 0.001 286.375);
-	/* 0.552 measured 4.39:1 against --muted, just under AA's 4.5. This is the colour
+	/* 0.552 measured 4.39:1 against --muted, just under AA's 4.5. This is the color
 	   every secondary label in the app uses, and --muted is a common ground for it
 	   (badges, the language select, hovered nav items), so the pairing is real rather
 	   than theoretical. 0.546 measures 4.52:1. Dark mode already clears it at 5.68. */
@@ -224,7 +224,7 @@ SPDX-License-Identifier: MPL-2.0
    --------------------------------------------------------------------------- */
 
 @utility fq-stage {
-	/* justify-center centres short content; min-height rather than height so a
+	/* justify-center centers short content; min-height rather than height so a
 	   tall composition grows and the page scrolls instead of clipping. */
 	display: flex;
 	flex-direction: column;
@@ -315,7 +315,7 @@ SPDX-License-Identifier: MPL-2.0
 	--fq-space-group: 1.5rem;
 	--fq-space-item: 0.75rem;
 
-	/* Projector type. The host screen is read from two to ten metres by people who
+	/* Projector type. The host screen is read from two to ten meters by people who
 	   are not touching it, so its type has to scale with the surface it is thrown
 	   on -- a breakpoint ladder (text-5xl md:text-6xl) is a laptop measurement and
 	   stops growing exactly where a projector starts. vw with a clamp on both ends:

@@ -71,7 +71,7 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 		await lisbon.click();
 		// The tiles stay up with their pick held until the timer ends -- "Answer locked
 		// in" is the screen *after* that, not the acknowledgement of the tap. Kahoot does
-		// the same. Asserting the copy here failed against correct behaviour; the page
+		// the same. Asserting the copy here failed against correct behavior; the page
 		// snapshot showed the timer still at 10 with the tile [disabled] [pressed].
 		await expect(lisbon).toBeDisabled();
 		await expect(lisbon).toHaveAttribute('aria-pressed', 'true');
@@ -113,7 +113,7 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 		// `/play` swaps the control by state: "Leave game" behind a confirm while you are
 		// joined and between questions, and plain "Home" once the final results are in --
 		// there is nothing left to leave by then. Asserting "Leave game" here hung until
-		// the test timed out, three runs out of three, against correct behaviour.
+		// the test timed out, three runs out of three, against correct behavior.
 		await expect(phone.getByRole('button', { name: 'Leave game' })).toHaveCount(0);
 		const home = phone.getByRole('link', { name: 'Home' });
 		await expect(home).toHaveAttribute('href', '/');

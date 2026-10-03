@@ -14,7 +14,7 @@ Format: each backlog section is a milestone. Items are one-liners with a short r
 1. Host picks or authors a "kahoot" (quiz) in an editor with question templates.
 2. Host starts a live session, gets a 6-digit game PIN + shareable link/QR.
 3. Players join on any device via a join page (`kahoot.it` + PIN), type a nickname — no account needed.
-4. Host controls pacing question-by-question; the big screen shows the question, shape/colour-coded answers, and a countdown; players see only shapes/colours on their phone and tap.
+4. Host controls pacing question-by-question; the big screen shows the question, shape/color-coded answers, and a countdown; players see only shapes/colors on their phone and tap.
 5. Points are speed-weighted (faster + correct = more points); after each question the host screen shows an answer distribution and a live leaderboard.
 6. Session ends with a podium (top 3) celebration and a full results/report export for the host.
 7. Optional: assign the same quiz as **self-paced homework/challenge** (players go through it solo, at their own pace, over a longer window).
@@ -278,7 +278,7 @@ component, matching the editor/dashboard visual language. Also folds in a scope 
 drop the Normal/Old-School mode picker (game mode hardcoded to `kahoot`; the API still
 accepts `normal` if it's ever wanted back) and drop the captcha toggle, which is dead
 UI while hCaptcha is off at the config level. Keeps the custom field, randomize-answers
-toggle, and start/spinner behaviour.
+toggle, and start/spinner behavior.
 
 Tracked as [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16).
 
@@ -311,7 +311,7 @@ What is actually there, verified in the file:
   wrappers forward `variant`.
 - **Accessibility**: the icon-only Play buttons at L183-210 and L215-237 need `label`,
   which the `gray` wrapper now forwards.
-- **Colours**: L343 `bg-white dark:bg-gray-700` → `Card`/tokens; L384-387
+- **Colors**: L343 `bg-white dark:bg-gray-700` → `Card`/tokens; L384-387
   `shadow-blue-500`/`shadow-yellow-500` → a token ring; L405/L415 `bg-gray-300
   dark:bg-gray-500` → `muted`. **Keep** the `ANSWER_COLORS` inline styles at L380-383 —
   that is answer identity, not theming.
@@ -320,7 +320,7 @@ What is actually there, verified in the file:
 ### ~~P2 — Editor: a "+" add-question button below the questions~~ (done)
 
 Google Forms style. Purely UX, and additive — the left rail keeps its add control.
-Assumed to open the same type picker, so there is one behaviour rather than two.
+Assumed to open the same type picker, so there is one behavior rather than two.
 
 **Done.** Both controls open the same picker, which is now the shadcn `Dialog`. The
 rail's own button was also fixed: it sat inside the scrolling list, so it scrolled out of
@@ -333,7 +333,7 @@ Gonçalo has stated he is comfortable consolidating features that exist on maste
 needed, including the Explore/Search merge above. Recorded here as his position.
 `CLAUDE.md` makes this a joint call with François, so **the blanket form needs François's
 agreement before it supersedes that rule.** The Explore/Search merge above is the
-specific case he has signed off on, not a general licence.
+specific case he has signed off on, not a general license.
 
 ---
 

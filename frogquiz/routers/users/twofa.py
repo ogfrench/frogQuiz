@@ -23,7 +23,7 @@ settings = settings()
 async def totp_setup_enabled():
     """Gate for the endpoints that *turn TOTP on*.
 
-    TOTP is cut from the MVP (see docs/mvp-scope.md), but the login flow still honours
+    TOTP is cut from the MVP (see docs/mvp-scope.md), but the login flow still honors
     a secret that is already set, so anyone who enabled it before the cut keeps being
     asked for a code. Gating the whole router would leave them behind a factor they can
     no longer remove, which is a lockout we would have created ourselves. So only the

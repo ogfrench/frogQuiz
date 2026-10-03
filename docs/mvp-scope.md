@@ -100,7 +100,7 @@ produced `ABCD`, by relying on the model default. It now says so explicitly
 somebody changing that default later.
 
 Two things were fixed there at the same time. It used to stamp a hardcoded
-four-colour palette — the old green and brown one — onto every imported answer,
+four-color palette — the old green and brown one — onto every imported answer,
 which meant imported quizzes kept looking like the pre-redesign app no matter what
 the design did, and raised `IndexError` on any question with more than four
 choices. And a Kahoot deck mixes scored questions with surveys and polls, which
@@ -123,7 +123,7 @@ written for the old visual language and have not been reviewed since the redesig
 The team signs in with a password. Company SSO is the route to a second factor, not
 an authenticator app, so building out TOTP now is work that SSO would replace.
 
-**What the flag gates is only turning TOTP on.** The login flow still honours a
+**What the flag gates is only turning TOTP on.** The login flow still honors a
 secret that is already set. If the whole `/2fa` router were switched off, anyone who
 had enabled TOTP before the cut would keep being asked for a code with no way to
 remove it — a lockout we would have created ourselves. So:

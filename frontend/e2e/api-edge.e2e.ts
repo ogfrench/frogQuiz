@@ -23,7 +23,7 @@ const start = (request: APIRequestContext, id: string, secret?: string) =>
 const note = (key: string, value: unknown) =>
 	test.info().annotations.push({ type: key, description: String(value) });
 
-// Known bugs are written as the behaviour we want, wrapped in test.fail: the run stays
+// Known bugs are written as the behavior we want, wrapped in test.fail: the run stays
 // green while they exist, and turns red ("expected to fail but passed") once one is fixed,
 // which is the prompt to delete the test.fail line.
 

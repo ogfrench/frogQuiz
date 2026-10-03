@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	// The four classic answer shapes: triangle, diamond, circle, square.
 	// Drawn inline rather than loaded as images so they inherit currentColor and
-	// keep contrast against whatever colour the answer tile is.
+	// keep contrast against whatever color the answer tile is.
 	interface Props {
 		index: number;
 		class?: string;

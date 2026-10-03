@@ -45,7 +45,7 @@ code sweep and are reliable about what the code says, not about what a browser d
 | Feature | How you reach it |
 | --- | --- |
 | **Custom field** — the host writes one extra prompt ("Team?", "Email?") shown on the join screen; answers land in Redis and become a column in the export | Start-game dialog → Custom field |
-| **Randomise answers** per game | Start-game dialog |
+| **Randomize answers** per game | Start-game dialog |
 | **Hide this question's results** — scores are recorded but the distribution never goes up | Editor → question card → gear → Advanced settings |
 | **Kick a player** — every lobby nickname is a button; kicking writes a cookie that refuses that player *that PIN only*, for a day | Lobby → click a nickname |
 | **Rejoin after a reload** — a 5-hour cookie carries (sid, username, pin) and re-seats the player on the question currently up | Reload mid-game |

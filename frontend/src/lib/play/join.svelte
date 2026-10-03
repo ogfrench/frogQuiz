@@ -44,7 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 	// phone is a system dialog that reads like the page has crashed.
 
 	// The server takes any non-blank nickname. The old minimum of four rejected "Ana"
-	// and "Rui" with a greyed-out button and no word of why.
+	// and "Rui" with a grayed-out button and no word of why.
 	const MIN_NICKNAME = 2;
 
 	// Mirrors MAX_CUSTOM_FIELD_LENGTH in frogquiz/socket_server/models.py. Without
@@ -227,12 +227,12 @@ SPDX-License-Identifier: MPL-2.0
      phone, which is where every player is, and pushed the submit button below the
      fold.
      This screen is the first thing every player sees, and it was a floating label, an
-     unlabelled box and a grey Submit on an empty page -- while the landing page next
+     unlabeled box and a gray Submit on an empty page -- while the landing page next
      door already did the same job in a card. Same card here: the mark, so you can see
      you are in the right place, one field, and one full-width primary action. -->
-<!-- fq-stage centres on both axes, which is right for the game surfaces a room reads and
+<!-- fq-stage centers on both axes, which is right for the game surfaces a room reads and
      wrong for a form: at 1440x900 the card floated with roughly 40% of the viewport empty
-     above it and read as a page that had failed to load. Centred on a phone, where it is
+     above it and read as a page that had failed to load. Centered on a phone, where it is
      correct and where every player actually is; biased upward from `sm` so a host testing
      on a laptop sees a form rather than a void. fq-stage itself is untouched. -->
 <div class="fq-stage sm:justify-start sm:pt-[14vh]">

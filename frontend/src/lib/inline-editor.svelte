@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { run } from 'svelte/legacy';
 
-	// ckeditor5 touches `document` while its modules initialise, which crashes any
+	// ckeditor5 touches `document` while its modules initialize, which crashes any
 	// server-side render. It is only ever used in onMount, so load it there.
 	import 'ckeditor5/ckeditor5.css';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
@@ -119,7 +119,7 @@ SPDX-License-Identifier: MPL-2.0
 		display: none;
 	}
 
-	/* ckeditor5.css sets its own text colour, which is a near-black constant. It does
+	/* ckeditor5.css sets its own text color, which is a near-black constant. It does
 	   not know about the theme, so in dark mode the question title rendered black on
 	   a dark ground and was all but invisible. Hand it the tokens instead of letting
 	   it pick. The balloon toolbar needs the same, or it arrives as a white slab. */

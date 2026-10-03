@@ -5,10 +5,10 @@
 // MVP.md D16: what a player sees on their own phone during a question.
 //
 // Kahoot's default puts the question and the answer text on the shared screen and gives
-// the phone four coloured shapes, and it ships a free host-side setting -- "Show questions
+// the phone four colored shapes, and it ships a free host-side setting -- "Show questions
 // & answers on participants' devices" -- that moves them onto the phone as well. frogQuiz
 // does the same, through `game_mode` ('kahoot' / 'normal'), which both render paths in
-// `lib/play/question.svelte` have always honoured; until 2026-10-02 the start modal
+// `lib/play/question.svelte` have always honored; until 2026-10-02 the start modal
 // hardcoded 'kahoot' so the switch was unreachable.
 //
 // The assertions below are deliberately about VISIBLE text. The answer text is the

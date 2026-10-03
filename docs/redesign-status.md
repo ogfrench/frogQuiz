@@ -21,11 +21,11 @@ overflow at any width.** Anything less is in one of the other tables.
 
 | Surface                | Route            | What changed                                                                                                                       |
 | ---------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Host lobby             | `/admin`         | One centred composition: giant join code, QR beside it, animated player chips, kick as a labelled button                           |
+| Host lobby             | `/admin`         | One centered composition: giant join code, QR beside it, animated player chips, kick as a labeled button                           |
 | Host question          | `/admin`         | Rebuilt; was the only game surface missing `fq-stage`, so it sat flush against the top of the projector with the bottom half empty |
 | Per-question results   | `/admin`         | Horizontal bars replacing vertical ones whose 45°-rotated labels collided; correct row marked with a tick and a ring               |
 | Podium                 | `/admin`         | Three-place podium building 3rd→2nd→1st, winner highlighted, confetti timed to their arrival; viewport-scaled blocks               |
-| Player join and answer | `/play`          | Answer tiles with shape, colour and pressable body; "you're in" confirmation; locked-in and time's-up states                       |
+| Player join and answer | `/play`          | Answer tiles with shape, color and pressable body; "you're in" confirmation; locked-in and time's-up states                       |
 | Editor                 | `/edit`          | Canvas shows the real game tiles; question navigation in the shell at every width; measure-capped canvas                           |
 | My Quizzes             | `/my-quizzes`    | The old dashboard list, merged with the signed-out browser list 2026-09-29 (D1): one page for both states, "On this browser" with Claim when signed in, the 30-day notice and account CTA when signed out, Delete in a dialog. `/dashboard` redirects here. Verified 2026-09-29 at 390/834/1440 in both themes, signed in and out |
 | Login                  | `/account/login` | Both steps on shadcn Label/Input/Button                                                                                            |
@@ -45,7 +45,7 @@ Two cross-cutting systems came out of this and now apply to every surface above:
 
 - **Answer palette** — four pastel hues in `src/lib/play/answer_colors.ts`, derived
   in OKLCH. Was the same hex array copy-pasted into six files. This page previously
-  said the palette was "validated for colour-vision separation". It is not, and an
+  said the palette was "validated for color-vision separation". It is not, and an
   earlier commit in this branch corrected the same claim in the source: under
   deuteranopia coral and green differ by 4 of 255. Four hues at one lightness cannot
   be separated by a dichromat. Accessibility here rests on the shape channel, which
@@ -184,7 +184,7 @@ Worth being exact, because the phrase gets stretched:
   painted region past its box, and a wide table contributing paint through a scroll
   container that was itself working correctly.
 - **Verified in dark mode:** the editor, at 390 and 1440. Doing this found a real
-  bug rather than confirming a guess: `ckeditor5.css` sets its own text colour as a
+  bug rather than confirming a guess: `ckeditor5.css` sets its own text color as a
   near-black constant, so the question title in the editor rendered black on a dark
   ground and was all but invisible. It is mapped onto the theme tokens now.
 - **Not verified in dark mode:** the projector surfaces and the player screens since

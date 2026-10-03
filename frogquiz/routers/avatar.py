@@ -81,7 +81,7 @@ async def get_customized_avatar(
     ).render_svg()
     # Return a Response with the media type rather than a PlainTextResponse whose
     # Content-Type is patched afterwards: patching left text/plain in place as a second
-    # Content-Type header, the browser honoured the first, and a perfectly valid SVG
+    # Content-Type header, the browser honored the first, and a perfectly valid SVG
     # body rendered as a broken image everywhere an avatar appears.
     return Response(content=avatar, media_type="image/svg+xml")
 

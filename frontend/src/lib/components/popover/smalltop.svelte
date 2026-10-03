@@ -28,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 	     for the close button against AA's 4.5, a 32px target, w-screen (100vw, so it
 	     overflowed by the scrollbar width), and a missing space in
 	     "shadow-smdark:text-gray-400" that silently broke both the shadow and the
-	     dark-mode colour it was meant to set. -->
+	     dark-mode color it was meant to set. -->
 	<div
 		class="fixed inset-x-0 bottom-6 z-[60] flex justify-center px-4"
 		transition:fly|global={{ y: -100 }}

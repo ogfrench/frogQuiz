@@ -102,7 +102,7 @@ test('a question can be moved and deleted', async ({ page, request }) => {
 	let texts = await cards(page).allInnerTexts();
 	expect(texts[0]).toContain('Second question?');
 	expect(texts[1]).toContain('First question?');
-	// The card the author was editing travelled with them: it is still the open one.
+	// The card the author was editing traveled with them: it is still the open one.
 	await expect(openCards(page)).toHaveCount(1);
 	await expect(cards(page).nth(1).getByRole('textbox', { name: 'Question text' })).toBeVisible();
 
