@@ -6,6 +6,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- `docs/redesign-status.md` listed `/user/[user_id]` and `/edit/videos` as live and
+  `/docs` as eight live pages; all but three legal pages were hidden on 2026-10-01.
+  The hidden ones now sit with the cut features, the live docs are named, and the Done
+  rows for results, Kahoot import and the media library say those routes are hidden.
 - Sentence case for the question-type picker ("Multiple choice", "Check choice") and the
   start-game dialog ("Start game"), matching the rest of the app. Both dialogs were
   driven at 390/834/1440 in both themes and moved to Done in `docs/redesign-status.md`.

@@ -33,16 +33,16 @@ overflow at any width.** Anything less is in one of the other tables.
 
 | Landing | `/` | Verified clean at both widths and themes |
 | Register | `/account/register` | Rebuilt on the same Card/Label/Input/Button primitives as login |
-| Results history | `/results`, `/results/[result_id]` | Table rebuilt on theme tokens in an `fq-scroll-x` container; real empty state with a way out of it |
+| Results history | `/results`, `/results/[result_id]` | Table rebuilt on theme tokens in an `fq-scroll-x` container; real empty state with a way out of it. Hidden since 2026-10-01 (`DISABLED_ROUTES`); the redesign predates that |
 | Create | `/create` | Verified clean |
-| Kahoot import | `/import` | Rebuilt as two stacking cards; styled file picker; no invalid ring on an untouched field |
-| Media library | `/dashboard/files` | Verified clean |
+| Kahoot import | `/import` | Rebuilt as two stacking cards; styled file picker; no invalid ring on an untouched field. Hidden since 2026-10-01 (`DISABLED_ROUTES`); the redesign predates that |
+| Media library | `/dashboard/files` | Verified clean. Hidden since 2026-10-01 (`DISABLED_ROUTES`); the redesign predates that |
 | Password reset | `/account/password-reset`, `/account/reset-password` | Swept with import |
 | Account settings | `/account/settings` | Rebuilt from `grid-cols-6` to a single column of section cards; sessions table in a scroll container, and a list below `sm` so each Delete is on screen (2026-10-03); the picture is the first letter of the username, in place of the generated cartoon face (2026-10-03) |
 | Discover | `/explore` (and `/search`, a 302 into it) | Shadcn `Card` on theme tokens since Explore and Search merged. 2026-10-03: driven in a browser at 390/834/1440 in both themes across all four modes (browse, results with highlights, too short, no results), no overflow in any of the 24. Dropped upstream's verified-seal icon that every original quiz wore with a hover-only explanation; an import now says "Imported from Kahoot" in words. Search highlights are a butter tint held to AA in both themes instead of the browser's #ffff00 |
 | Navbar and layout | every page with the navbar | 2026-10-03: one Log in (registration on the login page), an initial-letter avatar that opens My Account (Log out lives there), Join beside the menu button on phones, a Sheet drawer below `md`, the full bar from 768 px. Layout owns `<main>`, a skip link and the footer, which four pages used to paste in. axe reports nothing on any visible route at 390 and 1440, signed in and out. Screenshots walked: every route in light at 390 and 1440, the changed routes in dark at 390, the navbar and drawer in both themes |
 | Add-question picker | `/create`, `/edit` | The type picker is the shadcn `Dialog`, opened from the button after the last card and from the empty state. 2026-10-03: driven at 390/834/1440 in both themes; it fits at all six. Type names in sentence case ("Multiple choice", "Check choice") |
-| Start-game dialog | Play on `/view/[quiz_id]`, `/my-quizzes`, `/user/[user_id]` (one component, `lib/dashboard/start_game.svelte`) | Rebuilt on shadcn `Dialog`/`Button`/`Card`/`Input`/`Label`/`Switch`; the Old-School mode picker and the (already-inert) captcha toggle were dropped, see [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16). 2026-10-03: driven from `/view` at 390/834/1440 in both themes; it fits at all six. The other two open the same component. Title and button read "Start game" |
+| Start-game dialog | Play on `/view/[quiz_id]` and `/my-quizzes` (one component, `lib/dashboard/start_game.svelte`) | Rebuilt on shadcn `Dialog`/`Button`/`Card`/`Input`/`Label`/`Switch`; the Old-School mode picker and the (already-inert) captcha toggle were dropped, see [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16). 2026-10-03: driven from `/view` at 390/834/1440 in both themes; it fits at all six. `/my-quizzes` opens the same component. Title and button read "Start game" |
 
 Two cross-cutting systems came out of this and now apply to every surface above:
 
@@ -79,6 +79,9 @@ for how to turn any of them back on.
 | Box controller        | `/controller`, `/account/controllers/*` (4 routes)                                                      |
 | TOTP and backup codes | `/account/settings/security`                                                                            |
 | Moderation            | `/moderation` — 404s in its loader; its API is separately gated on the `mods` allowlist, which is empty |
+| Public user page      | `/user/[user_id]` — hidden through `DISABLED_ROUTES` since 2026-10-01; nothing linked to it               |
+| Video upload          | `/edit/videos` — hidden the same day; the uploader is always given `video_upload={false}`              |
+| Custom avatars        | `/account/settings/avatar` — hidden; My Account shows the first letter of the username instead          |
 
 `/remote` is hidden (MVP.md D15) and 404s through `DISABLED_ROUTES`. `/practice` was
 kept (D3) and rebuilt on 2026-09-29: the game's answer tiles, no timer, a score at the
@@ -91,10 +94,8 @@ covers it.
 
 | Surface          | Route                        | Why                                                                                                                                                                                                                                                                                                                                                       |
 | ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Docs             | `/docs` and 7 pages under it | Layout untouched, but the copy was not left alone: all eight carried upstream's "the open-source quiz-application" description and two described a different page entirely, two told you to `git clone mawoka-myblock/ClassQuiz`, and the attribution page credited nine named people for work on frogQuiz they never did. See the identity section below |
-| Public user page | `/user/[user_id]`            | Nobody links to it internally                                                                                                                                                                                                                                                                                                                             |
+| Docs             | `/docs/attribution`, `/docs/privacy-policy`, `/docs/tos` (the index and the other pages are hidden) | Layout untouched, but the copy was not left alone: all eight carried upstream's "the open-source quiz-application" description and two described a different page entirely, two told you to `git clone mawoka-myblock/ClassQuiz`, and the attribution page credited nine named people for work on frogQuiz they never did. See the identity section below |
 | OAuth error      | `/account/oauth-error`       | Layout untouched — OAuth renders nothing today, by config. Its "open an issue" link pointed at upstream's tracker and now points at ours                                                                                                                                                                                                                  |
-| Video editor     | `/edit/videos`               | Reachable only from the uploader's video path                                                                                                                                                                                                                                                                                                             |
 
 ---
 
