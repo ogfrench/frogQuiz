@@ -6,6 +6,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Log out falls back to the old GET when the API answers the POST with 404, so it keeps
+  working against an API from before this change: the deploy preview's (it uses the
+  production API) and production's, until the VM pulls the new images. HANDOVER now
+  lists that pull as a step after merging.
 - Fixed the production build, which the new navbar had broken: it read the query string
   for the Log in link, and SvelteKit forbids that while prerendering the legal pages, so
   every Netlify deploy preview since the navbar commit failed. Prerendered pages build

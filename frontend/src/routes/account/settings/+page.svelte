@@ -163,6 +163,29 @@ SPDX-License-Identifier: MPL-2.0
 		return `${result.browser.name ?? '?'} ${result.browser.version ?? ''} (${result.os.name ?? '?'})`;
 	};
 
+	// The form posts on its own without JavaScript. With it, this also copes with an API
+	// from before 2026-10-03, which only logged out on GET and answers this POST with a
+	// 404: the deploy preview runs against the production API, and production's API is
+	// only replaced when someone pulls the new images on the VM. Falling back to the GET
+	// opens nothing new: on such an API that GET already logs out by itself.
+	const logOut = async (e: SubmitEvent) => {
+		e.preventDefault();
+		const form = e.currentTarget as HTMLFormElement; // gone after the await
+		const res = await fetch('/api/v1/users/logout', { method: 'POST' }).catch(() => null);
+		if (res === null) {
+			// The request never got an answer, so nothing says you are logged out. Let the
+			// browser post the form itself: it either works or shows its own error, rather
+			// than this sending you home still signed in.
+			form.submit();
+			return;
+		}
+		if (res.status === 404 || res.status === 405) {
+			window.location.href = '/api/v1/users/logout';
+			return;
+		}
+		window.location.href = '/';
+	};
+
 	const deleteSession = async (session_id: string) => {
 		const res = await fetch(`/api/v1/users/sessions/${session_id}`, {
 			method: 'DELETE'
@@ -213,7 +236,7 @@ SPDX-License-Identifier: MPL-2.0
 					     page, and this is where you leave from (François, 2026-10-03). A form
 					     post, not a link: the API only logs out on POST, so another site cannot
 					     sign you out by sending you to a URL. -->
-					<form method="POST" action="/api/v1/users/logout">
+					<form method="POST" action="/api/v1/users/logout" onsubmit={logOut}>
 						<Button type="submit" variant="outline">
 							<LogOut />
 							{$t('words.logout')}

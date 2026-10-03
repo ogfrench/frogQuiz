@@ -22,7 +22,7 @@ against `master`.
 
 ---
 
-## 1. Do these three things, in this order
+## 1. Do these four things, in this order
 
 Nothing else on this list has a deadline. These do.
 
@@ -46,7 +46,26 @@ running right up to the cliff.
 Full analysis, verified against Oracle's own documentation, with a dated checklist:
 **issue #22**.
 
-### B. Prove mail works on the deployed site — 10 minutes
+### B. After merging, update the API on the VM — 5 minutes
+
+Merging builds new images (`build_backend.yml` publishes `ghcr.io/ogfrench/frogquiz-backend:master`,
+which the `api` and `worker` services run; `build_caddy.yml` does the same for the proxy),
+but **nothing in this repo's setup pulls them onto the VM**: no Watchtower, no cron (unless
+someone added one by hand on the box). Once the workflow is green:
+
+```bash
+cd frogQuiz && docker compose pull && docker compose up -d   # prestart runs the migrations
+```
+
+Until then the backend half of this PR is not live, even though Netlify ships the new
+frontend within a minute of the merge: upload caps, the pixel check, text and quiz-shape
+limits, the disconnect fix, owner-only Excel, the token fixes and POST-only logout all
+run on the old code. (Log out itself keeps working in that gap: the button falls back to
+the old GET when the API answers 404.) The same is true of PR #23's deploy preview, which
+runs this branch's frontend against the production API, so test backend changes on the
+local stack (`bash e2e/run.sh`), not on the preview.
+
+### C. Prove mail works on the deployed site — 10 minutes
 
 Set `MAIL_*` on the production API and run register → confirm → reset by hand, to
 **francois.prevot@hotmail.com**. Steps are in `DEPLOY.md` under "Testing it for real".
@@ -56,7 +75,7 @@ inside the email. What automation cannot prove is that a real provider accepts a
 delivers it. Check the spam folder on both messages — landing in spam is a pass for the
 code and a fail for the deployment, and it is the likely outcome on a fresh sender domain.
 
-### C. Confirm the `worker` container runs in production — 2 minutes
+### D. Confirm the `worker` container runs in production — 2 minutes
 
 `docker compose ps` on the VM. Without it, the 30-day deletion that the anonymous-quiz
 notice promises every user is not actually happening.
