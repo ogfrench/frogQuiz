@@ -166,8 +166,11 @@ SPDX-License-Identifier: MPL-2.0
 						<Badge variant="destructive">{$t('editor.question_incomplete')}</Badge>
 					{/if}
 					<div class="ml-auto flex flex-wrap items-center gap-1.5">
+						<!-- The input inside drops its own outline, so the pill shows focus for it,
+						     the way the shadcn Input does. Without this the only sign of focus was
+						     the selected value, gone as soon as you typed. -->
 						<label
-							class="border-input bg-background text-muted-foreground flex min-h-9 items-center gap-1.5 rounded-md border px-2 py-1 text-sm"
+							class="border-input bg-background text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 flex min-h-9 items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-[color,box-shadow] focus-within:ring-3"
 						>
 							<Clock class="size-4" />
 							<span class="sr-only">{$t('editor.time_in_seconds')}</span>

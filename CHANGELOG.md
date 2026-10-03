@@ -6,6 +6,12 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- In the editor, the answer fields and the timer now show focus. Both dropped the
+  browser outline with nothing in its place, so tabbing into an answer showed nothing;
+  answers get an outline set off past the "correct" ring, the timer the shadcn Input's
+  ring. Found by the first keyboard walk of the main pages, which Tab now allows.
+- The host screen's cover image no longer reads "Not provided" to a screen reader; it
+  is decorative, like the cover everywhere else.
 - Fixed Tab doing nothing on every page. The command palette binds its keys to the
   window for the life of the app and never checked whether it was open, so Tab and the
   arrow keys were swallowed everywhere: focus could not leave the page body and the

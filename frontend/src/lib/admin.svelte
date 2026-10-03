@@ -176,7 +176,7 @@ SPDX-License-Identifier: MPL-2.0
 						<img
 							class="max-h-full max-w-full block"
 							src="/api/v1/storage/download/{game_state.quiz_data.cover_image}"
-							alt="Not provided"
+							alt=""
 						/>
 					</div>
 				</div>
