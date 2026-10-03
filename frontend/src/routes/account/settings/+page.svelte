@@ -17,6 +17,8 @@ SPDX-License-Identifier: MPL-2.0
 	import DeleteAccount from './delete-account.svelte';
 	import UnverifiedBanner from './unverified-banner.svelte';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import LogOut from '@lucide/svelte/icons/log-out';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 
 	const { t } = getLocalization();
 
@@ -51,9 +53,6 @@ SPDX-License-Identifier: MPL-2.0
 	let isSubmittingPassword = $state(false);
 
 	let this_session = $state();
-	// The avatar endpoint can 404, and a failed <img> paints its alt text across the
-	// layout, which is what put "Profile image of reviewer" beside the heading.
-	let avatar_ok = $state(true);
 
 	let mismatch = $derived(
 		changePasswordData.newPasswordConfirm !== '' &&
@@ -200,28 +199,22 @@ SPDX-License-Identifier: MPL-2.0
 					<Card.Title>{$t('settings_page.profile')}</Card.Title>
 				</Card.Header>
 				<Card.Content class="flex flex-wrap items-center gap-5">
-					<!-- The avatar endpoint can 404, and an <img> that fails paints its alt
-					     text across the layout. Fall back to the initial instead. -->
-					{#if avatar_ok}
-						<img
-							class="border-border size-20 shrink-0 rounded-full border object-cover"
-							src="/api/v1/users/avatar"
-							alt=""
-							onerror={() => (avatar_ok = false)}
-						/>
-					{:else}
-						<span
-							class="bg-muted text-muted-foreground border-border flex size-20 shrink-0 items-center justify-center rounded-full border text-2xl font-semibold"
-							aria-hidden="true"
-						>
-							{user.username?.[0]?.toUpperCase() ?? '?'}
-						</span>
-					{/if}
+					<!-- The same initial circle as the navbar. It showed the random cartoon
+					     upstream generates at sign-up (/api/v1/users/avatar, still served for
+					     the hidden avatar editor); the navbar's circle and this one now agree. -->
+					<UserAvatar name={user.username} class="size-20 text-2xl" />
 
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-lg font-semibold">{user.username}</p>
 						<p class="text-muted-foreground truncate text-sm">{user.email}</p>
 					</div>
+
+					<!-- Log out lives here now, not in the navbar: the avatar brings you to this
+					     page, and this is where you leave from (François, 2026-10-03). -->
+					<Button href="/api/v1/users/logout" variant="outline">
+						<LogOut />
+						{$t('words.logout')}
+					</Button>
 
 					<!-- Change avatar (/account/settings/avatar) and Public profile (/user/[id])
 					     are hidden for the MVP (MVP.md D15); both routes 404. -->

@@ -13,9 +13,8 @@ SPDX-License-Identifier: MPL-2.0
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 	import Menu from '@lucide/svelte/icons/menu';
-	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import { page } from '$app/state';
 
 	const { t } = getLocalization();
@@ -30,10 +29,9 @@ SPDX-License-Identifier: MPL-2.0
 	const nav_class = (href: string) =>
 		is_current(href) ? `${link} bg-muted text-foreground` : link;
 	// The drawer's rows: the same "you are here", sized for a thumb rather than a cursor.
-	// Log out has no page to be on, so it passes no href.
-	const row_class = (href?: string) =>
-		`flex min-h-12 items-center rounded-md px-3 text-base font-medium transition-colors hover:bg-muted ${
-			href && is_current(href)
+	const row_class = (href: string) =>
+		`flex min-h-12 items-center gap-3 rounded-md px-3 text-base font-medium transition-colors hover:bg-muted ${
+			is_current(href)
 				? 'bg-muted text-foreground'
 				: 'text-muted-foreground hover:text-foreground'
 		}`;
@@ -59,6 +57,18 @@ SPDX-License-Identifier: MPL-2.0
 			return kept ? `/account/login?returnTo=${encodeURIComponent(kept)}` : '/account/login';
 		}
 		return `/account/login?returnTo=${encodeURIComponent(here + page.url.search)}`;
+	});
+
+	// The avatar's letter. The session token carries only the email, so the username is
+	// asked for once, when the bar first sees a signed-in user; the bar outlives client
+	// navigation, and logging out is a full page load that starts it over.
+	let username = $state<string | null>(null);
+	$effect(() => {
+		if (!$signedIn || username !== null) return;
+		fetch('/api/v1/users/me')
+			.then((r) => (r.ok ? r.json() : null))
+			.then((u) => (username = u?.username ?? ''))
+			.catch(() => (username = ''));
 	});
 
 	let menuOpen = $state(false);
@@ -95,36 +105,29 @@ SPDX-License-Identifier: MPL-2.0
 			     to https://github.com/ogfrench/frogQuiz with the ExternalLink icon. -->
 		</div>
 
-		<!-- Desktop: theme, the one account control, then the one button. -->
+		<!-- Desktop: theme, Log in or your avatar, then the one button. -->
 		<div class="hidden items-center gap-1 md:flex">
 			<ThemeToggle />
 			{#if $signedIn}
-				<!-- One account control, with Log out where people look for it: under the
-				     account. MVP.md §4.2 had "a link, not a menu, with Log out beside it";
-				     François replaced that on 2026-10-03, with the single Log in. -->
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger
-						class="{nav_class('/account/settings')} inline-flex items-center gap-1"
-					>
-						{$t('words.my_account')}
-						<ChevronDown class="size-4" aria-hidden="true" />
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content align="end" class="w-44">
-						<DropdownMenu.Item>
-							{#snippet child({ props })}
-								<a href="/account/settings" {...props}
-									>{$t('navbar.account_settings')}</a
-								>
-							{/snippet}
-						</DropdownMenu.Item>
-						<DropdownMenu.Separator />
-						<DropdownMenu.Item>
-							{#snippet child({ props })}
-								<a href="/api/v1/users/logout" {...props}>{$t('words.logout')}</a>
-							{/snippet}
-						</DropdownMenu.Item>
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
+				<!-- A circle with your initial that takes you to My Account, where Log out
+				     lives (François, 2026-10-03). It was a "My Account" menu holding settings
+				     and Log out; before that, two links side by side (MVP.md §4.2). -->
+				<a
+					href="/account/settings"
+					class="fq-touch-target focus-visible:ring-ring relative ml-1 inline-flex rounded-full focus-visible:ring-2 focus-visible:outline-none"
+					aria-label={$t('words.my_account')}
+					title={$t('words.my_account')}
+					aria-current={is_current('/account/settings') ? 'page' : undefined}
+				>
+					<UserAvatar
+						name={username}
+						class="size-8 text-sm transition-shadow hover:ring-2 hover:ring-ring/40 {is_current(
+							'/account/settings'
+						)
+							? 'ring-2 ring-ring/60'
+							: ''}"
+					/>
+				</a>
 			{:else}
 				<a class={nav_class('/account/login')} href={login_href}>{$t('words.login')}</a>
 			{/if}
@@ -182,15 +185,15 @@ SPDX-License-Identifier: MPL-2.0
 						<div class="bg-border my-2 h-px" role="separator"></div>
 
 						{#if $signedIn}
+							<!-- Log out is on the account page, as on desktop. -->
 							<a
 								class={row_class('/account/settings')}
 								href="/account/settings"
 								aria-current={is_current('/account/settings') ? 'page' : undefined}
-								>{$t('words.my_account')}</a
 							>
-							<a class={row_class()} href="/api/v1/users/logout"
-								>{$t('words.logout')}</a
-							>
+								<UserAvatar name={username} class="size-7 text-xs" />
+								{$t('words.my_account')}
+							</a>
 						{:else}
 							<a class={row_class('/account/login')} href={login_href}
 								>{$t('words.login')}</a

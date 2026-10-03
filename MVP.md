@@ -253,9 +253,9 @@ because they may reorder everything else.
 - [x] Navbar: Discover · My Quizzes · Join · (My Account | Sign in); current-page indicator; drop the always-highlighted Play pill. My Account is a link, not a menu, with Log out beside it
   Revised 2026-10-03 (François: "not double login register, just one login"): signed out
   shows **Log in** only, with registration linked from the login page, plus "Create a
-  quiz". Signed in, My Account is now a menu holding Account settings and Log out,
-  replacing "a link, not a menu" above (François, same day). Below 768 px Join stays
-  visible next to the menu button and the rest is a drawer.
+  quiz". Signed in, a circle with the user's initial links to My Account, and Log out
+  moved onto that page (François, same day; a dropdown was tried and dropped). Below
+  768 px Join stays visible next to the menu button and the rest is a drawer.
 - [x] Remove Docs and GitHub from the navbar and footer; keep ToS / Privacy / Attribution in the footer (2026-09-29; also the command palette, and `/docs` plus upstream's doc pages 404)
 - [x] Remove Import / Results / Files / Settings from the My Quizzes toolbar (per D4–D6). The toolbar is gone; Analytics went from each row with Results (D4)
 - [x] `/account/settings` becomes "My Account" (heading, tab title, navbar, command palette); remove the avatar and public-profile buttons

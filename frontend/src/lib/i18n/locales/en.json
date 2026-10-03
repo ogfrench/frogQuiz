@@ -488,7 +488,7 @@
         "views_n_plays": "Views & Plays",
         "info_analytics": "The \"Plays\" only show how often the quiz was started (you included), whereas the \"Views\" count how often the \"View\"-page was visited, so it also counts bots (sorry for that).",
         "commandpalette_notice": "Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on a Mac) to open the command palette",
-        "create_quiz": "Create a new quiz"
+        "create_quiz": "Create a quiz"
     },
     "footer": {
         "more_details_here": "More details here"
@@ -573,7 +573,6 @@
         "donate": "Donate",
         "menu": "Menu",
         "open_menu": "Open menu",
-        "account_settings": "Account settings",
         "theme": "Theme"
     },
     "security_settings": {

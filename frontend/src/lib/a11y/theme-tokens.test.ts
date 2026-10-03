@@ -31,8 +31,11 @@ const readTokens = (blockStart: string): Record<string, string> => {
 	return out;
 };
 
-const light = readTokens(':root {');
-const dark = readTokens('.dark {');
+// Anchored to the start of a line: the token blocks are top-level rules, and a plain
+// '.dark {' also matched `html.dark { color-scheme: dark; }` in the base layer, which
+// carries no tokens.
+const light = readTokens('\n:root {');
+const dark = readTokens('\n.dark {');
 
 // Foreground/background pairings the UI actually renders. Body text unless noted.
 const PAIRS: [string, string][] = [

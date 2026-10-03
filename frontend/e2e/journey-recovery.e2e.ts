@@ -172,19 +172,13 @@ test('somebody signs up, forgets their password, and gets back in through the em
 		// a signed-in person goes.
 		await page.waitForURL((u) => !u.pathname.startsWith('/account/login'), { timeout: 15_000 });
 
-		// Log out lives under the account menu, as a menu item that links to the API route.
-		// A menu needs the page hydrated before a click opens it, so retry the open until
-		// the item is there rather than assuming the first click landed after hydration.
-		await page.goto('/my-quizzes');
-		const logOut = page.getByRole('menuitem', { name: 'Log out' });
-		await expect(async () => {
-			if (!(await logOut.isVisible())) {
-				await page.getByRole('button', { name: 'My Account' }).click();
-			}
-			await expect(logOut).toBeVisible({ timeout: 1000 });
-		}).toPass({ timeout: 10_000 });
-		await logOut.click();
-		await page.waitForURL(/\/(?!my-quizzes)/);
+		// Log out is on the account page, which the navbar's avatar opens. Wait for the
+		// logout's own redirect home: the old check, /\/(?!my-quizzes)/, matched the
+		// "//" of any URL and passed at once, so the next navigation aborted the logout
+		// request and the user was still signed in (the trace of the 3 Oct failure).
+		await page.goto('/account/settings');
+		await page.getByRole('link', { name: 'Log out' }).click();
+		await page.waitForURL((u) => u.pathname === '/');
 
 		await logInThroughUI(page, email, OLD_PASSWORD);
 		await expect(page.getByText("That email address and password don't match.")).toBeVisible();

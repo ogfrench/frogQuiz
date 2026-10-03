@@ -42,7 +42,8 @@ test('signed out: the navbar marks My Quizzes, and Create needs no account', asy
 	);
 	await expect(page.getByText(/linked to this browser/)).toBeVisible();
 
-	await page.getByRole('link', { name: 'Create a new quiz' }).first().click();
+	// The page's own button, not the navbar's: both read "Create a quiz" now.
+	await page.getByRole('main').getByRole('link', { name: 'Create a quiz' }).first().click();
 	await expect(page).toHaveURL(/\/create$/);
 });
 

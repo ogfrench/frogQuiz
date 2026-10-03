@@ -39,7 +39,7 @@ overflow at any width.** Anything less is in one of the other tables.
 | Media library | `/dashboard/files` | Verified clean |
 | Password reset | `/account/password-reset`, `/account/reset-password` | Swept with import |
 | Account settings | `/account/settings` | Rebuilt from `grid-cols-6` to a single column of section cards; sessions table in a scroll container, and a list below `sm` so each Delete is on screen (2026-10-03); initial-letter avatar fallback |
-| Navbar and layout | every page with the navbar | 2026-10-03: one Log in (registration on the login page), My Account as a menu, Join beside the menu button on phones, a Sheet drawer below `md`, the full bar from 768 px. Layout owns `<main>`, a skip link and the footer, which four pages used to paste in. axe reports nothing on any visible route at 390 and 1440, signed in and out. Screenshots walked: every route in light at 390 and 1440, the changed routes in dark at 390, the navbar and drawer in both themes |
+| Navbar and layout | every page with the navbar | 2026-10-03: one Log in (registration on the login page), an initial-letter avatar that opens My Account (Log out lives there), Join beside the menu button on phones, a Sheet drawer below `md`, the full bar from 768 px. Layout owns `<main>`, a skip link and the footer, which four pages used to paste in. axe reports nothing on any visible route at 390 and 1440, signed in and out. Screenshots walked: every route in light at 390 and 1440, the changed routes in dark at 390, the navbar and drawer in both themes |
 
 Two cross-cutting systems came out of this and now apply to every surface above:
 

@@ -119,8 +119,8 @@ and the answer/timer grids at phone and projector width. One known gap is writte
 Compressor before the server sees it, hanging only the uploader's own tab — a follow-up.
 
 **Navigation and a UI best-practice pass** (3 Oct, from François's phone screenshots).
-One **Log in** in the navbar, with registration on the login page; signed in, one **My
-Account** menu holding settings and Log out. On a phone, Join sits beside the menu button
+One **Log in** in the navbar, with registration on the login page; signed in, a circle
+with your initial that opens **My Account**, where Log out now lives. On a phone, Join sits beside the menu button
 instead of stranded mid-bar, and the menu is a real drawer with "Create a quiz" at its
 foot. Tablets get the full bar. The review behind it ran axe on every visible route at 390
 and 1440 and walked the screenshots; every route is now axe-clean. Real bugs it found:

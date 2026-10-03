@@ -21,13 +21,19 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   indexed the four-color palette directly instead of wrapping.
 - Fixed the password-recovery journey test racing its own reset: it logged in before the
   reset request returned, and the reset's sign-out-everywhere then ended that new session.
-- Reworked the navbar. Desktop: the three surfaces on the left; theme, one account control
-  and "Create a quiz" on the right. Tablets (768 px and up) now get that full bar instead of
+- Reworked the navbar. Desktop: the three surfaces on the left; theme, Log in (or your
+  avatar) and "Create a quiz" on the right. Tablets (768 px and up) now get that full bar instead of
   a hamburger.
 - Removed "Register" from the navbar; "Log in" is the one entry, and the login page links
   to registration. That link now carries `returnTo` through and is hidden when
   registration is disabled, which the navbar used to do for it.
-- Signed in, "My Account" and "Log out" are one account menu instead of two links.
+- Signed in, the navbar shows a circle with your initial that opens My Account, instead
+  of "My Account" and "Log out" side by side. Log out moved onto the My Account page.
+- My Account shows the same initial circle instead of the random cartoon face generated
+  at sign-up, which gave people a look they never chose and could not change.
+- Native controls follow the theme (`color-scheme`), so checkboxes and scrollbars are no
+  longer bright white in dark mode.
+- Both Create buttons on My Quizzes read "Create a quiz"; the page's said "Create a new quiz".
 - On phones, Join sits with the menu button instead of stranded mid-bar, and the menu is
   a proper drawer (shadcn Sheet: focus trap, Esc, scrim, opaque), with "Create a quiz" at
   its foot instead of wedged between a divider and Log in. The theme toggle moved into it.

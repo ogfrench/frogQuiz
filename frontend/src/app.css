@@ -53,6 +53,13 @@ SPDX-License-Identifier: MPL-2.0
 		@apply bg-background text-foreground font-sans;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
+		color-scheme: light;
+	}
+	/* Tells the browser which theme its own controls are drawn for. Without it,
+	   native checkboxes, radios, date pickers and scrollbars stayed light in dark
+	   mode: Register's two consent boxes were bright white squares on the dark card. */
+	html.dark {
+		color-scheme: dark;
 	}
 	body {
 		@apply leading-relaxed;
