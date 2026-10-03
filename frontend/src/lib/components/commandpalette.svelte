@@ -33,15 +33,15 @@ This should be okay, right?
 	}[] = [
 		{
 			id: 0,
-			title: 'Close CommandPalette',
-			description: 'Closes CommandPalette',
+			title: 'Close',
+			description: 'Close this palette',
 			command: 'close',
 			action: () => close_cp(undefined)
 		},
 		{
 			id: 1,
-			title: 'Create Quiz',
-			description: 'Opens editor to create a new quiz',
+			title: 'Create a quiz',
+			description: 'Open the editor on a new quiz',
 			command: 'newquiz',
 			args: ['title'],
 			action: (args) => window.location.assign(`/create?title=${args.join(' ')}`)
@@ -50,15 +50,15 @@ This should be okay, right?
 		// id 4: Results (/results) is hidden for the MVP (MVP.md D4).
 		{
 			id: 5,
-			title: 'Explore Quizzes',
-			description: 'Opens the Explore-page',
+			title: 'Discover',
+			description: 'Browse and search quizzes',
 			command: 'explore',
 			action: () => window.location.assign('/explore')
 		},
 		{
 			id: 6,
 			title: 'My Quizzes',
-			description: 'Go to My Quizzes',
+			description: 'Your quizzes, and the ones made on this browser',
 			command: 'quizzes',
 			action: () => window.location.assign('/my-quizzes')
 		},
@@ -66,7 +66,7 @@ This should be okay, right?
 		{
 			id: 8,
 			title: 'My Account',
-			description: 'Opens My Account',
+			description: 'Your account, sessions and Log out',
 			command: 'settings',
 			action: () => window.location.assign('/account/settings')
 		}
@@ -257,7 +257,7 @@ This should be okay, right?
 								/{vi.command}
 								{#if vi.args}
 									{#each vi.args as arg}
-										&lbrace;<span class="text-indigo-400">{arg}</span
+										&lbrace;<span class="text-muted-foreground">{arg}</span
 										>&rbrace;{/each}
 								{/if}
 							</p>

@@ -6,6 +6,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- The command palette's entries read like the rest of the app: "Create a quiz",
+  "Discover" (was "Explore Quizzes", "Opens the Explore-page"), "Close" (was "Close
+  CommandPalette"), and its argument hint is muted instead of indigo, an accent the app
+  does not otherwise have.
 - HANDOVER, TODO and `docs/redesign-status.md` record the overnight keyboard work, what a
   keyboard check did and did not cover, and `/create`'s dead success modal as a removal
   candidate.

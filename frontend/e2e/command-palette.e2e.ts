@@ -21,7 +21,7 @@ test('the command palette opens, searches and runs an action', async ({ page }) 
 
 	await input.fill('create');
 	await page.waitForTimeout(400);
-	const hits = page.getByRole('button', { name: /Create Quiz/ });
+	const hits = page.getByRole('button', { name: /Create a quiz/ });
 	await expect(hits.first()).toBeVisible();
 	expect(errors, 'searching the palette threw').toEqual([]);
 
@@ -51,7 +51,7 @@ test('with the palette closed, Tab moves focus and Enter runs nothing', async ({
 	await page.keyboard.press('Tab');
 	await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
 
-	// Leave the palette with "Create Quiz" selected, then press Enter outside it.
+	// Leave the palette with "Create a quiz" selected, then press Enter outside it.
 	await page.keyboard.press('Control+k');
 	await page.getByRole('textbox').last().fill('create');
 	await page.waitForTimeout(400);
