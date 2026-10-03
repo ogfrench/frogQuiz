@@ -9,14 +9,14 @@ SPDX-License-Identifier: MPL-2.0
 For François and Gonçalo, 2–3 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
-**State: green and ready to merge.** 57 commits, about 180 files, roughly +10300 / −2900
+**State: green and ready to merge.** 70 commits, about 185 files, roughly +10800 / −3100
 against `master`.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **132 passed**, 9.3 min |
-| Backend | **168 passed**, 1 skipped |
-| Unit | **144 passed** |
+| e2e | **136 passed**, 9.1 min, clean stack, on `d932057` |
+| Backend | **168 passed**, 1 skipped, on `d932057` |
+| Unit | **147 passed** |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
 
@@ -153,13 +153,25 @@ frogquiz.xyz) came out brown and green, and anything written through the API cou
 red. The palette is now the only source, by slot, and wraps past four, which also fixes
 answers five to ten having no color at all on the host and phone screens.
 
+**Keyboard, and the last hand-rolled overlays** (3 Oct, overnight). The headline: **Tab
+did nothing on any page.** The command palette's key bindings sit on `window` for the life
+of the app and never checked whether it was open, so Tab and the arrow keys were swallowed
+everywhere and Enter could run the palette's last action after it closed. That was in the
+code since the fork. With Tab working, the first real keyboard walk found the rest: the
+join screen dropped focus between PIN and name, the lobby's full-screen QR could not be
+closed from the keyboard, and editor answers, the timer and player answer tiles showed no
+focus. Separately, every uploaded image was announced to screen readers as "��e"
+(`atob(null)` decodes the string "null"). The image uploader, Advanced settings and the
+image full-screen view are now the shadcn Dialog like everything else. Each bug has an
+e2e test that fails on the old code.
+
 Everything else is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 3. The test suites, and why they are worth trusting
 
-115 → **132 e2e tests**, and six of the new ones are *user journeys* rather than feature
+115 → **136 e2e tests**, and six of the new ones are *user journeys* rather than feature
 tests. The distinction matters: the existing suite was organized by mechanism — sockets,
 editor, uploads, exits — and was thorough at it, but a journey fails for a different
 reason. Not "this control is wrong" but **"you cannot get from here to there."**
@@ -232,10 +244,10 @@ One judgment call left open on purpose, not blocking:
 ## 7. Running it
 
 ```bash
-bash e2e/run.sh                      # whole stack + 132 e2e tests, no Docker needed
+bash e2e/run.sh                      # whole stack + 136 e2e tests, no Docker needed
 KEEP_UP=1 bash e2e/run.sh --list     # leave it up at localhost:3000 to click around
 bash e2e/stop.sh                     # stop it
-cd frontend && pnpm test             # 144 unit tests, about a second
+cd frontend && pnpm test             # 147 unit tests, about a second
 ```
 
 The backend suite needs a Python env (`pipenv sync --dev`, or point `E2E_VENV` at one) and

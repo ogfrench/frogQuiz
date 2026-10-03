@@ -179,6 +179,14 @@ Worth being exact, because the phrase gets stretched:
   bug rather than confirming a guess: `ckeditor5.css` sets its own text color as a
   near-black constant, so the question title in the editor rendered black on a dark
   ground and was all but invisible. It is mapped onto the theme tokens now.
+- **Verified with the keyboard, from 3 Oct only.** Before then Tab did nothing on any
+  page (the command palette swallowed it), so no keyboard check before that date meant
+  anything. Since: Tab order on `/`, Discover, My Quizzes, `/play`, login, register, the
+  quiz page and the editor; the skip link landing in `<main>`; the phone drawer trapping
+  focus and returning it on Escape; joining and answering a live game with the keyboard
+  alone; every rebuilt dialog closing on Escape with focus inside. The probe that flags
+  "no focus ring" reads outline and box-shadow, so a tile with a decorative shadow passes
+  it falsely -- the player tiles did. Check a screenshot, not just the probe.
 - **Not verified in dark mode:** the projector surfaces and the player screens since
   the type-scale change. They were checked in both themes when first built.
 - **Covered by tests now.** This line used to read "there are no frontend tests,

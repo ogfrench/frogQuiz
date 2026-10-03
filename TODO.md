@@ -10,9 +10,10 @@ Where the work actually stands. [`MVP.md`](MVP.md) is the plan and holds the dec
 this file is the running state, updated as things land.
 Audit that produced most of it: [`docs/audit-2026-10-01.md`](docs/audit-2026-10-01.md).
 
-**Branch:** `ccr-370df3e4-c44t1l` (PR #23) · **Suites:** 144 unit · 132 e2e · 168 backend (1 skipped)
-· **Last full green run:** 3 Oct — e2e **132/132** in 9.4m, backend **168 passed** (1 skipped),
-unit 144 passed, `pnpm build` OK, `flake8 .` 0, `eslint .` 0 errors
+**Branch:** `ccr-370df3e4-c44t1l` (PR #23) · **Suites:** 147 unit · 136 e2e · 168 backend (1 skipped)
+· **Last full green run:** 3–4 Oct — e2e **136/136** in 9.1m on a clean stack (`d932057`),
+unit 147 passed, backend **168 passed** (1 skipped), `pnpm build` OK, `flake8 .` 0,
+`eslint .` 0 errors
 
 ---
 
@@ -40,6 +41,18 @@ unit 144 passed, `pnpm build` OK, `flake8 .` 0, `eslint .` 0 errors
 | 18 | **Two over-wide permissions closed.** `captcha_enabled` defaulted to *true* on `/quiz/start`, where `check_captcha` then raised `AttributeError` out of `join_game` because `settings` was config.py's uncalled `lru_cache` wrapper — fixed, defaults off, refused without a provider key. The Excel export was open to any signed-in user while the view page hid the answers from a non-owner; **owner-only since 2 Oct** on François's call (D18). I had narrowed it on 1 Oct on a misreading of the markup and reverted it — this time it is the decision | `routers/quiz.py`, `socket_server/helpers.py`, `routers/eximport.py` |
 | 19 | **Deleting an image gives the space back.** `storage_used` was only ever incremented — by the worker, once per upload — and nothing anywhere subtracted it, so it was a lifetime upload counter and the quota a lifetime cap. Enforcing the quota turned that into a real lockout. The delete endpoint releases the bytes, and taking an image off a question now deletes the orphan once nothing references it instead of merely unlinking it | `routers/storage.py`, `worker/storage.py`, [`docs/uploads.md`](docs/uploads.md) |
 | 20 | **Deleting a quiz frees its images.** Both delete paths matched image keys with a regex that only described upstream's old double-key form, so for every modern upload it matched nothing: a deleted quiz, and every expired anonymous quiz, left its images in storage permanently and still charged to the owner. One reference-counted helper now serves all three paths | `frogquiz/helpers/__init__.py`, `routers/quiz.py`, `worker/storage.py` |
+
+## Done — 3 Oct, overnight
+
+| What | Where |
+| --- | --- |
+| **Tab worked on no page.** The command palette's key bindings live on `window` for the life of the app and never checked whether it was open, so Tab and the arrows were swallowed everywhere (focus could not leave `<body>`, the skip link included) and Enter ran the palette's last selected action after it was closed | `lib/components/commandpalette.svelte`, `e2e/command-palette.e2e.ts` |
+| **Every uploaded image was announced as "��e".** No alt text means no `X-Alt-Text` header, and `atob(null)` decodes the string "null" | `lib/editor/MediaComponent.svelte`, `e2e/uploads.e2e.ts` |
+| **The lobby's full-screen QR could not be closed from the keyboard** (its Enter handler returned a function, no Escape); now a Dialog with a quiet zone | `lib/play/admin/game_not_started.svelte`, `e2e/game-exits.e2e.ts` |
+| **Joining dropped focus between PIN and name**, closing a phone's keyboard mid-join | `lib/play/join.svelte`, `e2e/join.e2e.ts` |
+| **Hand-rolled overlays moved to the shadcn Dialog**: image uploader (also Uppy themed, "Powered by Uppy" actually hidden), Advanced settings (a Switch, "Skip the results", replacing "Hide question resuluts?"), the image full-screen view | `lib/editor/uploader.svelte`, `lib/editor/question-card.svelte`, `lib/editor/MediaComponent.svelte` |
+| **Focus you can see**: editor answer fields and timer, player answer tiles (were a white ring on a white page) | `lib/editor/`, `lib/play/question.svelte`, `lib/play/questions/check.svelte` |
+| **Sentence case** across live labels; `docs/redesign-status.md` corrected on which routes are hidden | `en.json`, `docs/redesign-status.md` |
 
 ## Open — before sharing
 
@@ -144,6 +157,7 @@ the explanation.
       could be excluded rather than fixed
 - [ ] The input tier on hidden routes (`/quiztivity`, `/edit/files`, controllers, Pixabay) still draws form fields at three different radii. An `fq-field` utility would fold in the un-themed `bg-gray-500` / `focus:ring-blue-500` drift at the same time
 - [ ] `lib/components/ui/button/button.svelte` has two off-ladder steps (8px and 10px) from upstream. Defensible, but they are the last two
+- [ ] `/create` still renders upstream's "quiz created" modal, which nothing can open: `responseData.open` is a plain object never set to true. It carries `bg-white`, `text-gray-900` and a raw Heroicon `<svg>`. Dead code, so a removal candidate; left in place pending a decision rather than deleted
 - [ ] Tailwind scans the repo's Markdown, so the word "rounded" in `CLAUDE.md` emits three dead CSS rules. Harmless; noted so nobody re-chases it
 
 ## After V1

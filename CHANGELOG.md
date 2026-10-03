@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- HANDOVER, TODO and `docs/redesign-status.md` record the overnight keyboard work, what a
+  keyboard check did and did not cover, and `/create`'s dead success modal as a removal
+  candidate.
 - Joining a game no longer drops focus between the PIN and the name. The sixth digit
   swaps the forms and the name field had no autofocus, so a phone's keyboard closed
   between the two fields and a name typed from a keyboard went nowhere. `join.e2e`
