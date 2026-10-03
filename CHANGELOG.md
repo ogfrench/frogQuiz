@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Sentence case for the question-type picker ("Multiple choice", "Check choice") and the
+  start-game dialog ("Start game"), matching the rest of the app. Both dialogs were
+  driven at 390/834/1440 in both themes and moved to Done in `docs/redesign-status.md`.
 - Removed the verified-seal icon Discover put on every quiz that was not imported (with
   Kahoot import hidden, every quiz), explained only by a hover tooltip phones never show.
   Imported quizzes now say "Imported from Kahoot" in words, as on the quiz page.

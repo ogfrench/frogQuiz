@@ -41,11 +41,11 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 
 	await test.step('they write two questions', async () => {
 		await startNewQuiz(page, title);
-		await addQuestion(page, /^Multiple-Choice/, 'Which of these is a frog?', [
+		await addQuestion(page, /^Multiple choice/, 'Which of these is a frog?', [
 			['Tree frog', true],
 			['Gecko', false]
 		]);
-		await addQuestion(page, /^Check Choice/, 'Which are amphibians?', [
+		await addQuestion(page, /^Check choice/, 'Which are amphibians?', [
 			['Frog', true],
 			['Salamander', true],
 			['Lizard', false]
@@ -62,9 +62,9 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 	let pin = '';
 	await test.step('they start a game', async () => {
 		await page.getByRole('button', { name: 'Play', exact: true }).click();
-		const dialog = page.getByRole('dialog', { name: 'Start Game' });
+		const dialog = page.getByRole('dialog', { name: 'Start game' });
 		await expect(dialog).toBeVisible();
-		await dialog.getByRole('button', { name: 'Start Game' }).click();
+		await dialog.getByRole('button', { name: 'Start game' }).click();
 		await page.waitForURL(/\/admin\?/);
 		pin = new URL(page.url()).searchParams.get('pin')!;
 		expect(pin, 'the lobby shows a PIN to read out').toMatch(/^\d{6}$/);

@@ -56,7 +56,7 @@ test('every question is on the page, and one card is open at a time', async ({ p
 test('a question can be added between two others', async ({ page, request }) => {
 	await openQuiz(page, request);
 	await page.getByRole('button', { name: 'Add a question here' }).first().click();
-	await page.getByRole('button', { name: /^Multiple-Choice/ }).click();
+	await page.getByRole('button', { name: /^Multiple choice/ }).click();
 	await expect(cards(page)).toHaveCount(4);
 	// It landed in the gap it was added from, not at the end.
 	await openCards(page).fill('Inserted');

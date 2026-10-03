@@ -72,7 +72,7 @@ export async function hostFromViewPage(
 ): Promise<string> {
 	await page.goto(`/view/${quizId}`);
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
-	const dialog = page.getByRole('dialog', { name: 'Start Game' });
+	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	await expect(dialog).toBeVisible();
 	if (opts.showOnDevices) {
 		// Kahoot's "Show questions & answers on participants' devices" (MVP.md D16). Off
@@ -84,7 +84,7 @@ export async function hostFromViewPage(
 		await toggle.click();
 		await expect(toggle).toHaveAttribute('aria-checked', 'true');
 	}
-	await dialog.getByRole('button', { name: 'Start Game' }).click();
+	await dialog.getByRole('button', { name: 'Start game' }).click();
 	await page.waitForURL(/\/admin\?/);
 	const pin = new URL(page.url()).searchParams.get('pin');
 	expect(pin).toMatch(/^\d{6}$/);

@@ -80,9 +80,9 @@ test('somebody comes back, finds their quiz, changes it and runs it again', asyn
 
 	await test.step('and they run it again', async () => {
 		await page.getByRole('button', { name: 'Play', exact: true }).click();
-		const dialog = page.getByRole('dialog', { name: 'Start Game' });
+		const dialog = page.getByRole('dialog', { name: 'Start game' });
 		await expect(dialog).toBeVisible();
-		await dialog.getByRole('button', { name: 'Start Game' }).click();
+		await dialog.getByRole('button', { name: 'Start game' }).click();
 		await page.waitForURL(/\/admin\?/);
 		const pin = new URL(page.url()).searchParams.get('pin')!;
 

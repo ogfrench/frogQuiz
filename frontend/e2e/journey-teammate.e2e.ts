@@ -77,9 +77,9 @@ test('a teammate finds a colleague’s quiz, runs it, and never sees the answers
 
 	await test.step('but they can run it, which is the point of sharing', async () => {
 		await mate.page.getByRole('button', { name: 'Play', exact: true }).click();
-		const dialog = mate.page.getByRole('dialog', { name: 'Start Game' });
+		const dialog = mate.page.getByRole('dialog', { name: 'Start game' });
 		await expect(dialog).toBeVisible();
-		await dialog.getByRole('button', { name: 'Start Game' }).click();
+		await dialog.getByRole('button', { name: 'Start game' }).click();
 		await mate.page.waitForURL(/\/admin\?/);
 		const pin = new URL(mate.page.url()).searchParams.get('pin')!;
 

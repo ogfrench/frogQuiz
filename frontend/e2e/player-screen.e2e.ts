@@ -103,7 +103,7 @@ test('the switch is off when the modal opens, and off again the next time', asyn
 	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
 	await page.goto(`/view/${saved.body.id}`);
 
-	const dialog = page.getByRole('dialog', { name: 'Start Game' });
+	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	const toggle = dialog.getByRole('switch', {
 		name: "Show questions and answers on players' devices"
 	});

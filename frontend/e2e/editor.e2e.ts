@@ -33,12 +33,12 @@ async function anonSecret(page: Page, id: string) {
 test('build a quiz by hand, save it, and play it', async ({ page, request }) => {
 	const title = `Handmade ${Date.now()}`;
 	await startNewQuiz(page, title);
-	await addQuestion(page, /^Multiple-Choice/, 'Which is a frog?', [
+	await addQuestion(page, /^Multiple choice/, 'Which is a frog?', [
 		['Tree frog', true],
 		['Gecko', false],
 		['Newt', false]
 	]);
-	await addQuestion(page, /^Check Choice/, 'Which are amphibians?', [
+	await addQuestion(page, /^Check choice/, 'Which are amphibians?', [
 		['Frog', true],
 		['Lizard', false],
 		['Salamander', true]
@@ -115,7 +115,7 @@ test('nothing is marked red before Save, and Save with no questions says what is
 	page
 }) => {
 	await startNewQuiz(page, `Guard ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, '', [
+	await addQuestion(page, /^Multiple choice/, '', [
 		['', false],
 		['', false]
 	]);
@@ -136,7 +136,7 @@ test('an unfinished quiz saves as a draft, and Save shows what is left', async (
 	request
 }) => {
 	await startNewQuiz(page, `Draft ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, 'No right answer yet', [
+	await addQuestion(page, /^Multiple choice/, 'No right answer yet', [
 		['One', false],
 		['Two', false]
 	]);
@@ -167,7 +167,7 @@ test('the editor saves on its own, and a reload reopens the saved quiz', async (
 }) => {
 	const title = `Autosaved ${Date.now()}`;
 	await startNewQuiz(page, title);
-	await addQuestion(page, /^Multiple-Choice/, 'Kept without Save', [
+	await addQuestion(page, /^Multiple choice/, 'Kept without Save', [
 		['A', true],
 		['B', false]
 	]);
@@ -199,7 +199,7 @@ test('the editor saves on its own, and a reload reopens the saved quiz', async (
 
 test('the timer field cannot produce a timer the game cannot run', async ({ page, request }) => {
 	await startNewQuiz(page, `Timer ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, 'Timed', [
+	await addQuestion(page, /^Multiple choice/, 'Timed', [
 		['A', true],
 		['B', false]
 	]);
@@ -225,7 +225,7 @@ test('the timer field cannot produce a timer the game cannot run', async ({ page
 
 test('an existing anonymous quiz can be reopened, edited and saved', async ({ page, request }) => {
 	await startNewQuiz(page, `Before ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, 'Q', [
+	await addQuestion(page, /^Multiple choice/, 'Q', [
 		['A', true],
 		['B', false]
 	]);
@@ -253,7 +253,7 @@ test('the editor fits a phone', async ({ browser }) => {
 test.describe('regressions', () => {
 	test('a question with no correct answer cannot reach the view page', async ({ page }) => {
 		await startNewQuiz(page, `No right ${Date.now()}`);
-		await addQuestion(page, /^Multiple-Choice/, 'No right answer', [
+		await addQuestion(page, /^Multiple choice/, 'No right answer', [
 			['One', false],
 			['Two', false]
 		]);
@@ -268,7 +268,7 @@ test.describe('regressions', () => {
 	// still went to the quiz page saying "Saved".
 	test('an edit made the moment the editor opens is not swallowed', async ({ page, request }) => {
 		await startNewQuiz(page, `Fast ${Date.now()}`);
-		await addQuestion(page, /^Multiple-Choice/, 'Q', [
+		await addQuestion(page, /^Multiple choice/, 'Q', [
 			['A', true],
 			['B', false]
 		]);
