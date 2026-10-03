@@ -148,7 +148,7 @@ The app carries a lot of features aimed at a public multi-tenant SaaS. For an in
 - **Hide/disable, don't delete** anything not needed right now (public docs pages, GitHub links in nav/footer, moderation tooling, public OAuth providers beyond what the team actually uses, box-controller/physical-buzzer hardware support, Pixabay integration, hCaptcha/reCAPTCHA, proof-of-work anti-bot challenge, Sentry/Plausible telemetry if unused). Prefer feature flags, route guards, or commenting out nav entries over ripping code out — we may want these back.
 - **Search bar**: keep. Useful for finding/sharing quizzes made by other people on the team.
 - When asked to "clean up" or "trim" the app, propose a list of hide/disable candidates with rationale and wait for a decision before touching anything — don't remove features unilaterally.
-- Remaining known leftover: README Credits section still links to upstream's own donation buttons (Ko-fi/Liberapay) — low priority, flag if touching that file.
+- README Credits: the upstream donation buttons (Ko-fi/Liberapay) were removed on 2026-10-03 (François's call); the credit to ClassQuiz and Marlon W stays, because that is attribution.
 
 ## If Explore or Search are ever removed for real
 

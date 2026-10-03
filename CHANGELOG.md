@@ -6,6 +6,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Removed the upstream Ko-fi and Liberapay donation links from the README (François's
+  call). The credit to ClassQuiz and Marlon W stays: that is attribution.
 - Switched the app to US English. User-facing: "color", "canceled", "practice"/"practicing",
   "colored", "license" (Terms of Service) and "Authorized" (self-host docs). The same
   whole-word pass ran over code comments, test names and the team docs. Left alone on
@@ -112,7 +114,7 @@ projector.
   clears a 48-megapixel phone photo and sits at the 8192 texture limit many mobile GPUs
   have; Kahoot caps at 5000×5000, so this could be tighter — it is one env var.
 - The server **never** decodes an image (no Pillow; the worker only hashes), so this is
-  the clients' defence, which is the right place for it: they are the ones that fall over.
+  the clients' defense, which is the right place for it: they are the ones that fall over.
 
 While wiring the editor's error message, found that the 413 branch of the uploader's
 `upload-error` handler has been **dead code**: `@uppy/xhr-upload` wraps a non-2xx as a
@@ -1046,7 +1048,7 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 ### Auth hardening
 
 - Rate-limited every endpoint that checks a credential, keyed on something the caller cannot forge. `/login/step` now buckets on the account being guessed at, `/login/start` and registration on the address, and `PUT /users/password/update` on the account -- all of them previously had a per-IP bucket or none. The per-IP bucket became advisory the moment `TRUSTED_PROXY_HOPS` went above 1: the address it keys on comes from a header anyone can forge by reaching the backend directly, which is publicly reachable. Per-account and per-address buckets are not forgeable.
-- Added a limit to `GET /users/verify/{key}`, which was unauthenticated and unthrottled. The key is 128 bits of `os.urandom` so this is defence in depth, not a hole being closed.
+- Added a limit to `GET /users/verify/{key}`, which was unauthenticated and unthrottled. The key is 128 bits of `os.urandom` so this is defense in depth, not a hole being closed.
 - `PUT /users/password/update` returns 400 rather than 500 for an account with no password, matching the delete endpoint.
 - Mail sends now retry transient failures twice before giving up, and never retry permanent ones. There is no queue behind the sender, so a relay that blipped for a second cost somebody their confirmation link outright -- while the endpoint reported success, because it swallows send failures by design to avoid leaking which addresses exist. A 4xx from a relay is "not now" and a 5xx is "not ever": retrying a 550 for an unverified sending domain just delays the same failure three times over.
 - Replaced "the account with the oldest `created_at`" as the definition of the instance admin with an explicit `users.is_admin` flag (migration `b5e91c7a2d38`). The old rule silently promoted the next-oldest account whenever the admin deleted theirs, which account deletion in the UI makes a thing a person can do by accident. The migration sets the flag on exactly the account the old rule was already pointing at, so the role did not change hands.
@@ -1218,7 +1220,7 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Formatted the 37 frontend files that had drifted while that plugin was silently not loading. Mechanical, no behavior change.
 - Corrected stale claims in `CLAUDE.md` and `README.md`: the redesign status, the locale count (34, not 30), MinIO still listed as a development service after it was removed, and upstream's product copy describing frogQuiz as a tool for schoolteachers. Added a section recording the layout mistakes this codebase makes repeatedly and the responsive baseline to check a screen against.
 
-- Added an auth dependency to `DELETE /api/v1/quiztivity/{uuid}`, which had none at all. Anyone who knew or guessed a QuizTivity's UUID could delete it, including someone else's; the endpoint now requires a logged-in user and only matches rows that user owns, exactly as the neighbouring `PUT` already did. A regression test covers the unauthenticated call and asserts the object survives it.
+- Added an auth dependency to `DELETE /api/v1/quiztivity/{uuid}`, which had none at all. Anyone who knew or guessed a QuizTivity's UUID could delete it, including someone else's; the endpoint now requires a logged-in user and only matches rows that user owns, exactly as the neighboring `PUT` already did. A regression test covers the unauthenticated call and asserts the object survives it.
 - Scoped `DELETE /api/v1/users/api_keys` to the calling user. It looked the key up by value alone, so any authenticated user could revoke any other user's API key if they ever saw it.
 - Put QuizTivity and the box-controller hardware endpoints behind `ENABLE_QUIZTIVITY` and `ENABLE_BOX_CONTROLLER`, both off by default. PR #5 removed their entry points from the UI but left the routers registered, so every endpoint stayed live and callable by anyone who typed the URL - obscurity rather than access control. They now return 404 and no longer appear in the OpenAPI schema. Moderation was left as it was: it is already gated on the `mods` allowlist, which is real authorisation.
 - Added the matching frontend half in `hooks.server.ts`: `/quiztivity`, `/controller`, `/account/controllers` and `/account/settings/security` now 404 rather than rendering a page for a feature whose API is switched off.

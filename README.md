@@ -154,9 +154,7 @@ frogQuiz is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz),
 written by Marlon W (Mawoka), who deserves the credit for essentially all of
 the software here. The upstream project has its own hosted instance at
 [classquiz.de](https://classquiz.de) and its own
-[docs](https://classquiz.de/docs). If his work has been useful to you,
-support him at [Ko-fi](https://ko-fi.com/K3K3CK3ES) or
-[Liberapay](https://liberapay.com/Mawoka/donate).
+[docs](https://classquiz.de/docs).
 
 ## License
 

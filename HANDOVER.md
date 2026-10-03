@@ -190,14 +190,9 @@ measured it and found the unfixed code passed 10/10. The retraction is in the gi
 Oct; D2 and D16 he answered with "like Kahoot"; D8, D9, D17 and D18 are his. Each row
 records what was decided and why.
 
-Two judgment calls left open on purpose, neither blocking:
+One judgment call left open on purpose, not blocking:
 
-- **The README still links to Mawoka's Ko-fi and Liberapay.** `CLAUDE.md` lists it as a
-  leftover, but the same file says credits to real upstream people are kept because they
-  are attribution, not a data-flow dependency — and a donation link is static text, not a
-  call to his servers. Removing credit is not Claude's call, so it stands. Decide whether
-  an internal company README should solicit donations for a third party.
-- **SonarQube** is untouched, per François. The nearer neighbour is `svelte-check` in CI:
+- **SonarQube** is untouched, per François. The nearer neighbor is `svelte-check` in CI:
   229 errors in our own code, 81 of them in five files, three of which are editor parts
   for question types the MVP does not offer — so it is smaller than the number looks.
 

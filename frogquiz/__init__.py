@@ -97,7 +97,7 @@ async def request_size_guard(request: Request, call_next):
     The route's own check is the authoritative one, but it only runs once FastAPI has
     parsed the multipart body -- and Starlette spools a part past 1MB to a temp file, so
     a 2GB upload is 2GB written to disk before any Python of ours sees it. This costs one
-    header lookup and makes the common case cheap. It is not the whole defence: a client
+    header lookup and makes the common case cheap. It is not the whole defense: a client
     can omit Content-Length or lie about it, which is what the route check is for, and
     the Caddyfile caps the body at the edge for the case where neither has run yet.
     """
