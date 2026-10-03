@@ -39,7 +39,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 			}
 		}).catch(() => null);
 		if (res?.ok) {
-			event.locals.email = await res.text();
+			// /users/check answers {"email": "..."}. This stored that whole body as the
+			// email, so after every token refresh locals.email read '{"email":...}'.
+			// Nothing used it beyond "is anyone signed in", which is why it went unseen.
+			const body = await res.json().catch(() => null);
+			event.locals.email = typeof body?.email === 'string' ? body.email : (jwt.sub ?? null);
 			const resp = await resolve(event);
 			try {
 				resp.headers.set('Set-Cookie', res.headers.get('set-cookie'));

@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Fixed the server-side session hook storing the API's whole JSON reply (`{"email": …}`)
+  as the user's email after every token refresh. Only "is anyone signed in" read it, so
+  nothing visibly broke; a unit test now pins the email and fails on the old code.
 - Removed the upstream Ko-fi and Liberapay donation links from the README (François's
   call). The credit to ClassQuiz and Marlon W stays: that is attribution.
 - Switched the app to US English. User-facing: "color", "canceled", "practice"/"practicing",
