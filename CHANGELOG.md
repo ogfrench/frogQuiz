@@ -6,6 +6,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Removed the verified-seal icon Discover put on every quiz that was not imported (with
+  Kahoot import hidden, every quiz), explained only by a hover tooltip phones never show.
+  Imported quizzes now say "Imported from Kahoot" in words, as on the quiz page.
+- Search highlights on Discover are a pastel butter tint in light mode and a muted gold
+  in dark, instead of the browser's pure #ffff00; a unit test holds both to WCAG AA.
 - Log out falls back to the old GET when the API answers the POST with 404, so it keeps
   working against an API from before this change: the deploy preview's (it uses the
   production API) and production's, until the VM pulls the new images. HANDOVER now

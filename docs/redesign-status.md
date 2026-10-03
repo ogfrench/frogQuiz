@@ -39,6 +39,7 @@ overflow at any width.** Anything less is in one of the other tables.
 | Media library | `/dashboard/files` | Verified clean |
 | Password reset | `/account/password-reset`, `/account/reset-password` | Swept with import |
 | Account settings | `/account/settings` | Rebuilt from `grid-cols-6` to a single column of section cards; sessions table in a scroll container, and a list below `sm` so each Delete is on screen (2026-10-03); initial-letter avatar fallback |
+| Discover | `/explore` (and `/search`, a 302 into it) | Shadcn `Card` on theme tokens since Explore and Search merged. 2026-10-03: driven in a browser at 390/834/1440 in both themes across all four modes (browse, results with highlights, too short, no results), no overflow in any of the 24. Dropped upstream's verified-seal icon that every original quiz wore with a hover-only explanation; an import now says "Imported from Kahoot" in words. Search highlights are a butter tint held to AA in both themes instead of the browser's #ffff00 |
 | Navbar and layout | every page with the navbar | 2026-10-03: one Log in (registration on the login page), an initial-letter avatar that opens My Account (Log out lives there), Join beside the menu button on phones, a Sheet drawer below `md`, the full bar from 768 px. Layout owns `<main>`, a skip link and the footer, which four pages used to paste in. axe reports nothing on any visible route at 390 and 1440, signed in and out. Screenshots walked: every route in light at 390 and 1440, the changed routes in dark at 390, the navbar and drawer in both themes |
 
 Two cross-cutting systems came out of this and now apply to every surface above:
@@ -59,12 +60,6 @@ Two cross-cutting systems came out of this and now apply to every surface above:
 
 ## In scope, not done
 
-- **Explore** (`/explore`) — rebuilt on shadcn `Card` and theme tokens when Explore and
-  Search were merged into it, and its four render modes (browse, too-short, results with
-  highlights, empty) were verified server-side against a stub carrying the deployed
-  backend's real payload. It is here rather than in Done because it has **not** been
-  driven in a browser at 390/834/1440, which is what this page means by verified.
-  `/search` is now a 302 into it and renders nothing of its own.
 - **Editor add-question control** — the rail's button moved out of the scroll container
   and a second one added at the end of the canvas; the type picker is the shadcn
   `Dialog` now. Same gap: compiles and lints, not yet driven at the three widths.

@@ -61,6 +61,18 @@ SPDX-License-Identifier: MPL-2.0
 	html.dark {
 		color-scheme: dark;
 	}
+	/* Search highlights. The browser default is pure #ffff00 in both themes: the loudest
+	   thing on Discover, and a glare in dark mode. A butter tint instead, with the text
+	   kept in the foreground color; mark-contrast.test.ts holds both pairs to AA. */
+	mark {
+		background-color: oklch(0.94 0.08 95);
+		color: var(--foreground);
+		border-radius: 0.2em;
+		padding-inline: 0.1em;
+	}
+	html.dark mark {
+		background-color: oklch(0.42 0.08 95);
+	}
 	body {
 		@apply leading-relaxed;
 	}
