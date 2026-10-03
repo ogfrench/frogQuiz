@@ -9,14 +9,14 @@ SPDX-License-Identifier: MPL-2.0
 For François and Gonçalo, 2–3 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
-**State: green and ready to merge.** 50 commits, about 125 files, roughly +9200 / −2600
+**State: green and ready to merge.** 57 commits, about 180 files, roughly +10300 / −2900
 against `master`.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **E2E_RESULT** |
-| Backend | **163 passed**, 1 skipped |
-| Unit | **142 passed** |
+| e2e | **132 passed**, 9.3 min |
+| Backend | **168 passed**, 1 skipped |
+| Unit | **144 passed** |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
 
@@ -216,7 +216,7 @@ One judgment call left open on purpose, not blocking:
 bash e2e/run.sh                      # whole stack + 132 e2e tests, no Docker needed
 KEEP_UP=1 bash e2e/run.sh --list     # leave it up at localhost:3000 to click around
 bash e2e/stop.sh                     # stop it
-cd frontend && pnpm test             # 142 unit tests, about a second
+cd frontend && pnpm test             # 144 unit tests, about a second
 ```
 
 The backend suite needs a Python env (`pipenv sync --dev`, or point `E2E_VENV` at one) and
