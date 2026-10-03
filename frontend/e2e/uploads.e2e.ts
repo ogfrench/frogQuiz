@@ -157,6 +157,11 @@ test('a file within the limit is accepted and attached', async ({ page, request 
 	// The dialog closes only on an upload that produced an id, so this is the signal
 	// that the image is on the question.
 	await expect(page.locator('.uppy-Dashboard-inner').first()).toBeHidden({ timeout: 15_000 });
+	// An upload carries no alt text, and its image used to be announced as "��e": with
+	// the header absent, atob(null) decoded the string "null".
+	const shown = page.locator('[data-question-card] img[src^="blob:"]').first();
+	await expect(shown).toBeVisible();
+	expect(await shown.getAttribute('alt')).not.toContain('\uFFFD');
 });
 
 test('an image over the pixel cap is refused, with advice about dimensions not bytes', async ({

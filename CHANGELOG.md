@@ -6,6 +6,12 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Fixed the alt text of every uploaded image, which screen readers announced as "��e".
+  Uploads carry no alt text, the server then leaves the header out, and `atob(null)`
+  decodes the string "null" instead of failing. Images without a description now have
+  an empty alt. The same guard covers a missing thumbhash. `uploads.e2e` checks it.
+- The full-screen view of a quiz image is the shadcn Dialog: Escape closes it, and the
+  image is centered. It was a `w-screen h-screen` div with a `fle` typo for `flex`.
 - Fixed the host lobby's full-screen QR code, which could not be closed from the
   keyboard: its Enter handler returned a function instead of calling it, and Escape did
   nothing. It is the shadcn Dialog now (Escape, Enter or a click closes it, focus
