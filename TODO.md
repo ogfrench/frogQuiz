@@ -10,9 +10,9 @@ Where the work actually stands. [`MVP.md`](MVP.md) is the plan and holds the dec
 this file is the running state, updated as things land.
 Audit that produced most of it: [`docs/audit-2026-10-01.md`](docs/audit-2026-10-01.md).
 
-**Branch:** `ccr-370df3e4-c44t1l` · **Suites:** 136 unit · 132 e2e · 163 backend (1 skipped)
-· **Last full green run:** 2 Oct — e2e **127/127** in 10.0m, backend **147 passed** (1 skipped),
-unit 126 passed, `flake8 .` 0, `eslint .` 0 errors
+**Branch:** `ccr-370df3e4-c44t1l` (PR #23) · **Suites:** 144 unit · 132 e2e · 168 backend (1 skipped)
+· **Last full green run:** 3 Oct — e2e **132/132** in 9.4m, backend **168 passed** (1 skipped),
+unit 144 passed, `pnpm build` OK, `flake8 .` 0, `eslint .` 0 errors
 
 ---
 
