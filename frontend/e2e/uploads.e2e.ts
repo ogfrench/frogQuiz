@@ -69,7 +69,7 @@ async function openPicker(page, request) {
 	await page.goto(`/edit?quiz_id=${saved.body.id}`);
 	await expect(page.locator('[data-question-card]')).toHaveCount(1);
 	// The one card opens focused, with the uploader's trigger inside it.
-	const addMedia = page.getByRole('button', { name: /Add Media/ }).first();
+	const addMedia = page.getByRole('button', { name: /Add an image/ }).first();
 	await expect(addMedia).toBeVisible();
 	await addMedia.click();
 	// Only Image is enabled, so the type picker is skipped and the Dashboard mounts.

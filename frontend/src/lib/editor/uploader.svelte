@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -11,6 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ImageEditor from '@uppy/image-editor';
 	import Compressor from '@uppy/compressor';
 	import { fade } from 'svelte/transition';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ImagePlus from '@lucide/svelte/icons/image-plus';
@@ -49,6 +51,9 @@ SPDX-License-Identifier: MPL-2.0
 	let video_popup: undefined | WindowProxy = $state(undefined);
 
 	let selected_type: AvailableUploadTypes | null = $state(null);
+	// Uppy draws its own bars and buttons and only knows its own two themes. Read ours
+	// when the dialog opens, which is when the Dashboard mounts.
+	let uppy_theme: 'light' | 'dark' = $state('light');
 
 	// Used only until GET /api/v1/storage/limits answers, and if it never does. Keep them
 	// no larger than config.py's max_image_upload_size, so a failed fetch errs tight
@@ -86,12 +91,24 @@ SPDX-License-Identifier: MPL-2.0
 	//
 	// These are starting values. `onMount` replaces them with the server's own numbers
 	// from GET /api/v1/storage/limits, so config.py is the only place they are written.
+	// On a phone there is nothing to drop a file from, so the picker says only what can
+	// be done there. Uppy fills %{browseFiles} with its own link. These go to the core
+	// instance, which every plugin reads strings from: passed as the Dashboard's own
+	// `locale` they made it throw "plugin.mount is not a function" on install and render
+	// an empty box.
+	const coarse_pointer = matchMedia('(pointer: coarse)').matches;
+	const uppy_locale = {
+		strings: coarse_pointer
+			? { dropPasteFiles: '%{browseFiles}', browseFiles: $t('uploader.choose_image') }
+			: { dropPasteFiles: $t('uploader.drop_or_browse'), browseFiles: $t('uploader.browse') }
+	};
 	const uppy = new Uppy({
 		restrictions: {
 			maxFileSize: FALLBACK_MAX_FILE_SIZE,
 			maxNumberOfFiles: 1,
 			allowedFileTypes: FALLBACK_TYPES
-		}
+		},
+		locale: uppy_locale
 	})
 		.use(DropTarget, {
 			target: document.body
@@ -108,8 +125,14 @@ SPDX-License-Identifier: MPL-2.0
 	// @uppy/svelte v4's Dashboard prop for the plugin's options is `props`, not
 	// `properties`. `inline: true` is the component's own default. Restrictions are not
 	// a Dashboard option and live on the Uppy instance above.
+	// Uppy's "Powered by Uppy" line was hidden with CSS here, which lost to Uppy's own
+	// `a.uppy-Dashboard-poweredBy` on specificity and so never hid it. This is its option.
+	// The height leaves room for the title and the size rule on a phone.
 	const dashboard_options = {
-		plugins: ['ImageEditor']
+		plugins: ['ImageEditor'],
+		proudlyDisplayPoweredByUppy: false,
+		width: '100%',
+		height: 400
 	};
 	// Read eagerly rather than inside the `complete` callback: that fires from Uppy, not
 	// from the component, and `$t` is a store read that wants component context.
@@ -222,117 +245,92 @@ SPDX-License-Identifier: MPL-2.0
 			video_popup = undefined;
 		});
 	};
-
-	const handle_on_click = (e: Event) => {
-		if (e.target === e.currentTarget) {
-			modalOpen = false;
-			selected_type = null;
-		}
-	};
-	onMount(() => {
-		window.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (e.key === 'Escape') {
-				modalOpen = false;
-				selected_type = null;
-			}
-		});
-	});
 </script>
 
-{#if modalOpen}
-	<div
-		class="fixed inset-0 z-20 flex overflow-y-auto bg-black/50 p-4"
-		onclick={handle_on_click}
-		tabindex="0"
-		role="button"
-		aria-label="Close modal"
-		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ' ? handle_on_click(e) : null)}
-		transition:fade={{ duration: 100 }}
+<!-- The shadcn Dialog, so it has a title, traps focus, and closes on Escape and on the
+     scrim. It was a hand-rolled overlay with role="button" wrapped around the whole
+     uploader, which left focus on the page behind it, and its size hint floated on the
+     scrim, over whatever page content happened to be there. -->
+<Dialog.Root bind:open={modalOpen} onOpenChange={(open) => !open && (selected_type = null)}>
+	<Dialog.Content
+		class="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto {selected_type === null ||
+		selected_type === AvailableUploadTypes.Video
+			? 'sm:max-w-lg'
+			: 'sm:max-w-3xl'}"
 	>
-		{#if selected_type === null}
-			<div
-				class="border-border bg-card m-auto w-full max-w-lg rounded-xl border p-6 shadow-xl"
-			>
-				<h1 class="mb-5 text-center text-xl font-semibold">
-					{$t('uploader.select_upload_type')}
-				</h1>
-				<div class="flex flex-wrap gap-3 sm:flex-nowrap">
-					<div class="w-full">
-						<BrownButton
-							onclick={() => {
-								selected_type = AvailableUploadTypes.Image;
-							}}
-							>{$t('words.image')}
-						</BrownButton>
-					</div>
-					<div class="w-full">
-						<BrownButton
-							disabled={!video_upload}
-							onclick={() => {
-								selected_type = AvailableUploadTypes.Video;
-							}}
-							>{$t('words.video')}
-						</BrownButton>
-					</div>
-					{#if library_enabled}
-						<div class="w-full">
-							<BrownButton
-								onclick={() => {
-									selected_type = AvailableUploadTypes.Library;
-								}}
-								>{$t('words.library')}
-							</BrownButton>
-						</div>
-					{/if}
-					{#if pixabay_enabled}
-						<div class="w-full">
-							<BrownButton
-								onclick={() => {
-									selected_type = AvailableUploadTypes.Pixabay;
-								}}
-								>Pixabay
-							</BrownButton>
-						</div>
-					{/if}
-				</div>
-			</div>
-		{:else if selected_type === AvailableUploadTypes.Image}
-			<div class="m-auto w-full max-w-3xl" transition:fade={{ duration: 100 }}>
-				<div>
-					<SvelteDashboard {uppy} props={dashboard_options} />
-				</div>
+		<Dialog.Header>
+			{#if selected_type === AvailableUploadTypes.Image}
+				<Dialog.Title>{$t('uploader.add_image')}</Dialog.Title>
 				<!-- State the rule before a file is picked, not only in the error after. -->
-				<p class="text-muted-foreground mt-3 text-center text-sm">
+				<Dialog.Description>
 					{$t('uploader.size_hint', { size: max_file_size_mb })}
-				</p>
-			</div>
-		{:else if selected_type === AvailableUploadTypes.Video}
-			<div
-				class="border-border bg-card m-auto w-full max-w-lg rounded-xl border p-6 shadow-xl"
-				transition:fade={{ duration: 100 }}
-			>
-				<h1 class="text-3xl text-center mb-4">{$t('uploader.upload_a_video')}</h1>
-				{#if video_popup}
-					<p class="text-center">
-						{$t('uploader.upload_video_popup_notice')}
-					</p>
-				{:else}
-					<BrownButton onclick={upload_video} type="button"
-						>{$t('uploader.upload_video')}</BrownButton
-					>
+				</Dialog.Description>
+			{:else if selected_type === AvailableUploadTypes.Video}
+				<Dialog.Title>{$t('uploader.upload_a_video')}</Dialog.Title>
+			{:else if selected_type === null}
+				<Dialog.Title>{$t('uploader.select_upload_type')}</Dialog.Title>
+			{:else}
+				<!-- Library and Pixabay draw their own headings. -->
+				<Dialog.Title class="sr-only">{$t('uploader.add_image')}</Dialog.Title>
+			{/if}
+		</Dialog.Header>
+		{#if selected_type === null}
+			<div class="flex flex-wrap gap-3 sm:flex-nowrap">
+				<div class="w-full">
+					<BrownButton
+						onclick={() => {
+							selected_type = AvailableUploadTypes.Image;
+						}}
+						>{$t('words.image')}
+					</BrownButton>
+				</div>
+				<div class="w-full">
+					<BrownButton
+						disabled={!video_upload}
+						onclick={() => {
+							selected_type = AvailableUploadTypes.Video;
+						}}
+						>{$t('words.video')}
+					</BrownButton>
+				</div>
+				{#if library_enabled}
+					<div class="w-full">
+						<BrownButton
+							onclick={() => {
+								selected_type = AvailableUploadTypes.Library;
+							}}
+							>{$t('words.library')}
+						</BrownButton>
+					</div>
+				{/if}
+				{#if pixabay_enabled}
+					<div class="w-full">
+						<BrownButton
+							onclick={() => {
+								selected_type = AvailableUploadTypes.Pixabay;
+							}}
+							>Pixabay
+						</BrownButton>
+					</div>
 				{/if}
 			</div>
+		{:else if selected_type === AvailableUploadTypes.Image}
+			<SvelteDashboard {uppy} props={{ ...dashboard_options, theme: uppy_theme }} />
+		{:else if selected_type === AvailableUploadTypes.Video}
+			{#if video_popup}
+				<p>{$t('uploader.upload_video_popup_notice')}</p>
+			{:else}
+				<BrownButton onclick={upload_video} type="button"
+					>{$t('uploader.upload_video')}</BrownButton
+				>
+			{/if}
 		{:else if selected_type === AvailableUploadTypes.Library}
-			<div>
-				<Library bind:data {selected_question} bind:modalOpen />
-			</div>
+			<Library bind:data {selected_question} bind:modalOpen />
 		{:else if selected_type === AvailableUploadTypes.Pixabay}
-			<div>
-				<Pixabay bind:data {selected_question} bind:modalOpen />
-			</div>
+			<Pixabay bind:data {selected_question} bind:modalOpen />
 		{/if}
-	</div>
-{/if}
+	</Dialog.Content>
+</Dialog.Root>
 <!-- Was a hand-rolled button: label set in italic for no reason, no gap between
      that label and its icon so the two collided, pt-10 of hardcoded dead space
      above it, an arbitrary w-1/2, a raw Heroicon path, and gray-500/gray-300
@@ -344,6 +342,7 @@ SPDX-License-Identifier: MPL-2.0
 		variant="outline"
 		class="w-full gap-2"
 		onclick={() => {
+			uppy_theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 			modalOpen = true;
 			// Image is the only enabled type at every call site today (video/library/
 			// Pixabay are hidden, not deleted, per CLAUDE.md's feature-triage rule) --
@@ -362,10 +361,31 @@ SPDX-License-Identifier: MPL-2.0
 	/* Uppy ships a light-only palette and draws its own chrome, so inside our modal
 	   its close control measured 1.09:1 and its footer text 2.79:1 -- both well under
 	   AA. Point its variables at the theme instead of letting it choose. */
-	:global(.uppy-Dashboard-inner),
-	:global(.uppy-Dashboard-AddFiles) {
+	/* Prefixed with .uppy-Root to match the weight of Uppy's [data-uppy-theme=dark]
+	   rules, which would otherwise win in dark mode. */
+	:global(.uppy-Root .uppy-Dashboard-inner),
+	:global(.uppy-Root .uppy-Dashboard-AddFiles) {
 		background: var(--card);
 		border-color: var(--border);
+	}
+
+	/* Its upload button was Uppy's green and its links Uppy's blue: two accents the
+	   app does not have. Zinc plus --primary, like every other control. */
+	:global(.uppy-Root .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload) {
+		background-color: var(--primary);
+		color: var(--primary-foreground);
+		border-radius: var(--radius-md);
+		font-weight: 500;
+	}
+
+	:global(.uppy-Root .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload:hover) {
+		background-color: color-mix(in oklch, var(--primary) 85%, var(--background));
+	}
+
+	:global(.uppy-Root .uppy-DashboardContent-back),
+	:global(.uppy-Root .uppy-DashboardContent-save),
+	:global(.uppy-Root .uppy-DashboardContent-addMore) {
+		color: var(--foreground);
 	}
 
 	:global(.uppy-Dashboard-close) {
@@ -378,9 +398,25 @@ SPDX-License-Identifier: MPL-2.0
 		color: var(--foreground);
 	}
 
-	/* Uppy's own branding link, at 3.07:1 against AA's 4.5 and not ours to show.
-	   ckeditor's equivalent is hidden the same way. */
-	:global(.uppy-Dashboard-poweredBy) {
-		display: none;
+	:global(.uppy-Root) {
+		font-family: inherit;
+	}
+
+	/* Recolored to the theme, "browse files" no longer looked like a link at all -- and
+	   on a phone it is the only thing in the box that does anything. */
+	:global(.uppy-Dashboard-browse) {
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	:global(.uppy-Dashboard-browse:hover),
+	:global(.uppy-Dashboard-browse:focus) {
+		border-bottom: none;
+	}
+
+	:global(.uppy-Dashboard-browse:focus-visible) {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
 	}
 </style>

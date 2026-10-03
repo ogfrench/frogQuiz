@@ -129,7 +129,7 @@ export async function expectNoHorizontalOverflow(page: Page) {
  *
  * A round is three host steps, not two: the answers, then the standings, then move on
  * (`show_scoreboard_step` in `lib/play/admin/controls.svelte`, added to match how Kahoot
- * sequences a round). It sits before "Next Question" *and* before "Get final results",
+ * sequences a round). It sits before "Next question" *and* before "Get final results",
  * so every spec that drives a host through a results screen has to pass it. Specs
  * written before that step hung on a screen offering "Scoreboard".
  *
@@ -153,7 +153,7 @@ export async function clearScoreboardStep(page: Page, next?: Locator) {
 
 /** Standings, then the next question. */
 export async function advancePastResults(page: Page) {
-	const next = page.getByRole('button', { name: /Next Question/ });
+	const next = page.getByRole('button', { name: /Next question/ });
 	await clearScoreboardStep(page, next);
 	await next.click();
 }

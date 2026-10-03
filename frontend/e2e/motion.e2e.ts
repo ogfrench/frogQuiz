@@ -55,7 +55,7 @@ async function toPodium(browser, request, options: { reducedMotion?: 'reduce' | 
 
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 	return { host, phone, hostCtx, ctx };
 }

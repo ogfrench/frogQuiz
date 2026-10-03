@@ -55,7 +55,7 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 	await host.waitForTimeout(1000);
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 	for (const pl of players) {
 		await pl.p
@@ -79,10 +79,10 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 			.evaluate((el) => Number(getComputedStyle(el).opacity));
 
 	// Third is standing while first is still on its way up.
-	await expect.poll(() => opacity('3rd Place'), { timeout: 4000 }).toBeGreaterThan(0.9);
-	expect(await opacity('1st Place'), 'the winner arrived with third').toBeLessThan(0.5);
-	await expect.poll(() => opacity('2nd Place'), { timeout: 4000 }).toBeGreaterThan(0.9);
-	await expect.poll(() => opacity('1st Place'), { timeout: 6000 }).toBeGreaterThan(0.9);
+	await expect.poll(() => opacity('3rd place'), { timeout: 4000 }).toBeGreaterThan(0.9);
+	expect(await opacity('1st place'), 'the winner arrived with third').toBeLessThan(0.5);
+	await expect.poll(() => opacity('2nd place'), { timeout: 4000 }).toBeGreaterThan(0.9);
+	await expect.poll(() => opacity('1st place'), { timeout: 6000 }).toBeGreaterThan(0.9);
 	// The crown lands once the winner's block has, not before.
 	await expect(host.locator('.crown')).toBeVisible();
 
@@ -140,7 +140,7 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 	expect(await overflow(), 'question').toBeLessThanOrEqual(0);
 	await phone.getByRole('button', { name: /Four/ }).first().click();

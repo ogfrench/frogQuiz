@@ -31,7 +31,7 @@ test('the host advances answers \u2192 scoreboard \u2192 next question', async (
 	await host.waitForTimeout(1400);
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 	for (const m of made) { await m.p.getByRole('button', { name: new RegExp(`^${m.a1}$`) }).first().click().catch(() => undefined); await m.p.waitForTimeout(200); }
 	await host.waitForTimeout(6500);
@@ -41,11 +41,11 @@ test('the host advances answers \u2192 scoreboard \u2192 next question', async (
 	await host.waitForTimeout(1200);
 	// The answers screen carries the breakdown and nothing else; the standings are the
 	// screen the host advances into.
-	await expect(host.getByRole('button', { name: /Next Question/ })).toBeVisible();
+	await expect(host.getByRole('button', { name: /Next question/ })).toBeVisible();
 	await expect(host.getByText('Scoreboard', { exact: true })).toBeVisible();
 	await expect(host.getByText('Ada')).toBeVisible();
 	// round two, so the movement arrows have something to say
-	await host.getByRole('button', { name: /Next Question/ }).click();
+	await host.getByRole('button', { name: /Next question/ }).click();
 	await host.waitForTimeout(1200);
 	for (const m of made) { await m.p.getByRole('button', { name: new RegExp(`^${m.a2}$`) }).first().click().catch(() => undefined); await m.p.waitForTimeout(200); }
 	await host.waitForTimeout(6500);

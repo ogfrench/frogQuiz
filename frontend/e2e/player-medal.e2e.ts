@@ -40,7 +40,7 @@ test('a player who placed gets a medal, and nobody gets both', async ({ browser,
 	await host.waitForTimeout(1200);
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 	for (const m of made) { await m.p.getByRole('button', { name: new RegExp(`^${m.a1}$`) }).first().click().catch(() => undefined); await m.p.waitForTimeout(220); }
 	await host.waitForTimeout(6500);
@@ -57,7 +57,7 @@ test('a player who placed gets a medal, and nobody gets both', async ({ browser,
 	await advanceToFinalResults(host);
 	await host.waitForTimeout(6000);
 	const winnerBar = made[0].p.locator('.fixed.bottom-0');
-	await expect(winnerBar.getByText('1st Place')).toBeVisible();
+	await expect(winnerBar.getByText('1st place')).toBeVisible();
 	await expect(winnerBar.getByText(/You.re on place/)).toHaveCount(0);
 
 	// Fourth gets no medal, so they get their place in words instead.

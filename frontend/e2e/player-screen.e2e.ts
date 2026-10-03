@@ -45,7 +45,7 @@ async function playTo1stQuestion(
 	const player = await joinAsPlayer(browser, pin, 'ana');
 	await expect(player.page.getByText(/You're in/)).toBeVisible();
 	await page.getByRole('button', { name: 'Start game' }).click();
-	await page.getByRole('button', { name: /Next Question/ }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
 	// The tile is up, so the question has reached the phone either way.
 	await expect(player.page.getByRole('button', { name: 'Lisbon' })).toBeVisible({
 		timeout: 15_000

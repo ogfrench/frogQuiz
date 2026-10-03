@@ -86,7 +86,7 @@ test('a teammate finds a colleague’s quiz, runs it, and never sees the answers
 		const player = await joinAsPlayer(browser, pin, 'ana');
 		await expect(player.page.getByText(/You're in/)).toBeVisible();
 		await mate.page.getByRole('button', { name: 'Start game' }).click();
-		await mate.page.getByRole('button', { name: /Next Question/ }).click();
+		await mate.page.getByRole('button', { name: /Next question/ }).click();
 		await player.page.getByRole('button', { name: 'Lisbon' }).click();
 		await mate.page.getByRole('button', { name: 'Show results' }).click();
 		await advanceToFinalResults(mate.page);

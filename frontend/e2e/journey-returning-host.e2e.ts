@@ -45,7 +45,7 @@ test('somebody comes back, finds their quiz, changes it and runs it again', asyn
 
 	await test.step('they log in', async () => {
 		await page.goto('/account/login');
-		await page.getByRole('textbox', { name: 'Email or Username' }).fill(user.email);
+		await page.getByRole('textbox', { name: 'Email or username' }).fill(user.email);
 		await page.getByRole('button', { name: 'Continue' }).click();
 		await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
 		await page.getByRole('button', { name: 'Continue' }).last().click();
@@ -93,7 +93,7 @@ test('somebody comes back, finds their quiz, changes it and runs it again', asyn
 			.first()
 			.click();
 		await page
-			.getByRole('button', { name: /Next Question/ })
+			.getByRole('button', { name: /Next question/ })
 			.first()
 			.click();
 		await player.page.getByRole('button', { name: 'Lisbon' }).click();

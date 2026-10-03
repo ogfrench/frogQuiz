@@ -68,7 +68,7 @@ async function playGame(
 
 	await page.getByRole('button', { name: 'Start game' }).click();
 
-	await page.getByRole('button', { name: /Next Question/ }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
 	await ana.getByRole('button', { name: 'Lisbon' }).click();
 	await bruno.getByRole('button', { name: 'Lisbon' }).click();
 	await carla.getByRole('button', { name: 'Porto' }).click();
@@ -89,14 +89,14 @@ async function playGame(
 
 	await advanceToFinalResults(page);
 	// Scoped to the podium block, not the page. The host screen legitimately says
-	// "1st Place" twice -- once on the gold block and once in the standings row for the
+	// "1st place" twice -- once on the gold block and once in the standings row for the
 	// winner -- so a bare getByText is a strict-mode violation rather than a real check.
 	// The player's own medal bar, not the page. Their screen shows the podium too, and
 	// the block's place label is now in the DOM at phone width as well -- it used to be
 	// `hidden sm:block`, which removed it, and is `max-sm:sr-only` so a screen reader
 	// still gets it. That made a bare getByText ambiguous on this side as well.
-	await expect(ana.locator('.fixed.bottom-0').getByText('1st Place')).toBeVisible();
-	await expect(page.locator('.podium-block.is-gold').getByText('1st Place')).toBeVisible();
+	await expect(ana.locator('.fixed.bottom-0').getByText('1st place')).toBeVisible();
+	await expect(page.locator('.podium-block.is-gold').getByText('1st place')).toBeVisible();
 
 	// Players' podiums are rendered from the server's totals, so they are the reference.
 	const truth: Record<string, number> = {};
@@ -114,7 +114,7 @@ test('anonymous host runs a full game with three players', async ({ page, reques
 	// The winner gets a medal instead of their place in words -- never both. This still
 	// asserted the words, which player-medal.e2e.ts explicitly asserts the winner does
 	// NOT get, so the two specs contradicted each other.
-	await expect(ana.locator('.fixed.bottom-0').getByText('1st Place')).toBeVisible();
+	await expect(ana.locator('.fixed.bottom-0').getByText('1st place')).toBeVisible();
 	await expect(ana.locator('.fixed.bottom-0').getByText(/You.re on place/)).toHaveCount(0);
 
 	for (const name of NAMES) {

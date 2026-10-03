@@ -128,7 +128,7 @@ test('text that is already stored cannot push a layout sideways', async ({
 		.first()
 		.click();
 	await page
-		.getByRole('button', { name: /Next Question/ })
+		.getByRole('button', { name: /Next question/ })
 		.first()
 		.click();
 	await expect(page.getByText(/Supercalifragilistic/).first()).toBeVisible({ timeout: 15_000 });

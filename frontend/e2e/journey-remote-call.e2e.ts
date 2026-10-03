@@ -63,7 +63,7 @@ test('a host with nobody in the room runs the whole game on everyone’s phones'
 			.first()
 			.click();
 		await page
-			.getByRole('button', { name: /Next Question/ })
+			.getByRole('button', { name: /Next question/ })
 			.first()
 			.click();
 

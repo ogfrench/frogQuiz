@@ -31,7 +31,7 @@ test('a player is told whether they were right, and where they stand', async ({ 
 	await host.waitForTimeout(1000);
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(900);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 	await good.p.getByRole('button', { name: /A/ }).first().click();
 	await bad.p.getByRole('button', { name: /B/ }).last().click();

@@ -6,6 +6,14 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Rebuilt the image uploader's overlay on the shadcn Dialog. It now has a title, keeps
+  focus inside, and shows the size rule inside the card instead of on the dimmed page.
+  Uppy follows the dark theme, its green Upload button and blue links use the app's
+  colors, "browse" is underlined, phones get "Choose an image" instead of a drop zone,
+  and "Powered by Uppy" is actually hidden now.
+- Sentence case for the remaining title-case labels on live screens: "Email or
+  username", "Advanced settings", "Next question", "1st place" (and 2nd, 3rd), and the
+  uploader's "Add an image" (was "Add Media"; images are the only thing it takes).
 - `docs/redesign-status.md` listed `/user/[user_id]` and `/edit/videos` as live and
   `/docs` as eight live pages; all but three legal pages were hidden on 2026-10-01.
   The hidden ones now sit with the cut features, the live docs are named, and the Done

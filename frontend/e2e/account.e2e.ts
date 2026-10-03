@@ -34,7 +34,7 @@ test.afterEach(closeAll);
 
 /** The login page is two forms: identify, then prove. Each has its own Continue. */
 async function logInThroughUI(page: Page, email: string, password: string) {
-	await page.getByRole('textbox', { name: 'Email or Username' }).fill(email);
+	await page.getByRole('textbox', { name: 'Email or username' }).fill(email);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await page.getByRole('textbox', { name: 'Password' }).fill(password);
 	await page.getByRole('button', { name: 'Continue' }).last().click();

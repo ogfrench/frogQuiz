@@ -56,7 +56,7 @@ test('a closed tab stops blocking the question', async ({ browser, request }) =>
 
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 
 	// One of the two answers. The question stays open: the count is still 2.

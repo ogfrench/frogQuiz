@@ -85,7 +85,7 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 	const [ana, bruno] = players.map((p) => p.page);
 	await test.step('they play both questions', async () => {
 		await page.getByRole('button', { name: 'Start game' }).click();
-		await page.getByRole('button', { name: /Next Question/ }).click();
+		await page.getByRole('button', { name: /Next question/ }).click();
 
 		await ana.getByRole('button', { name: 'Tree frog' }).click();
 		await bruno.getByRole('button', { name: 'Gecko' }).click();

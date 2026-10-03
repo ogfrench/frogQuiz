@@ -86,7 +86,7 @@ async function waitForMail(to: string) {
 /** The login page is two forms: identify, then prove. */
 async function logInThroughUI(page: Page, email: string, password: string) {
 	await page.goto('/account/login');
-	await page.getByRole('textbox', { name: 'Email or Username' }).fill(email);
+	await page.getByRole('textbox', { name: 'Email or username' }).fill(email);
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await page.getByRole('textbox', { name: 'Password' }).fill(password);
 	await page.getByRole('button', { name: 'Continue' }).last().click();

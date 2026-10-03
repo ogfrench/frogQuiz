@@ -32,7 +32,7 @@ test('the host downloads the game\u2019s answers in one press', async ({ browser
 	await host.waitForTimeout(900);
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next Question/ }).first().click();
+	await host.getByRole('button', { name: /Next question/ }).first().click();
 	await host.waitForTimeout(1200);
 	await p.getByRole('button', { name: /A/ }).first().click();
 	await host.waitForTimeout(6500);

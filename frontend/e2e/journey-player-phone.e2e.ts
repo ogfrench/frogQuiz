@@ -64,7 +64,7 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 			.first()
 			.click();
 		await page
-			.getByRole('button', { name: /Next Question/ })
+			.getByRole('button', { name: /Next question/ })
 			.first()
 			.click();
 		const lisbon = phone.getByRole('button', { name: 'Lisbon' });
