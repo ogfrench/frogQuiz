@@ -44,7 +44,7 @@ test('register and log in through the UI', async ({ page }) => {
 	const username = `ui${Date.now().toString(36)}`;
 	const email = `${username}@example.com`;
 	await page.goto('/account/register');
-	await page.getByRole('textbox', { name: 'E-mail address' }).fill(email);
+	await page.getByRole('textbox', { name: 'Email address' }).fill(email);
 	await page.getByRole('textbox', { name: 'Username' }).fill(username);
 	await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
 	await page.getByRole('textbox', { name: 'Repeat password' }).fill(PASSWORD);
@@ -200,7 +200,7 @@ test.describe('regressions', () => {
 		await page.getByRole('link', { name: 'Create an account to keep this quiz' }).click();
 		await expect(page).toHaveURL(/returnTo=/);
 		const username = `rt${Date.now().toString(36)}`;
-		await page.getByRole('textbox', { name: 'E-mail address' }).fill(`${username}@example.com`);
+		await page.getByRole('textbox', { name: 'Email address' }).fill(`${username}@example.com`);
 		await page.getByRole('textbox', { name: 'Username' }).fill(username);
 		await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
 		await page.getByRole('textbox', { name: 'Repeat password' }).fill(PASSWORD);

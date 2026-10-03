@@ -107,7 +107,10 @@ SPDX-License-Identifier: MPL-2.0
 		onmove(index, index + delta);
 		const target = e.currentTarget as HTMLElement;
 		requestAnimationFrame(() =>
-			target.closest('[data-question-card]')?.querySelector<HTMLElement>('[data-grip]')?.focus()
+			target
+				.closest('[data-question-card]')
+				?.querySelector<HTMLElement>('[data-grip]')
+				?.focus()
 		);
 	};
 </script>
@@ -130,7 +133,7 @@ SPDX-License-Identifier: MPL-2.0
 		e.preventDefault();
 		ondragend();
 	}}
-	role="listitem"
+	aria-label={$t('editor.question_n_of_total', { n: index + 1, total })}
 >
 	<div class="flex items-start gap-1 p-2 sm:gap-2 sm:p-3">
 		<!-- Only the grip starts a drag, so selecting text in the card does not drag it. -->
@@ -139,7 +142,7 @@ SPDX-License-Identifier: MPL-2.0
 			data-grip
 			draggable="true"
 			ondragstart={() => ondragstart(index)}
-			ondragend={ondragend}
+			{ondragend}
 			onkeydown={on_grip_keydown}
 			class="fq-touch-target text-muted-foreground hover:text-foreground focus-visible:ring-ring mt-1 inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none"
 			aria-label={$t('editor.reorder_grip', { n: index + 1 })}
@@ -328,8 +331,9 @@ SPDX-License-Identifier: MPL-2.0
 									class:font-medium={answer.right}
 									class:text-foreground={answer.right}
 								>
-									{answer.right ? '✓ ' : ''}{htmlToPlainText(answer.answer ?? '') ||
-										$t('editor.empty')}
+									{answer.right ? '✓ ' : ''}{htmlToPlainText(
+										answer.answer ?? ''
+									) || $t('editor.empty')}
 								</span>
 							{/each}
 						</span>
@@ -337,7 +341,6 @@ SPDX-License-Identifier: MPL-2.0
 				</button>
 			{/if}
 		</div>
-
 	</div>
 
 	<!-- Card actions sit in a footer on the open card, the way Forms and Kahoot both do
@@ -399,7 +402,8 @@ SPDX-License-Identifier: MPL-2.0
 				</AlertDialog.Trigger>
 				<AlertDialog.Content class="max-w-md">
 					<AlertDialog.Header>
-						<AlertDialog.Title>{$t('editor.delete_question_confirm')}</AlertDialog.Title>
+						<AlertDialog.Title>{$t('editor.delete_question_confirm')}</AlertDialog.Title
+						>
 						<AlertDialog.Description>
 							{summary || $t('editor.no_title')}
 						</AlertDialog.Description>

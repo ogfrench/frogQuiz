@@ -4,6 +4,43 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Navigation, one way to log in, and a UI best-practice pass
+
+- Reworked the navbar. Desktop: the three surfaces on the left; theme, one account control
+  and "Create a quiz" on the right. Tablets (768 px and up) now get that full bar instead of
+  a hamburger.
+- Removed "Register" from the navbar; "Log in" is the one entry, and the login page links
+  to registration. That link now carries `returnTo` through and is hidden when
+  registration is disabled, which the navbar used to do for it.
+- Signed in, "My Account" and "Log out" are one account menu instead of two links.
+- On phones, Join sits with the menu button instead of stranded mid-bar, and the menu is
+  a proper drawer (shadcn Sheet: focus trap, Esc, scrim, opaque), with "Create a quiz" at
+  its foot instead of wedged between a divider and Log in. The theme toggle moved into it.
+- Fixed "Log in" returning you to whichever page the app was first opened on: it read a
+  `pathname` store set once at load and never updated. It follows the router now.
+- Fixed My Quizzes rows reading "Questions" with no number.
+- Added a `<main>` landmark and a skip link to every page, and moved the footer into the
+  layout: it was pasted into four pages and missing from Discover, quiz pages, My Account,
+  reset password and the 404.
+- Gave every page an `<h1>`. Login and Register are headed "Log in" and "Create account"
+  rather than "frogQuiz", which the navbar already says.
+- The 404 page says "Page not found" (or "Quiz not found"), drops the monospace numeral, and
+  only offers "Try again" for server errors, where reloading can help.
+- Signed out, a teammate's quiz offers "Log in to host" (and returns there) instead of a
+  disabled Play button.
+- The join screen's buttons say "Join" and "Join game" instead of "Submit" twice.
+- On a phone, My Account's sessions are a list, so each Delete is on screen rather than
+  scrolled off the side of a table.
+- Fixed the editor's question list: it held the quiz settings, insert buttons and Add as
+  well as the questions, which axe flags as a critical ARIA error. Cards are now labelled
+  "Question n of total".
+- Unified "sign in" to "log in" and "E-mail" to "Email" across the copy, and removed
+  placeholders that only repeated their field's label.
+- Fixed the keyboard-shortcut hint's "Ctr+k" typo, and gave Mac users ⌘K.
+- Fixed an e2e helper race: `clearScoreboardStep` checked for the Scoreboard button once,
+  without waiting, so under load it skipped the step and stalled. It explains two of the
+  four "unexplained" stalls in `TODO.md`; reproduced by delaying the results frame.
+
 ### More hostile input: quiz shape, and editor/server drift
 
 Kept attacking the shapes a vanilla test never tries, and found that the editor and the

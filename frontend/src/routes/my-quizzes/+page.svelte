@@ -17,7 +17,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte';
 	import { anonDaysLeft, anonQuizIds, clearAnonSecret, getAnonSecret } from '$lib/anon_quiz';
-	import Footer from '$lib/footer.svelte';
 	import CommandpaletteNotice from '$lib/components/popover/commandpalettenotice.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
@@ -209,7 +208,10 @@ SPDX-License-Identifier: MPL-2.0
 				{#if draft}
 					<Badge variant="outline">{$t('draft.badge')}</Badge>
 				{/if}
+				<!-- The label carries no number of its own ("Questions"), so this printed
+				     "Questions" on every row. The view page always passed the count first. -->
 				<span>
+					{count}
 					{$t('words.question', { count })}
 				</span>
 				{#if days !== null}
@@ -289,7 +291,7 @@ SPDX-License-Identifier: MPL-2.0
 	</li>
 {/snippet}
 
-<div class="flex min-h-dvh flex-col">
+<div class="flex flex-col">
 	<div class="mx-auto w-full max-w-5xl grow px-5 pt-8 pb-20">
 		<header class="flex flex-wrap items-end justify-between gap-4">
 			<div class="min-w-0">
@@ -416,7 +418,6 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 		{/if}
 	</div>
-	<Footer />
 </div>
 
 <!-- No {#if} wrapper: the popup is a Dialog and owns its own visibility from `quiz_id`. -->

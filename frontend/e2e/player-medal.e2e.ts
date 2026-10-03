@@ -34,7 +34,7 @@ test('a player who placed gets a medal, and nobody gets both', async ({ browser,
 		await gotoPlayHydrated(p);
 		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
 		await p.getByRole('textbox', { name: 'Username' }).fill(n);
-		await p.getByRole('button', { name: 'Submit' }).click();
+		await p.getByRole('button', { name: 'Join game' }).click();
 		made.push({ c, p, a1, a2 });
 	}
 	await host.waitForTimeout(1200);

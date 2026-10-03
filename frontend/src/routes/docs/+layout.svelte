@@ -1,11 +1,11 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import Footer from '$lib/footer.svelte';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	interface Props {
 		children?: import('svelte').Snippet;
@@ -16,9 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	navbarVisible.visible = true;
 </script>
 
-<div class="min-h-screen flex flex-col">
+<!-- The root layout renders the footer for every page now; this one rendered a second. -->
+<div class="min-h-screen flex flex-col pb-4">
 	{@render children?.()}
-</div>
-<div class="pt-4">
-	<Footer />
 </div>

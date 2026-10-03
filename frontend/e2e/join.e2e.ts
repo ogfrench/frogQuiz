@@ -105,10 +105,10 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 	const pin = await hostFromViewPage(page, saved.body.id);
 
 	await gotoPlayHydrated(page);
-	const submit = page.getByRole('button', { name: 'Submit' });
-	await expect(submit).toBeDisabled();
-	const disabledBg = await bg(submit);
-	const disabledFg = await fg(submit);
+	const join = page.getByRole('button', { name: 'Join', exact: true });
+	await expect(join).toBeDisabled();
+	const disabledBg = await bg(join);
+	const disabledFg = await fg(join);
 
 	// `disabled:opacity-50` over a near-black primary gave a flat mid-grey with pale
 	// text, which is what a player stares at for the whole time they are typing. The
@@ -127,6 +127,9 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 	const nickname = page.getByRole('textbox', { name: 'Username' });
 	await expect(nickname).toBeVisible({ timeout: 15_000 });
 	await nickname.fill('ana');
+	// The nickname step's button: the same component and classes as the PIN step's, so
+	// its enabled colour is the one the PIN button reaches too.
+	const submit = page.getByRole('button', { name: 'Join game' });
 	await expect(submit).toBeEnabled();
 
 	// Polled, not read once: the button carries `transition-all`, so the background

@@ -365,9 +365,15 @@ SPDX-License-Identifier: MPL-2.0
 					     that room but aligns its contents right, so it still reads as sitting at
 					     the end of the header next to the theme switch rather than trailing the
 					     title. -->
-					<p class="min-w-0 max-w-[45%] shrink truncate font-medium">
-						{@html sanitizeTitleHtml(data.title)}
-					</p>
+					<!-- The page's heading (it had none). A new quiz has no title yet, so the
+					     heading falls back to a name for the screen, for screen readers only. -->
+					<h1 class="min-w-0 max-w-[45%] shrink truncate text-base font-medium">
+						{#if htmlToPlainText(data.title ?? '').trim()}
+							{@html sanitizeTitleHtml(data.title)}
+						{:else}
+							<span class="sr-only">{$t('editor.new_quiz')}</span>
+						{/if}
+					</h1>
 					<!-- One line of status, most urgent first. A failed save always shows. What is
 					     missing shows only after the first Save (D14): a new quiz is empty, and saying so
 					     in red before anyone had typed was the complaint. -->
@@ -453,7 +459,9 @@ SPDX-License-Identifier: MPL-2.0
 						class="border-border hidden w-60 shrink-0 overflow-y-auto border-r px-3 py-6 lg:block"
 						aria-label={$t('editor.outline')}
 					>
-						<p class="text-muted-foreground px-2 pb-2 text-xs font-medium tracking-wide uppercase">
+						<p
+							class="text-muted-foreground px-2 pb-2 text-xs font-medium tracking-wide uppercase"
+						>
 							{$t('editor.outline')}
 						</p>
 						<button
@@ -482,12 +490,17 @@ SPDX-License-Identifier: MPL-2.0
 											scrollToCard(i, 'start');
 										}}
 									>
-										<span class="text-muted-foreground shrink-0 tabular-nums">{i + 1}</span>
+										<span class="text-muted-foreground shrink-0 tabular-nums"
+											>{i + 1}</span
+										>
 										<span class="min-w-0 flex-1 truncate">
-											{htmlToPlainText(question.question ?? '').trim() || $t('editor.no_title')}
+											{htmlToPlainText(question.question ?? '').trim() ||
+												$t('editor.no_title')}
 										</span>
 										{#if editorValidation.shown && !isQuestionComplete(question)}
-											<span class="bg-destructive size-1.5 shrink-0 rounded-full"></span>
+											<span
+												class="bg-destructive size-1.5 shrink-0 rounded-full"
+											></span>
 										{/if}
 									</button>
 								</li>
@@ -498,41 +511,54 @@ SPDX-License-Identifier: MPL-2.0
 					<div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
 						<!-- One column, capped to a measure. Everything in the quiz is on this
 						     page in order: setup, then a card per question, then add. -->
-						<div
-							class="mx-auto flex w-full max-w-2xl flex-col gap-3"
-							role="list"
-							aria-label={$t('editor.outline')}
-						>
+						<!-- Only the questions are the list. Setup, the insert buttons and Add sat
+						     inside role="list" as well, so a screen reader was handed a list whose
+						     children were text boxes and buttons rather than items (axe:
+						     aria-required-children). Each item is the insert point plus its card. -->
+						<div class="mx-auto flex w-full max-w-2xl flex-col gap-3">
 							<div data-setup-card>
 								<SettingsCard bind:data bind:edit_id />
 							</div>
 
-							{#each data.questions as question, i (keyOf(question))}
-								{#if i > 0}
-									{@render insert_here(i)}
-								{/if}
-								<QuestionCard
-									bind:data
-									bind:edit_id
-									index={i}
-									total={data.questions.length}
-									focused={selected_question === i}
-									dragging={dragging_from === i}
-									onselect={focusCard}
-									onmove={moveQuestion}
-									ondelete={deleteQuestion}
-									onduplicate={duplicateQuestion}
-									ondragstart={(from) => (dragging_from = from)}
-									ondragenter={(over) => (drag_over = over)}
-									ondragend={() => {
-										if (dragging_from !== null && drag_over !== null) {
-											moveQuestion(dragging_from, drag_over);
-										}
-										dragging_from = null;
-										drag_over = null;
-									}}
-								/>
-							{/each}
+							{#if data.questions.length > 0}
+								<div
+									class="flex flex-col gap-3"
+									role="list"
+									aria-label={$t('editor.outline')}
+								>
+									{#each data.questions as question, i (keyOf(question))}
+										<div class="flex flex-col gap-3" role="listitem">
+											{#if i > 0}
+												{@render insert_here(i)}
+											{/if}
+											<QuestionCard
+												bind:data
+												bind:edit_id
+												index={i}
+												total={data.questions.length}
+												focused={selected_question === i}
+												dragging={dragging_from === i}
+												onselect={focusCard}
+												onmove={moveQuestion}
+												ondelete={deleteQuestion}
+												onduplicate={duplicateQuestion}
+												ondragstart={(from) => (dragging_from = from)}
+												ondragenter={(over) => (drag_over = over)}
+												ondragend={() => {
+													if (
+														dragging_from !== null &&
+														drag_over !== null
+													) {
+														moveQuestion(dragging_from, drag_over);
+													}
+													dragging_from = null;
+													drag_over = null;
+												}}
+											/>
+										</div>
+									{/each}
+								</div>
+							{/if}
 
 							{#if data.questions.length === 0}
 								<!-- A new quiz: the first question is the next thing to do, so it is

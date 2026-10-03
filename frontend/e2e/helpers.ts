@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-import { expect, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import {
+	expect,
+	type APIRequestContext,
+	type Browser,
+	type Locator,
+	type Page
+} from '@playwright/test';
 
 export const ANON_KEY = 'frogquiz_anon_secrets';
 export const PHONE = { width: 390, height: 844 };
@@ -106,7 +112,7 @@ export async function joinAsPlayer(browser: Browser, pin: string, username: stri
 	// The PIN form has no submit handler: the sixth digit advances it on its own.
 	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
 	await page.getByRole('textbox', { name: 'Username' }).fill(username);
-	await page.getByRole('button', { name: 'Submit' }).click();
+	await page.getByRole('button', { name: 'Join game' }).click();
 	return { context, page };
 }
 
@@ -127,26 +133,36 @@ export async function expectNoHorizontalOverflow(page: Page) {
  * so every spec that drives a host through a results screen has to pass it. Specs
  * written before that step hung on a screen offering "Scoreboard".
  *
- * Conditional rather than assumed: a slide, a hide-results question and a question
- * whose results have not arrived yet have no standings moment.
+ * Conditional rather than assumed: a slide and a hide-results question have no standings
+ * moment, so it waits for whichever of the two buttons arrives. Pass `next` for that;
+ * without it the step is asserted to exist.
+ *
+ * It used to read `isVisible()` once, which does not wait. Between "Show results" and
+ * the results arriving the bar shows neither button, so under load that read said "no
+ * standings step", skipped it, and the caller then waited 60 s for a button that only
+ * comes after it. journey-remote-call failed exactly so on 2 Oct with "Scoreboard" on
+ * screen. Specs that slept after "Show results" never hit it; the journeys do not sleep.
  */
-export async function clearScoreboardStep(page: Page) {
+export async function clearScoreboardStep(page: Page, next?: Locator) {
 	const scoreboard = page.getByRole('button', { name: 'Scoreboard' });
-	if (await scoreboard.isVisible().catch(() => false)) {
-		await scoreboard.click();
-	}
+	await expect(next ? scoreboard.or(next).first() : scoreboard).toBeVisible({
+		timeout: 15_000
+	});
+	if (await scoreboard.isVisible()) await scoreboard.click();
 }
 
 /** Standings, then the next question. */
 export async function advancePastResults(page: Page) {
-	await clearScoreboardStep(page);
-	await page.getByRole('button', { name: /Next Question/ }).click();
+	const next = page.getByRole('button', { name: /Next Question/ });
+	await clearScoreboardStep(page, next);
+	await next.click();
 }
 
 /** Standings, then the podium. */
 export async function advanceToFinalResults(page: Page) {
-	await clearScoreboardStep(page);
-	await page.getByRole('button', { name: /final results/i }).click();
+	const finalResults = page.getByRole('button', { name: /final results/i });
+	await clearScoreboardStep(page, finalResults);
+	await finalResults.click();
 }
 
 // ---- Driving the editor ----------------------------------------------------

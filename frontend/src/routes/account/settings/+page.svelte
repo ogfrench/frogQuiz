@@ -318,7 +318,45 @@ SPDX-License-Identifier: MPL-2.0
 						     container, and contain:paint stops its content contributing to the
 						     document's scroll width. Delete was a bare <button> with no box, so
 						     its target was the 42x20 of its own text. -->
-						<div class="border-border fq-scroll-x rounded-lg border">
+						<!-- On a phone the table scrolled sideways inside its card, so the
+						     Delete button for each session started off screen. Below sm the
+						     same rows are a list: what the device is, when it was last seen,
+						     and the action, all visible at once. -->
+						<ul
+							class="divide-border border-border divide-y rounded-lg border sm:hidden"
+						>
+							{#each sessions as session (session.id)}
+								<li class="flex items-center gap-3 px-4 py-3 text-sm">
+									<div class="min-w-0 flex-1">
+										<p class="flex flex-wrap items-center gap-2 font-medium">
+											{getFormattedUserAgent(session.user_agent)}
+											{#if session.id === this_session?.id}
+												<span
+													class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+													>{$t('settings_page.this_session?')}</span
+												>
+											{/if}
+										</p>
+										<p class="text-muted-foreground mt-0.5 text-xs">
+											{$t('settings_page.last_seen')}
+											{formatDate(session.last_seen)}
+										</p>
+									</div>
+									<Button
+										type="button"
+										variant="destructive"
+										size="sm"
+										aria-label={$t('settings_page.delete_this_session')}
+										onclick={() => {
+											deleteSession(session.id);
+										}}
+									>
+										{$t('words.delete')}
+									</Button>
+								</li>
+							{/each}
+						</ul>
+						<div class="border-border fq-scroll-x hidden rounded-lg border sm:block">
 							<table class="w-full text-left text-sm">
 								<thead
 									class="bg-muted/50 text-muted-foreground text-xs font-medium tracking-wider uppercase"

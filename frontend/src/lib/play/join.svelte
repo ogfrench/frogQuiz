@@ -237,6 +237,8 @@ SPDX-License-Identifier: MPL-2.0
      on a laptop sees a form rather than a void. fq-stage itself is untouched. -->
 <div class="fq-stage sm:justify-start sm:pt-[14vh]">
 	<div class="flex w-full max-w-sm flex-col items-center gap-6">
+		<!-- The page had no heading at all; the mark and the card say it visually. -->
+		<h1 class="sr-only">{$t('play_page.join_title')}</h1>
 		<Wordmark size={44} />
 
 		{#if game_pin === '' || game_pin.length < 6}
@@ -271,7 +273,9 @@ SPDX-License-Identifier: MPL-2.0
 					class="mt-4 h-12 w-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
 					disabled={game_pin.length < 6}
 				>
-					{$t('words.submit')}
+					<!-- "Join", as on the landing page's PIN box, which does the same thing.
+					     Both steps here said "Submit", which names the mechanism, not the act. -->
+					{$t('words.join')}
 				</Button>
 			</form>
 		{:else}
@@ -328,7 +332,7 @@ SPDX-License-Identifier: MPL-2.0
 					disabled={username.trim().length < MIN_NICKNAME}
 					onclick={setUsername}
 				>
-					{$t('words.submit')}
+					{$t('play_page.join_game')}
 				</Button>
 			</form>
 		{/if}

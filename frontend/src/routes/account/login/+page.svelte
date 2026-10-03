@@ -9,7 +9,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { alertModal } from '$lib/stores';
 	import { navbarVisible } from '$lib/stores.svelte';
 	import { slide } from 'svelte/transition';
-	import Footer from '$lib/footer.svelte';
 	import VerifiedBadge from './verified_badge.svelte';
 	import StartWindow from './start_window.svelte';
 	import SelectMethod from './select_method.svelte';
@@ -93,7 +92,7 @@ SPDX-License-Identifier: MPL-2.0
 <svelte:head>
 	<title>frogQuiz - Login</title>
 </svelte:head>
-<div class="flex min-h-screen flex-col items-center justify-center px-4">
+<div class="flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4">
 	{#if notice}
 		<VerifiedBadge state={notice} />
 	{/if}
@@ -134,4 +133,3 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	</Card.Root>
 </div>
-<Footer />

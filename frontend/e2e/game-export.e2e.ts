@@ -28,7 +28,7 @@ test('the host downloads the game\u2019s answers in one press', async ({ browser
 	await gotoPlayHydrated(p);
 	await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
 	await p.getByRole('textbox', { name: 'Username' }).fill('Robin');
-	await p.getByRole('button', { name: 'Submit' }).click();
+	await p.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
 	await host.getByRole('button', { name: /Start game/ }).first().click();
 	await host.waitForTimeout(800);

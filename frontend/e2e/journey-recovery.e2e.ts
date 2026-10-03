@@ -100,7 +100,7 @@ test('somebody signs up, forgets their password, and gets back in through the em
 
 	await test.step('they sign up', async () => {
 		await page.goto('/account/register');
-		await page.getByRole('textbox', { name: 'E-mail address' }).fill(email);
+		await page.getByRole('textbox', { name: 'Email address' }).fill(email);
 		await page.getByRole('textbox', { name: 'Username' }).fill(username);
 		await page.getByRole('textbox', { name: 'Password', exact: true }).fill(OLD_PASSWORD);
 		await page.getByRole('textbox', { name: 'Repeat password' }).fill(OLD_PASSWORD);
@@ -121,7 +121,7 @@ test('somebody signs up, forgets their password, and gets back in through the em
 		// Reached the way a person reaches it, from the login page, not by URL.
 		await page.getByRole('link', { name: /Forgot/i }).click();
 		await expect(page).toHaveURL(/\/account\/reset-password/);
-		await page.getByRole('textbox', { name: 'E-mail' }).fill(email);
+		await page.getByRole('textbox', { name: 'Email' }).fill(email);
 		await page.getByRole('button', { name: 'Send reset link' }).click();
 		// Deliberately says nothing about whether the address is on file.
 		await expect(page.getByText(/a reset link is on its way/i)).toBeVisible();
@@ -161,10 +161,10 @@ test('somebody signs up, forgets their password, and gets back in through the em
 		// a signed-in person goes.
 		await page.waitForURL((u) => !u.pathname.startsWith('/account/login'), { timeout: 15_000 });
 
-		// Log out is a navbar link to the API route, not a button, and the navbar renders
-		// it twice (desktop and the mobile sheet).
+		// Log out lives under the account menu, as a menu item that links to the API route.
 		await page.goto('/my-quizzes');
-		await page.getByRole('link', { name: 'Log out' }).first().click();
+		await page.getByRole('button', { name: 'My Account' }).click();
+		await page.getByRole('menuitem', { name: 'Log out' }).click();
 		await page.waitForURL(/\/(?!my-quizzes)/);
 
 		await logInThroughUI(page, email, OLD_PASSWORD);

@@ -37,6 +37,7 @@ SPDX-License-Identifier: MPL-2.0
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Play from '@lucide/svelte/icons/play';
+	import LogIn from '@lucide/svelte/icons/log-in';
 	import Repeat from '@lucide/svelte/icons/repeat';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 
@@ -334,19 +335,32 @@ SPDX-License-Identifier: MPL-2.0
 				class="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center"
 			>
 				<!-- Start is the one primary action; everything else is outline or ghost. -->
-				<Button
-					size="lg"
-					disabled={!can_start || is_draft}
-					onclick={() => (start_game = quiz.id)}
-					aria-describedby={is_draft
-						? 'draft-hint'
-						: can_start
-							? undefined
-							: 'signed-out-hint'}
-				>
-					<Play />
-					{$t('words.play')}
-				</Button>
+				{#if !logged_in && !can_start && !is_draft}
+					<!-- Signed out, Play was drawn disabled with the reason in small print
+					     below. Logging in is the way through, so the button is that, and it
+					     comes back here afterwards. -->
+					<Button
+						size="lg"
+						href="/account/login?returnTo={encodeURIComponent(page.url.pathname)}"
+					>
+						<LogIn />
+						{$t('view_quiz_page.log_in_to_host')}
+					</Button>
+				{:else}
+					<Button
+						size="lg"
+						disabled={!can_start || is_draft}
+						onclick={() => (start_game = quiz.id)}
+						aria-describedby={is_draft
+							? 'draft-hint'
+							: can_start
+								? undefined
+								: 'signed-out-hint'}
+					>
+						<Play />
+						{$t('words.play')}
+					</Button>
+				{/if}
 				{#if is_owner}
 					<Button href="/edit?quiz_id={quiz.id}" variant="outline" size="lg">
 						<Pencil />

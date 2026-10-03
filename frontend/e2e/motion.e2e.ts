@@ -50,7 +50,7 @@ async function toPodium(browser, request, options: { reducedMotion?: 'reduce' | 
 	await gotoPlayHydrated(phone);
 	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
 	await phone.getByRole('textbox', { name: 'Username' }).fill('Robin');
-	await phone.getByRole('button', { name: 'Submit' }).click();
+	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
 
 	await host.getByRole('button', { name: /Start game/ }).first().click();

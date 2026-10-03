@@ -188,7 +188,7 @@ test('a nickname cannot be used to wreck the host’s player list', async ({
 				el.value = v;
 				el.dispatchEvent(new Event('input', { bubbles: true }));
 			}, name);
-		await p.getByRole('button', { name: 'Submit' }).click();
+		await p.getByRole('button', { name: 'Join game' }).click();
 		await expect(p.getByText(/You're in/)).toBeVisible({ timeout: 15_000 });
 		await expectNoHorizontalOverflow(p);
 		joined.push(ctx);

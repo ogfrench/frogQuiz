@@ -10,7 +10,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { validateSchema } from '@felte/validator-yup';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
-	import Footer from '$lib/footer.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -143,16 +142,14 @@ SPDX-License-Identifier: MPL-2.0
      that turned sky-600 on focus -- a fourth accent the design system does not have,
      and CLAUDE.md is explicit that adding one is what makes this look generic -- an
      inlined spinner with hardcoded fill-blue-800, and a gray-700 submit. -->
-<div class="flex min-h-dvh items-center justify-center px-4 py-10">
+<div class="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-10">
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="gap-1 text-center">
-			<Card.Title class="text-3xl font-bold tracking-tight">frogQuiz</Card.Title>
-			<Card.Description class="grid gap-1">
-				<span class="text-foreground text-lg font-medium"
-					>{$t('register_page.greeting')}</span
-				>
-				<span>{$t('register_page.create_account')}</span>
-			</Card.Description>
+			<!-- Says what the page is for; see the login card. -->
+			<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+				{$t('register_page.create_account')}
+			</h1>
+			<Card.Description>{$t('register_page.greeting')}</Card.Description>
 		</Card.Header>
 
 		<Card.Content>
@@ -164,7 +161,6 @@ SPDX-License-Identifier: MPL-2.0
 						name="email"
 						type="email"
 						autocomplete="email"
-						placeholder={$t('words.email')}
 						aria-invalid={!!$errors.email}
 					/>
 					{#if $errors.email}
@@ -179,7 +175,6 @@ SPDX-License-Identifier: MPL-2.0
 						name="username"
 						type="text"
 						autocomplete="username"
-						placeholder={$t('words.username')}
 						aria-invalid={!!$errors.username}
 					/>
 					{#if $errors.username}
@@ -194,7 +189,6 @@ SPDX-License-Identifier: MPL-2.0
 						name="password1"
 						type="password"
 						autocomplete="new-password"
-						placeholder={$t('words.password')}
 						aria-invalid={!!$errors.password1}
 					/>
 					{#if $errors.password1}
@@ -209,7 +203,6 @@ SPDX-License-Identifier: MPL-2.0
 						name="password2"
 						type="password"
 						autocomplete="new-password"
-						placeholder={$t('register_page.repeat_password')}
 						aria-invalid={!!$errors.password2}
 					/>
 					{#if $errors.password2}
@@ -363,4 +356,3 @@ SPDX-License-Identifier: MPL-2.0
 		</Card.Footer>
 	</Card.Root>
 </div>
-<Footer />

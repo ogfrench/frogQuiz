@@ -38,7 +38,7 @@
         "terms_of_service": "Terms of Service",
         "result": {
             "check_email": "Account created. Check your email for the verification link.",
-            "ready": "Account created. You can sign in now.",
+            "ready": "Account created. You can log in now.",
             "taken": "That email or username is already taken.",
             "invalid": "That email address was rejected. Check it and try again.",
             "too_many": "Too many attempts from this address. Try again in an hour.",
@@ -80,7 +80,7 @@
             }
         },
         "use_backup_code": "Use backup-code",
-        "verified": "Your email address is confirmed. You can sign in now.",
+        "verified": "Your email address is confirmed. You can log in now.",
         "verify_link_dead": "That confirmation link has already been used, or a newer one replaced it.",
         "verify_link_resend": "Send a new one",
         "wrong_credentials": "That email address and password don't match.",
@@ -101,7 +101,7 @@
         "stats": "Stats",
         "features": "Features",
         "login": "Log in",
-        "email": "E-mail address",
+        "email": "Email address",
         "username": "Username",
         "password": "Password",
         "play": "Play",
@@ -263,6 +263,7 @@
         "bg_color_custom": "Use a custom colour",
         "quiz_setup": "Quiz setup",
         "question_n_of_total": "Question {{n}} of {{total}}",
+        "new_quiz": "New quiz",
         "single_answer": "One correct answer",
         "multiple_answers": "Several correct answers",
         "mark_correct": "Mark as correct",
@@ -396,12 +397,12 @@
         "sessions": "Sessions",
         "profile": "Profile",
         "public_profile": "Public profile",
-        "sessions_description": "Devices and browsers currently signed in to your account.",
+        "sessions_description": "Devices and browsers currently logged in to your account.",
         "password_requirements": "At least 8 characters, and different from your current password.",
         "passwords_do_not_match": "The two passwords do not match.",
         "password_section": "Password",
         "unknown_browser": "Unknown device",
-        "password_changed": "Password changed. Sign in again with the new one.",
+        "password_changed": "Password changed. Log in again with the new one.",
         "password_change_wrong": "That current password isn't right.",
         "password_change_too_many": "Too many attempts. Try again later.",
         "password_change_oauth": "This account signs in with an external provider, so there's no password to change.",
@@ -437,6 +438,8 @@
         "nothing_here": "There is nothing here..."
     },
     "play_page": {
+        "join_game": "Join game",
+        "join_title": "Join a game",
         "end_sentence": "That's it! This was the quiz.",
         "1st_place": "1st Place",
         "2nd_place": "2nd Place",
@@ -484,13 +487,16 @@
         "search_for_own_quizzes": "Search for your own quizzes",
         "views_n_plays": "Views & Plays",
         "info_analytics": "The \"Plays\" only show how often the quiz was started (you included), whereas the \"Views\" count how often the \"View\"-page was visited, so it also counts bots (sorry for that).",
-        "commandpalette_notice": "Press <kbd>Ctr</kbd>+<kbd>k</kbd> or <kbd>Meta</kbd>+<kbd>k</kbd> to open the command palette",
+        "commandpalette_notice": "Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on a Mac) to open the command palette",
         "create_quiz": "Create a new quiz"
     },
     "footer": {
         "more_details_here": "More details here"
     },
     "error_page": {
+        "404_title": "Page not found",
+        "unknown_error_title": "Something went wrong",
+        "quiz_404_title": "Quiz not found",
         "404_text": "The page you were looking for doesn't exist, or has been moved.",
         "unknown_error_text": "Something went wrong on our end. Try again — if it keeps happening, let the team know.",
         "quiz_404_text": "That quiz doesn't exist, or is no longer shared."
@@ -564,7 +570,11 @@
         "update_from_to": "Update from {{current_version}} to {{newest_version}}"
     },
     "navbar": {
-        "donate": "Donate"
+        "donate": "Donate",
+        "menu": "Menu",
+        "open_menu": "Open menu",
+        "account_settings": "Account settings",
+        "theme": "Theme"
     },
     "security_settings": {
         "backup_code": "Backup-Code",
@@ -602,7 +612,7 @@
         "on_this_browser": "On this browser",
         "on_this_browser_hint": "Made here without an account. Claim them to keep them on your account for good.",
         "claim": "Claim",
-        "claim_failed": "Couldn't claim this quiz. Try again, or sign in again if your session has expired.",
+        "claim_failed": "Couldn't claim this quiz. Try again, or log in again if your session has expired.",
         "delete_failed": "Couldn't delete this quiz. Try again.",
         "empty_signed_in": "No quizzes yet. Create one, or import a quiz to get going.",
         "empty_signed_out": "No quizzes saved in this browser yet.",
@@ -637,9 +647,10 @@
         "delete_confirm": "Delete this quiz permanently? This cannot be undone.",
         "delete_confirm_title": "Delete this quiz?",
         "delete_failed": "Could not delete this quiz. It may have already expired.",
-        "claim_failed": "Could not claim this quiz. Try again, or sign in again if your session has expired.",
-        "start_signed_out_hint": "Sign in to host or download this quiz.",
-        "download_signed_out_hint": "Sign in to download this quiz.",
+        "claim_failed": "Could not claim this quiz. Try again, or log in again if your session has expired.",
+        "start_signed_out_hint": "Hosting and downloading need an account.",
+        "log_in_to_host": "Log in to host",
+        "download_signed_out_hint": "Log in to download this quiz.",
         "unlisted_not_yours": "This quiz is unlisted, so only the person who made it can host it. You can still practise it.",
         "imported": "Imported from Kahoot",
         "questions_heading": "Questions",

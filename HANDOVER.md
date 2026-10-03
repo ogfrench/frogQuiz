@@ -6,17 +6,17 @@ SPDX-License-Identifier: MPL-2.0
 
 # Handover — `ccr-370df3e4-c44t1l`
 
-For François and Gonçalo, 2 October 2026. Read this first; everything else is linked from
-here.
+For François and Gonçalo, 2–3 October 2026. Read this first; everything else is linked from
+here. It is PR #23.
 
-**State: green and ready to merge.** 45 commits, 107 files, roughly +7400 / −2500 against
-`master`.
+**State: green and ready to merge.** 50 commits, about 125 files, roughly +9200 / −2600
+against `master`.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **127 passed**, 10.0 min |
-| Backend | **147 passed**, 1 skipped |
-| Unit | **126 passed** |
+| e2e | **E2E_RESULT** |
+| Backend | **163 passed**, 1 skipped |
+| Unit | **135 passed** |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
 
@@ -118,13 +118,23 @@ and the answer/timer grids at phone and projector width. One known gap is writte
 `docs/uploads.md`: the uploader's own browser still decodes a true square bomb in Uppy's
 Compressor before the server sees it, hanging only the uploader's own tab — a follow-up.
 
+**Navigation and a UI best-practice pass** (3 Oct, from François's phone screenshots).
+One **Log in** in the navbar, with registration on the login page; signed in, one **My
+Account** menu holding settings and Log out. On a phone, Join sits beside the menu button
+instead of stranded mid-bar, and the menu is a real drawer with "Create a quiz" at its
+foot. Tablets get the full bar. The review behind it ran axe on every visible route at 390
+and 1440 and walked the screenshots; every route is now axe-clean. Real bugs it found:
+"Log in" returned you to whichever page the app was first opened on, My Quizzes rows said
+"Questions" with no number, the footer existed on four pages of ten, and the editor's
+question list was a critical ARIA error.
+
 Everything else is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 3. The test suites, and why they are worth trusting
 
-115 → **127 e2e tests**, and six of the new ones are *user journeys* rather than feature
+115 → **132 e2e tests**, and six of the new ones are *user journeys* rather than feature
 tests. The distinction matters: the existing suite was organised by mechanism — sockets,
 editor, uploads, exits — and was thorough at it, but a journey fails for a different
 reason. Not "this control is wrong" but **"you cannot get from here to there."**
@@ -151,17 +161,20 @@ app, the app won. The table of all nine is in
 
 ---
 
-## 4. Two open test failures, deliberately not explained
+## 4. Test stalls: two explained, two still open
 
-`editor.e2e.ts › build a quiz by hand` and `game-reload.e2e.ts › a player can reload
-twice`. One occurrence each across six full runs; both pass in isolation (10/10 and 3/3);
-the suite has since gone 127/127 twice.
+Four intermittent live-game stalls were recorded, with a rule to root-cause the fourth
+rather than note it. When it came, **two of the four turned out to be the test, not the
+app**: `clearScoreboardStep` checked for the Scoreboard button once without waiting, so
+when results arrived late it skipped the step and waited forever for the next button.
+Reproduced on demand by delaying the results frame over the socket; the fixed helper
+passes the same delay.
 
-They share a symptom — the player does not get the question — and they are recorded
-together in `TODO.md` **with an explicit instruction not to assume one cause**. Earlier in
-this session I attributed one of them to a known race, said it was fixed, then measured it
-and found the unfixed code passed 10/10. The retraction is in the git history. Do not
-repeat it.
+Still open: `editor.e2e.ts › build a quiz by hand` and `game-reload.e2e.ts › a player can
+reload twice`. Both stall on the player side, a different symptom, and both pass in
+isolation. They stay recorded in `TODO.md` **with an explicit instruction not to assume
+one cause**. Earlier I attributed one of them to a known race, said it was fixed, then
+measured it and found the unfixed code passed 10/10. The retraction is in the git history.
 
 ---
 
@@ -199,10 +212,10 @@ Two judgement calls left open on purpose, neither blocking:
 ## 7. Running it
 
 ```bash
-bash e2e/run.sh                      # whole stack + 127 e2e tests, no Docker needed
+bash e2e/run.sh                      # whole stack + 132 e2e tests, no Docker needed
 KEEP_UP=1 bash e2e/run.sh --list     # leave it up at localhost:3000 to click around
 bash e2e/stop.sh                     # stop it
-cd frontend && pnpm test             # 126 unit tests, about a second
+cd frontend && pnpm test             # 135 unit tests, about a second
 ```
 
 The backend suite needs a Python env (`pipenv sync --dev`, or point `E2E_VENV` at one) and

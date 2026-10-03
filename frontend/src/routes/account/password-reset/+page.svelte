@@ -71,7 +71,9 @@ SPDX-License-Identifier: MPL-2.0
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="gap-1 text-center">
-			<Card.Title class="text-2xl">{$t('password_reset_page.choose_title')}</Card.Title>
+			<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+				{$t('password_reset_page.choose_title')}
+			</h1>
 			<Card.Description>{$t('password_reset_page.choose_subtitle')}</Card.Description>
 		</Card.Header>
 

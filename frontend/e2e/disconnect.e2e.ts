@@ -37,7 +37,7 @@ async function joinPhone(browser, pin: string, name: string) {
 	await gotoPlayHydrated(page);
 	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
 	await page.getByRole('textbox', { name: 'Username' }).fill(name);
-	await page.getByRole('button', { name: 'Submit' }).click();
+	await page.getByRole('button', { name: 'Join game' }).click();
 	return { ctx, page };
 }
 

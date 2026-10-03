@@ -85,27 +85,33 @@ string literal. Rows 16–18 above. That doc is still the map of the whole surfa
       `frogquiz/oauth/` stays config-gated and unwired.
 - [x] **Mail test recipient**: `francois.prevot@hotmail.com`. Steps in `DEPLOY.md`.
 
-## Open — three unexplained e2e failures, same symptom
+## Open — two unexplained e2e failures
 
-**Do not assume one cause.** They share a shape — a live-game step stalls: the player does
-not get the question, or the host cannot advance — and that is exactly the reasoning that
-produced a wrong attribution on 2 Oct. Recorded together so the pattern is visible, not so
-it is explained. Three occurrences now, all in full-suite runs under parallel load, none
-reproducible in isolation. That is itself a weak signal (concurrency/resource pressure in
-the socket flow when many specs share one API), but weak is not proven — the honest state
-is still "flaky, cause unknown". If it reaches a fourth, root-cause it rather than note it.
+A fourth live-game stall came on 2 Oct, so per the rule this section used to carry it was
+root-caused rather than noted. **Two of the four were the test, not the app**, and are
+closed below. The other two have a different symptom and stay open; do not fold them into
+the explanation.
 
-- [ ] **`journey-returning-host.e2e.ts › ... runs it again`** stalled on 2 Oct in
-      `advanceToFinalResults`, waiting 60 s for the "final results" button. It passed 3/3
-      in isolation earlier the same day and is untouched by that run's changes (quiz-shape
-      caps, which it does not exercise). Same stall-class as the two below.
+- [x] **`journey-remote-call` and `journey-returning-host` stalled in
+      `advanceToFinalResults`** (both on 2 Oct), each waiting 60 s for "final results".
+      Cause: `clearScoreboardStep` in `frontend/e2e/helpers.ts` read `isVisible()` once,
+      which does not wait. Between "Show results" and the results arriving, the host bar
+      shows neither "Scoreboard" nor "final results", so under load it read "no standings
+      step", skipped it, and the next button never came. The remote-call failure snapshot
+      shows "Scoreboard" on screen at timeout. **Reproduced on demand** by holding the
+      `question_results` frame back 3 s with `page.routeWebSocket`: the old helper stalled
+      identically, the fixed one (waits for whichever button arrives) passed. Older specs
+      never hit it because they `waitForTimeout(1200)` after "Show results"; the journeys
+      do not. returning-host's snapshot was not kept, so it is attributed on the matching
+      call site and symptom, not on its own evidence.
 
 - [ ] **`game-reload.e2e.ts › a player can reload twice and still be in the game`** failed
       once, in the 127-test run on 2 Oct (124 passed). It waits for an answer button after
       two reloads and did not get one. It passed in the three full runs before that, and
       the spec is untouched this session. **Re-run straight after: 3/3 clean in isolation**
       (12/12 counting the rest of that file), so it is not reproducible on demand — the
-      same profile as the `editor.e2e.ts` item below.
+      same profile as the `editor.e2e.ts` item below. Not the helper race above: it stalls
+      on the player side, waiting for a question to arrive.
 
 - [ ] **`editor.e2e.ts › build a quiz by hand, save it, and play it` failed once**, in the
       first of four full-suite runs on 2 Oct (118/119; the second was 119/119). `final_results`
