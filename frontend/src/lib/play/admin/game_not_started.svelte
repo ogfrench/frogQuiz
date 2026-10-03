@@ -9,9 +9,10 @@ SPDX-License-Identifier: MPL-2.0
 	import LobbyMusic from '$lib/play/lobby_music.svelte';
 	import ControllerCodeDisplay from '$lib/components/controller/code.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { fade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { Button } from '$lib/components/ui/button';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import X from '@lucide/svelte/icons/x';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
@@ -85,7 +86,7 @@ SPDX-License-Identifier: MPL-2.0
 		<button
 			type="button"
 			onclick={() => (fullscreen_open = true)}
-			aria-label={$t('play_page.join_by_entering_code')}
+			aria-label={$t('play_page.show_qr_full_screen')}
 			class="rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
 		>
 			<img
@@ -152,30 +153,25 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 </div>
 
-{#if fullscreen_open}
-	<!-- Was `w-screen h-screen`. 100vw includes the vertical scrollbar, so the overlay
-	     overflowed by its width on any page that scrolls, and 100vh is the wrong number
-	     on a phone. inset-0 is how a fixed overlay fills the viewport. -->
-	<div
-		class="fixed inset-0 z-50 flex bg-black/50 p-2"
-		transition:fade|global={{ duration: 80 }}
-		onclick={() => (fullscreen_open = false)}
-		tabindex="0"
-		role="button"
-		aria-label="Close modal"
-		onkeydown={(e) =>
-			e.key === 'Enter' || e.key === ' '
-				? () => {
-						fullscreen_open = false;
-					}
-				: null}
+<!-- The shadcn Dialog: Escape, a click anywhere, or Enter on the focused code closes it.
+     It was a div with role="button" whose Enter/Space handler returned a function
+     instead of calling it, and with no Escape at all, so from the keyboard it could be
+     opened on the projector and never closed. Before that it was `w-screen h-screen`,
+     which overflowed by the scrollbar width. -->
+<Dialog.Root bind:open={fullscreen_open}>
+	<Dialog.Content
+		showCloseButton={false}
+		class="grid h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-none place-items-center bg-transparent p-0 ring-0 sm:max-w-none"
 	>
-		<!-- bg-white here and on the thumbnail above is deliberate and must not become a
-		     token: a QR code needs a light quiet zone to scan, in either theme. -->
-		<img
-			alt="QR code to join the game"
-			src="/api/v1/utils/qr/{game_pin}"
-			class="object-contain rounded-lg m-auto h-full bg-white"
-		/>
-	</div>
-{/if}
+		<Dialog.Title class="sr-only">{$t('play_page.qr_code_title')}</Dialog.Title>
+		<Dialog.Close
+			aria-label={$t('words.close')}
+			class="focus-visible:ring-ring aspect-square w-[min(100%,calc(100dvh-1rem))] rounded-2xl bg-white p-[4%] outline-none focus-visible:ring-4"
+		>
+			<!-- bg-white and the padding, here and on the thumbnail above, are deliberate and
+			     must not become tokens: the code image runs to its own edge, and a QR code
+			     needs a light quiet zone around it to scan, in either theme. -->
+			<img alt="" src="/api/v1/utils/qr/{game_pin}" class="size-full object-contain" />
+		</Dialog.Close>
+	</Dialog.Content>
+</Dialog.Root>

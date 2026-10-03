@@ -17,10 +17,12 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import RangeEditor from '$lib/editor/RangeSelectorEditorPart.svelte';
-	import { fade } from 'svelte/transition';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Label } from '$lib/components/ui/label';
+	import { Switch } from '$lib/components/ui/switch';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import CircleDot from '@lucide/svelte/icons/circle-dot';
 	import Clock from '@lucide/svelte/icons/clock';
@@ -424,23 +426,35 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 </article>
 
-{#if advanced_options_open}
-	<div class="fixed inset-0 z-50 flex bg-black/60 p-4" transition:fade|global={{ duration: 150 }}>
-		<div
-			class="border-border bg-card m-auto flex w-full max-w-sm flex-col gap-5 rounded-xl border p-5 shadow-xl"
-		>
-			<h2 class="text-lg font-semibold">{$t('editor.advanced_settings')}</h2>
-			<label class="flex items-center justify-between gap-4 text-sm">
-				<span>{$t('editor.hide_question_results')}</span>
-				<input
-					type="checkbox"
-					class="accent-primary size-5"
-					bind:checked={data.questions[index]['hide_results']}
+<!-- The shadcn Dialog with a Switch, like the start-game dialog. It was a fixed div with
+     no dialog role, no Escape and no focus handling, around a bare checkbox. A function
+     binding because older questions have no hide_results at all, and binding a Switch
+     to undefined throws. -->
+<Dialog.Root bind:open={advanced_options_open}>
+	<Dialog.Content class="sm:max-w-sm">
+		<Dialog.Header>
+			<Dialog.Title>{$t('editor.advanced_settings')}</Dialog.Title>
+		</Dialog.Header>
+		<div class="grid gap-1.5">
+			<div class="flex items-center gap-3">
+				<Switch
+					id="hide-results-{index}"
+					bind:checked={
+						() => data.questions[index].hide_results === true,
+						(v) => (data.questions[index].hide_results = v)
+					}
+					aria-describedby="hide-results-hint-{index}"
 				/>
-			</label>
-			<Button class="w-full" type="button" onclick={() => (advanced_options_open = false)}>
-				{$t('words.close')}
-			</Button>
+				<Label for="hide-results-{index}">{$t('editor.hide_question_results')}</Label>
+			</div>
+			<p id="hide-results-hint-{index}" class="text-muted-foreground pl-14 text-sm">
+				{$t('editor.hide_question_results_hint')}
+			</p>
 		</div>
-	</div>
-{/if}
+		<Dialog.Footer>
+			<Dialog.Close class={buttonVariants({ class: 'w-full sm:w-auto' })}>
+				{$t('words.close')}
+			</Dialog.Close>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>

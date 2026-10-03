@@ -6,6 +6,16 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Fixed the host lobby's full-screen QR code, which could not be closed from the
+  keyboard: its Enter handler returned a function instead of calling it, and Escape did
+  nothing. It is the shadcn Dialog now (Escape, Enter or a click closes it, focus
+  returns to the code), with a white quiet zone so it scans on a dark screen, and its
+  button is labeled for what it does rather than "Join by entering the following code".
+- Rebuilt the editor's Advanced settings on the shadcn Dialog with a Switch. The option
+  reads "Skip the results" with a line on what it does, instead of a bare checkbox
+  labeled "Hide question resuluts?".
+- Added e2e tests for both: the QR closing from the keyboard, and "Skip the results"
+  saving on a question that never had the flag.
 - Rebuilt the image uploader's overlay on the shadcn Dialog. It now has a title, keeps
   focus inside, and shows the size rule inside the card instead of on the dimmed page.
   Uppy follows the dark theme, its green Upload button and blue links use the app's

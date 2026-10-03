@@ -106,3 +106,21 @@ test('the host ends mid-game: everyone gets the podium, Back goes to My Quizzes'
 	await expect(phone.getByRole('link', { name: 'Home' })).toBeVisible();
 	await context.close();
 });
+
+// The lobby's full-screen QR was a div with role="button" whose Enter handler returned a
+// function instead of calling it, and with no Escape: from the keyboard it opened on the
+// projector and could not be closed.
+test('the full-screen QR code closes from the keyboard', async ({ page, request }) => {
+	await hostAnon(page, request);
+	const qr = page.getByRole('button', { name: 'Show the QR code full screen' });
+	const dialog = page.getByRole('dialog', { name: 'QR code to join the game' });
+	await qr.click();
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(qr).toBeFocused();
+	await qr.press('Enter');
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press('Enter');
+	await expect(dialog).toBeHidden();
+});

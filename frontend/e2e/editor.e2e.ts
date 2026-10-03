@@ -285,6 +285,38 @@ test.describe('regressions', () => {
 		expect(stored.description).toBe('Typed immediately');
 	});
 
+	// Advanced settings was a bare checkbox in a hand-rolled overlay. It is a Switch now,
+	// and a Switch bound straight to `hide_results` throws on every question saved
+	// before that field existed, where it is undefined -- which is all of them here.
+	test('"Skip the results" is saved, on a question that never had the flag', async ({
+		page,
+		request
+	}) => {
+		await startNewQuiz(page, `Skip ${Date.now()}`);
+		await addQuestion(page, /^Multiple choice/, 'Q', [
+			['A', true],
+			['B', false]
+		]);
+		await saveQuizButton(page).click();
+		await page.waitForURL(/\/view\//);
+		const id = page.url().split('/view/')[1];
+
+		await page.goto(`/edit?quiz_id=${id}`);
+		await expect(titleBox(page)).toContainText('Skip', { timeout: 20_000 });
+		await page.getByRole('button', { name: 'Advanced settings' }).first().click();
+		const dialog = page.getByRole('dialog', { name: 'Advanced settings' });
+		const skip = dialog.getByRole('switch', { name: 'Skip the results' });
+		await expect(skip).toHaveAttribute('aria-checked', 'false');
+		await skip.click();
+		await expect(skip).toHaveAttribute('aria-checked', 'true');
+		await page.keyboard.press('Escape');
+		await expect(dialog).toBeHidden();
+		await saveQuizButton(page).click();
+		await page.waitForURL(/\/view\//);
+		const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+		expect(stored.questions[0].hide_results).toBe(true);
+	});
+
 	test("the editor's Back link does not send an anonymous user to a login wall", async ({
 		page
 	}) => {
