@@ -8,6 +8,17 @@
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 case "$(uname -s)" in MINGW* | MSYS* | CYGWIN*) OS=windows ;; *) OS=unix ;; esac
+DATA="${E2E_DATA:-$ROOT/e2e/.data}"
+case "$DATA" in /*|?:*) ;; *) DATA="$ROOT/$DATA" ;; esac
+
+# The arq worker listens on no port; run.sh leaves its pid here. Stopped first, while
+# Redis is still up, rather than left to exit on a lost connection.
+if [ -f "$DATA/worker.pid" ]; then
+  pid="$(cat "$DATA/worker.pid")"
+  { [ "$OS" = windows ] && taskkill //F //T //PID "$pid" >/dev/null 2>&1 || kill "$pid" 2>/dev/null; } &&
+    echo "stopped the worker (pid $pid)"
+  rm -f "$DATA/worker.pid"
+fi
 
 # 2526 is the mail sink (e2e/mailsink.py, MAIL_PORT_LOCAL in run.sh). It was added to
 # run.sh on 2026-10-02 and not here, so a KEEP_UP stack left it listening and the next
@@ -34,8 +45,6 @@ find_pg_bin() {
   done
 }
 PG_BIN="$(find_pg_bin || true)"
-DATA="${E2E_DATA:-$ROOT/e2e/.data}"
-case "$DATA" in /*|?:*) ;; *) DATA="$ROOT/$DATA" ;; esac
 # run.sh puts the cluster in the postgres user's home when it had to drop from root.
 PGDATA="$DATA/pg"
 [ -d "$PGDATA" ] || PGDATA="${E2E_PGDATA:-/var/lib/postgresql/frogquiz-e2e}"

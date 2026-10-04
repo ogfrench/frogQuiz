@@ -71,7 +71,9 @@ async def handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> 
                 # two messages in the same second colliding.
                 name = f"{time.time():.6f}.eml".replace(".", "_", 1)
                 tmp = os.path.join(OUT_DIR, f".{name}.part")
-                with open(tmp, "w", encoding="utf-8") as fh:
+                # newline="": the lines already end in CRLF, and text mode on Windows
+                # turned each into CR CR LF, which no MIME parser reads as a line break.
+                with open(tmp, "w", encoding="utf-8", newline="") as fh:
                     fh.write("".join(lines))
                 # Renamed into place, so a test never reads a half-written message.
                 os.replace(tmp, os.path.join(OUT_DIR, name))

@@ -176,6 +176,22 @@ the explanation.
       and a `{}` result arrives as `{}` either way (checked 4 Oct). The spec's own key
       assertion above is the guard that works.
 
+- [ ] **Two more one-off failures on 4 Oct**, in the first full run with the arq worker
+      started by `run.sh` (163/166, branch `crud-audit`): `editor-column.e2e.ts › a question
+      can be moved and deleted` (the second card was still the moved one's old text) and
+      `practice.e2e.ts › practice runs a quiz end to end` (the page stayed on its loading
+      spinner). No 5xx in `api.log` for either. Both passed straight after in isolation,
+      with the worker running. Same rule: note a recurrence, do not explain it in advance.
+
+## Open — CRUD audit (4 Oct)
+
+- [ ] **Triage C1 to C18** in [`docs/crud-audit-2026-10.md`](docs/crud-audit-2026-10.md).
+      C5 (anonymous uploads, no rate limit, never cleaned) is the one to fix before sharing
+      the URL; C14, C16, C18 and C4 are Medium. Each has a test marked as an expected failure.
+- [ ] **Is the worker running on the VM?** `docker compose ps`. C14 and C16 only bite with
+      it; without it no upload counts against the quota.
+- [ ] **Username change**: no route and not a recorded cut (C13). François and Gonçalo.
+
 ## Open — quality
 
 - [ ] `svelte-check` in CI. Measured in a single run, 2 Oct: **1054 errors, 229 in our own

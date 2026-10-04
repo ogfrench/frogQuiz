@@ -183,7 +183,9 @@ if command -v redis-server >/dev/null 2>&1; then
   log "starting redis-server on $REDIS_PORT and Meilisearch on $MEILI_PORT"
   redis-server --port $REDIS_PORT --save '' --appendonly no --dir "$DATA" \
     >"$DATA/redis.log" 2>&1 & PIDS+=($!)
+  WORKER=("$PY" -m arq frogquiz.worker.WorkerSettings)
 else
+  WORKER=("$PY" "$ROOT/e2e/worker.py")
   log "starting fakeredis on $REDIS_PORT and Meilisearch on $MEILI_PORT"
   "$PY" -c "import fakeredis" 2>/dev/null || { log "installing fakeredis into the venv"; "$PY" -m pip install -q "fakeredis[lua]"; }
   "$PY" "$ROOT/e2e/redis_server.py" $REDIS_PORT >"$DATA/redis.log" 2>&1 & PIDS+=($!)
@@ -217,6 +219,15 @@ log "migrating"
 log "starting API on $API_PORT"
 "$PY" -m uvicorn frogquiz:app --host 127.0.0.1 --port $API_PORT >"$DATA/api.log" 2>&1 & PIDS+=($!)
 wait_http "http://127.0.0.1:$API_PORT/api/docs" api
+# The arq worker, as production runs it (docker-compose.yml `worker`). Without it no
+# upload is ever hashed or counted against the quota and no image is ever linked to its
+# quiz, so the whole storage lifecycle went untested. It has no port for stop.sh to find,
+# hence the pid file.
+log "starting the arq worker"
+PYTHONUNBUFFERED=1 "${WORKER[@]}" >"$DATA/worker.log" 2>&1 & PIDS+=($!)
+# taskkill wants the Windows pid; if Git Bash cannot give it, stop.sh falls back to kill.
+worker=$!
+{ [ "$OS" = "windows" ] && cat "/proc/$worker/winpid" 2>/dev/null || echo "$worker"; } >"$DATA/worker.pid"
 
 # ---- frontend --------------------------------------------------------------------
 log "starting frontend on $WEB_PORT"

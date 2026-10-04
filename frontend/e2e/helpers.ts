@@ -52,6 +52,21 @@ export async function saveQuiz(request: APIRequestContext, quiz: QuizInput, bear
 	};
 }
 
+/** A real 1x1 PNG. Uppy's Compressor runs on the bytes, so zeros named .png do not do. */
+export const PNG = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
+	'base64'
+);
+
+/** Uploads PNG through the API, anonymously unless `request` carries a session. Returns its id. */
+export async function uploadPng(request: APIRequestContext) {
+	const res = await request.post('/api/v1/storage/', {
+		multipart: { file: { name: 'dot.png', mimeType: 'image/png', buffer: PNG } }
+	});
+	expect(res.status(), await res.text()).toBe(200);
+	return (await res.json()).id as string;
+}
+
 export async function rememberAnonQuiz(page: Page, id: string, secret: string) {
 	await page.goto('/');
 	await page.evaluate(

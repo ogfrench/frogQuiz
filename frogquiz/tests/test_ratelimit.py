@@ -10,9 +10,13 @@ key is caller-supplied and the limiter is bypassable. Neither failure is visible
 until it matters, hence the table.
 """
 
+import base64
+
 import pytest
+from fastapi.testclient import TestClient
 
 from frogquiz.helpers.ratelimit import client_ip
+from frogquiz.tests import test_client  # noqa: F401
 
 
 class _FakeClient:
@@ -63,3 +67,23 @@ def test_client_ip_survives_a_header_with_no_addresses(monkeypatch):
         lambda: type("S", (), {"trusted_proxy_hops": 1})(),
     )
     assert client_ip(_FakeRequest(" , ", peer="10.0.0.1")) == "10.0.0.1"
+
+
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
+)
+
+
+# C5 in docs/crud-audit-2026-10.md. Uploads need no account, and an upload that never
+# reaches a saved quiz is never cleaned up, so with no limit anyone can fill the disk at
+# 6 MB a request. It lives here rather than in the e2e suite because e2e.env switches
+# rate limiting off for the whole stack.
+@pytest.mark.xfail(strict=True, reason="C5: POST /api/v1/storage/ has no rate limit for anonymous callers")
+def test_anonymous_uploads_are_rate_limited(test_client: TestClient):  # noqa: F811
+    statuses = []
+    for _ in range(40):
+        res = test_client.post("/api/v1/storage/", files={"file": ("dot.png", _PNG, "image/png")})
+        statuses.append(res.status_code)
+        if res.status_code == 429:
+            break
+    assert 429 in statuses, statuses

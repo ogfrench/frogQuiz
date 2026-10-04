@@ -4,6 +4,29 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### CRUD audit
+
+- Audited who can create, read, change and delete every entity, what each change leaves
+  behind, what the UI lets a person do, and what each write accepts. Findings are in
+  `docs/crud-audit-2026-10.md` as C1 to C18: one High (anonymous uploads have no rate
+  limit and are never cleaned up), four Medium (a new quiz with an image answers 500 once
+  the worker has hashed it; taking an image off a question never frees it; deleting an
+  image through the API keeps the file; an export token opens any game's player data),
+  the rest Low. Nothing is fixed yet; each finding has a test marked as an expected failure.
+- Added `crud-authz`, `crud-lifecycle` and `crud-account` e2e specs (owner-only routes,
+  signed-out 401s, admin and flag-off routers, quiz and account deletion on disk, password
+  change and account deletion through My Account) and the C5 rate-limit test in
+  `test_ratelimit.py`. Moved the 1x1 PNG and an `uploadPng` helper into `e2e/helpers.ts`.
+- `e2e/run.sh` now starts the arq worker, as production does, logging to
+  `e2e/.data/worker.log`; `e2e/stop.sh` stops it through a pid file. On fakeredis it runs
+  through `e2e/worker.py`, which skips the `INFO` call fakeredis cannot answer. Without the
+  worker no upload was hashed or counted and no edited quiz was linked to its images, which
+  is how three of the findings went unseen. `stop.sh` stops the worker before Redis.
+- Fixed the e2e mail sink on Windows: it wrote each message in text mode, which turned
+  every CRLF into CR CR LF, so `journey-recovery` could not find the reset link and failed
+  every run on Windows (Linux and CI were unaffected).
+- Added the audit's open items and two one-off e2e failures to `TODO.md`.
+
 ### Navigation, one way to log in, and a UI best-practice pass
 
 - Corrected the plan docs: `MVP.md`, `TODO.md` and `HANDOVER.md` said every decision was signed by both, but Gonçalo has not ticked D16 or D18; ticked four `MVP.md` boxes that were done (e2e result, #16, `run.sh` on Linux and macOS, image cleanup on quiz delete); recorded why the e2e `next()` helper cannot tell an empty result from a payload-less event.

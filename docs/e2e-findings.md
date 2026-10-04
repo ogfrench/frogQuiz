@@ -12,6 +12,9 @@ Convention for new findings: write the test for the behavior you want, wrapped i
 red ("expected to fail, but passed") once somebody fixes it. That is the signal to
 delete the marker.
 
+The CRUD audit of 2026-10-04 is a separate list, numbered C1 to C18 and still open, in
+[`crud-audit-2026-10.md`](crud-audit-2026-10.md). Its tests use the same convention.
+
 ## How each was fixed
 
 | # | Fix |
