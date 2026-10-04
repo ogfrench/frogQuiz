@@ -228,16 +228,21 @@ class TestUsers:
     async def test_password_update(self, test_client: TestClient):  # noqa : F811
         resp = test_client.put(
             "/api/v1/users/password/update",
-            json={"new_password": "new_password", "old_password": test_user_password},
-            cookies=ValueStorage.cookies,
-        )
-        assert resp.status_code == 200
-        resp = test_client.put(
-            "/api/v1/users/password/update",
             json={"new_password": "asdsdadsasdaasd", "old_password": "asdasdsadadsasdsadasdasd"},
             cookies=ValueStorage.cookies,
         )
         assert resp.status_code == 400
+        before = ValueStorage.cookies
+        resp = test_client.put(
+            "/api/v1/users/password/update",
+            json={"new_password": "new_password", "old_password": test_user_password},
+            cookies=ValueStorage.cookies,
+        )
+        assert resp.status_code == 200
+        # Changing the password signs every session out, this one included, and that has
+        # to reach the access token: it only deleted the refresh records, so a token
+        # already handed out kept working for up to 30 minutes.
+        assert test_client.get("/api/v1/users/me", cookies=before).status_code == 401
         resp_code = self.log_in(test_client, password="new_password")
         assert resp_code == 200
         resp = test_client.put(
@@ -266,10 +271,21 @@ class TestUsers:
 
     @pytest.mark.asyncio
     async def test_delete_session(self, test_client: TestClient):  # noqa : F811
-        resp = test_client.get("/api/v1/users/session", cookies=ValueStorage.cookies)
-        session_id = resp.json()["id"]
+        # A second device, signed in alongside this one.
+        resp = test_client.post("/api/v1/login/start", json={"email": test_user_email})
+        resp = test_client.post(
+            f"/api/v1/login/step/1?session_id={resp.json()['session_id']}",
+            json={"auth_type": "PASSWORD", "data": test_user_password},
+        )
+        other = resp.cookies
+        assert test_client.get("/api/v1/users/me", cookies=other).status_code == 200
+        session_id = test_client.get("/api/v1/users/session", cookies=other).json()["id"]
         resp = test_client.delete("/api/v1/users/sessions/" + str(session_id), cookies=ValueStorage.cookies)
         assert resp.status_code == 200
+        # Deleting a session signs that device out now. It only removed the refresh record,
+        # so the device's 30-minute access token went on working until it expired.
+        assert test_client.get("/api/v1/users/me", cookies=other).status_code == 401
+        assert test_client.get("/api/v1/users/me", cookies=ValueStorage.cookies).status_code == 200
         resp = test_client.delete("/api/v1/users/sessions/asdsadasdasdsad", cookies=ValueStorage.cookies)
         assert resp.status_code == 422
 
@@ -333,11 +349,18 @@ class TestUsers:
             cookies=ValueStorage.cookies,
         )
         redis.flushdb()
+        # The change above signed this session out too; the tests after this need one.
+        assert self.log_in(test_client) == 200
 
     @pytest.mark.asyncio
     async def test_signout_everywhere(self, test_client: TestClient):  # noqa : F811
+        before = ValueStorage.cookies
         resp = test_client.delete("/api/v1/users/signout-everywhere", cookies=ValueStorage.cookies)
         assert resp.status_code == 200
+        # Every test after this one used to go on with these very cookies: "sign out
+        # everywhere" left the access token working for up to 30 minutes.
+        assert test_client.get("/api/v1/users/me", cookies=before).status_code == 401
+        assert self.log_in(test_client) == 200
 
 
 class TestUtils:

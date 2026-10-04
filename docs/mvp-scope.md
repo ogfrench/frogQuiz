@@ -88,6 +88,15 @@ it cannot predict, and half marks make "select all that apply" pay off for ticki
 everything. See the docstring on `check_check_question` in
 `frogquiz/socket_server/helpers.py` and the test that pins it.
 
+**Reconfirmed 4 Oct (François).** Kahoot was checked first. Its multi-select gives points
+per correct answer and nothing at all if any wrong answer is ticked (Kahoot's own blog,
+2020); its help center, read only through search snippets, puts that at up to 500 per
+correct answer now, and its separate "Accuracy" mode counts a partly right answer as
+right. What Kahoot gives for some right answers and no wrong one is not stated in its
+docs. frogQuiz stays all or nothing, with a 1000-point ceiling however many answers are
+right. The way to change it, if anyone asks, is points per correct tick and zero for any
+wrong tick; the player and practice screens would then need a "partly right" state.
+
 The format stays unambiguous only while a question has fewer than ten options, which
 the editor enforces by capping a question at four answers.
 

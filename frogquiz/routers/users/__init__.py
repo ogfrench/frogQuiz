@@ -25,6 +25,7 @@ import base64
 from frogquiz.auth import (
     get_password_hash,
     hash_session_key,
+    revoke_sessions,
     revoke_token,
     verify_password,
     get_current_user,
@@ -78,6 +79,9 @@ async def find_user_by_email(email: str) -> User | None:
 
 
 async def _sign_out_everywhere(user: User) -> None:
+    # Revoked first, so the access tokens those sessions handed out stop working now
+    # rather than when they expire; see revoke_sessions.
+    await revoke_sessions([session.id for session in await UserSession.objects.filter(user=user).all()])
     await UserSession.objects.filter(user=user).delete()
     await clear_cache_for_account(user)
 
@@ -178,7 +182,10 @@ async def logout(request: Request, response: Response):
     # SameSite=Lax cookies, so another site cannot trigger it.
     remember_token = request.cookies.get("rememberme_token")
     if remember_token is not None:
-        await UserSession.objects.filter(session_key=hash_session_key(remember_token)).delete()
+        session = await UserSession.objects.get_or_none(session_key=hash_session_key(remember_token))
+        if session is not None:
+            await revoke_sessions([session.id])
+            await session.delete()
     # Clearing the cookie only affects this browser; dropping the Redis entry is
     # what actually ends the session for a token that has already been copied.
     access_token = request.cookies.get("access_token")
@@ -252,8 +259,7 @@ async def change_password(
         raise HTTPException(status_code=400, detail="Incorrect password")
     user.password = get_password_hash(password_data.new_password)
     await user.update()
-    await clear_cache_for_account(user)
-    await UserSession.objects.filter(user=user).delete()
+    await _sign_out_everywhere(user)
     response.delete_cookie("access_token")
     response.delete_cookie("expiry")
     response.delete_cookie("rememberme")
@@ -403,7 +409,11 @@ async def list_sessions(user: User = Depends(get_current_user)):
 
 @router.delete("/sessions/{session_id}")
 async def delete_session(session_id: uuid.UUID, user: User = Depends(get_current_user)):
-    await UserSession.objects.filter(user=user, id=session_id).delete()
+    # Looked up as this user's, so nobody can revoke a session that is not theirs.
+    session = await UserSession.objects.get_or_none(user=user, id=session_id)
+    if session is not None:
+        await revoke_sessions([session.id])
+        await session.delete()
     return {"message": "Session deleted"}
 
 

@@ -6,6 +6,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Signing a device out takes effect at once. Deleting a session in My Account, "sign out
+  everywhere", a password change and a password reset deleted the sessions' refresh
+  records but left the access tokens those devices already held working for up to 30
+  minutes (checked on the local stack for a deleted session and a password change: the
+  other device's `/users/me` still answered 200). Access tokens now carry their session id
+  (`sid`); revoking a session marks it in Redis for one token lifetime, and every token
+  check refuses a revoked session. Logout, which already denylisted the token it was
+  handed, revokes the whole session too. Tokens minted before this deploy carry no `sid` and expire as before.
+  Three backend tests assert the old cookies get 401; the suite itself had been leaning
+  on the gap, reusing a "signed out everywhere" session for 107 later requests.
+- Recorded François's 4 Oct decision that multiple-answer questions stay all-or-nothing, with the Kahoot comparison behind it, in `docs/mvp-scope.md`, `MVP.md` (D2) and `TODO.md`.
 - The navbar is exactly 64px, the height of the space reserved under it. Its touch-sized
   row plus `py-3` made it 69px, so the first 5px of every page sat under the bar. It is
   named "Main" now, since the footer has a nav of its own, and the phone drawer's header

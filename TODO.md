@@ -74,7 +74,7 @@ failed first.
 | **My Account**: Delete on your own session (did nothing visible), name and email cut off on a phone | `routes/account/settings/+page.svelte` |
 | **Register** left the form live after success; **login** showed two pages at once on the way out | `routes/account/register/`, `routes/account/login/` |
 | **Copy**: "Custom field" explained, Delete names the quiz, "3 questions", no promise of a hidden import, practice headings, one contrast miss | `en.json`, `lib/dashboard/start_game.svelte`, `routes/practice/` |
-| **Found, not changed (auth)**: deleting a session or changing the password leaves the other device signed in up to 30 minutes | Open item below |
+| **Deleting a session or changing the password left the other device signed in up to 30 minutes**; revoked at once now (François agreed) | `auth.py`, `routers/users/`, `tests/test_server.py` |
 
 ## Open — before sharing
 
@@ -91,15 +91,13 @@ failed first.
       *Image upload* (row 15). The rest of Part A is either a hidden feature (video,
       `/import`, `/remote`, `/quiztivity`, `/moderation`, `/results`) or needs the deployed
       site. Part B's keep/cut decisions are recorded in [`docs/mvp-scope.md`](docs/mvp-scope.md)
-- [ ] **Decide: revoke access on session delete and password change** (auth, so not done
-      unasked). Checked on the local stack, 4 Oct: after device A deletes device B's
-      session, and even after A changes the password, B's `GET /api/v1/users/me` still
-      answers 200. Both only remove the refresh record (`UserSession`); B's access token is
-      a 30-minute JWT with no session in it, so it keeps working until it expires.
-      Proposal: put the session id in the access token and
-      check it is still live in `get_current_user` (one Redis lookup), and on password
-      change store a per-user "valid after" time that older tokens fail. Low urgency for
-      an internal tool, but "Delete" on a session reads as immediate and is not
+- [x] **Revoke access on session delete and password change** (François agreed, 4 Oct).
+      Deleting a session, logging out, "sign out everywhere", a password change and a
+      password reset now stop the other devices' access tokens at once, not up to 30
+      minutes later. Tokens carry their session id (`sid`) and `get_current_user` refuses a
+      revoked one (one Redis read). Checked on the local stack before and after; pinned by
+      `test_delete_session`, `test_password_update` and `test_signout_everywhere`. Tokens
+      minted before the deploy carry no `sid` and lapse within 30 minutes as before
 
 ## Found in the feature sweep — all cleared
 
@@ -108,7 +106,9 @@ the silent refused answer, the missing socket `disconnect` handler, the unfilter
 export (owner-only since 2 Oct, D18), `check_captcha`, and the route that lived inside a
 string literal. Rows 16–18 above. That doc is still the map of the whole surface.
 
-## Decided — 2 Oct
+## Decided — 2 and 4 Oct
+
+- [x] **4 Oct: multiple-answer scoring stays all or nothing** (François), after comparing Kahoot; the reasoning and the way to change it are in [`docs/mvp-scope.md`](docs/mvp-scope.md).
 
 - [x] **Non-owner answer key: locked to the owner** (D18). The view page hid the correct
       answers from a non-owner while the Download button beside it handed over a
