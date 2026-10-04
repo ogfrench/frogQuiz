@@ -165,6 +165,9 @@ SPDX-License-Identifier: MPL-2.0
 			</Card.Content>
 		</Card.Root>
 	{:else if phase === 'question' && question}
+		<!-- The intro's heading went with the intro, so every question screen and the end
+		     had none; the question itself is the h2 under it. -->
+		<h1 class="sr-only">{@html sanitizeTitleHtml(quiz.title)}</h1>
 		<div class="flex items-center justify-between gap-3 text-sm">
 			<span class="text-muted-foreground font-medium">
 				{$t('editor.question_n_of_total', { n: index + 1, total: questions.length })}
@@ -264,7 +267,9 @@ SPDX-License-Identifier: MPL-2.0
 	{:else if phase === 'done'}
 		<Card.Root>
 			<Card.Content class="flex flex-col items-center gap-4 py-10 text-center">
-				<p class="text-muted-foreground text-sm font-medium">{$t('practice_page.done')}</p>
+				<h1 class="text-muted-foreground text-sm font-medium">
+					{$t('practice_page.done')}
+				</h1>
 				{#if scored_count > 0}
 					<p class="text-4xl font-semibold tracking-tight">
 						{$t('practice_page.final_score', { score, count: scored_count })}

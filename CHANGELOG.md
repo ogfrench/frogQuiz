@@ -6,6 +6,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Practice has a page heading on every screen: the quiz title (for screen readers)
+  while answering, and "Practice finished" at the end. The intro's `h1` went with the
+  intro, so the rest of the run had none. The multiple-answer hint reads "Pick every
+  correct answer", as in the live game, instead of "right answer".
+- My Quizzes' empty state no longer offers to "import a quiz": import is hidden.
+- Question counts read "3 questions", not "3 Questions", on My Quizzes and the quiz
+  page, and the quiz page credits "Made by name" as Discover does, not "Made by @name".
 - After changing your password, logging in again takes you into the app. It reloaded
   `/account/login?password_changed=true`, and that flag is what tells the page not to
   redirect a signed-in visitor, so you were signed in on an empty login form. Success

@@ -317,16 +317,13 @@ SPDX-License-Identifier: MPL-2.0
 					{#if is_draft}
 						<Badge variant="outline">{$t('draft.badge')}</Badge>
 					{/if}
-					<span>
-						{quiz.questions.length}
-						{$t('words.question', { count: quiz.questions.length })}
-					</span>
+					<span>{$t('words.question_count', { count: quiz.questions.length })}</span>
 					{#if quiz.imported_from_kahoot}
 						<Badge variant="outline">{$t('view_quiz_page.imported')}</Badge>
 					{/if}
 					{#if quiz.user_id}
 						<!-- Plain text: public profiles are hidden for the MVP (see MVP.md). -->
-						<span>{$t('view_quiz_page.made_by')} @{quiz.user_id.username}</span>
+						<span>{$t('view_quiz_page.made_by')} {quiz.user_id.username}</span>
 					{/if}
 				</div>
 			</Card.Header>

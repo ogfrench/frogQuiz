@@ -209,11 +209,9 @@ SPDX-License-Identifier: MPL-2.0
 					<Badge variant="outline">{$t('draft.badge')}</Badge>
 				{/if}
 				<!-- The label carries no number of its own ("Questions"), so this printed
-				     "Questions" on every row. The view page always passed the count first. -->
-				<span>
-					{count}
-					{$t('words.question', { count })}
-				</span>
+				     "Questions" on every row. The count is part of the string now, which
+				     also keeps "questions" lowercase mid-sentence ("3 Questions" was not). -->
+				<span>{$t('words.question_count', { count })}</span>
 				{#if days !== null}
 					<span class="inline-flex items-center gap-1">
 						<Clock class="size-3.5" aria-hidden="true" />

@@ -53,6 +53,8 @@ test('practice runs a quiz end to end and scores it like the game', async ({ pag
 
 	// ABCD: one click reveals. The title is rendered, not shown as raw HTML.
 	await expect(page.getByRole('heading', { name: 'Capital of France?' })).toBeVisible();
+	// The intro's h1 went with the intro: every question screen and the end had none.
+	await expect(page.getByRole('heading', { level: 1, name: title })).toHaveCount(1);
 	await page.getByRole('button', { name: 'Paris' }).click();
 	await expect(page.getByRole('status')).toHaveText('Right!');
 	await expect(page.getByText('1 of 1 right')).toBeVisible();
@@ -75,6 +77,7 @@ test('practice runs a quiz end to end and scores it like the game', async ({ pag
 	await page.getByRole('button', { name: 'Right' }).click();
 	await page.getByRole('button', { name: 'See my score' }).click();
 	await expect(page.getByText('2 / 3')).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Practice finished' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Practice again' }).click();
 	await expect(page.getByRole('heading', { name: 'Capital of France?' })).toBeVisible();

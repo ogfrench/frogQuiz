@@ -89,3 +89,26 @@ test('signed in: browser quizzes sit under the account list and Claim moves them
 	await expect(user.page.getByRole('link', { name: loose })).toBeVisible();
 	await user.context.close();
 });
+
+test('counts and credits read as sentences, and the empty list promises nothing hidden', async ({
+	browser,
+	request
+}) => {
+	const user = await signedInContext(browser, request);
+	// Import is hidden (MVP.md D6), but the empty list said "or import a quiz".
+	await user.page.goto('/my-quizzes');
+	await expect(user.page.getByText('No quizzes yet. Create one to get going.')).toBeVisible();
+
+	const title = `Counted ${Date.now()}`;
+	const saved = await saveQuiz(user.context.request, quiz(title));
+	await user.page.goto('/my-quizzes');
+	// "1 Question" / "3 Questions": a label capitalized mid-sentence.
+	await expect(user.page.getByText('1 question', { exact: true })).toBeVisible();
+	await user.page.goto(`/view/${saved.body.id}`);
+	await expect(user.page.getByText('1 question', { exact: true })).toBeVisible();
+	// Discover credits "Made by name"; this page said "Made by @name".
+	await expect(
+		user.page.getByText(`Made by ${user.user.username}`, { exact: true })
+	).toBeVisible();
+	await user.context.close();
+});
