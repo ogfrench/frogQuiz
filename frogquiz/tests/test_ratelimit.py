@@ -17,7 +17,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from frogquiz.config import redis, settings
-from frogquiz.db.models import Quiz
+from frogquiz.db.models import Quiz, User
 from frogquiz.helpers.ratelimit import client_ip
 from frogquiz.tests import example_quiz, test_client  # noqa: F401
 
@@ -125,3 +125,23 @@ def test_editor_saves_are_limited_per_edit_session(test_client: TestClient, monk
         # TestStats counts quizzes and expects none left behind.
         if saved is not None and saved.status_code == 200:
             test_client.portal.call(lambda: Quiz.objects.filter(id=uuid.UUID(saved.json()["id"])).delete())
+
+
+# E16 in docs/edge-cases-2026-10.md. Registration allowed 10 an hour per address, and an
+# office signs up from behind one: the eleventh person in the room was locked out for an hour.
+def test_registration_fits_an_office_behind_one_address(test_client: TestClient, monkeypatch):  # noqa: F811
+    on = settings().model_copy(update={"rate_limit_enabled": True})
+    monkeypatch.setattr("frogquiz.helpers.ratelimit.settings", lambda: on)
+    bucket = "ratelimit:register:testclient"
+    email = "eleventh-colleague@byom.de"
+    # Ten colleagues have already signed up from this address.
+    test_client.portal.call(lambda: redis.set(bucket, 10, ex=3600))
+    try:
+        res = test_client.post(
+            "/api/v1/users/create", json={"email": email, "username": "eleventh", "password": "test-password"}
+        )
+        assert res.status_code == 200, res.text
+    finally:
+        test_client.portal.call(redis.delete, bucket)
+        # TestStats counts accounts and expects none left behind.
+        test_client.portal.call(lambda: User.objects.filter(email=email).delete())

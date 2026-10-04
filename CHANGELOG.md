@@ -4,12 +4,45 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Kahoot gap analysis
+
+- Added `docs/kahoot-gap-analysis-2026-10.md`: frogQuiz against Kahoot, step by step from
+  creating a quiz to the podium, with a ranked gap table and the open questions for François
+  and Gonçalo. Written by a separate agent from the code, the e2e specs and Kahoot's own help
+  pages.
+
 ### Edge-case pass
 
-Findings E1 to E15 are in `docs/edge-cases-2026-10.md`. Each has a test that failed
-before its fix: in `frontend/e2e/edge-cases.e2e.ts`, for E9 and E12 in
-`frogquiz/tests/test_ratelimit.py` and `test_storage_cleanup.py`, for E13 in
-`lib/practice/score.test.ts`.
+Findings E1 to E27 are in `docs/edge-cases-2026-10.md`. Each has a test that failed
+before its fix: in `frontend/e2e/edge-cases.e2e.ts`, for E9, E12, E16 and E17 in
+`frogquiz/tests/` (`test_ratelimit.py`, `test_storage_cleanup.py`, `test_edge_cases.py`), for
+E13 in `lib/practice/score.test.ts`. E16 to E27 were fixed on 5 Oct at François's request.
+
+- Per-address rate limits are sized for an office behind one address: registration 50 an
+  hour (was 10), login 100 and 50 per five minutes (was 20 and 10), password reset and
+  resend-verification 20 an hour (was 5), editor start and finish 120 a minute (was 30). The
+  per-account and per-recipient limits are unchanged (E16).
+- Usernames are trimmed, 3 to 20 characters, and unique whatever the case, as the register
+  form already said; the API took anything (E17).
+- A phone that comes back after the game ended gets the podium, and the phone's podium
+  totals come from the server's final results, so a phone that reloaded mid-game no longer
+  shows only the points scored after the reload (E18).
+- A disconnect that arrives after the same player has rejoined no longer tells the host
+  they left (E19). A player's rejoin key is refreshed with each answer instead of expiring
+  two hours after joining (E20).
+- Latency compensation uses the whole round trip, capped at the 1.5 s answer grace, and the
+  time taken is never negative. It read only the sub-second part (E21).
+- Phones say so when the host has been gone 15 seconds, and clear it when the host comes
+  back (E22).
+- Every change to a live game's stored state goes through a Redis WATCH transaction, so
+  host events and the last answer no longer overwrite each other (E23, open since 29 Sep).
+- Two players in one browser keep their own places: the joined game is remembered per tab,
+  and a new tab only falls back to the shared cookie when no other tab is in a game (E24).
+  `/play` removes its socket listeners when it goes (E25).
+- On a phone the editor's question settings button sits on the first line beside the
+  question number instead of wrapping onto a line of its own (E26).
+- `globals` and `@eslint/js` are declared as dev dependencies, so `pnpm lint` runs on a fresh
+  install (E27). The testing route compares its key in constant time.
 
 - Signing in lasts again. The access cookie had been cut to 30 minutes along with the token
   inside it (12 Sep), so it vanished before the remember-me path could renew it: everyone was

@@ -12,8 +12,11 @@ import { connect as tcp } from 'node:net';
 import { resolve } from 'node:path';
 import { expect, test, type Page, type WebSocketRoute } from '@playwright/test';
 import { SignJWT } from 'jose';
+import { io } from 'socket.io-client';
 import { apiLogin, PASSWORD, registerUser, signedInContext } from './accounts';
 import {
+	advancePastResults,
+	advanceToFinalResults,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
@@ -22,7 +25,17 @@ import {
 	saveQuiz,
 	titleBox
 } from './helpers';
-import { closeAll, connect, hostGame, joinAll, next, showQuestion, startGame } from './sockets';
+import {
+	API_URL,
+	closeAll,
+	connect,
+	finalResults,
+	hostGame,
+	joinAll,
+	next,
+	showQuestion,
+	startGame
+} from './sockets';
 
 const QUIZ = {
 	title: 'Edge cases',
@@ -295,6 +308,103 @@ test.describe('live game, protocol', () => {
 		expect(await question, 'question sent again').toBeNull();
 		other.close();
 	});
+	// E18. Final results go out once. A phone asleep through them came back to a game that
+	// was over and waited on a screen that would never change.
+	test('a phone asleep through the podium gets it when it comes back', async ({ request }) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const [player] = await joinAll(pin, ['sleeper']);
+		await startGame(host);
+		await showQuestion(host, 0);
+		const counted = next(host, 'player_answer');
+		player.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
+		expect(await counted).not.toBeNull();
+		await finalResults(host);
+
+		const back = await connect();
+		const podium = next(back, 'final_results');
+		back.emit('rejoin_game', { old_sid: player.id, username: 'sleeper', game_pin: pin });
+		expect(await podium, 'final results on rejoin').not.toBeNull();
+	});
+
+	// E21. The round trip was read from `timedelta.microseconds`, the part below a second, so
+	// a phone with a 1.2 s round trip was credited 200 ms and timed as slower than it was.
+	test('a slow phone is credited its whole round trip', async ({ request }) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const slow = io(API_URL, {
+			transports: ['websocket'],
+			forceNew: true,
+			reconnection: false
+		});
+		// A phone on a bad connection: the time_sync echo arrives 1.2 s after it was sent.
+		slow.on('time_sync', (d: string) => setTimeout(() => slow.emit('echo_time_sync', d), 1200));
+		await new Promise((r) => slow.once('connect', r));
+		const joined = next(slow, 'joined_game');
+		slow.emit('join_game', { username: 'slow', game_pin: pin });
+		expect(await joined).not.toBeNull();
+		await new Promise((r) => setTimeout(r, 1600));
+
+		await startGame(host);
+		await showQuestion(host, 0);
+		await new Promise((r) => setTimeout(r, 1000));
+		const counted = next(host, 'player_answer');
+		slow.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
+		expect(await counted).not.toBeNull();
+		const rows = (await finalResults(host))['0'] as unknown as {
+			username: string;
+			time_taken: number;
+		}[];
+		// About a second after the question showed, less a 1.2 s round trip: nothing left.
+		expect(rows.find((r) => r.username === 'slow')!.time_taken).toBeLessThan(300);
+		slow.close();
+	});
+
+	// E22. A host who closed the tab for good left every phone on a waiting screen with no
+	// word why. After a grace long enough for a reload, the players are told.
+	test('players are told when the host does not come back', async ({ request }) => {
+		test.setTimeout(60_000);
+		const { host, pin } = await hostGame(request, QUIZ);
+		const [player] = await joinAll(pin, ['waiting']);
+		const told = next(player, 'host_left', 25_000);
+		host.close();
+		expect(await told, 'host_left').not.toBeNull();
+	});
+
+	test('a host who comes straight back is not reported gone', async ({ request }) => {
+		test.setTimeout(60_000);
+		const { host, pin, gameId } = await hostGame(request, QUIZ);
+		const [player] = await joinAll(pin, ['patient']);
+		const gone = next(player, 'host_left', 20_000);
+		const back = next(player, 'host_back', 5_000);
+		host.close();
+		await new Promise((r) => setTimeout(r, 1000));
+		const again = await connect();
+		const registered = next(again, 'registered_as_admin');
+		again.emit('register_as_admin', { game_pin: pin, game_id: gameId });
+		expect(await registered).not.toBeNull();
+		expect(await back, 'host_back').not.toBeNull();
+		expect(await gone, 'host_left after a reload').toBeNull();
+	});
+
+	// E23. Host events read the stored game, changed a field and wrote it all back, so two
+	// sent together could undo each other: start_game landing after set_question_number put
+	// the question back to "not showing", and the answer to it was refused. The UI waits
+	// between the two; a slow server can still interleave them. A race, so five rounds.
+	test('start and the first question sent back to back both stick', async ({ request }) => {
+		for (let round = 0; round < 5; round++) {
+			const { host, pin } = await hostGame(request, QUIZ);
+			const [player] = await joinAll(pin, [`racer${round}`]);
+			const shown = next(player, 'set_question_number');
+			host.emit('start_game', {});
+			host.emit('set_question_number', '0');
+			expect(await shown).not.toBeNull();
+			const counted = next(host, 'player_answer');
+			const refused = next(player, 'question_not_active', 1000);
+			player.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
+			expect(await counted, `round ${round}: answer counted`).not.toBeNull();
+			expect(await refused, `round ${round}: answer refused`).toBeNull();
+			closeAll();
+		}
+	});
 });
 
 test.describe('live game, in the browser', () => {
@@ -427,6 +537,86 @@ test.describe('live game, in the browser', () => {
 		await expect(host.getByRole('button', { name: /Show results/ })).toBeVisible({
 			timeout: 10_000
 		});
+		await ctx.close();
+		await hostCtx.close();
+	});
+
+	async function joinIn(page: Page, pin: string, name: string) {
+		await gotoPlayHydrated(page);
+		await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await page.getByRole('textbox', { name: 'Username' }).fill(name);
+		await page.getByRole('button', { name: 'Join game' }).click();
+	}
+
+	// E22. A host who closed the tab for good left every phone waiting with no word why.
+	test('a phone says so when the host has gone', async ({ browser, request }) => {
+		test.setTimeout(2 * 60_000);
+		const { hostCtx, host, pin } = await hostQuiz(browser, request);
+		const ctx = await browser.newContext({ viewport: PHONE });
+		const player = await ctx.newPage();
+		await joinIn(player, pin, 'left behind');
+		await expect(host.getByText('left behind')).toBeVisible();
+		await hostCtx.close();
+		await expect(
+			player.getByRole('status').filter({ hasText: "The host's connection dropped" })
+		).toBeVisible({
+			timeout: 30_000
+		});
+		await ctx.close();
+	});
+
+	// E24. Two players in one browser, a tab each, shared the joined_game cookie: reloading
+	// the first tab rejoined it as the second player, and the first dropped off the host.
+	test('two players in one browser keep their own places through a reload', async ({
+		browser,
+		request
+	}) => {
+		test.setTimeout(2 * 60_000);
+		const { hostCtx, host, pin } = await hostQuiz(browser, request);
+		const ctx = await browser.newContext({ viewport: PHONE });
+		const first = await ctx.newPage();
+		const second = await ctx.newPage();
+		await joinIn(first, pin, 'first tab');
+		await expect(host.getByText('first tab')).toBeVisible();
+		await joinIn(second, pin, 'second tab');
+		await expect(host.getByText('second tab')).toBeVisible();
+
+		await first.reload();
+		await first.waitForTimeout(3000);
+		await expect(host.getByText('first tab')).toBeVisible();
+		await expect(host.getByText('second tab')).toBeVisible();
+		await ctx.close();
+		await hostCtx.close();
+	});
+
+	// E18. The phone's podium added up `scores` question by question, so a phone that
+	// reloaded mid-game showed a total from after the reload only.
+	test('a phone that reloaded mid-game shows its whole total on the podium', async ({
+		browser,
+		request
+	}) => {
+		test.setTimeout(3 * 60_000);
+		const { hostCtx, host, pin } = await hostQuiz(browser, request);
+		const ctx = await browser.newContext({ viewport: PHONE });
+		const player = await ctx.newPage();
+		await joinIn(player, pin, 'reloader');
+		await expect(host.getByText('reloader')).toBeVisible();
+		await showFirstQuestion(host);
+		await player.getByRole('button', { name: 'Lisbon' }).click();
+		await host.getByRole('button', { name: 'Show results' }).click();
+		await expect(player.getByText(/Total score/)).toBeVisible();
+
+		await player.reload();
+		await player.waitForTimeout(2000);
+		await advancePastResults(host);
+		await player.getByRole('button', { name: 'Madrid' }).click();
+		await host.getByRole('button', { name: 'Show results' }).click();
+		await advanceToFinalResults(host);
+		// Two quick right answers on a 60 s timer: each close to 1000, so over 1000 together.
+		const line = player.getByText(/Your score: \d+/);
+		await expect(line).toBeVisible({ timeout: 30_000 });
+		const total = Number((await line.innerText()).match(/\d+/)![0]);
+		expect(total).toBeGreaterThan(1000);
 		await ctx.close();
 		await hostCtx.close();
 	});

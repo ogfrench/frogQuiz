@@ -12,19 +12,21 @@ who may do what to each entity. This pass asked what goes wrong when time passes
 network drops, or somebody does an ordinary thing in an unusual order: leaving the editor
 open over lunch, a phone locking mid-game, a back swipe, a capital letter in an address.
 
-Findings are numbered **E1 to E15**, after the H/M/L list in
-[`e2e-findings.md`](e2e-findings.md) and C1 to C18. **Every bug below was fixed the same
-evening.** Each has a test that was run against the unfixed code first and failed on the
-assertion it names. E2 and E6 were checked a second time by stashing just the fixed file
+Findings are numbered **E1 to E27**, after the H/M/L list in
+[`e2e-findings.md`](e2e-findings.md) and C1 to C18. **Every bug below is fixed: E1 to E15
+the same evening, E16 to E27 the morning after, when François asked for everything left
+open to be fixed too.** Each has a test that was run against the unfixed code first and
+failed on the assertion it names, except E19 and E20 (see below). E2 and E6 were checked a second time by stashing just the fixed file
 and running their tests again.
 
 | Test file | What it covers |
 |---|---|
-| `frontend/e2e/edge-cases.e2e.ts` | E1 to E8, E10, E11, E14, E15, and two guards for things that held up |
-| `frogquiz/tests/test_ratelimit.py` | E9 (rate limiting is off in the e2e stack, so it cannot live there) |
+| `frontend/e2e/edge-cases.e2e.ts` | E1 to E8, E10, E11, E14, E15, E18, E21 to E24, and two guards for things that held up |
+| `frogquiz/tests/test_ratelimit.py` | E9 and E16 (rate limiting is off in the e2e stack, so they cannot live there) |
 | `frogquiz/tests/test_storage_cleanup.py` | E12 (a race with the worker, staged by hand) |
 | `frontend/src/hooks.server.test.ts` | the page-load half of E1 |
 | `frontend/src/lib/practice/score.test.ts` | E13 |
+| `frogquiz/tests/test_edge_cases.py` | E17 |
 
 Severity follows `e2e-findings.md`. **High** means a real game gives wrong scores or loses
 answers, or a core flow breaks for everyone. **Medium** breaks a flow that has a workaround.
@@ -48,6 +50,18 @@ answers, or a core flow breaks for everyone. **Medium** breaks a flow that has a
 | E14 | Medium | Going back from the editor inside the app dropped whatever was typed in the last couple of seconds | `lib/editor.svelte`: the pending save is sent when the editor unmounts |
 | E15 | Low | A save that failed offline was not retried when the network came back, so the header stayed red until the next keystroke | `lib/editor.svelte`: save again on the browser's `online` event |
 | E13 | Low | Practice on a draft marked every pick "Not quite" on a question with no right answer yet, and counted it | `lib/practice/score.ts`: such a question is not scored, like a poll |
+| E16 | Medium | Registration, login, password-reset and editor-start limits were per address too: the eleventh person registering in one room was locked out for an hour | Per-address limits sized for an office (registration 50 an hour); the per-account and per-recipient limits are unchanged |
+| E18 | Medium | A phone's podium added up scores itself, so a phone that reloaded mid-game showed a total from after the reload, and one asleep through the end never got the podium | The server keeps the final results and sends them on rejoin; the phone rebuilds totals from them, as the host already did (H3) |
+| E22 | Medium | A host who closed the tab for good left every phone waiting with no word | After 15 s without the host, phones say so; a host who comes back clears it |
+| E23 | Medium | Host events and the last answer each rewrote the whole stored game, so two arriving together undid each other | `update_game`: every change to the game goes through a WATCH transaction |
+| E17 | Low | The API took any username: empty, 1,000 characters, "Ana " beside "Ana" or "ana" | 3 to 20 characters, trimmed, unique whatever the case, as the register form already said |
+| E19 | Low | A disconnect processed after the same player's rejoin told the host they had left | The host is only told if the disconnect removed the player itself |
+| E20 | Low | A player's rejoin key expired two hours after joining, whatever happened since | Refreshed with each answer |
+| E21 | Low | Latency was read from the sub-second part of the round trip, so 1.4 s counted as 400 ms | The whole round trip, capped at the 1.5 s answer grace; time taken never below zero |
+| E24 | Low | Two players in one browser (a tab each) shared one record, so a reload, or a new tab, took over the other player | Per tab first; the shared cookie only when no other tab is in a game |
+| E25 | Low | `/play` never removed its socket listeners, so coming back stacked a second set | Removed when the page goes |
+| E26 | Low | At 390 px the editor's settings button wrapped onto a line of its own | It shares the first line with the question number on a phone |
+| E27 | Low | `eslint` could not start on a fresh install: its config needs `globals` and `@eslint/js`, which `package.json` did not declare | Both declared; the lockfile only gains their two importer entries |
 | E12 | Low | Storage accounting raced: a claim during hashing lost the image's owner, and two uploads hashed at once lost one of the two counts | `helpers.adjust_storage_used` (one `UPDATE`), and single-statement owner and hash writes in `claim_quiz` and `calculate_hash` |
 
 ### E1. Signed out after 30 minutes (High)
@@ -140,11 +154,7 @@ pause in typing, so a workshop of half a dozen people building quizzes would sta
 "429" in the editor header. It is now 60 a minute per edit session, plus 600 a minute per
 address against scripts.
 
-**Not changed, needs a decision:** the same reasoning applies to `register` (10 an hour
-per address) and `login_step` (10 per 5 minutes per address). A team signing up together in
-one room would lock the eleventh person out of registering for an hour. These are auth
-limits, so per `CLAUDE.md` they are surfaced rather than changed. A per-address limit of
-around 50 an hour for registration would keep the abuse protection and survive a launch.
+The same reasoning applied to registration and login, which E16 fixed the next morning.
 
 ### E7, E10, E11 (Low)
 
@@ -188,30 +198,39 @@ GREATEST(0, storage_used + :delta)`. The claim sets the owner with one `UPDATE .
 reads the owner back with `RETURNING "user"`. Postgres runs the two one after the other, so
 whichever lands second sees the other's write, and exactly one of them counts the image.
 
-## Seen, not fixed
+### E16 to E27
 
-- **Ping wraps at one second.** `echo_time_sync` stores `delta.microseconds / 1000`, which
-  drops whole seconds, so a 1.4 s round trip is recorded as 400 ms. Left alone on purpose:
-  `total_seconds()` would let a player who delays their echo buy themselves time, so the
-  fix needs a cap as well, and nobody plays on a network that slow.
-- **A phone asleep through the podium misses it.** `final_results` goes out once; a rejoin
-  afterwards gets the game but not the results.
-- **Two players in one browser** (two tabs) share the `joined_game` cookie, so reloading one
-  takes over the other's identity. Only happens when somebody tests alone.
-- **A player's rejoin key lives two hours from joining**, and nothing refreshes it, while the
-  game's own key is refreshed on every change. A game more than two hours after a player
-  joined would refuse that player's reload. Nobody runs a quiz that long.
-- **A host who closes the tab for good** leaves players on "waiting" with no notice. They
-  have Leave.
-- **A late disconnect can hide a player from the host's list.** If the server processes a
-  dropped socket's disconnect after the same player has already rejoined, between the two
-  checks, it emits `player_left` for a player who is back. Needs two events to interleave
-  inside one Redis round trip.
-- **Usernames** can differ only by case, and a username sent with surrounding spaces is
-  accepted as is. Display only.
-- **`/play` never removes its socket listeners.** Coming back to the page adds a second set.
-  With E6's disconnect and reconnect in place the duplicates are harmless (the second
-  rejoin is refused because the first already moved the player), but it is untidy.
+- **E16 (Medium).** Changed on François's say-so on 5 Oct; Gonçalo has not seen it yet.
+  Per address: registration 10 to 50 an hour, `login/start` 20 to 100 and `login/step` 10 to
+  50 per five minutes, password reset and resend-verification 5 to 20 an hour, editor start
+  and finish 30 to 120 a minute. Untouched, because they are what actually stops abuse: 10
+  password tries per account per five minutes, 3 reset or verification mails per address an
+  hour, 5 registrations per address an hour, and the anonymous upload limit (C5).
+- **E18 (Medium).** `get_final_results` keeps the results for two hours and `rejoin_game`
+  sends them to a player who comes back after the end. The phone used to build the podium
+  from scores it had added up question by question, which start from nothing after a
+  reload; it now rebuilds them from the final results, with `totalsFromResults`, the helper
+  the host's podium has used since H3.
+- **E22 (Medium).** When the host's socket goes, the server waits 15 s (a reload or a wifi
+  blip takes a few) and, if no new host socket has registered for the game and it is not
+  over, sends `host_left` to the room. The phone shows a line saying so, with Leave in the
+  usual place. A host who registers again sends `host_back`, which clears it.
+- **E23 (Medium).** Listed under "Found, not fixed" in `e2e-findings.md` since 29 Sep.
+  `start_game`, `set_question_number`, `get_question_results` and both "everyone answered"
+  paths read `game:{pin}`, changed one field and wrote the whole game back. They now go
+  through `update_game`, a WATCH/MULTI transaction like `record_answer_once`. Closing a
+  question also checks, inside the transaction, that it is still the question showing, so a
+  late "everyone answered" cannot close the next one. The host UI already waited between
+  events, so this was reachable mostly under load; the test sends `start_game` and the first
+  question back to back five times, and failed on the old code.
+- **E21 (Low).** The ping fix needed a cap, or a player could hold the echo back to buy
+  time: it is capped at the 1.5 s the server already allows past the timer.
+- **E24 (Low).** A tab in a game writes a heartbeat to local storage every 3 s, and clears it
+  when the tab closes. A new tab uses the shared cookie to rejoin only when it hears no
+  heartbeat, so it no longer takes over a player another tab is using, and a tab closed by
+  accident and reopened still gets back in.
+- **E19, E20, E25.** No test for E19 (it needs two events inside one Redis round trip) or E20
+  (it needs two hours); both are a line each and are in the code with their reasons.
 
 ## What held up
 

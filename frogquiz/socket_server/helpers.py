@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import logging
+from typing import Callable
 
 import aiohttp
 from redis.exceptions import WatchError
@@ -193,6 +194,38 @@ async def record_answer_once(game_pin: str, q_index: int, data: AnswerData) -> A
             except WatchError:
                 # Somebody else's answer landed between our read and our write. Read
                 # again; nothing of ours was written.
+                continue
+
+
+async def update_game(game_pin: str, change: Callable[[PlayGame], bool | None]) -> PlayGame | None:
+    """Change the stored game in a WATCH/MULTI transaction, as record_answer_once does.
+
+    Every handler used to read `game:{pin}`, change one field and write the whole game back,
+    so two arriving together lost one change: start_game and set_question_number back to
+    back could leave `started` false, and the last answer's "everyone answered" could close
+    the question the host had just moved on to (E23 in docs/edge-cases-2026-10.md).
+
+    `change` edits the game in place; returning False means "nothing to do", and nothing is
+    written. Returns the game as written, or None if it is gone or nothing was written.
+    """
+    key = f"game:{game_pin}"
+    async with redis.pipeline(transaction=True) as pipe:
+        while True:
+            try:
+                await pipe.watch(key)
+                raw = await pipe.get(key)
+                if raw is None:
+                    await pipe.unwatch()
+                    return None
+                game = PlayGame.model_validate_json(raw)
+                if change(game) is False:
+                    await pipe.unwatch()
+                    return None
+                pipe.multi()
+                pipe.set(key, game.model_dump_json(), ex=7200)
+                await pipe.execute()
+                return game
+            except WatchError:
                 continue
 
 

@@ -32,6 +32,7 @@ from frogquiz.socket_server.helpers import (
     check_captcha,
     has_already_answered,
     record_answer_once,
+    update_game,
 )
 from .models import (
     RejoinGameData,
@@ -185,6 +186,11 @@ async def rejoin_game(sid: str, data: dict):
         {"username": data.username, "sid": sid},
         room=f"admin:{data.game_pin}",
     )
+    # The game is over: a phone asleep through the podium missed it (E18).
+    final = await redis.get(f"game:{data.game_pin}:final_results")
+    if final is not None:
+        await sio.emit("final_results", json.loads(final), room=sid)
+        return
     # A reload mid-question used to leave the player on a waiting screen until the next
     # question. Send the one that is up.
     index = game_data.current_question
@@ -283,9 +289,9 @@ async def start_game(sid: str, _data: dict):
     session = await get_session(sid, sio)
     if not session["admin"]:
         return
-    game_data = await PlayGame.get_from_redis(session["game_pin"])
-    game_data.started = True
-    await game_data.save(session["game_pin"])
+    game_data = await update_game(session["game_pin"], lambda g: setattr(g, "started", True))
+    if game_data is None:
+        return
     if game_data.user_id is not None:
         # Anonymous hosts never get a "game_in_lobby" entry in the first
         # place (no dashboard to show it on), so there's nothing to clear.
@@ -320,6 +326,8 @@ async def register_as_admin(sid: str, data: dict):
             return
         existing_session.admin = sid
         await existing_session.save(game_pin)
+        # Clears "the host has left" on the phones, if it went out (E22).
+        await sio.emit("host_back", room=game_pin)
     players = [json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")]
     answer_count = 0
     if game.current_question >= 0:
@@ -353,9 +361,8 @@ async def get_question_results(sid: str, data: dict):
         return
     game_pin = session["game_pin"]
     answer_data_list = await AnswerDataList.get_redis_or_empty(game_pin, data["question_number"])
-    game_data = await PlayGame.get_from_redis(game_pin)
-    game_data.question_show = False
-    await game_data.save(game_pin)
+    if await update_game(game_pin, lambda g: setattr(g, "question_show", False)) is None:
+        return
     await sio.emit("question_results", answer_data_list.model_dump(), room=game_pin)
 
 
@@ -366,11 +373,17 @@ async def set_question_number(sid: str, data: str):
     if not session["admin"]:
         return
     game_pin = session["game_pin"]
-    game_data = await PlayGame.get_from_redis(session["game_pin"])
-    game_data.current_question = int(float(data))
-    game_data.question_show = True
-    await game_data.save(session["game_pin"])
-    await redis.set(f"game:{session['game_pin']}:current_time", datetime.now().isoformat(), ex=7200)
+    index = int(float(data))
+
+    def show(game: PlayGame) -> None:
+        game.current_question = index
+        game.question_show = True
+
+    # The clock first: an answer that sees the new question must not time it from the last.
+    await redis.set(f"game:{game_pin}:current_time", datetime.now().isoformat(), ex=7200)
+    game_data = await update_game(game_pin, show)
+    if game_data is None:
+        return
     if game_data.questions[int(float(data))].type == QuizQuestionType.SLIDE:
         await sio.emit(
             "set_question_number",
@@ -422,7 +435,8 @@ async def submit_answer(sid: str, data: dict):
     # KeyError and drop the answer; scoring it without a latency correction is better.
     latency = int(float(session.get("ping", 0)))
     time_q_started = datetime.fromisoformat(await redis.get(f"game:{game_pin}:current_time"))
-    elapsed = abs((time_q_started - now).total_seconds() * 1000) - latency
+    # Never below zero: the latency subtracted is a round trip measured once, at join.
+    elapsed = max(0, abs((time_q_started - now).total_seconds() * 1000) - latency)
     question_seconds = int(float(game_data.questions[question_index].time))
     # The timer was never enforced here. Past it, calculate_score goes negative and was
     # added all the same: a correct answer 2 s late scored -988.
@@ -447,14 +461,28 @@ async def submit_answer(sid: str, data: dict):
         return
     # Only after the answer is recorded, so a refused duplicate never adds points.
     await redis.hincrby(f"game_session:{game_pin}:player_scores", username, score)
+    # The rejoin key was set for two hours at join and never again (E20).
+    await redis.expire(f"game_session:{game_pin}:players:{username}", 7200)
     # Both were emitted with no room, so to every client in every game: one game's last
     # answer ended the question in all the others.
     await sio.emit("player_answer", {}, room=f"admin:{game_pin}")
-    if await everyone_here_answered(game_pin, answers):
-        game_data = await PlayGame.get_from_redis(game_pin)
-        game_data.question_show = False
-        await game_data.save(game_pin)
+    if await everyone_here_answered(game_pin, answers) and await close_question(game_pin, question_index):
         await sio.emit("everyone_answered", {}, room=game_pin)
+
+
+async def close_question(game_pin: str, index: int) -> bool:
+    """Stop taking answers for question `index`, if it is still the one showing.
+
+    Checked inside the transaction: a stale "everyone answered" used to write the whole game
+    back and could close the question the host had just moved on to (E23).
+    """
+
+    def close(game: PlayGame) -> bool | None:
+        if game.current_question != index or not game.question_show:
+            return False
+        game.question_show = False
+
+    return await update_game(game_pin, close) is not None
 
 
 @sio.event
@@ -464,6 +492,8 @@ async def get_final_results(sid: str, _data: dict):
         return
     game_data = await PlayGame.get_from_redis(session["game_pin"])
     results = await generate_final_results(game_data, session["game_pin"])
+    # Kept for a phone that was asleep when they went out: its rejoin gets the podium (E18).
+    await redis.set(f"game:{session['game_pin']}:final_results", json.dumps(results), ex=7200)
     await sio.emit("final_results", results, room=session["game_pin"])
 
 
@@ -501,7 +531,10 @@ async def echo_time_sync(sid: str, data: str):
     now = datetime.now()
     delta = now - then
     session = await get_session(sid, sio)
-    session["ping"] = delta.microseconds / 1000
+    # `.microseconds` is only the sub-second part, so a 1.4 s round trip read as 400 ms (E21
+    # in docs/edge-cases-2026-10.md). Capped at the answer grace, so holding the echo back
+    # cannot buy a player more time than the server already allows.
+    session["ping"] = min(delta.total_seconds() * 1000, ANSWER_GRACE_MS)
     await save_session(sid, sio, session)
 
 
@@ -693,11 +726,30 @@ async def end_question_if_everyone_answered(game_pin: str) -> None:
     game_data = PlayGame.model_validate_json(raw)
     if not (game_data.question_show and game_data.current_question >= 0):
         return
-    answers = await AnswerDataList.get_redis_or_empty(game_pin, game_data.current_question)
-    if await everyone_here_answered(game_pin, answers):
-        game_data.question_show = False
-        await game_data.save(game_pin)
+    index = game_data.current_question
+    answers = await AnswerDataList.get_redis_or_empty(game_pin, index)
+    if await everyone_here_answered(game_pin, answers) and await close_question(game_pin, index):
         await sio.emit("everyone_answered", {}, room=game_pin)
+
+
+# Long enough for a reload or a wifi blip, short enough that a room is not left guessing.
+HOST_GRACE_SECONDS = 15
+
+
+async def tell_players_if_host_stays_away(game_pin: str, sid: str) -> None:
+    """Tell the players if the host has not come back after HOST_GRACE_SECONDS.
+
+    A host who closed the tab for good left every phone waiting on a game that would never
+    move, with no word why (E22 in docs/edge-cases-2026-10.md). A host who comes back
+    re-registers on a new socket, which replaces `admin` in the game session.
+    """
+    await sio.sleep(HOST_GRACE_SECONDS)
+    raw = await redis.get(f"game_session:{game_pin}")
+    if raw is None or await redis.exists(f"game:{game_pin}:final_results"):
+        # Canceled, expired, or over: nothing is waiting on the host.
+        return
+    if GameSession.model_validate_json(raw).admin == sid:
+        await sio.emit("host_left", room=game_pin)
 
 
 @sio.event
@@ -727,17 +779,24 @@ async def disconnect(sid: str, reason: str | None = None):
         return
     username = session.get("username")
     game_pin = session.get("game_pin")
+    if session.get("admin") and not session.get("remote") and game_pin:
+        sio.start_background_task(tell_players_if_host_stays_away, game_pin, sid)
+        return
     if not username or not game_pin:
-        # A host, a remote, or a socket that never joined a game.
+        # A remote, or a socket that never joined a game.
         return
     # If this player has already rejoined on a newer socket, that socket owns them now
     # and this late disconnect must not touch the count.
     if await redis.get(f"game_session:{game_pin}:players:{username}") != sid:
         return
-    await redis.srem(
+    removed = await redis.srem(
         f"game_session:{game_pin}:players",
         GamePlayer(username=username, sid=sid).model_dump_json(),
     )
+    if not removed:
+        # The player rejoined between the check above and here; rejoin_game already swapped
+        # the entry. Telling the host they left would drop somebody who is back (E19).
+        return
     await sio.emit("player_left", {"username": username}, room=f"admin:{game_pin}")
     await end_question_if_everyone_answered(game_pin)
 

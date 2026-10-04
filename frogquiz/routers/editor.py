@@ -92,7 +92,9 @@ async def init_editor(
     user: User | None = Depends(get_current_user_optional),
     x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
 ):
-    await rate_limit(request, "editor_start", limit=30, window_seconds=60)
+    # Per address, sized for an office: everybody behind one NAT shares this bucket (E16 in
+    # docs/edge-cases-2026-10.md).
+    await rate_limit(request, "editor_start", limit=120, window_seconds=60)
     if not edit and quiz_id is not None:
         raise HTTPException(status_code=400, detail="You can't choose the id for your quiz")
     if edit and quiz_id is None:
@@ -134,7 +136,9 @@ async def finish_edit(
     x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
 ):
     """Save and close the edit session."""
-    await rate_limit(request, "editor_finish", limit=30, window_seconds=60)
+    # Per address, sized for an office: everybody behind one NAT shares this bucket (E16 in
+    # docs/edge-cases-2026-10.md).
+    await rate_limit(request, "editor_finish", limit=120, window_seconds=60)
     return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=False)
 
 

@@ -73,7 +73,8 @@ class TestUsers:
                 "username": "12345678978978978978945632145678",
             },
         )
-        assert resp.status_code == 400
+        # Refused for the name now, before the address is looked at: over 20 characters (E17).
+        assert resp.status_code == 422
 
     @pytest.mark.asyncio
     async def test_verify_email(self, test_client: TestClient):  # noqa : F811

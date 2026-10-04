@@ -103,8 +103,10 @@ def verify_webauthn(data, fidocredentialss: list[FidoCredentials], login_session
 
 @router.post("/start")
 async def start_login(data: StartLoginInput, request: Request):
-    # Without this, password guessing against /step is unthrottled.
-    await rate_limit(request, "login_start", limit=20, window_seconds=300)
+    # Without this, password guessing against /step is unthrottled. Sized for an office behind
+    # one address (E16 in docs/edge-cases-2026-10.md); the per-account bucket below is the
+    # one that stops guessing at a single account.
+    await rate_limit(request, "login_start", limit=100, window_seconds=300)
     # The per-IP bucket above is advisory: with TRUSTED_PROXY_HOPS > 1 the address it
     # keys on comes from a header the caller can forge by reaching Caddy directly.
     # This one keys on what is being attacked instead, which cannot be forged.
@@ -163,7 +165,8 @@ class StepInput(BaseModel):
 
 @router.post("/step/{step_id}")
 async def step_1_endpoint(session_id: str, data: StepInput, request: Request, response: Response, step_id: int):
-    await rate_limit(request, "login_step", limit=10, window_seconds=300)
+    # Per address, sized for an office (E16); login_step_user below caps guesses per account.
+    await rate_limit(request, "login_step", limit=50, window_seconds=300)
     if step_id < 0 or step_id > 2:
         raise HTTPException(status_code=401)
     redis_res = await redis.get(f"login_session:{session_id}")

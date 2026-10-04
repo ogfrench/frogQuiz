@@ -197,24 +197,21 @@ the explanation.
 
 ## Open — edge-case pass (4 Oct, late)
 
-- [x] **E1 to E15** in [`docs/edge-cases-2026-10.md`](docs/edge-cases-2026-10.md): every bug
-      fixed the same evening, each with a test that failed first. The three High ones: everyone
+- [x] **E1 to E27** in [`docs/edge-cases-2026-10.md`](docs/edge-cases-2026-10.md): every bug
+      fixed (E1 to E15 on 4 Oct, E16 to E27 on 5 Oct), each with a test that failed first. The three High ones: everyone
       was signed out 30 minutes after logging in (E1), a phone that dropped after answering
       could end the question for somebody else (E4), and a back swipe mid-game left a ghost
       that held every question to its full timer (E6).
-- [ ] **Registration and login rate limits are per address**, and an office shares one:
-      `register` allows 10 an hour, so the eleventh person signing up in the same room is
-      locked out for an hour. Auth limits, so a decision for François and Gonçalo rather than
-      a quiet change. Suggested: 50 an hour per address for `register`, and check
-      `login_step` (10 per 5 minutes per address) the same way.
+- [x] **Registration and login rate limits were per address** (E16), and an office shares
+      one: the eleventh person registering in one room was locked out for an hour. Raised to
+      office scale on 5 Oct at François's request (numbers in the CHANGELOG); Gonçalo to see
+      it in the review, since it is an auth limit
 
 ## Open — quality
 
-- [ ] **`eslint` does not run on a fresh local install.** `eslint.config.cjs` requires
-      `globals`, which `package.json` does not declare, so `pnpm lint` stops with "Cannot find
-      module 'globals'". CI passes anyway. Locally, `NODE_PATH=node_modules/.pnpm/node_modules`
-      gets a real run (0 errors on 4 Oct). The fix is `pnpm add -D globals`, left for after the
-      merge because it touches the lockfile
+- [x] **`eslint` did not run on a fresh local install** (E27, fixed 5 Oct). `eslint.config.cjs`
+      required `globals` and `@eslint/js`, which `package.json` did not declare. Both are
+      declared now; CI had passed regardless
 
 - [x] `svelte-check` in CI. **Done 4 Oct: 0 errors, and CI runs it.** The 825 under
       `node_modules` were `.d.ts` files, gone with `skipLibCheck`. The 227 of ours were

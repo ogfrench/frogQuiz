@@ -485,6 +485,7 @@
         "unknown_error": "Something went wrong. Try again in a moment.",
         "username_taken": "Someone in this game already has that nickname. Pick another.",
         "kicked": "The host removed you from this game.",
+        "host_left": "The host's connection dropped. If they don't come back, you can leave the game.",
         "nickname_hint": "At least {{count}} characters."
     },
     "editor_page": {

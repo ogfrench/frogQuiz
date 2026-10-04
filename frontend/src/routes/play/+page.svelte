@@ -22,6 +22,7 @@ SPDX-License-Identifier: MPL-2.0
 	import House from '@lucide/svelte/icons/house';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import { onMount } from 'svelte';
+	import { totalsFromResults } from '$lib/play/admin/totals';
 	const { t } = getLocalization();
 
 	interface Props {
@@ -77,10 +78,39 @@ SPDX-License-Identifier: MPL-2.0
 	let join_error = $state('');
 	// The host canceled the game from its lobby.
 	let game_ended = $state(false);
+	// The host's connection dropped and has not come back (E22 in docs/edge-cases-2026-10.md).
+	let host_gone = $state(false);
+
+	// Which game this tab is in, for a rejoin after a reload. Per tab first: two players in one
+	// browser (two tabs) shared the cookie, so a reload in one took over the other's player
+	// (E24). The cookie is the fallback that lets a new tab rejoin after the old one closed,
+	// and only then: a tab in a game says so every few seconds, and a new tab that hears it
+	// leaves that player alone instead of taking them over.
+	const JOINED = 'joined_game';
+	const ALIVE = 'joined_game_alive';
+	const ALIVE_EVERY_MS = 3000;
+	let alive_timer: ReturnType<typeof setInterval> | undefined;
+	const sayAlive = () => localStorage.setItem(ALIVE, String(Date.now()));
+	const stopAlive = () => {
+		clearInterval(alive_timer);
+		alive_timer = undefined;
+		localStorage.removeItem(ALIVE);
+	};
+	const readJoined = () => {
+		const own = sessionStorage.getItem(JOINED);
+		if (own) return own;
+		const heard = Number(localStorage.getItem(ALIVE) ?? 0);
+		return Date.now() - heard > ALIVE_EVERY_MS * 3 ? Cookies.get(JOINED) : undefined;
+	};
+	const forgetJoined = () => {
+		stopAlive();
+		sessionStorage.removeItem(JOINED);
+		Cookies.remove(JOINED);
+	};
 
 	// Back to an empty join screen without a reload, so a reason can be shown there.
 	const reset_to_join = (reason = '') => {
-		Cookies.remove('joined_game');
+		forgetJoined();
 		gameData = undefined;
 		gameMeta.started = false;
 		question_index = '';
@@ -116,9 +146,15 @@ SPDX-License-Identifier: MPL-2.0
 	// to answer on, and coming forward showed an empty join form with their own nickname
 	// taken (E6 in docs/edge-cases-2026-10.md). Leaving now drops the connection, as
 	// closing the tab does; coming back connects again and the handler below rejoins.
+	// The listeners below are registered when the page is created and go with it: left on
+	// the socket, coming back stacked a second set on top of the first.
 	onMount(() => {
 		if (!socket.connected) socket.connect();
-		return () => socket.disconnect();
+		return () => {
+			if (alive_timer) stopAlive();
+			socket.off();
+			socket.disconnect();
+		};
 	});
 
 	socket.on('time_sync', (data) => {
@@ -127,11 +163,11 @@ SPDX-License-Identifier: MPL-2.0
 
 	socket.on('connect', async () => {
 		console.log('Connected!');
-		const cookie_data = Cookies.get('joined_game');
-		if (!cookie_data) {
+		const joined_data = readJoined();
+		if (!joined_data) {
 			return;
 		}
-		const data = JSON.parse(cookie_data);
+		const data = JSON.parse(joined_data);
 		rejoining = data;
 		socket.emit('rejoin_game', {
 			old_sid: data.sid,
@@ -146,10 +182,13 @@ SPDX-License-Identifier: MPL-2.0
 	// js-cookie's `expires` is in days; this was 3600, about ten years. A game lives
 	// in Redis for five hours, so there is nothing to rejoin after that.
 	const JOINED_GAME_COOKIE_DAYS = 5 / 24;
-	const rememberJoinedGame = () =>
-		Cookies.set('joined_game', JSON.stringify({ sid: socket.id, username, game_pin }), {
-			expires: JOINED_GAME_COOKIE_DAYS
-		});
+	const rememberJoinedGame = () => {
+		const joined_data = JSON.stringify({ sid: socket.id, username, game_pin });
+		sessionStorage.setItem(JOINED, joined_data);
+		Cookies.set(JOINED, joined_data, { expires: JOINED_GAME_COOKIE_DAYS });
+		sayAlive();
+		alive_timer ??= setInterval(sayAlive, ALIVE_EVERY_MS);
+	};
 
 	// Socket-events
 	socket.on('joined_game', (data) => {
@@ -174,9 +213,8 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	socket.on('game_not_found', () => {
-		const cookie_data = Cookies.get('joined_game');
-		if (cookie_data) {
-			Cookies.remove('joined_game');
+		if (readJoined()) {
+			forgetJoined();
 			window.location.reload();
 			return;
 		}
@@ -205,7 +243,7 @@ SPDX-License-Identifier: MPL-2.0
 		reset_to_join($t('play_page.kicked'));
 	});
 	socket.on('game_ended', () => {
-		Cookies.remove('joined_game');
+		forgetJoined();
 		game_ended = true;
 	});
 	socket.on('left_game', () => {
@@ -213,7 +251,17 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	socket.on('final_results', (data) => {
 		final_results = data;
-		Cookies.remove('joined_game');
+		// The podium reads `scores`, which this page added up question by question, so a phone
+		// that reloaded mid-game (or slept through the end) showed totals from after the
+		// reload only. The server's record has every answer (E18).
+		scores = totalsFromResults(data, Object.keys(scores));
+		forgetJoined();
+	});
+	socket.on('host_left', () => {
+		host_gone = true;
+	});
+	socket.on('host_back', () => {
+		host_gone = false;
 	});
 
 	socket.on('solutions', (data) => {
@@ -233,7 +281,7 @@ SPDX-License-Identifier: MPL-2.0
 	// The rest
 </script>
 
-<svelte:window onbeforeunload={confirmUnload} />
+<svelte:window onbeforeunload={confirmUnload} onpagehide={() => alive_timer && stopAlive()} />
 <svelte:head>
 	<title>frogQuiz - Play</title>
 </svelte:head>
@@ -264,6 +312,14 @@ SPDX-License-Identifier: MPL-2.0
 				{$t('play_page.leave_game')}
 			</ConfirmAction>
 		</div>
+	{/if}
+	{#if host_gone && joined && !show_final && !game_ended}
+		<p
+			role="status"
+			class="border-border bg-card text-foreground fixed inset-x-4 bottom-4 z-30 mx-auto max-w-sm rounded-lg border p-3 text-center text-sm shadow-sm"
+		>
+			{$t('play_page.host_left')}
+		</p>
 	{/if}
 	<div>
 		{#if game_ended}

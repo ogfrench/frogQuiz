@@ -48,8 +48,10 @@ SPDX-License-Identifier: MPL-2.0
 				const ref = yup.ref('password1');
 				return v === this.resolve(ref);
 			}),
+		// Trimmed, as the server stores it: "  ab  " passed a length check it then failed.
 		username: yup
 			.string()
+			.trim()
 			.required()
 			.min(3, 'Username must be at least 3 characters long')
 			.max(20, 'Username must be at most 20 characters long'),

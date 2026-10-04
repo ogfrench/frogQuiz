@@ -10,6 +10,7 @@ import os
 
 import asyncpg.exceptions
 from datetime import datetime
+from typing import Annotated
 
 import ormar
 import pydantic
@@ -55,7 +56,10 @@ router.include_router(twofa.router, prefix="/2fa")
 
 
 class RouteUser(pydantic.BaseModel):
-    username: str
+    # The register form's rule (3 to 20 characters), trimmed. The API took any string, so a
+    # script could register an empty name, or "Ana " beside "Ana" (E17 in
+    # docs/edge-cases-2026-10.md).
+    username: Annotated[str, pydantic.StringConstraints(strip_whitespace=True, min_length=3, max_length=20)]
     # Mirrors the rule the register form enforces; without it the API accepted
     # a one-character password.
     password: str = pydantic.Field(min_length=8, max_length=100)
@@ -95,7 +99,9 @@ router.include_router(oauth.router, tags=["users", "oauth"], prefix="/oauth")
     response_model_include={"id": ..., "verified": ..., "email": ...},
 )
 async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
-    await rate_limit(request, "register", limit=10, window_seconds=3600)
+    # Was 10 an hour per address, and an office shares one: the eleventh person signing up in
+    # the same room was locked out for an hour (E16 in docs/edge-cases-2026-10.md).
+    await rate_limit(request, "register", limit=50, window_seconds=3600)
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
     # Checked before anything is written. Without it the row is created, the send
@@ -129,7 +135,8 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     # source addresses.
     await rate_limit_key(f"register_addr:{user.email}", limit=5, window_seconds=3600)
     user.verify_key = str(os.urandom(16).hex())
-    res = await User.objects.filter((User.email == user.email) | (User.username == user.username)).all()
+    # Case-insensitively: "Ana" and "ana" would read as one person everywhere a name is shown.
+    res = await User.objects.filter((User.email == user.email) | (User.username.iexact(user.username))).all()
     if len(res) != 0:
         raise HTTPException(status_code=409, detail="User already exists")
 
@@ -309,7 +316,8 @@ _RESET_ACK = {"message": "If that address has an account, a reset link is on its
 @router.post("/forgot-password")
 async def forgotten_password(forgot_password: ForgotPassword, request: Request):
     # Unrated, this endpoint can be used to spam a victim's inbox or hammer the DB.
-    await rate_limit(request, "forgot_password", limit=5, window_seconds=3600)
+    # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
+    await rate_limit(request, "forgot_password", limit=20, window_seconds=3600)
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     # Limited per address as well as per source IP. The IP bucket is what stops
@@ -345,7 +353,8 @@ async def resend_verification(body: ResendVerification, request: Request):
     sent while the relay was down, the address stayed unverified and re-registering
     returned 409 forever.
     """
-    await rate_limit(request, "resend_verification", limit=5, window_seconds=3600)
+    # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
+    await rate_limit(request, "resend_verification", limit=20, window_seconds=3600)
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     await rate_limit_key(f"resend_verification_addr:{body.email.strip().lower()}", limit=3, window_seconds=3600)

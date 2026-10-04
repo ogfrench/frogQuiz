@@ -167,6 +167,20 @@ SPDX-License-Identifier: MPL-2.0
 					{#if incomplete}
 						<Badge variant="destructive">{$t('editor.question_incomplete')}</Badge>
 					{/if}
+					<!-- On a phone the timer and type pills fill a line by themselves, and this
+					     button used to wrap onto a third line alone. It shares the first one with
+					     the question number there, and goes back after the pills from `sm`. -->
+					<Button
+						variant="ghost"
+						size="icon"
+						type="button"
+						class="max-sm:ml-auto sm:order-last"
+						title={$t('editor.advanced_settings')}
+						aria-label={$t('editor.advanced_settings')}
+						onclick={() => (advanced_options_open = true)}
+					>
+						<Settings2 />
+					</Button>
 					<div class="ml-auto flex flex-wrap items-center gap-1.5">
 						<!-- The input inside drops its own outline, so the pill shows focus for it,
 						     the way the shadcn Input does. Without this the only sign of focus was
@@ -208,16 +222,6 @@ SPDX-License-Identifier: MPL-2.0
 								{/if}
 							</Button>
 						{/if}
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							title={$t('editor.advanced_settings')}
-							aria-label={$t('editor.advanced_settings')}
-							onclick={() => (advanced_options_open = true)}
-						>
-							<Settings2 />
-						</Button>
 					</div>
 				</div>
 
