@@ -13,11 +13,13 @@ test('the command palette opens, searches and runs an action', async ({ page }) 
 	page.on('pageerror', (e) => errors.push(String(e)));
 
 	await page.goto('/my-quizzes');
-	await page.waitForTimeout(800);
-	await page.keyboard.press('Control+k');
-
+	// The binding is attached on hydration. A fixed 800ms wait lost the keypress on a cold
+	// Vite compile; retry until the palette's input actually has focus.
 	const input = page.getByRole('textbox').last();
-	await expect(input).toBeFocused();
+	await expect(async () => {
+		await page.keyboard.press('Control+k');
+		await expect(input).toBeFocused({ timeout: 1_000 });
+	}).toPass({ timeout: 15_000 });
 
 	await input.fill('create');
 	await page.waitForTimeout(400);

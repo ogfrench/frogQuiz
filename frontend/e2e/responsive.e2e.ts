@@ -124,3 +124,19 @@ test('the footer sits on the page ground, one line wide, with a text heart', asy
 		await ctx.close();
 	}
 });
+
+test('the navbar is exactly as tall as the space reserved for it', async ({ browser }) => {
+	for (const width of [390, 1440]) {
+		const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+		const page = await ctx.newPage();
+		await page.goto('/');
+		// It was 69px over a 64px spacer, so every page's first 5px sat under the bar; and
+		// login and register size themselves to 100dvh - 4rem.
+		const nav = await page.getByRole('navigation', { name: 'Main' }).boundingBox();
+		const main = await page.locator('main').boundingBox();
+		expect(nav!.y).toBe(0);
+		expect(nav!.height).toBe(64);
+		expect(main!.y).toBe(64);
+		await ctx.close();
+	}
+});

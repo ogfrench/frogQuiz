@@ -82,10 +82,14 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
+<!-- h-16, not py-3: the 44px touch-sized row plus padding made the bar 69px over a 64px
+     spacer, so every page's first 5px sat under it. 64 is what the spacer and the
+     100dvh - 4rem pages assume. Named because the footer has a nav of its own. -->
 <nav
-	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 border-b px-5 py-3 backdrop-blur-xl [clip-path:inset(0)] lg:px-8"
+	aria-label="Main"
+	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b px-5 backdrop-blur-xl [clip-path:inset(0)] lg:px-8"
 >
-	<div class="flex items-center justify-between gap-4">
+	<div class="flex w-full items-center justify-between gap-4">
 		<div class="flex min-w-0 items-center gap-1">
 			<a
 				href="/"
@@ -165,7 +169,7 @@ SPDX-License-Identifier: MPL-2.0
 				     beneath the last row. -->
 				<Sheet.Content side="right" class="bg-background w-[85%] max-w-sm gap-0 p-0">
 					<Sheet.Header
-						class="border-border/60 flex h-17 flex-row items-center border-b px-5"
+						class="border-border/60 flex h-16 flex-row items-center border-b px-5"
 					>
 						<Sheet.Title class="sr-only">{$t('navbar.menu')}</Sheet.Title>
 						<a

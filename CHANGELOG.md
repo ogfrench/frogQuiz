@@ -6,6 +6,14 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- The navbar is exactly 64px, the height of the space reserved under it. Its touch-sized
+  row plus `py-3` made it 69px, so the first 5px of every page sat under the bar. It is
+  named "Main" now, since the footer has a nav of its own, and the phone drawer's header
+  is 64px to keep its hairline level with the bar's. (The tall blank band above the
+  navbar in some of this session's screenshots was a capture artifact: a full-page shot
+  taken while scrolled draws a fixed bar at the scroll offset. The live preview has none.)
+- `command-palette.e2e.ts` retries Ctrl+K until the palette has focus instead of waiting
+  a fixed 800ms, which lost the keypress on a cold Vite compile.
 - HANDOVER and TODO carry the current suite numbers: e2e 144/144 on a clean stack (145 with the footer test), unit 153, backend 168.
 - The footer lost its grey band. It is one line on the page ground with a hairline above
   that mirrors the navbar's, at the navbar's side padding: the credit on the left and
