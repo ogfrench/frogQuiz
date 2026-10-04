@@ -6,6 +6,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- A multiple-answer question no longer opens on the phone with every tile faded: the
+  "unticked tiles recede" style applied before anything was ticked, so the question
+  looked disabled. Ticked tiles get a tick badge, since the white ring alone was faint
+  on a pastel tile in light mode, and Submit is a full-width button instead of a
+  half-width one in a strip 5% of the screen tall.
 - Fixed the host's results screen after a multiple-answer question, which showed an
   empty card: no question, no correct answers, no split. The screen listed the question
   types it drew and left that one out. `scoreboard.e2e` plays one through the UI.

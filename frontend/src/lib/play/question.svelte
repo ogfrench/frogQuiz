@@ -18,6 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { flip } from 'svelte/animate';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import { Button } from '$lib/components/ui/button';
 	import { get_foreground_color } from '../helpers';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
@@ -422,15 +423,17 @@ SPDX-License-Identifier: MPL-2.0
 					{timer_res}
 					{circular_progress}
 				/>
-				<div class="flex justify-center h-[5%]">
-					<div class="w-1/2">
-						<BrownButton
-							type="button"
-							disabled={selected_answer === undefined}
-							onclick={() => selectAnswer(selected_answer)}
-							>{$t('words.submit')}
-						</BrownButton>
-					</div>
+				<!-- The one action on this screen, so it is sized for a thumb: it was a
+				     half-width default button in a strip 5% of the screen tall. -->
+				<div class="flex h-18 items-start justify-center px-4">
+					<Button
+						type="button"
+						size="lg"
+						class="h-12 w-full max-w-md text-base"
+						disabled={selected_answer === undefined}
+						onclick={() => selectAnswer(selected_answer)}
+						>{$t('words.submit')}
+					</Button>
 				</div>
 			{/await}
 		{/if}

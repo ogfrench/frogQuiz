@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -10,6 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { get_foreground_color } from '$lib/helpers';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
+	import Check from '@lucide/svelte/icons/check';
 
 	interface Props {
 		question: Question;
@@ -48,14 +50,17 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<div class="w-full h-[95%]">
+<div class="h-[calc(100%-4.5rem)] w-full">
 	<div
 		class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-black shadow-2xl z-40"
 	>
 		<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 	</div>
 
-	<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-3 w-full p-4 h-full">
+	<div
+		class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-3 w-full p-4 h-full"
+		class:has-picks={_selected_answers.some(Boolean)}
+	>
 		{#each question.answers as answer, i}
 			{@const picked = _selected_answers[i]}
 			<!-- Focus is a foreground outline. It was ring-white/80, a white ring on a near-white
@@ -100,6 +105,14 @@ SPDX-License-Identifier: MPL-2.0
 						aria-hidden="true"
 						class="absolute inset-0 ring-4 ring-inset ring-white rounded-2xl motion-safe:animate-in motion-safe:zoom-in-95"
 					></span>
+					<!-- The ring alone was faint on a pastel tile in light mode; a tick says
+					     "chosen" without relying on how bright the tile is. -->
+					<span
+						aria-hidden="true"
+						class="absolute top-3 right-3 grid size-8 place-items-center rounded-full bg-white text-black shadow-md motion-safe:animate-in motion-safe:zoom-in-50"
+					>
+						<Check class="size-5" strokeWidth={3} />
+					</span>
 				{/if}
 			</button>
 		{/each}
@@ -107,8 +120,10 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 
 <style>
-	/* Ticked tiles lift; unticked ones recede, so a glance shows the current set. */
-	.answer-tile:not(.is-picked) {
+	/* Ticked tiles lift; unticked ones recede, so a glance shows the current set. Only
+	   once something is ticked: applied from the start, it opened every multiple-answer
+	   question with all four tiles faded, looking disabled. */
+	.has-picks .answer-tile:not(.is-picked) {
 		opacity: 0.5;
 		filter: saturate(0.6);
 		transform: scale(0.97);
