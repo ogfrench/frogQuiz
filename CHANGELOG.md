@@ -6,6 +6,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- After changing your password, logging in again takes you into the app. It reloaded
+  `/account/login?password_changed=true`, and that flag is what tells the page not to
+  redirect a signed-in visitor, so you were signed in on an empty login form. Success
+  now drops the stale flag before reloading; the three login steps stopped calling
+  `reload()` themselves so there is one redirect path.
+- Leaving the login page no longer shows two pages at once. Its step slides were
+  `|global`, so the card animated out on navigation while the next page rendered under
+  it, briefly with two `h1`s and two `#email` fields.
+- Registering replaces the form with the result and a Log in button, which takes focus.
+  The filled form stayed with Register still live, and a second press said the name was
+  taken. Validation messages lost their exclamation marks.
 - My Account on a phone: Log out wraps under the name instead of squeezing it (a
   13-character username read "walkmut..."), and the email wraps rather than truncating.
 - My Account no longer offers Delete on the session you are using. Deleting it left the

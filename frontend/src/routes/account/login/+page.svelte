@@ -37,10 +37,17 @@ SPDX-License-Identifier: MPL-2.0
 	let selected_method = $state(null);
 	let done = $state(false);
 
+	// Signed in: load the page again and let the server send us on to returnTo. Not a
+	// plain reload: password_changed and deleted tell the server not to redirect a
+	// signed-in visitor (for a cookie that survived), and after a fresh login they are
+	// stale. Reloading with them kept you here, signed in, on an empty form.
 	const redirect_back = (done_var: boolean) => {
 		if (done_var) {
 			setTimeout(() => {
-				window.location.reload();
+				const next = new URL(window.location.href);
+				next.searchParams.delete('password_changed');
+				next.searchParams.delete('deleted');
+				window.location.replace(next.toString());
 			}, 100);
 		}
 	};
@@ -100,17 +107,17 @@ SPDX-License-Identifier: MPL-2.0
 	<Card.Root class="w-full max-w-sm overflow-hidden pt-6 pb-0 shadow-xl">
 		{#if step === 0}
 			<!--			<p>StartWindow</p>-->
-			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
+			<div class="flex flex-col gap-(--card-spacing)" transition:slide>
 				<StartWindow bind:session_data bind:step bind:identifier />
 			</div>
 		{:else if selected_method === null}
 			<!--			<p>SelectWindow</p>-->
-			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
+			<div class="flex flex-col gap-(--card-spacing)" transition:slide>
 				<SelectMethod {session_data} {step} bind:selected_method />
 			</div>
 		{:else if selected_method === 'PASSWORD'}
 			<!--			<p>PasswordWindow</p>-->
-			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
+			<div class="flex flex-col gap-(--card-spacing)" transition:slide>
 				<PasswordComponent
 					{session_data}
 					{identifier}
@@ -122,12 +129,12 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{:else if selected_method === 'BACKUP'}
 			<!--			<p>BackupWindow</p>-->
-			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
+			<div class="flex flex-col gap-(--card-spacing)" transition:slide>
 				<BackupComponent {session_data} bind:done bind:step bind:selected_method />
 			</div>
 		{:else if selected_method === 'TOTP'}
 			<!--			<p>TotpWindow</p>-->
-			<div class="flex flex-col gap-(--card-spacing)" transition:slide|global>
+			<div class="flex flex-col gap-(--card-spacing)" transition:slide>
 				<TotpComponent {session_data} bind:done bind:step bind:selected_method />
 			</div>
 		{/if}

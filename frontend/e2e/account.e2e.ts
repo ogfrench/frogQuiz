@@ -54,6 +54,9 @@ test('register and log in through the UI', async ({ page }) => {
 	// It stays on the page and reports in place; with verification skipped, it is ready.
 	await expect(page.getByRole('status')).toBeVisible();
 	await expect(page.getByRole('status')).not.toHaveClass(/destructive/);
+	// The filled form used to stay, Register still live, and a second press said "taken".
+	await expect(page.getByRole('button', { name: 'Register' })).toHaveCount(0);
+	await expect(page.getByRole('link', { name: 'Log in' }).last()).toBeFocused();
 	await expectNoHorizontalOverflow(page);
 
 	await page.getByRole('link', { name: 'Log in' }).last().click();
@@ -295,5 +298,25 @@ test('My Account on a phone: the name reads in full, and only other devices can 
 	await expect(page.getByText(/Firefox/)).toHaveCount(0);
 	await expectNoHorizontalOverflow(page);
 	await other.close();
+	await context.close();
+});
+
+test('after changing the password, logging in again lands you in the app', async ({
+	browser,
+	request
+}) => {
+	const { context, page, user } = await signedInContext(browser, request);
+	await page.goto('/account/settings');
+	await page.getByLabel('Old password').fill(PASSWORD);
+	await page.getByLabel('New password', { exact: true }).fill('Changed-e2e-password-2');
+	await page.getByLabel('Repeat password').fill('Changed-e2e-password-2');
+	await page.getByRole('button', { name: 'Change password' }).click();
+	await page.waitForURL(/password_changed=true/);
+	await expect(page.getByText('Password changed.')).toBeVisible();
+
+	await logInThroughUI(page, user.username, 'Changed-e2e-password-2');
+	// Success reloaded the same URL, and password_changed=true is what tells the page not
+	// to redirect a signed-in visitor: you were signed in, on an empty login form.
+	await page.waitForURL(/\/my-quizzes/);
 	await context.close();
 });

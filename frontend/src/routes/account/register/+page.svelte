@@ -35,16 +35,16 @@ SPDX-License-Identifier: MPL-2.0
 	import * as yup from 'yup';
 
 	const registerSchema = yup.object({
-		email: yup.string().email('Email must be valid!').required(),
+		email: yup.string().email('Enter a valid email address').required(),
 		password1: yup
 			.string()
 			.required()
-			.min(8, 'Password must be at least 8 characters long!')
-			.max(100, 'Password must be at most 100 characters long!'),
+			.min(8, 'Password must be at least 8 characters long')
+			.max(100, 'Password must be at most 100 characters long'),
 		password2: yup
 			.string()
 			.required()
-			.test('equal', 'Passwords do not match!', function (v) {
+			.test('equal', 'Passwords do not match', function (v) {
 				const ref = yup.ref('password1');
 				return v === this.resolve(ref);
 			}),
@@ -53,10 +53,8 @@ SPDX-License-Identifier: MPL-2.0
 			.required()
 			.min(3, 'Username must be at least 3 characters long')
 			.max(20, 'Username must be at most 20 characters long'),
-		privacy_accept: yup
-			.boolean()
-			.oneOf([true], 'You must accept the privacy policy to register!'),
-		tos_accept: yup.boolean().oneOf([true], 'You must accept the terms of service to register!')
+		privacy_accept: yup.boolean().oneOf([true], 'Accept the privacy policy to register'),
+		tos_accept: yup.boolean().oneOf([true], 'Accept the Terms of Service to register')
 	});
 
 	const { form, errors, isValid, isSubmitting } = createForm<
@@ -108,6 +106,12 @@ SPDX-License-Identifier: MPL-2.0
 		open: false,
 		data: ''
 	});
+	// Once the account exists the form has done its job. It used to stay filled in with
+	// Register still live, next to "You can log in now", and a second press answered
+	// "taken". It gives way to the result and the next step.
+	const registered = $derived(
+		responseData.open && (responseData.data === '200' || responseData.data === '200_verified')
+	);
 
 	// Registration had no way back: if the confirmation mail was lost or filtered,
 	// signing up again just returned 409 and the address stayed unverified forever.
@@ -152,120 +156,122 @@ SPDX-License-Identifier: MPL-2.0
 			<Card.Description>{$t('register_page.greeting')}</Card.Description>
 		</Card.Header>
 
-		<Card.Content>
-			<form use:form class="grid gap-4">
-				<div class="grid gap-2">
-					<Label for="email">{$t('words.email')}</Label>
-					<Input
-						id="email"
-						name="email"
-						type="email"
-						autocomplete="email"
-						aria-invalid={!!$errors.email}
-					/>
-					{#if $errors.email}
-						<p class="text-destructive text-sm">{$errors.email}</p>
-					{/if}
-				</div>
+		{#if !registered}
+			<Card.Content>
+				<form use:form class="grid gap-4">
+					<div class="grid gap-2">
+						<Label for="email">{$t('words.email')}</Label>
+						<Input
+							id="email"
+							name="email"
+							type="email"
+							autocomplete="email"
+							aria-invalid={!!$errors.email}
+						/>
+						{#if $errors.email}
+							<p class="text-destructive text-sm">{$errors.email}</p>
+						{/if}
+					</div>
 
-				<div class="grid gap-2">
-					<Label for="username">{$t('words.username')}</Label>
-					<Input
-						id="username"
-						name="username"
-						type="text"
-						autocomplete="username"
-						aria-invalid={!!$errors.username}
-					/>
-					{#if $errors.username}
-						<p class="text-destructive text-sm">{$errors.username}</p>
-					{/if}
-				</div>
+					<div class="grid gap-2">
+						<Label for="username">{$t('words.username')}</Label>
+						<Input
+							id="username"
+							name="username"
+							type="text"
+							autocomplete="username"
+							aria-invalid={!!$errors.username}
+						/>
+						{#if $errors.username}
+							<p class="text-destructive text-sm">{$errors.username}</p>
+						{/if}
+					</div>
 
-				<div class="grid gap-2">
-					<Label for="password1">{$t('words.password')}</Label>
-					<Input
-						id="password1"
-						name="password1"
-						type="password"
-						autocomplete="new-password"
-						aria-invalid={!!$errors.password1}
-					/>
-					{#if $errors.password1}
-						<p class="text-destructive text-sm">{$errors.password1}</p>
-					{/if}
-				</div>
+					<div class="grid gap-2">
+						<Label for="password1">{$t('words.password')}</Label>
+						<Input
+							id="password1"
+							name="password1"
+							type="password"
+							autocomplete="new-password"
+							aria-invalid={!!$errors.password1}
+						/>
+						{#if $errors.password1}
+							<p class="text-destructive text-sm">{$errors.password1}</p>
+						{/if}
+					</div>
 
-				<div class="grid gap-2">
-					<Label for="password2">{$t('register_page.repeat_password')}</Label>
-					<Input
-						id="password2"
-						name="password2"
-						type="password"
-						autocomplete="new-password"
-						aria-invalid={!!$errors.password2}
-					/>
-					{#if $errors.password2}
-						<p class="text-destructive text-sm">{$errors.password2}</p>
-					{/if}
-				</div>
+					<div class="grid gap-2">
+						<Label for="password2">{$t('register_page.repeat_password')}</Label>
+						<Input
+							id="password2"
+							name="password2"
+							type="password"
+							autocomplete="new-password"
+							aria-invalid={!!$errors.password2}
+						/>
+						{#if $errors.password2}
+							<p class="text-destructive text-sm">{$errors.password2}</p>
+						{/if}
+					</div>
 
-				<!-- The consent boxes had their label as a sibling of the input, so tapping
+					<!-- The consent boxes had their label as a sibling of the input, so tapping
 				     the words did nothing and the target was the 16px box. Wrapping makes the
 				     whole row one target, and the links inside it still work. -->
-				<div class="grid gap-2">
-					<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
-						<input
-							type="checkbox"
-							name="privacy_accept"
-							class="accent-primary mt-0.5 size-5 shrink-0"
-							aria-invalid={!!$errors.privacy_accept}
-						/>
-						<span>
-							{$t('register_page.read_privacy_policy_prefix')}
-							<a href="/docs/privacy-policy" class="underline underline-offset-4"
-								>{$t('register_page.privacy_policy')}</a
-							>.
-						</span>
-					</label>
-					{#if $errors.privacy_accept}
-						<p class="text-destructive text-sm">{$errors.privacy_accept}</p>
-					{/if}
+					<div class="grid gap-2">
+						<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
+							<input
+								type="checkbox"
+								name="privacy_accept"
+								class="accent-primary mt-0.5 size-5 shrink-0"
+								aria-invalid={!!$errors.privacy_accept}
+							/>
+							<span>
+								{$t('register_page.read_privacy_policy_prefix')}
+								<a href="/docs/privacy-policy" class="underline underline-offset-4"
+									>{$t('register_page.privacy_policy')}</a
+								>.
+							</span>
+						</label>
+						{#if $errors.privacy_accept}
+							<p class="text-destructive text-sm">{$errors.privacy_accept}</p>
+						{/if}
 
-					<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
-						<input
-							type="checkbox"
-							name="tos_accept"
-							class="accent-primary mt-0.5 size-5 shrink-0"
-							aria-invalid={!!$errors.tos_accept}
-						/>
-						<span>
-							{$t('register_page.agree_tos_prefix')}
-							<a href="/docs/tos" class="underline underline-offset-4"
-								>{$t('register_page.terms_of_service')}</a
-							>.
-						</span>
-					</label>
-					{#if $errors.tos_accept}
-						<p class="text-destructive text-sm">{$errors.tos_accept}</p>
-					{/if}
-				</div>
+						<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
+							<input
+								type="checkbox"
+								name="tos_accept"
+								class="accent-primary mt-0.5 size-5 shrink-0"
+								aria-invalid={!!$errors.tos_accept}
+							/>
+							<span>
+								{$t('register_page.agree_tos_prefix')}
+								<a href="/docs/tos" class="underline underline-offset-4"
+									>{$t('register_page.terms_of_service')}</a
+								>.
+							</span>
+						</label>
+						{#if $errors.tos_accept}
+							<p class="text-destructive text-sm">{$errors.tos_accept}</p>
+						{/if}
+					</div>
 
-				<!-- "Forgot password?" was offered on the registration form, which is for
+					<!-- "Forgot password?" was offered on the registration form, which is for
 				     people who have no password yet. It lives on the login page, where it is
 				     the thing you reach for. -->
-				<div class="flex items-center justify-end gap-4">
-					<Button type="submit" disabled={!$isValid || $isSubmitting}>
-						{#if $isSubmitting}
-							<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
-							<span class="sr-only">{$t('words.register')}</span>
-						{:else}
-							{$t('words.register')}
-						{/if}
-					</Button>
-				</div>
-			</form>
-		</Card.Content>
+					<div class="flex items-center justify-end gap-4">
+						<Button type="submit" disabled={!$isValid || $isSubmitting}>
+							{#if $isSubmitting}
+								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								<span class="sr-only">{$t('words.register')}</span>
+							{:else}
+								{$t('words.register')}
+							{/if}
+						</Button>
+					</div>
+				</form>
+			</Card.Content>
+		{/if}
 
 		{#if responseData.open}
 			{@const ok = responseData.data === '200' || responseData.data === '200_verified'}
@@ -348,11 +354,22 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 		{/if}
 
-		<Card.Footer class="justify-center gap-1.5 text-sm">
-			<span class="text-muted-foreground">{$t('register_page.already_have_account?')}</span>
-			<a href={login_href} class="text-primary font-medium underline-offset-4 hover:underline"
-				>{$t('words.login')}</a
-			>
-		</Card.Footer>
+		{#if responseData.data === '200_verified'}
+			<div class="px-6 pt-2">
+				<!-- svelte-ignore a11y_autofocus -->
+				<Button href={login_href} class="w-full" autofocus>{$t('words.login')}</Button>
+			</div>
+		{:else}
+			<Card.Footer class="justify-center gap-1.5 text-sm">
+				<span class="text-muted-foreground"
+					>{$t('register_page.already_have_account?')}</span
+				>
+				<a
+					href={login_href}
+					class="text-primary font-medium underline-offset-4 hover:underline"
+					>{$t('words.login')}</a
+				>
+			</Card.Footer>
+		{/if}
 	</Card.Root>
 </div>

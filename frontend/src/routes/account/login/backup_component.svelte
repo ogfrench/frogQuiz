@@ -34,7 +34,8 @@ SPDX-License-Identifier: MPL-2.0
 			body: JSON.stringify({ auth_type: 'BACKUP', data: backup_code })
 		});
 		if (res.status === 200) {
-			window.location.reload();
+			// The page sends you on (redirect_back): not a reload, which kept stale notice
+			// params and left you on the login form after changing your password.
 			done = true;
 		} else {
 			step += 1;

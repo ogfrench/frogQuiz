@@ -49,7 +49,8 @@ SPDX-License-Identifier: MPL-2.0
 				body: JSON.stringify({ auth_type: 'PASSWORD', data: password })
 			});
 			if (res.status === 200) {
-				window.location.reload();
+				// The page sends you on (redirect_back): not a reload, which kept stale notice
+				// params and left you on the login form after changing your password.
 				done = true;
 			} else if (res.status === 202) {
 				step += 1;
