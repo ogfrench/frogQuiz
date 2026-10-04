@@ -206,11 +206,14 @@ SPDX-License-Identifier: MPL-2.0
 					{$t('play_page.pick_every_correct')}
 				</p>
 			{/if}
+			<!-- The image takes what the header has left under the question and scales to
+			     fit. Its max-h-[90%] used to resolve against a wrapper with no height, so it
+			     drew at full size, ran out of the header and slid under the answer tiles. -->
 			{#if question.image !== null && game_mode !== 'kahoot'}
-				<div class="max-h-full">
+				<div class="flex min-h-0 flex-1 justify-center px-4 pb-2">
 					<MediaComponent
 						src={question.image}
-						css_classes="object-cover mx-auto mb-8 max-h-[90%]"
+						css_classes="h-full w-auto max-w-full rounded-lg object-contain"
 					/>
 				</div>
 			{/if}

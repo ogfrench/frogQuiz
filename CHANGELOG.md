@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- A question's image on the phone fits between the question and the tiles. Its
+  `max-h-[90%]` resolved against a wrapper with no height, so it drew at full size and
+  slid under the answer tiles; it also used `object-cover`, which cropped it.
 - A multiple-answer question now says so: "Pick every correct answer" under the question
   on the shared screen, and on the phone when it shows the question. Before, nothing
   told the room that more than one answer could be right.
