@@ -11,7 +11,8 @@ the local e2e stack. Production was not touched. The question for every entity: 
 create, read, change and delete it, what each change leaves behind, whether the UI lets a
 person do all four, and what input each write accepts.
 
-Findings are numbered **C1, C2, ...** so they do not collide with the H/M/L numbers in
+Findings are numbered **C1 to C18** (C15 and C17 were folded into C8 and C6 while writing
+this up, so those two numbers are unused) so they do not collide with the H/M/L numbers in
 [`e2e-findings.md`](e2e-findings.md). **Every bug below was fixed the same day, on this
 branch** (see [How each was fixed](#how-each-was-fixed)); C2 and C13 are decisions, not
 bugs. The tables are kept as the record of what was wrong. Each bug was first written as a

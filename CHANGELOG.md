@@ -47,6 +47,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   every CRLF into CR CR LF, so `journey-recovery` could not find the reset link and failed
   every run on Windows (Linux and CI were unaffected).
 - Added the audit's open items and two one-off e2e failures to `TODO.md`.
+- Updated `HANDOVER.md` with the audit and the suite counts after it (e2e 167, backend 171).
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
