@@ -135,6 +135,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	let claiming = $state(false);
 	let claim_error = $state(false);
+	let banner_open = $state(logged_in);
 
 	const claim_quiz = async () => {
 		const anon_secret = getAnonSecret(quiz.id);
@@ -214,7 +215,11 @@ SPDX-License-Identifier: MPL-2.0
 			     when; expanding gives the why and the way to keep it. -->
 			<!-- Secondary text here is foreground at 75%, not muted-foreground: on the
 			     bg-primary/10 tint, muted read 4.05:1 in light mode (axe, 2026-10-04). -->
+			<!-- Open from the start when signed in: then the action inside is Claim, and
+			     whoever just made an account to keep this quiz lands back here. Collapsed,
+			     it still said "isn't saved" with Claim out of sight. -->
 			<Collapsible.Root
+				bind:open={banner_open}
 				class="border-primary/40 bg-primary/10 text-foreground rounded-xl border"
 			>
 				<Collapsible.Trigger

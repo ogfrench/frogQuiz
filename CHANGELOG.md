@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- A signed-in visitor sees the "isn't saved to an account" banner open, with Claim in
+  view. Someone who made an account through "Create an account to keep this quiz" was
+  sent back to the quiz, which still said it wasn't saved, with Claim folded away.
 - The Start game dialog's "Custom field" switch is "Ask players for one more detail",
   with a line saying players fill it in when they join and that it lands in the
   Download results spreadsheet. Its placeholder was a hard-coded "Phone Number or

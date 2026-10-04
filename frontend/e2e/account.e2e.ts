@@ -125,9 +125,11 @@ test('an anonymous quiz can be claimed after signing up', async ({ browser, requ
 	const user = await signedInContext(browser, request);
 	await rememberAnonQuiz(user.page, saved.body.id, saved.secret!);
 	await user.page.goto(`/view/${saved.body.id}`);
-	// The notice is a collapsed banner; its actions live inside it.
-	await user.page.getByRole('button', { name: /isn't saved to an account/ }).click();
-	await user.page.getByRole('button', { name: 'Claim this quiz to your account' }).click();
+	// Signed in, the banner opens on its own. Someone who had just made an account to keep
+	// this quiz came back to it collapsed, still saying "isn't saved", Claim inside it.
+	await user.page
+		.getByRole('button', { name: 'Claim this quiz to your account' })
+		.click({ timeout: 5_000 });
 	await expect(user.page.getByText("This quiz isn't saved to an account")).toHaveCount(0);
 	await user.page.goto('/my-quizzes');
 	await expect(user.page.getByText(title)).toBeVisible();
