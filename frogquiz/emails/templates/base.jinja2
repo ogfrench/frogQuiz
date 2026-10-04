@@ -10,6 +10,13 @@ SPDX-License-Identifier: MPL-2.0
 	  --background #FFFFFF   --foreground        #09090B
 	  --muted      #F4F4F5   --muted-foreground  #6F6F7A
 	  --border     #E4E4E7   --primary           #18181B / #FAFAFA
+	  --radius     14px on the card; the button sits tighter, at 11px (radius-md),
+	               as controls do in the app.
+
+	The look follows the app's: breathy, one loud element, the rainbow spent once.
+	The loud element is the Wordmark (the gradient mark plus "frogQuiz"), set
+	larger than anything around it and inside the card. Nothing else takes a
+	color; a second rainbow (a band, a tinted button) is what makes it generic.
 
 	Email constraints this has to live inside:
 	  - Tables, not flex or grid. Outlook renders through Word.
@@ -39,9 +46,9 @@ SPDX-License-Identifier: MPL-2.0
 		body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
 		a { text-decoration: none; }
 		@media only screen and (max-width: 600px) {
-			.fq-pad { padding-left: 24px !important; padding-right: 24px !important; }
-			.fq-h1 { font-size: 22px !important; }
-			.fq-btn { display: block !important; }
+			.fq-pad { padding-left: 28px !important; padding-right: 28px !important; }
+			.fq-h1 { font-size: 26px !important; }
+			.fq-btn { display: block !important; text-align: center !important; }
 		}
 	</style>
 </head>
@@ -50,20 +57,9 @@ SPDX-License-Identifier: MPL-2.0
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F4F4F5; border-collapse: collapse">
 	<tr>
-		<td align="center" style="padding: 40px 16px">
+		<td align="center" style="padding: 56px 16px">
 
 			<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; border-collapse: collapse">
-
-				<!-- Wordmark, matching the app's navbar: mark then name, nothing else. -->
-				<tr>
-					<td align="center" style="padding: 0 0 20px">
-						<a href="{{ base_url }}" style="text-decoration: none">
-							<img src="{{ base_url }}/apple-touch-icon.png" width="28" height="28" alt=""
-								style="display: inline-block; vertical-align: middle; width: 28px; height: 28px; border: 0; border-radius: 8px">
-							<span style="display: inline-block; vertical-align: middle; padding-left: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: #09090B">frogQuiz</span>
-						</a>
-					</td>
-				</tr>
 
 				<!-- The card. Same white-on-muted, 1px border and 14px radius as every
 				     Card in the app. -->
@@ -71,17 +67,31 @@ SPDX-License-Identifier: MPL-2.0
 					<td style="background-color: #FFFFFF; border: 1px solid #E4E4E7; border-radius: 14px">
 						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse">
 							<tr>
-								<td class="fq-pad" style="padding: 36px 40px 32px">
+								<td class="fq-pad" style="padding: 44px 44px 40px">
 
-									<h1 class="fq-h1" style="margin: 0 0 10px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 24px; line-height: 1.25; font-weight: 600; letter-spacing: -0.02em; color: #09090B">{% block heading %}{% endblock %}</h1>
+									<!-- The Wordmark, as in the app's navbar but larger: the mark and
+									     the name. The one place the rainbow appears. -->
+									<a href="{{ base_url }}" style="text-decoration: none">
+										<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse">
+											<tr>
+												<td style="vertical-align: middle">
+													<img src="{{ base_url }}/apple-touch-icon.png" width="44" height="44" alt=""
+														style="display: block; width: 44px; height: 44px; border: 0; border-radius: 11px">
+												</td>
+												<td style="vertical-align: middle; padding-left: 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 21px; font-weight: 600; letter-spacing: -0.03em; color: #09090B">frogQuiz</td>
+											</tr>
+										</table>
+									</a>
 
-									<p style="margin: 0 0 28px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.6; font-weight: 400; color: #6F6F7A">{% block lede %}{% endblock %}</p>
+									<h1 class="fq-h1" style="margin: 40px 0 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -0.03em; color: #09090B">{% block heading %}{% endblock %}</h1>
+
+									<p style="margin: 0 0 32px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.65; font-weight: 400; color: #6F6F7A">{% block lede %}{% endblock %}</p>
 
 									<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse">
 										<tr>
-											<td bgcolor="#18181B" style="background-color: #18181B; border-radius: 10px">
+											<td bgcolor="#18181B" style="background-color: #18181B; border-radius: 11px">
 												<a class="fq-btn" href="{% block action_url %}{% endblock %}" target="_blank" rel="noopener noreferrer"
-													style="display: inline-block; padding: 12px 22px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 500; line-height: 1; color: #FAFAFA; text-decoration: none; border-radius: 10px">{% block action_label %}{% endblock %}</a>
+													style="display: inline-block; padding: 14px 24px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 500; line-height: 1; color: #FAFAFA; text-decoration: none; border-radius: 11px">{% block action_label %}{% endblock %}</a>
 											</td>
 										</tr>
 									</table>
@@ -90,7 +100,7 @@ SPDX-License-Identifier: MPL-2.0
 									     or block the click, and then there is nothing to copy. -->
 									<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse">
 										<tr>
-											<td style="padding: 28px 0 0">
+											<td style="padding: 36px 0 0">
 												<div style="height: 1px; line-height: 1px; font-size: 0; background-color: #E4E4E7">&nbsp;</div>
 											</td>
 										</tr>
@@ -109,7 +119,7 @@ SPDX-License-Identifier: MPL-2.0
 				</tr>
 
 				<tr>
-					<td class="fq-pad" align="center" style="padding: 24px 40px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; line-height: 1.6; color: #6F6F7A">
+					<td class="fq-pad" align="center" style="padding: 28px 44px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; line-height: 1.6; color: #6F6F7A">
 						{% block footnote %}{% endblock %}
 					</td>
 				</tr>
