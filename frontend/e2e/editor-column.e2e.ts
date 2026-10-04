@@ -131,3 +131,27 @@ test('the column is the navigation on a phone, and fits one', async ({ browser, 
 	expect(overflow, 'the editor scrolls sideways on a phone').toBeLessThanOrEqual(0);
 	await ctx.close();
 });
+
+test('on a touch screen, the card under your finger is the one you tap', async ({
+	browser,
+	request
+}) => {
+	// A coarse pointer is what turns fq-touch-target on. The grip had no position of its
+	// own, so its 44px hit area sized itself to the whole card and sat on top of it:
+	// on a phone, tapping "Add an answer" (or anything else not positioned) hit the grip.
+	const ctx = await browser.newContext({ viewport: PHONE, hasTouch: true, isMobile: true });
+	const page = await ctx.newPage();
+	await openQuiz(page, request);
+	await cards(page).first().click();
+	const answers = page.getByRole('textbox', { name: 'Enter an answer' });
+	await expect(answers).toHaveCount(2);
+	await page.getByRole('button', { name: 'Add an answer' }).tap({ timeout: 5_000 });
+	await expect(answers).toHaveCount(3);
+	const unpositioned = await page.evaluate(() =>
+		[...document.querySelectorAll('.fq-touch-target')]
+			.filter((el) => getComputedStyle(el).position === 'static')
+			.map((el) => el.getAttribute('aria-label') || el.textContent?.trim())
+	);
+	expect(unpositioned, 'a touch target with no position escapes to its ancestor').toEqual([]);
+	await ctx.close();
+});

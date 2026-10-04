@@ -6,6 +6,12 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- On a phone, tapping inside an open question card works again. The drag grip's
+  touch-sized hit area (`fq-touch-target`, on for coarse pointers only) had no
+  positioned parent of its own, so it stretched to the whole card and sat on top of it:
+  "Add an answer" and the other unpositioned controls received nothing. No spec had
+  ever run with a touch screen; `editor-column.e2e.ts` now does, and checks every touch
+  target on the page is positioned.
 - Changing a question's timer no longer breaks Save. The field is a number input bound
   straight to the question, so it stored a number; the API takes the timer as a string
   and answered 422 ("Input should be a valid string") to every quiz whose timer had

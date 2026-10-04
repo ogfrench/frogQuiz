@@ -143,7 +143,7 @@ SPDX-License-Identifier: MPL-2.0
 			ondragstart={() => ondragstart(index)}
 			{ondragend}
 			onkeydown={on_grip_keydown}
-			class="fq-touch-target text-muted-foreground hover:text-foreground focus-visible:ring-ring mt-1 inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none"
+			class="fq-touch-target text-muted-foreground hover:text-foreground focus-visible:ring-ring relative mt-1 inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none"
 			aria-label={$t('editor.reorder_grip', { n: index + 1 })}
 		>
 			<GripVertical class="size-4" />
