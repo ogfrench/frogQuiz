@@ -79,11 +79,19 @@ SPDX-License-Identifier: MPL-2.0
 	const playable = $derived(!schemaInvalid && incomplete_count === 0);
 	// Savable is what the server needs to store a draft: something to call it, and at
 	// least one question with at least one answer.
-	const savable = $derived(
-		htmlToPlainText(data.title ?? '').trim().length > 0 &&
-			(data.questions ?? []).length > 0 &&
-			data.questions.every((q) => !Array.isArray(q.answers) || q.answers.length > 0)
+	// Which of the three is missing, so the header can say so: one message for all three
+	// told an author with a title and a question to add a title and a question, when what
+	// was missing was an answer.
+	const unsavable_reason = $derived(
+		htmlToPlainText(data.title ?? '').trim().length === 0
+			? 'cannot_save_no_title'
+			: (data.questions ?? []).length === 0
+				? 'cannot_save_no_questions'
+				: !data.questions.every((q) => !Array.isArray(q.answers) || q.answers.length > 0)
+					? 'cannot_save_no_answers'
+					: null
 	);
+	const savable = $derived(unsavable_reason === null);
 	// One list for everyone now: the account's quizzes signed in, this browser's signed out.
 	const back_href = '/my-quizzes';
 
@@ -343,7 +351,7 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="flex h-dvh w-full flex-col overflow-hidden">
 			<div class="flex min-w-0 flex-1 flex-col">
 				<header
-					class="border-border bg-background flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-4"
+					class="border-border bg-background flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 sm:h-14 sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-0"
 				>
 					<Button
 						href={back_href}
@@ -367,7 +375,13 @@ SPDX-License-Identifier: MPL-2.0
 					     title. -->
 					<!-- The page's heading (it had none). A new quiz has no title yet, so the
 					     heading falls back to a name for the screen, for screen readers only. -->
-					<h1 class="min-w-0 max-w-[45%] shrink truncate text-base font-medium">
+					<!-- On a phone the row is too short for title and status together: the status
+					     got 33px and read "Saved" as "S" and the draft warning as one letter. There
+					     the title takes the row, a quiet status shrinks to its icon, and a red one
+					     wraps onto a line of its own under the header. -->
+					<h1
+						class="min-w-0 max-w-[45%] shrink truncate text-base font-medium max-sm:max-w-none max-sm:flex-1"
+					>
 						{#if htmlToPlainText(data.title ?? '').trim()}
 							{@html sanitizeTitleHtml(data.title)}
 						{:else}
@@ -379,11 +393,11 @@ SPDX-License-Identifier: MPL-2.0
 					     in red before anyone had typed was the complaint. -->
 					{#if save_error}
 						<p
-							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium"
+							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
 							role="alert"
 						>
 							<TriangleAlert class="size-4 shrink-0" />
-							<span class="truncate">
+							<span class="truncate max-sm:whitespace-normal">
 								{$t('editor.save_failed', { detail: save_error })}
 							</span>
 						</p>
@@ -392,13 +406,13 @@ SPDX-License-Identifier: MPL-2.0
 						     telling the author what to go and fix. The count points at the rail, where each
 						     unfinished question is already flagged. -->
 						<p
-							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium"
+							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
 							role="status"
 						>
 							<TriangleAlert class="size-4 shrink-0" />
-							<span class="truncate">
+							<span class="truncate max-sm:whitespace-normal">
 								{#if !savable}
-									{$t('editor.cannot_save_yet')}
+									{$t(`editor.${unsavable_reason}`)}
 								{:else if incomplete_count > 0}
 									<!-- The full sentence truncates to "Saved a..." on a phone. -->
 									<span class="sm:hidden">
@@ -418,15 +432,15 @@ SPDX-License-Identifier: MPL-2.0
 						</p>
 					{:else if saving || current_id}
 						<p
-							class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm"
+							class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm max-sm:flex-none"
 							role="status"
 						>
 							{#if saving}
 								<LoaderCircle class="size-4 shrink-0 animate-spin" />
-								<span class="truncate">{$t('editor.saving')}</span>
+								<span class="truncate max-sm:sr-only">{$t('editor.saving')}</span>
 							{:else if !unsaved}
 								<CloudCheck class="size-4 shrink-0" />
-								<span class="truncate">
+								<span class="truncate max-sm:sr-only">
 									{playable ? $t('editor.saved') : $t('editor.saved_draft')}
 								</span>
 							{/if}

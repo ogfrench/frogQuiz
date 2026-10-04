@@ -6,6 +6,14 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- The editor header's status is readable on a phone. It shared one row with the title,
+  the theme switch and Save and got 33px, so "Saved" showed as "S" and every draft
+  warning as one letter. Below `sm`, "Saving" and "Saved" shrink to their icon (the
+  words stay for screen readers) and a red message wraps onto its own line under the
+  header.
+- "Can't save yet" names what is missing: a title, a question, or an answer on every
+  question. One message covered all three and told an author who had a title and a
+  question to add a title and a question.
 - On a phone, tapping inside an open question card works again. The drag grip's
   touch-sized hit area (`fq-touch-target`, on for coarse pointers only) had no
   positioned parent of its own, so it stretched to the whole card and sat on top of it:

@@ -12,6 +12,7 @@ import {
 	cards,
 	expectNoHorizontalOverflow,
 	PHONE,
+	questionBox,
 	saveQuizButton,
 	startNewQuiz,
 	titleBox
@@ -125,9 +126,7 @@ test('nothing is marked red before Save, and Save with no questions says what is
 	await page.goto('/create');
 	await titleBox(page).fill(`Empty ${Date.now()}`);
 	await saveQuizButton(page).click();
-	await expect(
-		page.getByText('Give the quiz a title and at least one question to save it')
-	).toBeVisible();
+	await expect(page.getByText('Add a question to save the quiz')).toBeVisible();
 	await expect(page).toHaveURL(/\/create$/);
 });
 
@@ -262,6 +261,31 @@ test('the editor fits a phone', async ({ browser }) => {
 	const ctx = await browser.newContext({ viewport: PHONE });
 	const page = await ctx.newPage();
 	await startNewQuiz(page, `Phone ${Date.now()}`);
+	await expectNoHorizontalOverflow(page);
+	await ctx.close();
+});
+
+test('on a phone, the header says what is missing, in full', async ({ browser }) => {
+	const ctx = await browser.newContext({ viewport: PHONE });
+	const page = await ctx.newPage();
+	await startNewQuiz(page, `October team trivia ${Date.now()}`);
+	await page
+		.getByRole('button', { name: /Add your first question/ })
+		.first()
+		.click();
+	await page.getByRole('button', { name: /^Multiple choice/ }).click();
+	await questionBox(page).fill('No answers yet');
+	await saveQuizButton(page).click();
+	// The status shared one row with the title, the theme switch and Save, and got 33px:
+	// this sentence read as a single letter. It also asked for a title and a question,
+	// which the quiz had; the missing piece was an answer.
+	const status = page.locator('header [role=status]');
+	await expect(status).toHaveText('Give every question at least one answer to save the quiz');
+	const clipped = await status
+		.locator('span')
+		.first()
+		.evaluate((el) => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight + 1);
+	expect(clipped, 'the status is cut off').toBe(false);
 	await expectNoHorizontalOverflow(page);
 	await ctx.close();
 });
