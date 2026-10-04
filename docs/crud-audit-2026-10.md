@@ -79,8 +79,8 @@ Two leads from planning turned out not to be bugs:
   key from visitors, "presentation only: the public API still returns the answers", and an
   unlisted quiz is shareable by link on purpose. Recorded so nobody files it again.
 - **C13.** There is no way to change a username or email. Email change is a recorded cut
-  (`docs/mvp-scope.md`, issue #13). Username change is not mentioned anywhere; it is a gap
-  for François and Gonçalo to decide on, not a bug.
+  (`docs/mvp-scope.md`, issue #13). Username change was not mentioned anywhere; on
+  2026-10-04 the call was that usernames do not change, recorded in `docs/mvp-scope.md`.
 
 ### C5. Anonymous uploads: no rate limit, no quota, no clean-up (High)
 
@@ -256,7 +256,7 @@ bounds (`api-edge.e2e.ts`), upload size and type limits (`uploads.e2e.ts`).
 | Game results | Save at the podium | `/results` is hidden (D4) | n/a | n/a | `account` |
 | API key | API only, no UI | API only | n/a | API only | none |
 
-Gaps: no username or email change (C13); "sign out everywhere" has no button of its own,
+Gaps: no email change (C13; usernames do not change, by decision); "sign out everywhere" has no button of its own,
 it happens as part of a password change; API keys have no UI at all (nothing in
 `frontend/src` calls `/users/api_keys`); saved game results cannot be seen while
 `/results` is hidden.

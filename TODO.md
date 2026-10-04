@@ -190,7 +190,7 @@ the explanation.
 - [ ] **Is the worker running on the VM?** `docker compose ps`. Without it no upload counts
       against the quota, edited quizzes are never linked to their images, and neither sweep
       (orphaned uploads, expired anonymous quizzes) ever runs.
-- [ ] **Username change**: no route and not a recorded cut (C13). François and Gonçalo.
+- [x] **Username change** (C13): decided 4 Oct, usernames do not change. Recorded in `docs/mvp-scope.md`.
 
 ## Open — quality
 

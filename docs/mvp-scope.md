@@ -323,6 +323,8 @@ Two proposals were considered and rejected:
 Deferred as a result, and not to be re-litigated without both teammates:
 
 - Email change (issue #13). No endpoint exists; it is a new verification flow.
+- Username change. Decided 2026-10-04 (François): a username is fixed once the account is
+  made. There is no route for it and none is wanted. Found as C13 in the CRUD audit.
 - Passkeys/WebAuthn, TOTP, custom avatars, and the public `/user/[user_id]` page.
 - Anonymous quizzes becoming public or searchable.
 - Changing the 30-day anonymous expiry.

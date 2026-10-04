@@ -48,6 +48,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   every run on Windows (Linux and CI were unaffected).
 - Added the audit's open items and two one-off e2e failures to `TODO.md`.
 - Updated `HANDOVER.md` with the audit and the suite counts after it (e2e 167, backend 171).
+- Recorded the decision that usernames do not change (C13) in `docs/mvp-scope.md`, the audit doc, `TODO.md` and `HANDOVER.md`.
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
