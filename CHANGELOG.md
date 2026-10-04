@@ -6,6 +6,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- HANDOVER and TODO carry the current suite numbers: e2e 137, unit 153, backend 168.
 - The podium reads "1885 points", not "1885 Points".
 - HANDOVER, TODO and `docs/redesign-status.md` record the live-game pass: what axe
   covered, at which sizes, and the multiple-answer results gap.

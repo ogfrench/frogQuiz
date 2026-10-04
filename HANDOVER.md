@@ -9,14 +9,14 @@ SPDX-License-Identifier: MPL-2.0
 For François and Gonçalo, 2–3 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
-**State: green and ready to merge.** 70 commits, about 185 files, roughly +10800 / −3100
+**State: green and ready to merge.** 79 commits, about 185 files, roughly +11100 / −3200
 against `master`.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **136 passed**, 9.1 min, clean stack, on `d932057` |
-| Backend | **168 passed**, 1 skipped, on `d932057` |
-| Unit | **147 passed** |
+| e2e | **137 passed**, 9.5 min, clean stack, on `31565ff` |
+| Backend | **168 passed**, 1 skipped, on `d932057` (no backend change since) |
+| Unit | **153 passed** |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
 
@@ -182,7 +182,7 @@ Everything else is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## 3. The test suites, and why they are worth trusting
 
-115 → **136 e2e tests**, and six of the new ones are *user journeys* rather than feature
+115 → **137 e2e tests**, and six of the new ones are *user journeys* rather than feature
 tests. The distinction matters: the existing suite was organized by mechanism — sockets,
 editor, uploads, exits — and was thorough at it, but a journey fails for a different
 reason. Not "this control is wrong" but **"you cannot get from here to there."**
@@ -255,10 +255,10 @@ One judgment call left open on purpose, not blocking:
 ## 7. Running it
 
 ```bash
-bash e2e/run.sh                      # whole stack + 136 e2e tests, no Docker needed
+bash e2e/run.sh                      # whole stack + 137 e2e tests, no Docker needed
 KEEP_UP=1 bash e2e/run.sh --list     # leave it up at localhost:3000 to click around
 bash e2e/stop.sh                     # stop it
-cd frontend && pnpm test             # 147 unit tests, about a second
+cd frontend && pnpm test             # 153 unit tests, about a second
 ```
 
 The backend suite needs a Python env (`pipenv sync --dev`, or point `E2E_VENV` at one) and
