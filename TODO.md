@@ -84,9 +84,11 @@ failed first.
       external and strict about SPF/DKIM, so a relay misconfiguration shows up.
       Steps in [`DEPLOY.md`](DEPLOY.md#testing-it-for-real); check spam on both mails
 - [ ] **Confirm the `worker` container runs in production**, or the 30-day deletion the anonymous copy promises is not kept
-- [x] **All decisions signed.** François signed D1 and D3–D15 on 2 Oct after asking for
-      each to be explained; D2 and D16 are his "like Kahoot", D8, D9 and D18 are his, D17
-      was already his. Nothing in §4.0 is waiting on anybody
+- [ ] **Gonçalo's tick on D16 and D18.** François signed D1 and D3–D15 on 2 Oct after
+      asking for each to be explained; D2 and D16 are his "like Kahoot", D8, D9 and D18 are
+      his, D17 was already his. The `MVP.md` table still has Gonçalo's column empty for D16
+      (questions on players' phones) and D18 (results owner-only). Not blocking, but it
+      is not "both" until he ticks them
 - [ ] **#3 Part A** — two more boxes are now true: *Player disconnect / rejoin* (row 16) and
       *Image upload* (row 15). The rest of Part A is either a hidden feature (video,
       `/import`, `/remote`, `/quiztivity`, `/moderation`, `/results`) or needs the deployed
@@ -167,9 +169,12 @@ the explanation.
       The spec now asserts which question keys came back, and prints the payload, so a
       recurrence is readable rather than an opaque `TypeError`. Leave this open until it
       either recurs with that message or goes twenty full runs without appearing.
-      Related harness defect, worth fixing on its own: `next()` in `e2e/sockets.ts`
-      resolves a falsy payload to `{}` instead of `null`, which is why `finalResults`'
-      own `not.toBeNull()` guard could not catch an empty result.
+      On the harness: `next()` in `e2e/sockets.ts` maps a missing payload to `{}`, so
+      `finalResults`' `not.toBeNull()` guard cannot catch an empty result. This is not
+      fixable in `next()`: python-socketio sends `emit(event, None)` with no arguments, so
+      the client cannot tell a `None` result from a payload-less event like `start_game`,
+      and a `{}` result arrives as `{}` either way (checked 4 Oct). The spec's own key
+      assertion above is the guard that works.
 
 ## Open — quality
 

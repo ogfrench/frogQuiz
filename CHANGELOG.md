@@ -6,6 +6,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Corrected the plan docs: `MVP.md`, `TODO.md` and `HANDOVER.md` said every decision was signed by both, but Gonçalo has not ticked D16 or D18; ticked four `MVP.md` boxes that were done (e2e result, #16, `run.sh` on Linux and macOS, image cleanup on quiz delete); recorded why the e2e `next()` helper cannot tell an empty result from a payload-less event.
 - Signing a device out takes effect at once. Deleting a session in My Account, "sign out
   everywhere", a password change and a password reset deleted the sessions' refresh
   records but left the access tokens those devices already held working for up to 30

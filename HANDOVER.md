@@ -35,7 +35,7 @@ is clean at the commit that added this section, CI is green on it, and PR #23 is
 | PR #23 | Open, mergeable, CI green. Waiting on a merge decision; nothing on it is waiting on Claude |
 | Suites | e2e 146/146 and backend 168 on `077f695`; unit 153; lint clean |
 | Open issues | #3 (MVP 1, Part A partly done), #4 (MVP 2), #22 (Oracle VM, **31 Oct**), #24 (touch targets, filed 4 Oct, not started) |
-| Decisions open | None. Scoring stays all-or-nothing; sign-out revocation is done |
+| Decisions open | Gonçalo's tick on D16 and D18 (see `MVP.md` §4.0). Scoring stays all-or-nothing; sign-out revocation is done |
 
 ### Getting it onto the laptop
 
@@ -359,9 +359,9 @@ measured it and found the unfixed code passed 10/10. The retraction is in the gi
 
 ## 5. Decisions
 
-**Nothing in `MVP.md` §4.0 is waiting on anybody.** François signed D1 and D3–D15 on 2
-Oct; D2 and D16 he answered with "like Kahoot"; D8, D9, D17 and D18 are his. Each row
-records what was decided and why.
+**`MVP.md` §4.0 waits only on Gonçalo's tick for D16 and D18.** François signed D1 and
+D3–D15 on 2 Oct; D2 and D16 he answered with "like Kahoot"; D8, D9, D17 and D18 are his.
+Each row records what was decided and why.
 
 One judgment call left open on purpose, not blocking:
 

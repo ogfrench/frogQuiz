@@ -168,7 +168,7 @@ has a single Sign in anyway.
 - **Conclusion:** safe to hide. Media stays managed inside the quiz, as proposed.
 
 - [x] Hide `/edit/files`, `/dashboard/files` and `/edit/videos`, and remove the dashboard's Files button (2026-09-29, D15)
-- [ ] (optional) Make quiz delete also remove `cover_image` / `background_image`, so hiding Files leaks nothing
+- [x] (optional) Make quiz delete also remove `cover_image` / `background_image`, so hiding Files leaks nothing. Done 2026-10-01: one reference-counted helper in `frogquiz/helpers/__init__.py` serves every delete path
 
 ### Results and analytics
 
@@ -209,8 +209,9 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
 asking for each to be explained; D2 and D16 he answered with "like Kahoot" the same day,
-and D18 is his. Every decision in this table is now agreed by both, except D17, which is
-his alone and needs no second signature.
+and D18 is his. D1 to D15 are agreed by both. D17 is his alone and needs no second
+signature. **D16 and D18 still need Gonçalo's tick**: both are François's calls from
+2 Oct, and D18 narrows who can download a quiz's results.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on
 François's sign-off, including hiding Docs and GitHub. Everything hidden since is
@@ -228,12 +229,12 @@ because they may reorder everything else.
 - [ ] Forgot password with a real inbox: mail arrives, reset works, old password rejected
 - [ ] Delete a test account that owns a quiz and an uploaded image; confirm both are gone
 - [ ] Check `MAIL_*` is set on the production API (`DEPLOY.md` → Email)
-- [ ] Run `bash e2e/run.sh` locally and record the result here: ______
+- [x] Run `bash e2e/run.sh` locally and record the result here: 146/146 on `077f695`, clean stack, 2026-10-04
 - [ ] Confirm the `worker` container is running in production. The 30-day deletion the
       anonymous copy promises is an arq cron (`frogquiz/worker/storage.py`, 03:00 daily);
       nothing else enforces it, so without that container the promise is not kept
 - [x] Run the backend suite on clean infrastructure — 2026-10-01: 134 passed, 1 skipped
-- [ ] Close #16: the start-game modal was rebuilt and driven in a browser on 2026-10-01
+- [x] Close #16: the start-game modal was rebuilt and driven in a browser on 2026-10-01. Closed 2026-10-02
 
 > **Running the e2e suite from a VS Code terminal:** with the project venv active,
 > `python` is the venv's own interpreter, which has no pipenv, and `run.sh` dies with
@@ -321,7 +322,7 @@ Drafts first — they are small and help whichever editor we end up with.
 - [x] Hidden routes 404 through the app's own error page (2026-10-01). They were guarded in `handle`, which runs before the router, so SvelteKit answered with its built-in fallback: bare "404 | Not found", no navbar, no way home, on exactly the sixteen URLs we hide. `lib/hidden_routes.ts` holds the list and `hooks.ts` reroutes them
 - [x] The editor no longer drops an edit typed in the first half-second after it opens (2026-10-01). The "nothing has changed yet" baseline was taken 500ms late and swallowed the change, so Save sent nothing and still went to the quiz page saying "Saved"
 - [x] Run the backend suite on clean infrastructure — 2026-10-01: **134 passed, 1 skipped**
-- [ ] Make `e2e/run.sh` run on Linux and macOS. It looks for `pg_ctl.exe`, `meilisearch-windows-amd64.exe`, `%APPDATA%\npm\pnpm` and pipenv, so the stack can only be stood up on the machine it was written for
+- [x] Make `e2e/run.sh` run on Linux and macOS (done 2026-10-01, `TODO.md` row 11). It looks for `pg_ctl.exe`, `meilisearch-windows-amd64.exe`, `%APPDATA%\npm\pnpm` and pipenv, so the stack can only be stood up on the machine it was written for
 
 ### 4.7 Sign-off play test (the gate before sharing)
 
@@ -337,7 +338,7 @@ Both of us, on the deployed site, after 4.2–4.4 land.
 | Discover: browse, search, open a public quiz, start it | ☐ | ☐ | ☐ | ☐ |
 
 - [ ] No horizontal scroll at any of the three widths (`document.documentElement.scrollWidth > clientWidth`)
-- [ ] Closes #19 (visual pass), #16 (modal live check), #3 (MVP1 umbrella)
+- [ ] Closes #3 (MVP1 umbrella). #19 (visual pass) and #16 (modal live check) were closed on 2026-10-02
 - [ ] G ☐ F ☐ — agreed it's ready to share
 
 ### 4.8 After V1 (not blockers)
