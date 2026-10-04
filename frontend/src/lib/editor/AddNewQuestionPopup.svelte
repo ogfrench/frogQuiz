@@ -56,11 +56,15 @@ SPDX-License-Identifier: MPL-2.0
 		// True/False is not a type of its own anywhere: it is an ABCD question that
 		// arrives with its two answers already written. Kahoot offers the same preset,
 		// and it needs no play, scoring or export path that ABCD does not already have.
+		// Neither starts marked correct. True used to, so a false statement left alone
+		// shipped with True as its answer and nothing flagged it, and an author who
+		// clicked True to mark it un-marked it instead. Unmarked, the question stays
+		// unfinished until the author picks one.
 		{
 			name: $t('words.true_false'),
 			description: $t('editor.true_false_description'),
 			answers: [
-				{ answer: $t('words.true'), right: true },
+				{ answer: $t('words.true'), right: false },
 				{ answer: $t('words.false'), right: false }
 			],
 			type: QuizQuestionType.ABCD

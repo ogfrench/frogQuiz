@@ -223,6 +223,22 @@ test('the timer field cannot produce a timer the game cannot run', async ({ page
 	}
 });
 
+test('a changed timer saves, and is stored as the seconds typed', async ({ page, request }) => {
+	await startNewQuiz(page, `Timer change ${Date.now()}`);
+	await addQuestion(page, /^Multiple choice/, 'Timed', [
+		['A', true],
+		['B', false]
+	]);
+	// A number input bound with bind:value hands back a number, and the API takes the
+	// timer as a string: every edited timer made Save answer 422.
+	await page.getByRole('spinbutton', { name: /Time in seconds/ }).fill('30');
+	await saveQuizButton(page).click();
+	await page.waitForURL(/\/view\//);
+	const id = page.url().split('/view/')[1];
+	const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+	expect(stored.questions[0].time).toBe('30');
+});
+
 test('an existing anonymous quiz can be reopened, edited and saved', async ({ page, request }) => {
 	await startNewQuiz(page, `Before ${Date.now()}`);
 	await addQuestion(page, /^Multiple choice/, 'Q', [

@@ -210,6 +210,7 @@ SPDX-License-Identifier: MPL-2.0
 				</label>
 				<input
 					type="color"
+					aria-label={$t('editor.bg_color')}
 					class="border-input min-h-11 w-16 cursor-pointer rounded-md border p-1 disabled:cursor-not-allowed disabled:opacity-50"
 					disabled={!custom_bg_color}
 					bind:value={bg_color_value}

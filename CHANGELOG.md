@@ -6,6 +6,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Changing a question's timer no longer breaks Save. The field is a number input bound
+  straight to the question, so it stored a number; the API takes the timer as a string
+  and answered 422 ("Input should be a valid string") to every quiz whose timer had
+  been edited. Introduced by the editor rebuild on this branch: master's old field
+  converted it by accident. Found by creating a quiz through the UI as a user would.
+- True / False arrives with neither answer marked correct. True used to be, so a false
+  statement left alone was saved as playable with the wrong answer and nothing flagged
+  it, and an author who clicked True to mark it un-marked it instead. The question now
+  stays unfinished until one is picked.
+- The quiz background color picker has an accessible name ("Background color"); axe
+  reported it as an unlabeled form control.
 - HANDOVER and TODO carry the current suite numbers: e2e 137, unit 153, backend 168.
 - The podium reads "1885 points", not "1885 Points".
 - HANDOVER, TODO and `docs/redesign-status.md` record the live-game pass: what axe

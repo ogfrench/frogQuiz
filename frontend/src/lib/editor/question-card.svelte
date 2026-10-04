@@ -79,15 +79,12 @@ SPDX-License-Identifier: MPL-2.0
 
 	// The timer is a free-text number field, so it can hold anything the keyboard
 	// produces. Clamp what the author can store rather than what the game has to cope with.
-	const correctTimeInput = () => {
-		const time = data.questions[index].time;
-		if (time === null || time === undefined) {
-			data.questions[index].time = '';
-			return;
-		}
-		if (String(time).length > 3) {
-			data.questions[index].time = String(time).slice(0, 3);
-		}
+	// It is stored as a string, which is what the API takes: a number input bound with
+	// bind:value hands back a number, and every edited timer made Save answer 422.
+	const getTime = () => data.questions[index].time;
+	const setTime = (time: string | number | null | undefined) => {
+		data.questions[index].time =
+			time === null || time === undefined ? '' : String(time).slice(0, 3);
 	};
 
 	const question_valid = $derived(
@@ -179,8 +176,7 @@ SPDX-License-Identifier: MPL-2.0
 								max="999"
 								min="1"
 								class="text-foreground w-10 bg-transparent text-right tabular-nums outline-none"
-								bind:value={data.questions[index].time}
-								oninput={correctTimeInput}
+								bind:value={getTime, setTime}
 							/>
 							<span>s</span>
 						</label>

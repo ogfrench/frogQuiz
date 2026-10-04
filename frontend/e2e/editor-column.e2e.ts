@@ -74,11 +74,16 @@ test('True / False arrives with its answers already written', async ({ page, req
 	await expect(answers).toHaveCount(2);
 	await expect(answers.nth(0)).toHaveValue('True');
 	await expect(answers.nth(1)).toHaveValue('False');
-	// True is already the right answer, which is the whole point of the preset.
-	await expect(page.getByRole('button', { name: 'Mark as correct: True', exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	// Neither is marked: the author decides which one is right. With True pre-marked, a
+	// false statement left alone was saved as playable with the wrong answer, and
+	// clicking True to mark it un-marked it.
+	const markTrue = page.getByRole('button', { name: 'Mark as correct: True', exact: true });
+	const markFalse = page.getByRole('button', { name: 'Mark as correct: False', exact: true });
+	await expect(markTrue).toHaveAttribute('aria-pressed', 'false');
+	await expect(markFalse).toHaveAttribute('aria-pressed', 'false');
+	await markFalse.click();
+	await expect(markFalse).toHaveAttribute('aria-pressed', 'true');
+	await expect(markTrue).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('duplicate copies the question and does not share its answers', async ({ page, request }) => {
