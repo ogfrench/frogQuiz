@@ -15,6 +15,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   rejects any arbitrary `rounded-[...]` value.
 - Tailwind no longer scans `*.test.ts`, which turned the class names a test lists as banned
   into four dead rules. The TODO entry blamed Markdown; excluding Markdown changed nothing.
+- Touch-sized press areas on phones (issue #24). On a coarse pointer every text field grows
+  to 44px, the editor's "Mark as correct" grows to 44px, its timer field to 44px at 16px
+  text, and "Delete answer" shows without a hover. Quiz title links and the drawer's home
+  link get a 44px press area, and the crowded icon rows on quiz cards and the editor's card
+  footer get 8px gaps so neighbouring press areas no longer overlap. `fq-touch-target` now
+  keys on `any-pointer: coarse`, which also catches touch laptops. Desktop with a mouse is
+  unchanged.
+- New e2e spec `touch-targets.e2e.ts` audits every control on home, Discover, My Quizzes,
+  the quiz page, My Account, Join, the editor, the menu drawer and the player's game
+  screens under touch emulation: 44x44 press area, no press area landing on a neighbour,
+  text fields at 16px or more, nothing visible only on hover.
 
 ### CRUD audit
 

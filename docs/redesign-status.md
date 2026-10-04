@@ -169,9 +169,10 @@ Worth being exact, because the phrase gets stretched:
 - **Not verified:** anything on the deployed site. The sandbox this work was done
   in cannot reach `frogquiz.xyz` — the egress policy blocks it — so nothing here
   describes production. Somebody has to open the real site.
-- **Verified:** eight routes x two themes x two widths report no horizontal overflow,
-  no touch target below the minimum (44px on coarse pointers, 24px otherwise) and no
-  text below WCAG AA. Chasing the last of those to its cause was worth it: the
+- **Verified:** eight routes x two themes x two widths report no horizontal overflow
+  and no text below WCAG AA. This bullet also claimed no touch target below 44px on
+  coarse pointers; that probe missed fields and the editor's answer row, and issue #24
+  measured them on 4 Oct (next bullet). Chasing the last of those to its cause was worth it: the
   remaining overflow was never layout, it was paint -- filters expanding an element's
   painted region past its box, and a wide table contributing paint through a scroll
   container that was itself working correctly.
@@ -207,6 +208,13 @@ Worth being exact, because the phrase gets stretched:
   in the editor and a dead end after changing a password; TODO.md lists all of them.
   Touch emulation matters: the editor tap bug does not reproduce with a mouse, and no spec
   had run with a touch screen until then.
+- **Verified under touch emulation, 4 Oct: press areas (issue #24).** At 390x844 with
+  `hasTouch` and `isMobile`, every control on home, Discover, My Quizzes, the quiz page,
+  My Account, Join, the editor, the menu drawer and the player's join, lobby, question and
+  results screens has a 44x44 press area. The centre and four edges of each land on the
+  control itself, every text field renders at 16px or more, and no control is visible
+  only on hover. `frontend/e2e/touch-targets.e2e.ts` runs that audit. Not verified: a
+  real thumb on a real phone, and the host's screens (a projector, not a phone).
 - **Covered by tests now.** This line used to read "there are no frontend tests,
   and the frontend CI job runs eslint only". There are 57 under vitest and the CI
   job runs them, alongside eslint. They cover the answer palette, question

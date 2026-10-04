@@ -175,7 +175,7 @@ SPDX-License-Identifier: MPL-2.0
 								type="number"
 								max="999"
 								min="1"
-								class="text-foreground w-10 bg-transparent text-right tabular-nums outline-none"
+								class="text-foreground any-pointer-coarse:w-11 any-pointer-coarse:text-base w-10 bg-transparent text-right tabular-nums outline-none"
 								bind:value={getTime, setTime}
 							/>
 							<span>s</span>
@@ -350,7 +350,9 @@ SPDX-License-Identifier: MPL-2.0
 	     of them -- a list of twenty questions should read as a list, not as eighty
 	     buttons. -->
 	{#if focused}
-		<div class="border-border flex items-center justify-end gap-0.5 border-t px-2 py-1">
+		<div
+			class="border-border any-pointer-coarse:gap-2 flex items-center justify-end gap-0.5 border-t px-2 py-1"
+		>
 			<Button
 				type="button"
 				variant="ghost"

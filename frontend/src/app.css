@@ -52,6 +52,22 @@ SPDX-License-Identifier: MPL-2.0
 		@apply text-foreground bg-transparent;
 	}
 
+	/* Issue #24. A replaced element renders no ::after, so fq-touch-target cannot enlarge
+	   a field: on touch it grows to a fingertip instead. Desktop is unchanged. */
+	@media (any-pointer: coarse) {
+		input:not(
+			[type='checkbox'],
+			[type='radio'],
+			[type='range'],
+			[type='file'],
+			[type='hidden']
+		),
+		select,
+		textarea {
+			min-height: 44px;
+		}
+	}
+
 	html {
 		@apply bg-background text-foreground font-sans;
 		-webkit-font-smoothing: antialiased;
@@ -288,7 +304,8 @@ SPDX-License-Identifier: MPL-2.0
    Applied to the button primitive, so it reaches every button in the app rather
    than the handful somebody remembered to fix. */
 @utility fq-touch-target {
-	@media (pointer: coarse) {
+	/* any-pointer, not pointer: a touch laptop's primary pointer is the trackpad. */
+	@media (any-pointer: coarse) {
 		&::after {
 			content: '';
 			position: absolute;

@@ -174,7 +174,7 @@ SPDX-License-Identifier: MPL-2.0
 						<Sheet.Title class="sr-only">{$t('navbar.menu')}</Sheet.Title>
 						<a
 							href="/"
-							class="text-foreground flex items-center text-lg"
+							class="fq-touch-target text-foreground relative flex items-center text-lg"
 							aria-label="frogQuiz home"
 						>
 							<Wordmark />

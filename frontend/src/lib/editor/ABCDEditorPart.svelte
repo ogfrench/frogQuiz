@@ -106,7 +106,7 @@ SPDX-License-Identifier: MPL-2.0
 					bind:value={answer.answer}
 					rows="1"
 					maxlength={ANSWER_MAX_LENGTH}
-					class="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-lg font-medium wrap-anywhere outline-none placeholder:opacity-60"
+					class="any-pointer-coarse:py-2 min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-lg font-medium wrap-anywhere outline-none placeholder:opacity-60"
 					style="color: {ink}"
 					placeholder={$t('editor.enter_answer')}
 					oninput={(e) => grow(e.currentTarget)}
@@ -115,7 +115,7 @@ SPDX-License-Identifier: MPL-2.0
 
 				<button
 					type="button"
-					class="shrink-0 rounded-full border-2 p-1 transition focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
+					class="any-pointer-coarse:p-3 shrink-0 rounded-full border-2 p-1 transition focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
 					style="border-color: {ink}; {answer.right
 						? `background-color: ${ink}; color: ${color}`
 						: 'background-color: transparent'}"
@@ -139,7 +139,7 @@ SPDX-License-Identifier: MPL-2.0
 				</button>
 
 				<button
-					class="absolute -top-2 -right-2 rounded-full border p-1 opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+					class="fq-touch-target any-pointer-coarse:opacity-100 absolute -top-2 -right-2 rounded-full border p-1 opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
 					style="background-color: {color}; color: {ink}; border-color: {ink}"
 					type="button"
 					title={$t('editor.delete_answer')}

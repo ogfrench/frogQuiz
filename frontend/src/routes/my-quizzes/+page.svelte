@@ -193,7 +193,7 @@ SPDX-License-Identifier: MPL-2.0
 			<!-- The view page is where a quiz's full set of actions lives; the title goes there. -->
 			<a
 				href="/view/{quiz.id}"
-				class="block truncate font-medium underline-offset-4 hover:underline"
+				class="any-pointer-coarse:py-2.5 block truncate font-medium underline-offset-4 hover:underline"
 				>{quiz.title}</a
 			>
 			{#if quiz.description}
@@ -229,7 +229,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 		</div>
 
-		<div class="flex shrink-0 flex-wrap items-center gap-1.5">
+		<div class="any-pointer-coarse:gap-2 flex shrink-0 flex-wrap items-center gap-1.5">
 			<Button
 				disabled={draft}
 				title={draft ? $t('draft.hint_owner') : undefined}
