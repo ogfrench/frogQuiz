@@ -9,12 +9,12 @@ SPDX-License-Identifier: MPL-2.0
 For François and Gonçalo, 2–3 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
-**State: green and ready to merge.** About 80 commits and 185 files, roughly +11100 / −3200
+**State: green and ready to merge.** About 90 commits and 190 files, roughly +11700 / −3400
 against `master`.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **137 passed**, 9.5 min, clean stack, on `31565ff` |
+| e2e | **144 passed**, 10.1 min, clean stack, on `eba03fa`; 145 with the footer test added after, its specs green |
 | Backend | **168 passed**, 1 skipped, on `d932057` (no backend change since) |
 | Unit | **153 passed** |
 | `flake8 .` | 0 |
@@ -255,7 +255,7 @@ One judgment call left open on purpose, not blocking:
 ## 7. Running it
 
 ```bash
-bash e2e/run.sh                      # whole stack + 137 e2e tests, no Docker needed
+bash e2e/run.sh                      # whole stack + 145 e2e tests, no Docker needed
 KEEP_UP=1 bash e2e/run.sh --list     # leave it up at localhost:3000 to click around
 bash e2e/stop.sh                     # stop it
 cd frontend && pnpm test             # 153 unit tests, about a second

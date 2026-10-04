@@ -6,6 +6,12 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- HANDOVER and TODO carry the current suite numbers: e2e 144/144 on a clean stack (145 with the footer test), unit 153, backend 168.
+- The footer lost its grey band. It is one line on the page ground with a hairline above
+  that mirrors the navbar's, at the navbar's side padding: the credit on the left and
+  Terms, Privacy and Attribution on the right from `sm` up, stacked and centered on a
+  phone. The heart is the ♥ text glyph in the text color, as on frogConvert, instead of
+  the red ❤️ emoji (white in dark mode). The links underline on hover instead of always.
 - `frontend_lint` passes again: an unused `svelte-ignore` on the register page's Log in
   button (a component, so the a11y warning it silenced never fires) is an error under
   `svelte/no-unused-svelte-ignore`.
