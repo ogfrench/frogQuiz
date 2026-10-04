@@ -34,11 +34,12 @@ mail) and `MVP.md` §4.1 on the deployed site.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **167 passed**, 14.2 min, clean stack with the arq worker, on `9c62681f` (the CRUD audit, 4 Oct) |
+| e2e | **169 passed** on `35a5e59a` (4 Oct, evening), clean stack with the arq worker. Two runs: a session restart cut the first after 134, the remaining 37 were rerun. 167 on `9c62681f` before that |
 | Backend | **171 passed**, 1 skipped, on `9c62681f`, CI settings on a fresh database |
-| Unit | **153 passed**, Windows included since `9c62681f` |
+| Unit | **154 passed**, Windows included |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
+| `svelte-check` | **0 errors** (1052 on 2 Oct), 36 warnings; CI runs it since `35a5e59a` |
 
 ---
 
