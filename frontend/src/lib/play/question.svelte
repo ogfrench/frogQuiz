@@ -201,6 +201,11 @@ SPDX-License-Identifier: MPL-2.0
 			<h1 class="text-foreground lg:text-2xl text-lg text-center wrap-anywhere px-4 py-3 text-balance">
 				{@html sanitizeTitleHtml(question.question)}
 			</h1>
+			{#if question.type === QuizQuestionType.CHECK}
+				<p class="text-muted-foreground -mt-2 pb-2 text-center text-sm">
+					{$t('play_page.pick_every_correct')}
+				</p>
+			{/if}
 			{#if question.image !== null && game_mode !== 'kahoot'}
 				<div class="max-h-full">
 					<MediaComponent

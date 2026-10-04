@@ -455,6 +455,7 @@
         "join_description": "Join at {{url}} and enter {{pin}}.",
         "join_by_entering_code": "Join by entering the following code",
         "question_number": "Question {{n}}",
+        "pick_every_correct": "Pick every correct answer",
         "show_qr_full_screen": "Show the QR code full screen",
         "qr_code_title": "QR code to join the game",
         "points_added": "Points added",

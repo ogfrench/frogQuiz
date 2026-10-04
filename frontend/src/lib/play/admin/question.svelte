@@ -62,6 +62,13 @@ SPDX-License-Identifier: MPL-2.0
 		<h1 class="fq-display max-w-[22ch] text-center font-bold text-balance wrap-anywhere">
 			{@html sanitizeTitleHtml(quiz_data.questions[selected_question].question)}
 		</h1>
+		<!-- With shapes only on the phones, this screen is the one place that can say a
+		     question takes more than one answer. Nothing did. -->
+		{#if quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
+			<p class="fq-meta text-muted-foreground -mt-2 text-center font-medium">
+				{$t('play_page.pick_every_correct')}
+			</p>
+		{/if}
 		<div class="flex items-center gap-10">
 			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 			<p class="fq-meta text-muted-foreground font-medium tabular-nums" aria-live="polite">

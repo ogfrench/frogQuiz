@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- A multiple-answer question now says so: "Pick every correct answer" under the question
+  on the shared screen, and on the phone when it shows the question. Before, nothing
+  told the room that more than one answer could be right.
 - The player's question screen is a flex column, so it fits the phone with questions shown
   on devices too. Tile heights were percentages that assumed a fixed header: the
   multiple-answer screen ran ~150px past the viewport and Submit sat below the fold.
