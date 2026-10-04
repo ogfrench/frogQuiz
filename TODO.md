@@ -53,6 +53,9 @@ unit 147 passed, backend **168 passed** (1 skipped), `pnpm build` OK, `flake8 .`
 | **Hand-rolled overlays moved to the shadcn Dialog**: image uploader (also Uppy themed, "Powered by Uppy" actually hidden), Advanced settings (a Switch, "Skip the results", replacing "Hide question resuluts?"), the image full-screen view | `lib/editor/uploader.svelte`, `lib/editor/question-card.svelte`, `lib/editor/MediaComponent.svelte` |
 | **Focus you can see**: editor answer fields and timer, player answer tiles (were a white ring on a white page) | `lib/editor/`, `lib/play/question.svelte`, `lib/play/questions/check.svelte` |
 | **Sentence case** across live labels; `docs/redesign-status.md` corrected on which routes are hidden | `en.json`, `docs/redesign-status.md` |
+| **Multiple-answer results were an empty card on the projector**; now drawn, and `scoreboard.e2e` plays one through the UI | `lib/play/admin/results.svelte` |
+| **Every game state passes axe**, host and phone, both themes: `<h1>`s, scoreboard labels read out, medal inks per theme held to AA (`medal-contrast.test.ts`) | `lib/play/`, `lib/a11y/medal-contrast.test.ts` |
+| **The phone question screen fits a phone**: `h-dvh` flex column, equal answer columns, images that fit, a real Submit, no faded start, "Pick every correct answer" | `lib/play/question.svelte`, `lib/play/questions/check.svelte`, `lib/play/admin/question.svelte` |
 
 ## Open — before sharing
 

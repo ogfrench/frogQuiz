@@ -6,6 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- The podium reads "1885 points", not "1885 Points".
+- HANDOVER, TODO and `docs/redesign-status.md` record the live-game pass: what axe
+  covered, at which sizes, and the multiple-answer results gap.
 - A question's image on the phone fits between the question and the tiles. Its
   `max-h-[90%]` resolved against a wrapper with no height, so it drew at full size and
   slid under the answer tiles; it also used `object-cover`, which cropped it.

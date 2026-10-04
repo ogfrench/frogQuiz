@@ -165,6 +165,17 @@ focus. Separately, every uploaded image was announced to screen readers as "ï¿½ï
 image full-screen view are now the shadcn Dialog like everything else. Each bug has an
 e2e test that fails on the old code.
 
+**The live game, screen by screen** (4 Oct). axe now passes every state of a game, host
+and phone, in both themes. Getting there found one real gap: **after a multiple-answer
+question the projector showed an empty card**, because the results screen listed the
+types it draws and left that one out. The phone side of the same question type opened
+with every tile faded (looking disabled), gave no hint that several answers count, and
+put Submit in a strip 5% of the screen tall. The question screen was `h-screen w-screen`,
+so on a real phone the bottom tiles could sit under the browser toolbar, and with
+questions shown on devices it overflowed by ~150px. Medal colors on a player's score
+were under AA in one theme or the other; the scoreboard's up/down labels were never
+read out.
+
 Everything else is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---

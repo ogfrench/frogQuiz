@@ -187,8 +187,16 @@ Worth being exact, because the phrase gets stretched:
   alone; every rebuilt dialog closing on Escape with focus inside. The probe that flags
   "no focus ring" reads outline and box-shadow, so a tile with a decorative shadow passes
   it falsely -- the player tiles did. Check a screenshot, not just the probe.
-- **Not verified in dark mode:** the projector surfaces and the player screens since
-  the type-scale change. They were checked in both themes when first built.
+- **Verified with axe, 4 Oct: every state of a live game.** Host lobby, question,
+  results (single and multiple answer), scoreboard and podium; phone PIN step, name
+  step, lobby, both question types, locked in, feedback right and wrong, and the end
+  screen at first, second and third. Light and dark, no violations. The phone question
+  screen was also measured at 390x664 (a phone with its toolbars) and 390x844, with and
+  without questions shown on devices, with and without an image: no overflow.
+- **Verified in dark mode, 4 Oct:** every host projector screen (lobby, both question
+  types, both results screens, scoreboard, podium) walked by eye at 1440x900 and
+  1920x1080, no overflow; the phone question screens too. axe passes every game state in
+  dark as well.
 - **Covered by tests now.** This line used to read "there are no frontend tests,
   and the frontend CI job runs eslint only". There are 57 under vitest and the CI
   job runs them, alongside eslint. They cover the answer palette, question
