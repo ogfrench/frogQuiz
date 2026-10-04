@@ -16,6 +16,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   handed, revokes the whole session too. Tokens minted before this deploy carry no `sid` and expire as before.
   Three backend tests assert the old cookies get 401; the suite itself had been leaning
   on the gap, reusing a "signed out everywhere" session for 107 later requests.
+- Added HANDOVER §0 for continuing on a laptop: state at handoff, plain git or `claude --teleport`, what does not carry over (the PR watch), Windows setup, and the local route for each open item, including a real phone against the local stack.
 - Filed touch-sized press areas on phones as issue #24 (a measured list of controls under 44px, frogConvert's approach, acceptance criteria) and listed it in `TODO.md`; HANDOVER now covers the sign-out change and the 4 Oct walk, with suite counts on `077f695`.
 - Recorded François's 4 Oct decision that multiple-answer questions stay all-or-nothing, with the Kahoot comparison behind it, in `docs/mvp-scope.md`, `MVP.md` (D2) and `TODO.md`.
 - The navbar is exactly 64px, the height of the space reserved under it. Its touch-sized

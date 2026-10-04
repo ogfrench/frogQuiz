@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 # Handover — `ccr-370df3e4-c44t1l`
 
-For François and Gonçalo, 2–3 October 2026. Read this first; everything else is linked from
+For François and Gonçalo, 2–4 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
 **State: green and ready to merge.** About 90 commits and 190 files, roughly +11700 / −3400
@@ -19,6 +19,121 @@ against `master`.
 | Unit | **153 passed** |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
+
+---
+
+## 0. Picking this up on a laptop (4 Oct)
+
+The cloud session that did the 2–4 Oct work stops here. Nothing is left uncommitted: the branch
+is clean at the commit that added this section, CI is green on it, and PR #23 is mergeable.
+
+### State at handoff
+
+| | |
+| --- | --- |
+| Branch | `ccr-370df3e4-c44t1l`, clean, pushed |
+| PR #23 | Open, mergeable, CI green. Waiting on a merge decision; nothing on it is waiting on Claude |
+| Suites | e2e 146/146 and backend 168 on `077f695`; unit 153; lint clean |
+| Open issues | #3 (MVP 1, Part A partly done), #4 (MVP 2), #22 (Oracle VM, **31 Oct**), #24 (touch targets, filed 4 Oct, not started) |
+| Decisions open | None. Scoring stays all-or-nothing; sign-out revocation is done |
+
+### Getting it onto the laptop
+
+Two ways in. Pick one.
+
+- **Plain git (the default).** In your existing clone:
+  `git fetch origin && git switch ccr-370df3e4-c44t1l && git pull`, then start `claude` there
+  and point it at this section. Everything the next session needs is in this file, `TODO.md`,
+  `CHANGELOG.md`, the PR #23 description and issue #24. The cloud conversation has been
+  compacted twice, so what is left of it is a summary of those same documents.
+- **Teleport, if you want the conversation itself.** From a checkout of this repository (not a
+  fork): `claude --teleport session_01KVaWrDgi2ESR2WbZoLq4MU`. It needs a clean working tree
+  (it offers to stash), the same claude.ai account signed in through `/login` rather than an
+  API key, and the branch pushed, which it is. It checks the branch out and loads the
+  conversation. The terminal gets its own copy, and nothing you do there flows back to the
+  cloud session. Its fetch never waits for input, so if git would ask for a password or an
+  SSH passphrase, run `git fetch` once by hand first.
+  [Docs](https://code.claude.com/docs/en/claude-code-on-the-web#from-cloud-to-terminal).
+
+Either way, only one session should push to this branch at a time. The cloud session has
+cancelled its PR watch and its scheduled check-in, so it will not push behind you.
+
+### What does not come with you
+
+- **The PR watch.** The cloud session got PR #23's CI results and review comments pushed to it
+  as GitHub events. A local session does not, so both local routes poll through the GitHub
+  CLI: install `gh` and run `gh auth login` first. The Desktop app shows a CI status bar with
+  Auto-fix and Auto-merge toggles and a notification when CI finishes. In the CLI,
+  `/loop check PR #23's CI and review comments` runs only while that session stays open and
+  expires after seven days. `/autofix-pr` on the branch hands the watch to a new cloud
+  session instead.
+- **GitHub access.** The cloud session reached GitHub through a connector. Locally it is your
+  own git credentials and `gh`.
+- **The test stack.** The cloud container's Postgres, Redis and Meilisearch went with it.
+  `bash e2e/run.sh` builds its own on the laptop.
+- **Nothing else.** There is no uncommitted work and no stash. Issue #24 carries the touch
+  audit script, and the PR description carries the full report.
+
+### Setting up the laptop
+
+- **Shell:** Git Bash. `e2e/run.sh` is POSIX and the `build` script uses `NODE_ENV=production
+  vite build`, which fails under cmd.exe.
+- **pnpm** is not on PATH by default; it is in `%APPDATA%\npm`.
+- **e2e:** `bash e2e/run.sh` drives the installed **Edge** on Windows (Chromium elsewhere;
+  `E2E_BROWSER` overrides). It needs the Postgres binaries installed and a Python env
+  (`pipenv sync --dev`, or `E2E_VENV=<venv>`); it fetches Meilisearch itself. API on 8010,
+  because 8000 sits in a Windows reserved port range.
+- **Backend suite:** fresh database and `redis-cli flushall` first, or it lies (§7).
+
+### What to do next, and what being local changes
+
+Everything still open needs something the cloud session did not have: your SSH key, your
+inbox, a real phone, the Oracle console. This is the route for each.
+
+| Open item | Local route |
+| --- | --- |
+| §1 A, Oracle shape (issue #22) | **Do the console change by hand.** It is one form on billing-sensitive infrastructure, and screen control (Desktop computer use) would be the only way for Claude to drive it. Then Claude can copy `uploads/` and `.env` off the box with `scp` from Git Bash, using your key, one approved command at a time. |
+| §1 B, pull images after merge | From the local session: `ssh ubuntu@<public-ip> 'cd frogQuiz && docker compose pull && docker compose up -d'`. |
+| §1 C, real mail | [Claude in Chrome](https://code.claude.com/docs/en/chrome) works with Edge and uses your signed-in browser, so Claude can open the Hotmail inbox, check spam, and follow the confirm and reset links. Allow it on that site only, in the extension's site permissions. |
+| §1 D, worker container | `ssh ubuntu@<public-ip> 'cd frogQuiz && docker compose ps'`. |
+| MVP.md §4.1, deployed-site run | The same browser route covers the anonymous host, register, forgot password and account deletion. The three-phone game stays a human job. |
+| #24, touch targets | A real phone on the same Wi-Fi (command below). Emulation measured the sizes; only a thumb shows whether they are enough. |
+
+**A phone against the local stack (untested).** With `KEEP_UP=1 bash e2e/run.sh --list` up,
+start a second dev server that listens on the network, then open
+`http://<laptop-IP>:3001` on the phone:
+
+```bash
+cd frontend
+API_PROXY_TARGET=http://127.0.0.1:8010 API_URL=http://127.0.0.1:8010 \
+  pnpm exec vite dev --host --port 3001   # pnpm lives in %APPDATA%\npm
+```
+
+The proxy carries `/api` and `/socket.io`, so live games work too. Windows will ask whether
+to let Node through the firewall: allow private networks only. Sign-in survives plain HTTP
+because `COOKIE_SECURE` is on only when `ROOT_ADDRESS` starts with `https://`. The e2e stack
+does not set `ROOT_ADDRESS`, but a stray `.env` in the repo root that does would break this.
+
+**Also new locally**, each checked against the docs on 4 Oct:
+
+- **Remote Control.** `/remote-control` in a session, or `claude --remote-control`, puts the
+  local session in the Claude app on your phone. The laptop has to stay on with `claude`
+  running. It reconnects by itself after sleep.
+  [Docs](https://code.claude.com/docs/en/remote-control).
+- **Desktop app Browser pane.** Claude opens the running app, clicks, fills forms and takes
+  screenshots, which is how this session walked the UI with Playwright. To attach it to the
+  stack `run.sh` already started, give `.claude/launch.json` a `url` and no command.
+  [Docs](https://code.claude.com/docs/en/desktop#preview-your-app).
+- **Git Bash is the shell.** With Git for Windows installed, Claude Code's Bash tool runs in
+  Git Bash, which is what `e2e/run.sh` and the `build` script need. If it is not found, set
+  `CLAUDE_CODE_GIT_BASH_PATH` in `~/.claude/settings.json`.
+  [Docs](https://code.claude.com/docs/en/setup#set-up-on-windows).
+- **Context7.** CLAUDE.md points to it for shadcn-svelte docs, but it was not connected in
+  the cloud session. Add it with `claude mcp add` (the command is in Context7's README).
+  `--scope project` writes `.mcp.json` for both of you; the default scope keeps it on this
+  machine only.
+- **Computer use** (the Desktop app controlling your screen) is a research preview on
+  Windows, for Pro and Max plans only. Nothing above needs it.
 
 ---
 
