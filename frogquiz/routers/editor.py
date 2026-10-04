@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
-import asyncio
 import secrets
 import uuid
 from typing import Optional
@@ -62,12 +61,27 @@ def _quiz_expired(quiz: Quiz) -> bool:
     return quiz.expire_at is not None and quiz.expire_at < datetime.now()
 
 
-async def delete_images_for_edit_id(edit_id: str):
-    await asyncio.sleep(30)
-    res = await redis.lrange(f"edit_session:{edit_id}:images", 0, -1)
-    if len(res) != 0:
-        for image_id in res:
-            await storage.delete([image_id])
+def _image_ids(quiz_input: QuizInput) -> set[str]:
+    images = [quiz_input.cover_image, quiz_input.background_image, *(q.image for q in quiz_input.questions)]
+    return {str(image) for image in images if image}
+
+
+async def _refuse_other_accounts_images(quiz_input: QuizInput, old_quiz: Quiz | None, caller_id: UUID | None):
+    """400 if the quiz names an upload that belongs to another account.
+
+    Saving links a quiz to every image it names, and nothing checked whose they were, so
+    one account could pin another's bytes to its own quiz (C3 in docs/crud-audit-2026-10.md).
+    Images the quiz already had are left alone, so an older quiz still saves. Uploads made
+    without an account have no owner to protect and stay usable.
+    """
+    already = set(extract_image_ids_from_quiz(old_quiz)) if old_quiz is not None else set()
+    for image in _image_ids(quiz_input) - {str(i) for i in already}:
+        valid, item_id = check_image_string(image)
+        if not valid or item_id is None:
+            continue
+        item = await StorageItem.objects.get_or_none(id=item_id)
+        if item is not None and item.user is not None and item.user.id != caller_id:
+            raise HTTPException(status_code=400, detail="An image in this quiz belongs to another account")
 
 
 @router.post("/start", response_model=InitEditorResponse)
@@ -98,7 +112,6 @@ async def init_editor(
     if quiz_id is None:
         quiz_id = uuid.uuid4()
     edit_id = os.urandom(4).hex()
-    await redis.sadd("edit_sessions", edit_id)
     await redis.set(
         f"edit_session:{edit_id}",
         EditSessionData(quiz_id=quiz_id, edit=edit, user_id=user.id if user is not None else None).model_dump_json(),
@@ -108,9 +121,7 @@ async def init_editor(
 
 
 async def _end_session(edit_id: str):
-    await redis.srem("edit_sessions", edit_id)
     await redis.delete(f"edit_session:{edit_id}")
-    await redis.delete(f"edit_session:{edit_id}:images")
 
 
 @router.post("/finish")
@@ -233,6 +244,8 @@ async def _persist(
     if quiz_input.background_image is not None and not check_image_string(quiz_input.background_image)[0]:
         raise HTTPException(status_code=400, detail="image url is not valid")
 
+    await _refuse_other_accounts_images(quiz_input, old_quiz_data, caller_id)
+
     if session_data.edit:
         if old_quiz_data is None:
             # The quiz was deleted while its editor was still open.
@@ -303,14 +316,17 @@ async def _persist(
             # before the save, a failed save left the session pointing at a missing quiz.
             now_editing = EditSessionData(quiz_id=session_data.quiz_id, edit=True, user_id=session_data.user_id)
             await redis.set(f"edit_session:{edit_id}", now_editing.model_dump_json(), ex=3600)
-        new_images = extract_image_ids_from_quiz(quiz)
-        for image in new_images:
-            item = await StorageItem.objects.get_or_none(id=uuid.UUID(image))
-            if item is None:
-                continue
-            await quiz.storageitems.add(item)
+        for image in extract_image_ids_from_quiz(quiz):
+            # Upstream's legacy `uuid--uuid` key has no row to link, and uuid.UUID() raised on it.
+            item_id = check_image_string(image)[1]
+            item = await StorageItem.objects.get_or_none(id=item_id) if item_id else None
+            if item is not None:
+                await quiz.storageitems.add(item)
         if raw_anon_secret is not None:
             # Issued exactly once, here -- the hash on the row is all that's
             # kept server-side, so this is the caller's only chance to see it.
             response.headers["X-Anon-Secret"] = raw_anon_secret
-        return quiz
+        # Without the images just linked: once the worker has hashed one, its `hash` is raw
+        # bytes, which FastAPI's encoder cannot decode, and every first save of a quiz with
+        # an image answered 500 after the quiz was already saved (C14).
+        return quiz.model_dump(exclude={"storageitems"})

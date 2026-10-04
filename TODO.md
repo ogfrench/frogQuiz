@@ -185,11 +185,11 @@ the explanation.
 
 ## Open — CRUD audit (4 Oct)
 
-- [ ] **Triage C1 to C18** in [`docs/crud-audit-2026-10.md`](docs/crud-audit-2026-10.md).
-      C5 (anonymous uploads, no rate limit, never cleaned) is the one to fix before sharing
-      the URL; C14, C16, C18 and C4 are Medium. Each has a test marked as an expected failure.
-- [ ] **Is the worker running on the VM?** `docker compose ps`. C14 and C16 only bite with
-      it; without it no upload counts against the quota.
+- [x] **C1 to C18** in [`docs/crud-audit-2026-10.md`](docs/crud-audit-2026-10.md): every bug
+      fixed on branch `crud-audit` the same day, each with a regression test.
+- [ ] **Is the worker running on the VM?** `docker compose ps`. Without it no upload counts
+      against the quota, edited quizzes are never linked to their images, and neither sweep
+      (orphaned uploads, expired anonymous quizzes) ever runs.
 - [ ] **Username change**: no route and not a recorded cut (C13). François and Gonçalo.
 
 ## Open — quality

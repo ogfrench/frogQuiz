@@ -117,7 +117,11 @@ PIDS=()
 cleanup() {
   [ "${KEEP_UP:-}" = 1 ] && { log "KEEP_UP=1: leaving the stack running"; return; }
   log "stopping services"
-  for pid in "${PIDS[@]:-}"; do
+  # Last started, first stopped: the worker and the API go before the Redis they use,
+  # rather than filling their logs with connection errors on the way down.
+  local i pid
+  for ((i = ${#PIDS[@]} - 1; i >= 0; i--)); do
+    pid="${PIDS[i]}"
     [ -n "$pid" ] || continue
     # Git Bash's kill does not reach native grandchildren (pnpm -> node -> vite);
     # taskkill /T takes the whole tree. Elsewhere, kill the process group.

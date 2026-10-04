@@ -644,8 +644,10 @@ class PrivateStorageItem(PublicStorageItem):
 
 
 class UpdateStorageItem(BaseModel):
-    filename: str | None = None
-    alt_text: str | None = None
+    # Bounded because alt text goes back out base64-encoded in an X-Alt-Text header on
+    # every download, and 100 KB of it was accepted (C12 in docs/crud-audit-2026-10.md).
+    filename: str | None = Field(default=None, max_length=255)
+    alt_text: str | None = Field(default=None, max_length=500)
 
 
 class Controller(ormar.Model):

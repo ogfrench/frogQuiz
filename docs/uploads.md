@@ -66,8 +66,22 @@ actually free anything:
 - The orphan path runs in the worker, so it needs the `worker` container (already an open
   item in [`../TODO.md`](../TODO.md)). The explicit delete runs in the request path and does
   not.
+- **Two of the bullets above did not hold until the CRUD audit of 2026-10-04**
+  ([`crud-audit-2026-10.md`](crud-audit-2026-10.md)). The `quiz_update` unlink raised
+  `NoMatch` on every image, because the quiz was fetched without its images and ormar's
+  `remove()` checks the loaded relation; the job caught it and skipped (C16). And the
+  delete endpoint handed `storage.delete()` a string, so the local backend deleted one
+  "file" per character and kept the real one, while releasing the quota anyway (C18).
+  Both are fixed and covered by `frontend/e2e/crud-lifecycle.e2e.ts`, which needs the
+  worker that `e2e/run.sh` now starts. The endpoint also refuses, with a 409, an image one
+  of your quizzes still shows (C10).
+- **An upload that never reaches a saved quiz** used to stay forever: the editor sweep read
+  a Redis list nothing wrote. `clean_orphaned_uploads` (every six hours) now deletes any
+  upload that no quiz names after a day, judged by the quizzes' own JSON rather than the
+  links. Anonymous uploads are also limited to 30 per ten minutes per address (C5).
 
-`DELETE /api/v1/users/me` takes a leaver's files with it.
+`DELETE /api/v1/users/me` takes a leaver's files with it, and so do the admin delete routes,
+which share its clean-up (C9).
 
 **How the decrement is verified.** No test in this suite can reach the database — the
 `TestClient` runs its own event loop, which is why the one attempt at

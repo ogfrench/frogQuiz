@@ -6,7 +6,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from frogquiz.auth import get_current_user
 from frogquiz.db.models import User, GameResults
@@ -45,7 +45,7 @@ async def get_game_result(game_id: UUID, user: User = Depends(get_current_user))
 
 
 class _SetNoteInput(BaseModel):
-    note: str
+    note: str = Field(max_length=2000)
 
 
 @router.post("/set_note")

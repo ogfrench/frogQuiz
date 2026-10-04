@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -20,7 +21,7 @@ import { describe, expect, it } from 'vitest';
  * see whether a radius is the *right* step. What it does is make the off-scale ones
  * impossible to add back.
  */
-const SRC = new URL('../..', import.meta.url).pathname;
+const SRC = fileURLToPath(new URL('../..', import.meta.url));
 
 const walk = (dir: string): string[] =>
 	readdirSync(dir).flatMap((entry) => {

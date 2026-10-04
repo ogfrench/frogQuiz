@@ -15,6 +15,7 @@ import base64
 import pytest
 from fastapi.testclient import TestClient
 
+from frogquiz.config import redis, settings
 from frogquiz.helpers.ratelimit import client_ip
 from frogquiz.tests import test_client  # noqa: F401
 
@@ -74,16 +75,23 @@ _PNG = base64.b64decode(
 )
 
 
-# C5 in docs/crud-audit-2026-10.md. Uploads need no account, and an upload that never
-# reaches a saved quiz is never cleaned up, so with no limit anyone can fill the disk at
-# 6 MB a request. It lives here rather than in the e2e suite because e2e.env switches
-# rate limiting off for the whole stack.
-@pytest.mark.xfail(strict=True, reason="C5: POST /api/v1/storage/ has no rate limit for anonymous callers")
-def test_anonymous_uploads_are_rate_limited(test_client: TestClient):  # noqa: F811
+# C5 in docs/crud-audit-2026-10.md. Uploads need no account, and with no limit anyone could
+# fill the disk at 6 MB a request. Rate limiting is off in .env.ci and e2e.env, so the test
+# switches it on for itself, and clears its bucket so later anonymous uploads still work.
+def test_anonymous_uploads_are_rate_limited(test_client: TestClient, monkeypatch):  # noqa: F811
+    on = settings().model_copy(update={"rate_limit_enabled": True})
+    monkeypatch.setattr("frogquiz.helpers.ratelimit.settings", lambda: on)
+    # "testclient" is the peer address Starlette's TestClient reports.
+    bucket = "ratelimit:upload_anon:testclient"
+    test_client.portal.call(redis.delete, bucket)
     statuses = []
-    for _ in range(40):
-        res = test_client.post("/api/v1/storage/", files={"file": ("dot.png", _PNG, "image/png")})
-        statuses.append(res.status_code)
-        if res.status_code == 429:
-            break
-    assert 429 in statuses, statuses
+    try:
+        for _ in range(40):
+            res = test_client.post("/api/v1/storage/", files={"file": ("dot.png", _PNG, "image/png")})
+            statuses.append(res.status_code)
+            if res.status_code == 429:
+                break
+    finally:
+        test_client.portal.call(redis.delete, bucket)
+    assert statuses[-1] == 429, statuses
+    assert statuses.count(200) == 30, statuses

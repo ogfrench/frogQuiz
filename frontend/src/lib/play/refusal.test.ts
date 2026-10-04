@@ -27,7 +27,7 @@ import { describe, expect, it } from 'vitest';
  * the page clock does not hold the countdown. Rather than land a flaky spec, this pins
  * the wiring, which is what regressed.
  */
-const src = readFileSync(new URL('./question.svelte', import.meta.url).pathname, 'utf8');
+const src = readFileSync(new URL('./question.svelte', import.meta.url), 'utf8');
 
 /** The events this component subscribes to, and whether each is released on destroy. */
 const subscriptions = (): { event: string; handler: string }[] =>
@@ -62,11 +62,13 @@ describe('the player question screen', () => {
 	it('releases every listener it takes, since it is recreated per question', () => {
 		const subs = subscriptions();
 		expect(subs.length, 'no socket.on(event, namedHandler) found').toBeGreaterThan(0);
-		const offs = [...src.matchAll(/socket\.off\(\s*'([^']+)'\s*,\s*([A-Za-z_$][\w$]*)\s*\)/g)].map(
-			(m) => `${m[1]}:${m[2]}`
-		);
+		const offs = [
+			...src.matchAll(/socket\.off\(\s*'([^']+)'\s*,\s*([A-Za-z_$][\w$]*)\s*\)/g)
+		].map((m) => `${m[1]}:${m[2]}`);
 		for (const { event, handler } of subs) {
-			expect(offs, `socket.on('${event}') is never released`).toContain(`${event}:${handler}`);
+			expect(offs, `socket.on('${event}') is never released`).toContain(
+				`${event}:${handler}`
+			);
 		}
 		expect(src, 'the cleanup is not wired to the component lifecycle').toMatch(
 			/onDestroy\(\s*\(\)\s*=>/

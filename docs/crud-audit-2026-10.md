@@ -12,19 +12,22 @@ create, read, change and delete it, what each change leaves behind, whether the 
 person do all four, and what input each write accepts.
 
 Findings are numbered **C1, C2, ...** so they do not collide with the H/M/L numbers in
-[`e2e-findings.md`](e2e-findings.md). Every bug has a test that fails today and is marked
-as an expected failure, so the suites stay green and the test turns red the day the bug is
-fixed. Remove the marker then.
+[`e2e-findings.md`](e2e-findings.md). **Every bug below was fixed the same day, on this
+branch** (see [How each was fixed](#how-each-was-fixed)); C2 and C13 are decisions, not
+bugs. The tables are kept as the record of what was wrong. Each bug was first written as a
+test marked as an expected failure and checked to fail on the assertion it names; the
+markers are gone now and the same tests stand as regression guards.
 
 | Test file | What it covers |
 |---|---|
 | `frontend/e2e/crud-authz.e2e.ts` | who may call what: other accounts, signed out, admin, flag-off routers |
 | `frontend/e2e/crud-lifecycle.e2e.ts` | files on disk, quota, rows left behind; needs the arq worker |
 | `frontend/e2e/crud-account.e2e.ts` | password change and account deletion through My Account |
-| `frogquiz/tests/test_ratelimit.py` | C5 (rate limiting is off in the e2e stack, so it cannot live there) |
+| `frogquiz/tests/test_ratelimit.py` | C5's rate limit (rate limiting is off in the e2e stack, so it cannot live there) |
+| `frogquiz/tests/test_storage_cleanup.py` | C5's orphan sweep and C9's admin delete, which e2e cannot reach (a cron job, an admin account) |
 
-Full e2e run with the worker, Windows/Edge: 163 of 166 passed, every expected failure
-among them. The three that failed had nothing to do with the audit: `journey-recovery`
+Audit run, before the fixes: full e2e with the worker, Windows/Edge, 163 of 166 passed,
+every expected failure among them. The three that failed had nothing to do with the audit: `journey-recovery`
 was a Windows bug in the e2e mail sink (fixed on this branch, passes now), and
 `editor-column` › moved and deleted and `practice` › end to end each failed once and
 passed straight after in isolation (logged in `TODO.md`). Each expected failure was also
@@ -42,7 +45,7 @@ which is why C14, C16 and C18 went unnoticed. `run.sh` now starts it (on fakered
 logs to `e2e/.data/worker.log` and leaves a pid file for `stop.sh`.
 
 **Open question for production:** whether the worker container is actually running on the
-VM. If it is, C14 and C16 are live. If it is not, no upload is ever counted against the
+VM. If it is, C14 and C16 are live until this branch is deployed. If it is not, no upload is ever counted against the
 quota and expired anonymous quizzes are never swept. `docker compose ps` on the VM answers it.
 
 ## Findings
@@ -53,7 +56,7 @@ harm the service; **Medium** breaks a flow with a workaround or needs an account
 
 | # | Sev | Finding | Where | Test |
 |---|---|---|---|---|
-| C5 | High | Anyone can upload without an account, with no rate limit and no quota, and an upload that never reaches a saved quiz is never cleaned up | `routers/storage.py:190`, `worker/storage.py:28` | `test_ratelimit.py` › anonymous uploads are rate limited |
+| C5 | High | Anyone can upload without an account, with no rate limit and no quota, and an upload that never reaches a saved quiz is never cleaned up | `routers/storage.py:190`, `worker/storage.py:28` | `test_ratelimit.py` › anonymous uploads are rate limited; `test_storage_cleanup.py` › an upload no quiz uses is swept |
 | C14 | Medium | Saving a **new** quiz whose image is already hashed returns 500, though the quiz is saved | `routers/editor.py:306-311` | `crud-lifecycle` › a new quiz with an image saves cleanly |
 | C16 | Medium | Taking an image off a question never deletes the file or gives the bytes back | `worker/storage.py:121-128` | `crud-lifecycle` › taking an image off a question… |
 | C18 | Medium | `DELETE /storage/meta/{id}` gives the quota back but never deletes the file, which stays downloadable | `routers/storage.py:329` | `crud-lifecycle` › deleting an image through the API removes the file |
@@ -65,8 +68,8 @@ harm the service; **Medium** breaks a flow with a workaround or needs an account
 | C6 | Low | The hash job raises on every anonymous upload | `worker/storage.py:75` | `crud-lifecycle` › the worker processes an anonymous upload… |
 | C11 | Low | `/storage/list/last` lists deleted images | `routers/storage.py:375` | `crud-authz` › a deleted image is not listed… |
 | C12 | Low | No upper bound on image alt text, the quiz list's page size, or a result note | `routers/storage.py:336`, `quiz.py:272`, `results.py:47` | `crud-authz` › image alt text…, the quiz list refuses… |
-| C9 | Low | Admin delete-user skips every clean-up account deletion does | `routers/admin.py:16-28` | none, see below |
-| C10 | Low | `DELETE /storage/meta/{id}` deletes an image a quiz still shows | `routers/storage.py:321` | none, see below |
+| C9 | Low | Admin delete-user skips every clean-up account deletion does | `routers/admin.py:16-28` | `test_storage_cleanup.py` › an admin deleting an account… |
+| C10 | Low | `DELETE /storage/meta/{id}` deletes an image a quiz still shows | `routers/storage.py:321` | `crud-lifecycle` › an image a quiz still uses cannot be deleted… |
 
 Two leads from planning turned out not to be bugs:
 
@@ -184,19 +187,35 @@ serve under D12, which is why it is Low. The fix is the same 404 the Excel route
   base64-encoded, in an `X-Alt-Text` header on every download, and a 100 KB alt text was
   accepted.
 
-### C9 and C10: findings with no test (Low)
+### C9 and C10 (Low)
 
 - **C9.** `DELETE /api/v1/admin/user/{id,username,email}` is a bare
   `User.objects.delete(...)`. It skips everything `DELETE /users/me` does: files on disk,
   Meilisearch documents, the Redis user cache (so the deleted account keeps authenticating
-  for up to 24 h) and token revocation. No e2e test, because only a migration can make an
-  account admin and the e2e stack cannot. To reproduce: set `is_admin` on one account in
-  Postgres, delete another account through the route, and its uploads stay in
-  `STORAGE_PATH`. The fix is to call the same clean-up `delete_user_account` uses.
+  for up to 24 h) and token revocation. Only a migration can make an account admin, which
+  the e2e stack cannot, so its test is a backend one that sets the flag in the database.
 - **C10.** `DELETE /storage/meta/{id}` does not check whether a quiz still uses the image.
   Only the owner can call it, against their own quiz, and only through the API since
-  `/edit/files` is hidden. Not tested because the right behavior (refuse, or unlink first)
-  is a decision for whoever fixes it.
+  `/edit/files` is hidden.
+
+## How each was fixed
+
+| # | Fix |
+|---|---|
+| C5 | Anonymous uploads are limited to 30 per ten minutes per address. `clean_orphaned_uploads` replaces the editor sweep: every six hours it deletes uploads more than a day old that no quiz's JSON names, so leftovers from before the C16 fix go too. The dead `edit_sessions` bookkeeping in the editor is removed. |
+| C14 | The first save returns the quiz without the images it just linked. Upstream's legacy `uuid--uuid` keys, which raised there, are skipped. |
+| C16 | `quiz_update` loads the quiz with its images before unlinking, and also frees a removed image that was never linked. |
+| C18 | `storage.delete()` gets a list. Download, info and HEAD treat a row with `deleted_at` as gone. |
+| C4 | The token stores its PIN; `export_data` answers 404 for any other PIN, or a game that no longer exists. |
+| C3 | A save that adds an image another account uploaded is refused with 400. Images a quiz already had, and uploads made without an account, are still allowed. |
+| C1 | `GET /eximport/{id}` is the owner's only, as the Excel export is. |
+| C7 | Claiming hands the quiz's ownerless images to the claimer and counts the hashed ones; the hash job counts the rest once it runs. |
+| C8 | Account deletion sets `deleted_at` on the account's uploads inside the same transaction. |
+| C6 | The hash job skips the quota step for an upload with no owner, and returns early for one already deleted. |
+| C11 | `/storage/list/last` filters deleted rows. |
+| C12 | Alt text up to 500 characters, file name 255, a result note 2,000, `page_size` 1 to 100 (the most the UI asks for). |
+| C9 | The clean-up moved out of `DELETE /users/me` into `delete_account()`, which the admin routes now call. |
+| C10 | The route answers 409 while one of the owner's quizzes shows the image. |
 
 ## What held up
 
@@ -231,7 +250,7 @@ bounds (`api-edge.e2e.ts`), upload size and type limits (`uploads.e2e.ts`).
 | Quiz, signed in | Editor | My Quizzes, view page | Editor | My Quizzes | `journey-returning-host`, `my-quizzes` |
 | Quiz, no account | Editor | My Quizzes (this browser) | Editor | My Quizzes | `my-quizzes`, `editor` |
 | Claim a browser quiz | n/a | n/a | My Quizzes › Claim | n/a | `my-quizzes` |
-| Image | Editor upload | On the quiz | Replace in editor | X in editor, but see C16 | `uploads` |
+| Image | Editor upload | On the quiz | Replace in editor | X in editor (frees the file since the C16 fix) | `uploads` |
 | Live game | Play on view page | Lobby | Host controls | End or cancel | `game-exits`, `live-socket` |
 | Game results | Save at the podium | `/results` is hidden (D4) | n/a | n/a | `account` |
 | API key | API only, no UI | API only | n/a | API only | none |

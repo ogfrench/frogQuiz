@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -22,7 +23,7 @@ import { describe, expect, it } from 'vitest';
  * - The server accepted `video/mp4` while the editor passed `video_upload={false}` and
  *   `/edit/videos` was hidden, which is an upload path with no UI in front of it.
  */
-const SRC = new URL('../../..', import.meta.url).pathname;
+const SRC = fileURLToPath(new URL('../../..', import.meta.url));
 const uploader = readFileSync(`${SRC}/src/lib/editor/uploader.svelte`, 'utf8');
 const config = readFileSync(`${SRC}/../frogquiz/config.py`, 'utf8');
 

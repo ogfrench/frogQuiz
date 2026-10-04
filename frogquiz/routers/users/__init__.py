@@ -432,30 +432,13 @@ async def get_session(request: Request, user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Session not found")
 
 
-class DeleteUserInput(BaseModel):
-    password: str
+async def delete_account(user: User, access_token: str | None = None) -> None:
+    """Delete an account and everything it owns: quizzes, uploads, sessions, API keys.
 
-
-@router.delete("/me")
-async def delete_user_account(
-    input_data: DeleteUserInput,
-    request: Request,
-    response: Response,
-    user: User = Depends(get_current_user),
-):
-    # Keyed on the account, not the source address: the caller is already
-    # authenticated, so the account is the thing being attacked, and each attempt
-    # costs a deliberately expensive argon2 verify. Unthrottled, this is both a
-    # password oracle behind a borrowed session and a cheap way to burn CPU.
-    await rate_limit_key(f"delete_account:{user.id}", limit=5, window_seconds=3600)
-    # OAuth accounts are created with no password at all (frogquiz/oauth/*), and
-    # verify_password(x, None) raises rather than returning False -- a 500 with no
-    # explanation for the one person who cannot act on it.
-    if user.password is None:
-        raise HTTPException(status_code=400, detail="This account has no password to confirm with")
-    if not verify_password(input_data.password, user.password):
-        raise HTTPException(status_code=400, detail="Incorrect password")
-
+    Shared by DELETE /users/me and the admin routes, which used to be a bare
+    User.objects.delete() that left the files on disk, the search documents in the
+    index and the user cached in Redis, still able to sign in for a day (C9).
+    """
     # Everything the cleanup needs, read before anything is destroyed.
     #
     # Deliberately NOT re-reading the user from the database first. get_current_user
@@ -476,6 +459,10 @@ async def delete_user_account(
     # controller foreign keys were made to cascade (c3f8a1d47b62).
     async with database.transaction():
         await UserSession.objects.filter(user=user).delete()
+        # Marked deleted while they still name their owner: the foreign key sets the owner
+        # to NULL when the account row goes, and those ownerless rows with no deleted_at
+        # kept answering /storage/info and /storage/download (C8 in docs/crud-audit-2026-10.md).
+        await StorageItem.objects.filter(user=user, deleted_at=None).update(deleted_at=datetime.now())
         await Quiz.objects.filter(user_id=user).delete()
         await User.objects.filter(id=user.id).delete()
 
@@ -486,16 +473,8 @@ async def delete_user_account(
     # The cache clear is the load-bearing one: get_current_user reads the user out of
     # Redis, where this very request just warmed an entry, so without it a deleted
     # account keeps authenticating for up to cache_expiry (24h).
-    # Cookies first, because setting them on the response cannot fail. Redis can,
-    # and if it did before this point the browser would still be holding a session
-    # for an account that no longer exists.
-    response.delete_cookie("access_token")
-    response.delete_cookie("expiry")
-    response.delete_cookie("rememberme")
-    response.delete_cookie("rememberme_token")
     try:
         await clear_cache_for_account(user)
-        access_token = request.cookies.get("access_token")
         if access_token is not None:
             await revoke_token(access_token.removeprefix("Bearer "))
         for key in api_keys:
@@ -524,6 +503,36 @@ async def delete_user_account(
         except Exception:
             LOGGER.exception("Could not delete a deleted user's uploads")
 
+
+class DeleteUserInput(BaseModel):
+    password: str
+
+
+@router.delete("/me")
+async def delete_user_account(
+    input_data: DeleteUserInput,
+    request: Request,
+    response: Response,
+    user: User = Depends(get_current_user),
+):
+    # Keyed on the account, not the source address: the caller is already
+    # authenticated, so the account is the thing being attacked, and each attempt
+    # costs a deliberately expensive argon2 verify. Unthrottled, this is both a
+    # password oracle behind a borrowed session and a cheap way to burn CPU.
+    await rate_limit_key(f"delete_account:{user.id}", limit=5, window_seconds=3600)
+    # OAuth accounts are created with no password at all (frogquiz/oauth/*), and
+    # verify_password(x, None) raises rather than returning False -- a 500 with no
+    # explanation for the one person who cannot act on it.
+    if user.password is None:
+        raise HTTPException(status_code=400, detail="This account has no password to confirm with")
+    if not verify_password(input_data.password, user.password):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+
+    await delete_account(user, request.cookies.get("access_token"))
+    response.delete_cookie("access_token")
+    response.delete_cookie("expiry")
+    response.delete_cookie("rememberme")
+    response.delete_cookie("rememberme_token")
     return {"message": "Account deleted"}
 
 

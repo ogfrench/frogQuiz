@@ -461,7 +461,9 @@ async def get_export_token(sid: str):
     game_data = await PlayGame.get_from_redis(session["game_pin"])
     results = await generate_final_results(game_data, session["game_pin"])
     token = os.urandom(32).hex()
-    await redis.set(f"export_token:{token}", json.dumps(results), ex=7200)
+    # The PIN goes in with the results, so the token opens this game and no other.
+    payload = {"game_pin": session["game_pin"], "results": results}
+    await redis.set(f"export_token:{token}", json.dumps(payload), ex=7200)
     await sio.emit("export_token", token, room=sid)
 
 
@@ -691,7 +693,12 @@ async def disconnect(sid: str, reason: str | None = None):
     player who cannot get back in. The nickname stays claimed and the key stays put; only
     the membership of the count is dropped, and rejoin_game adds it back.
     """
-    session: dict = await get_session(sid, sio)
+    try:
+        session: dict = await get_session(sid, sio)
+    except socketio.exceptions.ConnectionRefusedError:
+        # No session to read (expired, or the socket was refused at connect): nothing to
+        # drop. Raised, it logged a full traceback for every such disconnect.
+        return
     username = session.get("username")
     game_pin = session.get("game_pin")
     if not username or not game_pin:

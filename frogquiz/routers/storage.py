@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 from base64 import b64encode
@@ -12,8 +13,9 @@ from pydantic import BaseModel
 from frogquiz.auth import get_current_user, get_current_user_optional
 from frogquiz.config import settings, storage, arq, UPLOAD_LIMITS
 from frogquiz.image_dimensions import image_dimensions, HEADER_BYTES
-from frogquiz.db.models import User, StorageItem, PublicStorageItem, UpdateStorageItem, PrivateStorageItem
-from frogquiz.helpers import check_image_string
+from frogquiz.db.models import User, StorageItem, PublicStorageItem, UpdateStorageItem, PrivateStorageItem, Quiz
+from frogquiz.helpers import check_image_string, extract_image_ids_from_quiz
+from frogquiz.helpers.ratelimit import rate_limit
 from frogquiz.storage.errors import DownloadingFailedError
 from uuid import uuid4, UUID
 
@@ -65,7 +67,9 @@ async def download_file(file_name: str):
     if not checked_image_string[0]:
         raise HTTPException(status_code=400, detail="Invalid file name")
     if checked_image_string[1] is not None:
-        item = await StorageItem.objects.get_or_none(id=checked_image_string[1])
+        # A deleted image keeps its row, so without deleted_at here it stayed downloadable,
+        # and the local backend answers 200 with no body for a file that is gone (C8, C18).
+        item = await StorageItem.objects.get_or_none(id=checked_image_string[1], deleted_at=None)
         if item is None:
             print("Item not found")
             raise HTTPException(status_code=404, detail="File not found")
@@ -105,7 +109,7 @@ async def get_basic_file_info(file_name: str) -> Response:
     if not checked_image_string[0]:
         raise HTTPException(status_code=404, detail="Invalid file name")
     if checked_image_string[1] is not None:
-        item = await StorageItem.objects.get_or_none(id=checked_image_string[1])
+        item = await StorageItem.objects.get_or_none(id=checked_image_string[1], deleted_at=None)
         if item is None:
             raise HTTPException(status_code=404, detail="File not found")
         # return PublicStorageItem.from_db_model(item)
@@ -124,7 +128,7 @@ async def download_file_head(file_name: str) -> Response:
     if not checked_image_string[0]:
         raise HTTPException(status_code=404, detail="Invalid file name")
     if checked_image_string[1] is not None:
-        item = await StorageItem.objects.get_or_none(id=checked_image_string[1])
+        item = await StorageItem.objects.get_or_none(id=checked_image_string[1], deleted_at=None)
         if item is None:
             raise HTTPException(status_code=404, detail="File not found")
         # return PublicStorageItem.from_db_model(item)
@@ -189,12 +193,17 @@ def _reject_oversized_pixels(header: bytes) -> None:
 
 @router.post("/")
 async def upload_file(
-    file: UploadFile = File(), user: User | None = Depends(get_current_user_optional)
+    request: Request, file: UploadFile = File(), user: User | None = Depends(get_current_user_optional)
 ) -> PublicStorageItem:
     # Cover/background/question images are uploaded from the quiz editor, which an
     # anonymous host can use end to end (see routers/editor.py). Requiring a login
     # here made every upload from that flow fail silently in the UI -- there is no
     # per-user quota to check without a user, so anonymous uploads skip it.
+    if user is None:
+        # With no quota either, this was the one way to fill the disk without an account
+        # (C5 in docs/crud-audit-2026-10.md). Thirty in ten minutes is a quiz with an image
+        # on every question; clean_orphaned_uploads deletes what never reaches a quiz.
+        await rate_limit(request, "upload_anon", limit=30, window_seconds=600)
     limit = UPLOAD_LIMITS.get(file.content_type)
     if limit is None:
         raise HTTPException(status_code=422, detail="Unsupported")
@@ -323,10 +332,18 @@ async def mark_file_as_deleted(file_id: UUID, user: User = Depends(get_current_u
     file_data = await StorageItem.objects.get_or_none(id=file_id, user=user, deleted_at=None)
     if file_data is None:
         raise HTTPException(status_code=404, detail="File not found")
+    # Deleting it would leave the quiz showing a broken image (C10). Images go with their
+    # quiz, or by taking them off it in the editor. Only the owner's quizzes are read: no
+    # other account can put this image on a quiz (routers/editor.py).
+    for quiz in await Quiz.objects.filter(user_id=user.id).all():
+        if str(file_id) in {str(image) for image in extract_image_ids_from_quiz(quiz)}:
+            raise HTTPException(status_code=409, detail="This image is used by one of your quizzes")
     storage_path = file_data.storage_path
     if storage_path is None:
         storage_path = file_data.id.hex
-    await storage.delete(storage_path)
+    # A list: given a string, the local backend deleted one file per character of the name
+    # and kept the real one, while the quota below was released anyway (C18).
+    await storage.delete([storage_path])
     file_data.deleted_at = datetime.now()
     await file_data.update()
     await release_storage_quota(user, file_data.size)
@@ -377,6 +394,7 @@ async def get_latest_images(count: int = 50, user: User = Depends(get_current_us
     count = min(count, 50)
     items = (
         await StorageItem.objects.filter(user=user)
+        .filter(StorageItem.deleted_at == None)  # noqa: E711  (C11)
         .limit(count)
         .select_related([StorageItem.quizzes, StorageItem.quiztivities])
         .order_by(StorageItem.uploaded_at.desc())

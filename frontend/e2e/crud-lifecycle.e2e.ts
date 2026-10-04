@@ -6,7 +6,8 @@
 // storage quota, rows the API still answers for. These need the arq worker, which
 // run.sh starts: it is what hashes an upload, counts it against the quota and links an
 // edited quiz to its images. Before it ran here, none of that had ever been exercised
-// end to end. Findings carry the C-numbers of docs/crud-audit-2026-10.md.
+// end to end. A test with a C-number guards the fix for that finding in
+// docs/crud-audit-2026-10.md; the comment above it says what used to go wrong.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -56,10 +57,9 @@ async function edit(request: APIRequestContext, id: string, body: object, secret
 }
 
 /**
- * A quiz with `image` on its question, put there by an edit rather than the first save.
- * The first save of a quiz with an already-hashed image answers 500 (C14), which would
- * stop every test below at its first line; through an edit the image is linked by the
- * worker's quiz_update job instead, which these tests wait for.
+ * A quiz with `image` on its question, put there by an edit rather than the first save,
+ * so the image is linked by the worker's quiz_update job, which these tests wait for.
+ * The first save links in the request instead; C14 below covers that path.
  */
 async function quizWithImage(request: APIRequestContext, title: string, image: string) {
 	const saved = await saveQuiz(request, quiz(title));
@@ -81,14 +81,13 @@ async function quizWithImage(request: APIRequestContext, title: string, image: s
 	return id;
 }
 
-// C16. quiz_update calls `new_quiz.storageitems.remove(item)` on a quiz fetched without
-// its storageitems, and ormar's remove() checks the in-memory relation, so it raises
-// NoMatch, which the job catches and skips. The image stays linked, on disk and counted.
+// C16. quiz_update called `new_quiz.storageitems.remove(item)` on a quiz fetched without
+// its storageitems, and ormar's remove() checks the in-memory relation, so it raised
+// NoMatch, which the job caught and skipped. The image stayed linked, on disk and counted.
 test('taking an image off a question deletes the file and gives the bytes back', async ({
 	browser,
 	request
 }) => {
-	test.fail(true, 'C16: quiz_update never unlinks a removed image (worker/storage.py:125)');
 	const { context } = await signedInContext(browser, request);
 	const as = context.request;
 	const image = await countedUpload(as);
@@ -138,13 +137,11 @@ test('deleting an account takes its quizzes, its files and its session with it',
 	await context.close();
 });
 
-// C14. The first save links the quiz to its images in the request itself
-// (editor.py:306-311), which loads the StorageItems onto the quiz that is returned. Once
-// the worker has hashed an image, its `hash` is raw bytes, and FastAPI's encoder calls
-// .decode() on them: UnicodeDecodeError, 500. The quiz is saved; the editor is told it
-// was not. Invisible until now because the e2e stack ran no worker, so hash stayed null.
+// C14. The first save links the quiz to its images in the request itself, which loaded
+// the StorageItems onto the quiz it returned. Once the worker had hashed an image, its
+// `hash` was raw bytes, and FastAPI's encoder called .decode() on them: 500, after the
+// quiz was saved. Invisible while the e2e stack ran no worker, so hash stayed null.
 test('a new quiz with an image saves cleanly', async ({ browser, request }) => {
-	test.fail(true, 'C14: first save returns 500 once the image is hashed (editor.py:311)');
 	const { context } = await signedInContext(browser, request);
 	const as = context.request;
 	const image = await countedUpload(as);
@@ -153,17 +150,22 @@ test('a new quiz with an image saves cleanly', async ({ browser, request }) => {
 		.toBeTruthy();
 	const saved = await saveQuiz(as, quiz(`Fresh ${Date.now()}`, image));
 	expect(saved.status, String(saved.body).slice(0, 200)).toBe(200);
+	// And it is linked, which is what the 500 came from.
+	const items = (await (await as.get('/api/v1/storage/list')).json()) as {
+		id: string;
+		quizzes: { id: string }[];
+	}[];
+	expect(items.find((i) => i.id === image)?.quizzes.map((q) => q.id)).toContain(saved.body.id);
 	await context.close();
 });
 
-// C8. The files go, but the storage_items rows stay (ON DELETE SET NULL, deleted_at
-// never set), so /storage/info answers 200 for them, and /storage/download answers 200
+// C8. The files went, but the storage_items rows stayed (ON DELETE SET NULL, deleted_at
+// never set), so /storage/info answered 200 for them, and /storage/download answered 200
 // with an empty body because the local backend yields None for a missing file.
 test('after an account is deleted, its images are gone from the API too', async ({
 	browser,
 	request
 }) => {
-	test.fail(true, 'C8: account deletion leaves storage_items rows (users/__init__.py:518)');
 	const { context } = await signedInContext(browser, request);
 	const as = context.request;
 	const image = await uploadPng(as);
@@ -175,13 +177,12 @@ test('after an account is deleted, its images are gone from the API too', async 
 	await context.close();
 });
 
-// C18. DELETE /storage/meta/{id} hands storage.delete() one string where it takes a list,
-// so the local backend tries to remove one file per character of the name and the real
-// file stays. The quota is released anyway, and download does not check deleted_at, so
-// the "deleted" image is still served: upload, delete, repeat, and the 1 GiB cap means
+// C18. DELETE /storage/meta/{id} handed storage.delete() one string where it takes a list,
+// so the local backend tried to remove one file per character of the name and the real
+// file stayed. The quota was released anyway, and download did not check deleted_at, so
+// the "deleted" image was still served: upload, delete, repeat, and the 1 GiB cap meant
 // nothing.
 test('deleting an image through the API removes the file', async ({ browser, request }) => {
-	test.fail(true, 'C18: storage.delete gets a str, not a list (storage.py:329)');
 	const { context } = await signedInContext(browser, request);
 	const as = context.request;
 	const image = await countedUpload(as);
@@ -194,10 +195,24 @@ test('deleting an image through the API removes the file', async ({ browser, req
 	await context.close();
 });
 
-// C7. Claiming moves the quiz to the account but not the images it was made with: they
-// stay ownerless, so they never count against the quota and outlive the account.
+// C10. The same route deleted an image a quiz still showed, leaving it broken.
+test('an image a quiz still uses cannot be deleted through the API', async ({
+	browser,
+	request
+}) => {
+	const { context } = await signedInContext(browser, request);
+	const as = context.request;
+	const image = await uploadPng(as);
+	const saved = await saveQuiz(as, quiz(`In use ${Date.now()}`, image));
+	expect(saved.status).toBe(200);
+	expect((await as.delete(`/api/v1/storage/meta/${image}`)).status()).toBe(409);
+	expect(onDisk(image)).toBe(true);
+	await context.close();
+});
+
+// C7. Claiming moved the quiz to the account but not the images it was made with: they
+// stayed ownerless, so they never counted against the quota and outlived the account.
 test('claiming a quiz brings its images into the account', async ({ browser, request }) => {
-	test.fail(true, 'C7: claim_quiz does not reassign storage items (quiz.py:236)');
 	const title = `Claimed ${Date.now()}`;
 	const anon = await saveQuiz(request, quiz(title));
 	expect(anon.secret).toBeTruthy();
@@ -214,14 +229,10 @@ test('claiming a quiz brings its images into the account', async ({ browser, req
 	await context.close();
 });
 
-// C3. A saved quiz links any image id it names, whoever uploaded it. The owner of the
-// image then cannot get its bytes back by deleting their own quiz while the other quiz
-// still points at it, and deleting their account deletes the file out from under it.
+// C3. A saved quiz linked any image id it named, whoever uploaded it. The owner of the
+// image then could not get its bytes back by deleting their own quiz while the other
+// quiz still pointed at it, and deleting their account broke the other quiz's image.
 test('a quiz cannot use an image somebody else uploaded', async ({ browser, request }) => {
-	test.fail(
-		true,
-		'C3: no owner check when linking images (editor.py:306, worker/storage.py:135)'
-	);
 	const owner = await signedInContext(browser, request);
 	const other = await signedInContext(browser, request);
 	const image = await uploadPng(owner.context.request);
@@ -232,14 +243,14 @@ test('a quiz cannot use an image somebody else uploaded', async ({ browser, requ
 	await other.context.close();
 });
 
-// C5 (anonymous uploads have no rate limit) is tested in frogquiz/tests/test_ratelimit.py:
-// e2e.env switches rate limiting off for the whole stack, so it could never pass here.
+// C5 (anonymous uploads had no rate limit) is tested in frogquiz/tests/test_ratelimit.py,
+// and the orphan sweep in test_storage_cleanup.py: e2e.env switches rate limiting off and
+// the sweep is a cron job, so neither can be reached from here.
 
-// C6. calculate_hash reads `file_data.user.id`, and an anonymous upload has no user, so
-// the job raises on every anonymous upload. The hash is saved first, so nothing visible
-// breaks; the worker log is where it shows.
+// C6. calculate_hash read `file_data.user.id`, and an anonymous upload has no user, so
+// the job raised on every anonymous upload. The hash was saved first, so nothing visible
+// broke; the worker log is where it showed.
 test('the worker processes an anonymous upload without an error', async ({ request }) => {
-	test.fail(true, 'C6: calculate_hash dereferences a missing user (worker/storage.py:75)');
 	const id = (await uploadPng(request)).replaceAll('-', '');
 	const log = () => fs.readFileSync(path.join(DATA, 'worker.log'), 'utf8').split('\n');
 	const jobOf = () =>

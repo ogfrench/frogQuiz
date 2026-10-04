@@ -13,18 +13,19 @@ from random import randint
 import ormar.exceptions
 
 from frogquiz.helpers import (
+    check_image_string,
     extract_image_ids_from_quiz,
     generate_spreadsheet,
     handle_import_from_excel,
     release_quiz_images,
 )
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError, BaseModel
 
 from frogquiz.auth import get_current_user, get_current_user_optional, verify_anon_secret
 from frogquiz.config import redis, settings, meilisearch
-from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
+from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType, StorageItem
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
 from frogquiz.helpers.ratelimit import rate_limit
@@ -237,6 +238,24 @@ async def claim_quiz(
     quiz.anon_secret = None
     quiz.expire_at = None
     await quiz.update()
+    # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
+    # ownerless, they counted against nobody's quota and outlived the account. Only the
+    # ones already hashed are counted here; calculate_hash counts the rest when it runs,
+    # now that they have an owner, so nothing is counted twice.
+    counted = 0
+    for image in extract_image_ids_from_quiz(quiz):
+        item_id = check_image_string(str(image))[1]
+        item = await StorageItem.objects.get_or_none(id=item_id, deleted_at=None) if item_id else None
+        if item is None or item.user is not None:
+            continue
+        item.user = user
+        await item.update()
+        if item.hash is not None:
+            counted += item.size
+    if counted:
+        owner = await User.objects.get(id=user.id)
+        owner.storage_used += counted
+        await owner.update()
     return quiz
 
 
@@ -269,7 +288,12 @@ async def get_game_id(game_pin: str):
 
 
 @router.get("/list")
-async def get_quiz_list(user: User = Depends(get_current_user), page_size: int | None = 10, page: int | None = 1):
+async def get_quiz_list(
+    user: User = Depends(get_current_user),
+    # 100 is what My Quizzes and the delete-account dialog ask for; it had no ceiling (C12).
+    page_size: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+):
     try:
         return (
             await Quiz.objects.order_by(Quiz.updated_at.desc())
@@ -336,7 +360,13 @@ async def export_quiz_answers(export_token: str, game_pin: str):
     if data is None:
         raise HTTPException(status_code=404, detail="export token not found")
     data = json.loads(data)
+    # The token is minted for one game (socket_server get_export_token). The PIN used to
+    # come only from the query string, so a host could read another game's players,
+    # scores and custom fields, and an unknown PIN was a 500 (C4).
     data2 = await redis.get(f"game:{game_pin}")
+    if data.get("game_pin") != game_pin or data2 is None:
+        raise HTTPException(status_code=404, detail="export token not found")
+    data = data["results"]
     game_data = PlayGame.model_validate_json(data2)
     quiz = await Quiz.objects.get_or_none(id=game_data.quiz_id)
     if quiz is None:

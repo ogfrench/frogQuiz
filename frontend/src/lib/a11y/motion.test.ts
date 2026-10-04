@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DUR, EASE } from '$lib/motion';
@@ -16,7 +17,7 @@ import { DUR, EASE } from '$lib/motion';
  *
  * The tree had fifteen different durations and almost no easing before this.
  */
-const SRC = new URL('../..', import.meta.url).pathname;
+const SRC = fileURLToPath(new URL('../..', import.meta.url));
 const css = readFileSync(join(SRC, 'app.css'), 'utf8');
 
 const cssVar = (name: string): string => {

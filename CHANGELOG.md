@@ -12,11 +12,32 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   limit and are never cleaned up), four Medium (a new quiz with an image answers 500 once
   the worker has hashed it; taking an image off a question never frees it; deleting an
   image through the API keeps the file; an export token opens any game's player data),
-  the rest Low. Nothing is fixed yet; each finding has a test marked as an expected failure.
+  the rest Low. Each was written as an expected-failure test first, then fixed:
+- Anonymous uploads are limited to 30 per ten minutes per address, and a new six-hourly
+  `clean_orphaned_uploads` job deletes uploads no quiz has named for a day. It replaces an
+  editor sweep that read a Redis list nothing wrote (C5).
+- Saving a new quiz with an image no longer answers 500 (C14). Taking an image off a
+  question now deletes the file and gives the bytes back; the worker's unlink had never
+  worked (C16). Deleting an image through the API deletes the file, and a deleted image is
+  no longer served (C18), nor one that a quiz still shows (409, C10).
+- An export token opens only its own game (C4); the `.cqa` export is the owner's only (C1);
+  a quiz can no longer use an image another account uploaded (C3).
+- Claiming a quiz brings its images into the account and its quota (C7); deleting an
+  account marks its uploads deleted (C8); the admin delete routes run the same clean-up as
+  an account deleting itself (C9); the hash job no longer raises on anonymous uploads (C6).
+- `/storage/list/last` hides deleted images (C11); alt text, file names, result notes and
+  the quiz list's page size are bounded (C12).
+- Four frontend unit tests built file paths with `new URL(...).pathname`, which gives
+  `/C:/...` on Windows; they now use `fileURLToPath` and pass there too.
+- The socket `disconnect` handler logged a full traceback for every socket that left
+  without a session (21 in one e2e run); it now returns quietly. `e2e/run.sh` stops its
+  services last-started-first, so the worker and API no longer log Redis errors on the way
+  down. A full e2e run now leaves both logs free of tracebacks.
 - Added `crud-authz`, `crud-lifecycle` and `crud-account` e2e specs (owner-only routes,
   signed-out 401s, admin and flag-off routers, quiz and account deletion on disk, password
   change and account deletion through My Account) and the C5 rate-limit test in
-  `test_ratelimit.py`. Moved the 1x1 PNG and an `uploadPng` helper into `e2e/helpers.ts`.
+  `test_ratelimit.py`, plus `test_storage_cleanup.py` for the orphan sweep and admin
+  delete. Moved the 1x1 PNG and an `uploadPng` helper into `e2e/helpers.ts`.
 - `e2e/run.sh` now starts the arq worker, as production does, logging to
   `e2e/.data/worker.log`; `e2e/stop.sh` stops it through a pid file. On fakeredis it runs
   through `e2e/worker.py`, which skips the `INFO` call fakeredis cannot answer. Without the

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // Who may create, read, change and delete what, asked of the API directly: the UI hiding
-// a button is not a guard. Every finding here is written up in docs/crud-audit-2026-10.md
-// under the same C-number; a `test.fail` is a known bug and turns red when it is fixed.
+// a button is not a guard. A test with a C-number guards the fix for that finding in
+// docs/crud-audit-2026-10.md; the comment above it says what used to go wrong.
 
 import { expect, test } from '@playwright/test';
 import { signedInContext } from './accounts';
@@ -143,14 +143,11 @@ test('routers switched off by a flag are not reachable', async ({ browser, reque
 
 // C1. D18 made the Excel answer key the owner's alone, and journey-teammate checks it with
 // "hiding a button is not a guard". The .cqa export next to it was missed: eximport.py
-// takes the user as `_` and exports whatever id it is given. Under D12 /quiz/get/public
-// already returns the answers, so this exposes nothing new; it is the inconsistency with
-// D18 that is the bug.
+// took the user as `_` and exported whatever id it was given.
 test('another account cannot export somebody else’s private quiz as a file', async ({
 	browser,
 	request
 }) => {
-	test.fail(true, 'C1: GET /eximport/{id} has no ownership check (eximport.py:91)');
 	const owner = await signedInContext(browser, request);
 	const other = await signedInContext(browser, request);
 	const id = (await saveQuiz(owner.context.request, quiz(`Export ${Date.now()}`))).body.id;
@@ -160,11 +157,10 @@ test('another account cannot export somebody else’s private quiz as a file', a
 	await other.context.close();
 });
 
-// C4. The export token is minted for one game's results, but export_data reads the PIN
-// from the query string, so a host can pull another game's player scores and custom
-// fields (which can hold an email address). An unknown PIN is a 500.
+// C4. The export token is minted for one game's results, but export_data read the PIN
+// from the query string, so a host could pull another game's player scores and custom
+// fields (which can hold an email address). An unknown PIN was a 500.
 test('an export token only opens the game it was made for', async ({ request }) => {
-	test.fail(true, 'C4: export_data does not tie game_pin to the token (quiz.py:333)');
 	const a = await hostGame(request, quiz(`Game A ${Date.now()}`));
 	const b = await hostGame(request, quiz(`Game B ${Date.now()}`));
 	const tokenFor = async () => {
@@ -185,9 +181,8 @@ test('an export token only opens the game it was made for', async ({ request }) 
 	expect(crossed.status()).toBeLessThan(500);
 });
 
-// C11. /storage/list filters out deleted rows; /storage/list/last does not.
+// C11. /storage/list filtered out deleted rows; /storage/list/last did not.
 test('a deleted image is not listed among the latest uploads', async ({ browser, request }) => {
-	test.fail(true, 'C11: /storage/list/last does not filter deleted_at (storage.py:375)');
 	const user = await signedInContext(browser, request);
 	const as = user.context.request;
 	const id = await upload(as);
@@ -197,11 +192,10 @@ test('a deleted image is not listed among the latest uploads', async ({ browser,
 	await user.context.close();
 });
 
-// C12. Free-text fields with no upper bound. alt_text is the one that matters: it is sent
+// C12. Free-text fields had no upper bound. alt_text is the one that matters: it is sent
 // back base64-encoded in an X-Alt-Text header on every download of the image, and a
 // header of that size is refused by most proxies.
 test('image alt text has an upper bound', async ({ browser, request }) => {
-	test.fail(true, 'C12: UpdateStorageItem.alt_text is unbounded (storage.py:336)');
 	const user = await signedInContext(browser, request);
 	const as = user.context.request;
 	const id = await upload(as);
@@ -213,7 +207,6 @@ test('image alt text has an upper bound', async ({ browser, request }) => {
 });
 
 test('the quiz list refuses an absurd page size', async ({ browser, request }) => {
-	test.fail(true, 'C12: quiz/list page_size is unbounded (quiz.py:272)');
 	const user = await signedInContext(browser, request);
 	const res = await user.context.request.get('/api/v1/quiz/list?page_size=1000000');
 	expect(res.status()).toBe(422);
