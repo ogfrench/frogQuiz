@@ -21,6 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { selected_question, data = $bindable() }: Props = $props();
+	const answers = $derived(data.questions[selected_question].answers as OrderQuizAnswer[]);
 
 	let parent_el: HTMLDivElement = $state();
 
@@ -35,13 +36,13 @@ SPDX-License-Identifier: MPL-2.0
 	const move_item = (up: boolean, index: number) => {
 		if (up) {
 			data.questions[selected_question].answers = swapArrayElements(
-				data.questions[selected_question].answers,
+				answers,
 				index,
 				index - 1
 			);
 		} else {
 			data.questions[selected_question].answers = swapArrayElements(
-				data.questions[selected_question].answers,
+				answers,
 				index,
 				index + 1
 			);
@@ -51,18 +52,20 @@ SPDX-License-Identifier: MPL-2.0
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
-	for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-		data.questions[selected_question].answers[i] = {
-			answer: data.questions[selected_question].answers[i].answer,
-			color: data.questions[selected_question].answers[i].color ?? undefined,
-			id: [i]
+	// Setup runs once, so it reads the question directly rather than the reactive alias.
+	const initial = data.questions[selected_question].answers as OrderQuizAnswer[];
+	for (let i = 0; i < initial.length; i++) {
+		initial[i] = {
+			answer: initial[i].answer,
+			color: initial[i].color ?? undefined,
+			id: i
 		};
 	}
 	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
 	const set_colors_if_unset = () => {
-		for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-			if (!data.questions[selected_question].answers[i].color) {
-				data.questions[selected_question].answers[i].color = default_colors[i];
+		for (let i = 0; i < answers.length; i++) {
+			if (!answers[i].color) {
+				answers[i].color = default_colors[i];
 			}
 		}
 	};
@@ -75,7 +78,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="w-full">
 	<div class="flex flex-col w-full px-8" bind:this={parent_el}>
-		{#each data.questions[selected_question].answers as answer, i (answer.id)}
+		{#each answers as answer, i (answer.id)}
 			<div
 				animate:flip={{ duration: 200 }}
 				out:fade={{ duration: 150 }}
@@ -85,9 +88,8 @@ SPDX-License-Identifier: MPL-2.0
 					class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
 					type="button"
 					onclick={() => {
-						data.questions[selected_question].answers.splice(i, 1);
-						data.questions[selected_question].answers =
-							data.questions[selected_question].answers;
+						answers.splice(i, 1);
+						data.questions[selected_question].answers = answers;
 					}}
 				>
 					<svg
@@ -137,7 +139,7 @@ SPDX-License-Identifier: MPL-2.0
 						}}
 						class="disabled:opacity-50 transition"
 						type="button"
-						disabled={i === data.questions[selected_question].answers.length - 1}
+						disabled={i === answers.length - 1}
 					>
 						<svg
 							class="w-8 h-8"
@@ -180,19 +182,19 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 
 	<div class="px-8 flex w-full">
-		{#if data.questions[selected_question].answers.length < 4}
+		{#if answers.length < 4}
 			<button
 				class="p-4 rounded-lg bg-transparent border-gray-500 border-2 hover:bg-gray-300 transition dark:hover:bg-gray-600 m-2 w-full"
 				type="button"
 				in:fade={{ duration: 150 }}
 				onclick={() => {
 					data.questions[selected_question].answers = [
-						...data.questions[selected_question].answers,
+						...answers,
 						{
 							...{
 								answer: '',
 								color: undefined,
-								id: data.questions[selected_question].answers.length
+								id: answers.length
 							}
 						}
 					];

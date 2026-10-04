@@ -9,8 +9,28 @@ SPDX-License-Identifier: MPL-2.0
 For François and Gonçalo, 2–4 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
-**State: green and ready to merge.** About 90 commits and 190 files, roughly +11700 / −3400
-against `master`.
+**State: ready to merge. François and Gonçalo review it together on 5 Oct.** About 100 commits and
+about 210 files, roughly +13700 / -3600 against `master`, which has not moved since 29 Sep.
+
+### Reviewing and merging (5 Oct)
+
+Read the PR #23 description top to bottom. It is grouped by theme, with dates, and each
+section names the doc that holds the detail. Only one thing in it needs the two of you:
+**D16 and D18** (`MVP.md` §4.0) are François's calls from 2 Oct and still need Gonçalo's
+tick. D16 is the host-side "show questions and answers on players' devices" switch, off by
+default as in Kahoot. D18 makes downloading a quiz's results owner-only. Every other
+decision in the PR is already agreed and recorded in `docs/mvp-scope.md`.
+
+To read code by area rather than commit by commit:
+`git diff master...ccr-370df3e4-c44t1l --stat -- frogquiz/` for the backend (auth, uploads,
+the worker, the socket server), the same with `frontend/src/` for the UI, and
+`frontend/e2e/` for what is now tested.
+
+Merge with **Create a merge commit**. Squash and rebase both rewrite hashes, and this file,
+the PR and the docs cite them (`9c62681f`, `077f695` and others). After the merge, on the
+VM: `docker compose pull && docker compose up -d`, then `docker compose ps` to confirm the
+`worker` container is up. The CRUD audit's upload clean-up runs there. Then §1 C (a real
+mail) and `MVP.md` §4.1 on the deployed site.
 
 | Suite | Result |
 | --- | --- |
@@ -366,9 +386,8 @@ Each row records what was decided and why.
 
 One judgment call left open on purpose, not blocking:
 
-- **SonarQube** is untouched, per François. The nearer neighbor is `svelte-check` in CI:
-  229 errors in our own code, 81 of them in five files, three of which are editor parts
-  for question types the MVP does not offer — so it is smaller than the number looks.
+- **SonarQube** is untouched, per François. The nearer neighbor, `svelte-check` in CI, is
+  done: 0 errors since 4 Oct, and `frontend_lint` runs it.
 
 ---
 

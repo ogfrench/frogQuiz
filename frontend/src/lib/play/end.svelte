@@ -23,7 +23,7 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let data_available = $state(false);
-	let winners_arr = $state();
+	let winners_arr = $state<[string, number][]>();
 
 	const getWinnersSorted = () => {
 		let winners = {};

@@ -52,7 +52,7 @@ SPDX-License-Identifier: MPL-2.0
 	// was no feedback at all while a slow request was pending.
 	let isSubmittingPassword = $state(false);
 
-	let this_session = $state();
+	let this_session = $state<{ id: string }>();
 
 	let mismatch = $derived(
 		changePasswordData.newPasswordConfirm !== '' &&

@@ -31,7 +31,7 @@ SPDX-License-Identifier: MPL-2.0
 	}: Props = $props();
 	let type: 'img' | 'video' | undefined = $state(undefined);
 
-	let img_data = $state();
+	let img_data = $state<{ data: string; alt_text: string }>();
 	let thumbhash_data: string = $state();
 
 	function base64ToBytes(base64: string): Uint8Array {

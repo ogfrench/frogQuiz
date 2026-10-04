@@ -84,7 +84,7 @@ SPDX-License-Identifier: MPL-2.0
 				<span class="truncate">{identifier}</span>
 				<button
 					type="button"
-					onclick={restart}
+					onclick={() => restart()}
 					class="text-muted-foreground hover:text-foreground shrink-0 underline underline-offset-4"
 				>
 					{$t('login_page.change_account')}

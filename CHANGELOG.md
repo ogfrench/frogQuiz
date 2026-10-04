@@ -24,6 +24,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   footer get 8px gaps so neighbouring press areas no longer overlap. `fq-touch-target` now
   keys on `any-pointer: coarse`, which also catches touch laptops. Desktop with a mouse is
   unchanged.
+- `svelte-check` passes with 0 errors (it reported 1052) and CI now runs it. `skipLibCheck`
+  removed the 825 that were in bits-ui's type files. The 227 in our code were fixed
+  rather than excluded: mostly the quiz answer union read without narrowing, untyped
+  `$state()`, and `bind:` on props the child never writes back. Real bugs it surfaced:
+  the ORDER editor stored each answer's id as an array, `/edit/videos` read ffmpeg.wasm
+  0.11's `ratio` so its compression progress never moved, the login page showed its
+  "confirmed" badge for any `?verified=` value, the quiztivity page type was missing
+  `Abcd`, and a leftover `<!--{/if}-->` made svelte-check treat `/import` as JavaScript.
+- `editor-column.e2e.ts › a question can be moved and deleted` no longer fails at random.
+  The moved card's rich-text field takes up to a second to show its text again after
+  re-mounting, and the test read it once, at once. It now waits for the text.
 - New e2e spec `touch-targets.e2e.ts` audits every control on home, Discover, My Quizzes,
   the quiz page, My Account, Join, the editor, the menu drawer and the player's game
   screens under touch emulation: 44x44 press area, no press area landing on a neighbour,

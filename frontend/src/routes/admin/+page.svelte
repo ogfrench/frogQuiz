@@ -111,7 +111,7 @@ SPDX-License-Identifier: MPL-2.0
 	const game_pin = data.game_pin;
 	let errorMessage = $state('');
 	let success = $state(false);
-	let dataexport_download_a = $state();
+	let dataexport_download_a = $state<HTMLAnchorElement>();
 	let warnToLeave = true;
 
 	const socket_game_controls: SocketGameControls = new SocketGameControls(socket);

@@ -178,7 +178,10 @@ the explanation.
 
 - [ ] **Two more one-off failures on 4 Oct**, in the first full run with the arq worker
       started by `run.sh` (163/166, branch `crud-audit`): `editor-column.e2e.ts › a question
-      can be moved and deleted` (the second card was still the moved one's old text) and
+      can be moved and deleted` (the second card was still the moved one's old text;
+      **explained and fixed 4 Oct, later**: it recurred, and a probe showed the moved card's
+      rich-text field takes 11ms to 1s to show its text again after re-mounting, while the
+      test read it once, straight away. The text was never lost. The test now waits) and
       `practice.e2e.ts › practice runs a quiz end to end` (the page stayed on its loading
       spinner). No 5xx in `api.log` for either. Both passed straight after in isolation,
       with the worker running. Same rule: note a recurrence, do not explain it in advance.
@@ -194,7 +197,15 @@ the explanation.
 
 ## Open — quality
 
-- [ ] `svelte-check` in CI. Measured in a single run, 2 Oct: **1054 errors, 229 in our own
+- [x] `svelte-check` in CI. **Done 4 Oct: 0 errors, and CI runs it.** The 825 under
+      `node_modules` were `.d.ts` files, gone with `skipLibCheck`. The 227 of ours were
+      fixed rather than excluded, gated question types included. A few were real bugs: the
+      ORDER editor gave each answer `id: [i]` (an array), `/edit/videos` read ffmpeg.wasm
+      0.11's `ratio` so its progress bar sat at 0, `?verified=<anything>` showed the login
+      page's "confirmed" badge, and a stray `<!--{/if}-->` at the end of `/import` made
+      svelte-check read that page as JavaScript, which hid a `File[]` bound to a `FileList`.
+      The original measurement follows.
+      Measured in a single run, 2 Oct: **1054 errors, 229 in our own
       code and 825 under `node_modules`** (mostly `bits-ui`). Reproduce with
       `npx svelte-check --output machine > out.txt`, then count `^[0-9]* ERROR` lines in
       that one file, with and without `node_modules` — the first attempt at this used two

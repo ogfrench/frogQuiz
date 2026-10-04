@@ -98,6 +98,8 @@ SPDX-License-Identifier: MPL-2.0
 	// an empty box.
 	const coarse_pointer = matchMedia('(pointer: coarse)').matches;
 	const uppy_locale = {
+		// Uppy's English rule; its Locale type requires one even when no string is plural.
+		pluralize: (n: number) => (n === 1 ? 0 : 1),
 		strings: coarse_pointer
 			? { dropPasteFiles: '%{browseFiles}', browseFiles: $t('uploader.choose_image') }
 			: { dropPasteFiles: $t('uploader.drop_or_browse'), browseFiles: $t('uploader.browse') }

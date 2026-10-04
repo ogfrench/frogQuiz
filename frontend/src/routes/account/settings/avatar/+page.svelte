@@ -72,9 +72,12 @@ SPDX-License-Identifier: MPL-2.0
 
 	const save_avatar = async () => {
 		save_finished = false;
-		const res = await fetch(`/api/v1/avatar/save?${new URLSearchParams(data).toString()}`, {
-			method: 'POST'
-		});
+		const res = await fetch(
+			`/api/v1/avatar/save?${new URLSearchParams(Object.entries(data).map(([k, v]) => [k, String(v)])).toString()}`,
+			{
+				method: 'POST'
+			}
+		);
 		if (res.ok) {
 			save_finished = true;
 		}

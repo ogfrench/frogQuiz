@@ -8,8 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import type { EditorData } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
-	import { reach } from 'yup';
-	import { dataSchema } from '$lib/yupSchemas';
+	import { dataSchema, fieldIsValid } from '$lib/yupSchemas';
 	import { editorValidation } from '$lib/editor/validation.svelte';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { htmlToPlainText } from '$lib/sanitize';
@@ -90,11 +89,17 @@ SPDX-License-Identifier: MPL-2.0
 	const question_valid = $derived(
 		// Marked only after the first Save (validation.svelte.ts): a new question is blank.
 		!editorValidation.shown ||
-			reach(dataSchema, 'questions[].question').isValidSync(question.question)
+			fieldIsValid(dataSchema, 'questions[].question', question.question)
 	);
 	const incomplete = $derived(editorValidation.shown && !isQuestionComplete(question));
 	const summary = $derived(htmlToPlainText(question.question ?? '').trim());
-	const answers = $derived(Array.isArray(question.answers) ? question.answers : []);
+	// Every list-shaped answer type has `answer`; only ABCD and CHECK have `right`.
+	const answers = $derived(
+		(Array.isArray(question.answers) ? question.answers : []) as {
+			answer: string;
+			right?: boolean;
+		}[]
+	);
 
 	// Arrow keys on the grip move the question without a pointer at all, which is the
 	// single-pointer alternative WCAG 2.5.7 asks for. Kept from the old rail.

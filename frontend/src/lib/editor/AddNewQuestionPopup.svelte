@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Answers, Question } from '$lib/quiz_types';
+	import type { Answer, Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { getLocalization } from '$lib/i18n';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
@@ -38,7 +38,7 @@ SPDX-License-Identifier: MPL-2.0
 	const question_types: {
 		name: string;
 		description: string;
-		answers: Answers;
+		answers: Answer[];
 		type: QuizQuestionType;
 	}[] = [
 		{
@@ -80,7 +80,8 @@ SPDX-License-Identifier: MPL-2.0
 			// A fresh copy: the preset's answers are a template, not shared state.
 			answers: question_types[index].answers.map((a) => ({ ...a }))
 		};
-		const position = at === null ? questions.length : Math.max(0, Math.min(at, questions.length));
+		const position =
+			at === null ? questions.length : Math.max(0, Math.min(at, questions.length));
 		questions = [
 			...questions.slice(0, position),
 			{ ...empty_question },
@@ -105,7 +106,12 @@ SPDX-License-Identifier: MPL-2.0
 			</Dialog.Title>
 			<Dialog.Close>
 				{#snippet child({ props })}
-					<Button variant="ghost" size="icon-sm" aria-label={$t('words.close')} {...props}>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						aria-label={$t('words.close')}
+						{...props}
+					>
 						<X />
 					</Button>
 				{/snippet}

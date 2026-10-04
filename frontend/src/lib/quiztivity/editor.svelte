@@ -5,7 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Data } from './types';
+	import type { Abcd, Data, Markdown, Memory } from './types';
 	import { getLocalization } from '$lib/i18n';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import AddNewSlide from './add_new_slide.svelte';
@@ -28,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	// saving is bound by both call sites with bind:saving, so the prop has to stay
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	let { data = $bindable(), saving }: Props = $props();
+	let { data = $bindable(), saving = $bindable() }: Props = $props();
 
 	let selected_slide = $state(null);
 	let opened_slide = $state(null);
@@ -172,11 +172,26 @@ SPDX-License-Identifier: MPL-2.0
 		{#if sel_t === QuizTivityTypes.PDF}
 			<PdfEdit />
 		{:else if sel_t === QuizTivityTypes.MEMORY}
-			<MemoryEdit bind:data={data.pages[opened_slide].data} />
+			<MemoryEdit
+				bind:data={
+					() => data.pages[opened_slide].data as Memory,
+					(v) => (data.pages[opened_slide].data = v)
+				}
+			/>
 		{:else if sel_t === QuizTivityTypes.MARKDOWN}
-			<MarkdownEdit bind:data={data.pages[opened_slide].data} />
+			<MarkdownEdit
+				bind:data={
+					() => data.pages[opened_slide].data as Markdown,
+					(v) => (data.pages[opened_slide].data = v)
+				}
+			/>
 		{:else if sel_t === QuizTivityTypes.ABCD}
-			<AbcdEdit bind:data={data.pages[opened_slide].data} />
+			<AbcdEdit
+				bind:data={
+					() => data.pages[opened_slide].data as Abcd,
+					(v) => (data.pages[opened_slide].data = v)
+				}
+			/>
 		{:else}
 			<h1 class="text-8xl">ERROR!</h1>
 		{/if}

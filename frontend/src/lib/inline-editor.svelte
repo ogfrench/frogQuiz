@@ -31,7 +31,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { text = $bindable(''), label = '' }: Props = $props();
 
-	let html_el = $state();
+	let html_el = $state<HTMLElement>();
 
 	// Sanitizes on every assignment, not just our own triggerChange, so a value
 	// coming in from the parent (e.g. legacy unsanitized data loaded from the
@@ -75,10 +75,8 @@ SPDX-License-Identifier: MPL-2.0
 		Editor.create(html_el, {
 			licenseKey: 'GPL',
 			// plugins: [Strikethrough],
-			config: {
-				enterMode: BalloonEditor.ENTER_DIV,
-				shiftEnterMode: BalloonEditor.ENTER_BR
-			},
+			// A `config: { enterMode, shiftEnterMode }` block sat here: CKEditor 4 options.
+			// CKEditor 5 has neither constant, so both were undefined and it was ignored.
 			toolbar: [
 				'bold',
 				'italic',

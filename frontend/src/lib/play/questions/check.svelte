@@ -28,9 +28,10 @@ SPDX-License-Identifier: MPL-2.0
 		timer_res,
 		circular_progress
 	}: Props = $props();
+	const answers = $derived(question.answers as { answer: string }[]);
 	// Sized to the question rather than hardcoded to four, so a question with a
 	// different number of options still tracks every tile.
-	let _selected_answers = $state(question.answers.map(() => false));
+	let _selected_answers = $state((question.answers as { answer: string }[]).map(() => false));
 
 	// The wire format is the indices of everything ticked, concatenated in
 	// ascending order: ticking the first and third option sends "02". The backend
@@ -61,7 +62,7 @@ SPDX-License-Identifier: MPL-2.0
 		class="grid grid-rows-2 grid-flow-col auto-cols-[minmax(0,1fr)] gap-3 w-full p-4 h-full"
 		class:has-picks={_selected_answers.some(Boolean)}
 	>
-		{#each question.answers as answer, i}
+		{#each answers as answer, i}
 			{@const picked = _selected_answers[i]}
 			<!-- Focus is a foreground outline. It was ring-white/80, a white ring on a near-white
 			     page, so tabbing between answers showed nothing in light mode. -->

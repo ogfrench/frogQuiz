@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { socket } from '$lib/socket';
 	import JoinGame from '$lib/play/join.svelte';
-	import type { Answer, Question as QuestionType } from '$lib/quiz_types';
+	import type { Question as QuestionType } from '$lib/quiz_types';
 	import ShowTitle from '$lib/play/title.svelte';
 	import Question from '$lib/play/question.svelte';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
@@ -49,8 +49,20 @@ SPDX-License-Identifier: MPL-2.0
 	let question_index = $state('');
 	let unique = $state({});
 	navbarVisible.visible = false;
-	let answer_results: Array<Answer> = $state();
-	let gameData = $state();
+	// Every player's answer to the question just closed, as the server sends it.
+	let answer_results: Array<{
+		username: string;
+		answer: string;
+		right: boolean;
+		time_taken: number;
+		score: number;
+	}> = $state();
+	let gameData = $state<{
+		title: string;
+		description: string;
+		cover_image?: string;
+		background_color?: string;
+	}>();
 	let solution: QuestionType = $state();
 	let username = $state('');
 	let scores = $state({});
@@ -58,7 +70,7 @@ SPDX-License-Identifier: MPL-2.0
 		started: false
 	});
 
-	let question: Question = $state();
+	let question: QuestionType = $state();
 
 	// Why the player is back on the join screen, if they were sent there.
 	let join_error = $state('');

@@ -20,7 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 	let url_input = $state('');
-	let file_input: File[] = $state();
+	let file_input: FileList = $state();
 	let kahoot_regex = /^https:\/\/create\.kahoot\.it\/details\/.*\/?([a-zA-Z-\d]{36})\/?$/;
 
 	let url_valid = $derived(kahoot_regex.test(url_input));
@@ -225,4 +225,3 @@ SPDX-License-Identifier: MPL-2.0
 		</p>
 	</div>
 </div>
-<!--{/if}-->

@@ -21,7 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 
-	const fetch_images = async (): Promise<PrivateImageData> => {
+	const fetch_images = async (): Promise<PrivateImageData[]> => {
 		const response = await fetch('/api/v1/storage/list/last?count=50');
 		return await response.json();
 	};

@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Question } from '$lib/quiz_types';
+	import type { OrderQuizAnswer, Question, RangeQuizAnswer } from '$lib/quiz_types';
 	import { answerColor } from '$lib/play/answer_colors';
 	import Check from '@lucide/svelte/icons/check';
 	import Clock from '@lucide/svelte/icons/clock';
@@ -40,6 +40,8 @@ SPDX-License-Identifier: MPL-2.0
 		question_index,
 		solution
 	}: Props = $props();
+	const answers = $derived(question.answers as OrderQuizAnswer[]);
+	const range = $derived(question.answers as RangeQuizAnswer);
 
 	if (question.type === undefined) {
 		question.type = QuizQuestionType.ABCD;
@@ -131,7 +133,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	let slider_value = $state([0]);
 	if (question.type === QuizQuestionType.RANGE) {
-		slider_value[0] = (question.answers.max - question.answers.min) / 2 + question.answers.min;
+		const initial = question.answers as RangeQuizAnswer;
+		slider_value[0] = (initial.max - initial.min) / 2 + initial.min;
 	}
 	const set_answer_if_not_set_range = (time) => {
 		if (question.type !== QuizQuestionType.RANGE) {
@@ -144,8 +147,9 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	if (question.type === QuizQuestionType.ORDER) {
-		for (let i = 0; i < question.answers.length; i++) {
-			question.answers[i] = { ...question.answers[i], id: i };
+		const initial = question.answers as OrderQuizAnswer[];
+		for (let i = 0; i < initial.length; i++) {
+			initial[i] = { ...initial[i], id: i };
 		}
 	}
 
@@ -161,12 +165,11 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	let circular_progress = $derived.by(() => {
 		try {
-			return 1 - ((100 / question.time) * parseInt(timer_res)) / 100;
+			return 1 - ((100 / Number(question.time)) * parseInt(timer_res)) / 100;
 		} catch {
 			return 0;
 		}
 	});
-
 </script>
 
 <!-- h-dvh w-full, not h-screen w-screen: on a real phone 100vh counts the browser's own
@@ -190,15 +193,19 @@ SPDX-License-Identifier: MPL-2.0
 		     question got a margin meant for three question types. -->
 		<div
 			class="flex shrink-0 flex-col justify-start"
-			class:mt-10={[QuizQuestionType.RANGE, QuizQuestionType.ORDER, QuizQuestionType.TEXT].includes(
-				question.type
-			)}
+			class:mt-10={[
+				QuizQuestionType.RANGE,
+				QuizQuestionType.ORDER,
+				QuizQuestionType.TEXT
+			].includes(question.type)}
 			style={question.image ? 'height: 33.333333%' : undefined}
 		>
 			<!-- Its own height when there is no image: a fixed sixth of the screen left a
 			     one-line question floating over a gap, and px-4 keeps a long one off the
 			     screen edges. -->
-			<h1 class="text-foreground lg:text-2xl text-lg text-center wrap-anywhere px-4 py-3 text-balance">
+			<h1
+				class="text-foreground lg:text-2xl text-lg text-center wrap-anywhere px-4 py-3 text-balance"
+			>
 				{@html sanitizeTitleHtml(question.question)}
 			</h1>
 			{#if question.type === QuizQuestionType.CHECK}
@@ -234,7 +241,7 @@ SPDX-License-Identifier: MPL-2.0
 				<div
 					class="grid grid-rows-2 grid-flow-col auto-cols-[minmax(0,1fr)] gap-3 w-full p-4 h-full"
 				>
-					{#each question.answers as answer, i}
+					{#each answers as answer, i}
 						{@const picked = selected_answer === answer.answer}
 						{@const waiting = selected_answer !== undefined && !picked}
 						<!-- Focus is a foreground outline. It was ring-white/80, a white ring on a near-white
@@ -295,8 +302,8 @@ SPDX-License-Identifier: MPL-2.0
 				<div class:pointer-events-none={selected_answer !== undefined} class="mt-24">
 					<c.default
 						bind:values={slider_value}
-						bind:min={question.answers.min}
-						bind:max={question.answers.max}
+						bind:min={range.min}
+						bind:max={range.max}
 						id="pips-slider"
 						pips
 						float
@@ -305,7 +312,7 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 				<div class="flex justify-center">
 					<div class="w-1/2">
-						<BrownButton onclick={() => selectAnswer(slider_value[0])}
+						<BrownButton onclick={() => selectAnswer(`${slider_value[0]}`)}
 							>{$t('words.submit')}
 						</BrownButton>
 					</div>
@@ -352,7 +359,7 @@ SPDX-License-Identifier: MPL-2.0
 				style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
 			></span>
 			<div class="flex min-h-0 w-full flex-1 flex-col gap-4 px-4 py-6 mt-10">
-				{#each question.answers as answer, i (answer.id)}
+				{#each answers as answer, i (answer.id)}
 					<div
 						class="w-full h-fit flex-row rounded-lg p-2 align-middle"
 						animate:flip={{ duration: 100 }}
@@ -360,7 +367,7 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<button
 							onclick={() => {
-								question.answers = swapArrayElements(question.answers, i, i - 1);
+								question.answers = swapArrayElements(answers, i, i - 1);
 							}}
 							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
 							type="button"
@@ -388,12 +395,12 @@ SPDX-License-Identifier: MPL-2.0
 
 						<button
 							onclick={() => {
-								question.answers = swapArrayElements(question.answers, i, i + 1);
+								question.answers = swapArrayElements(answers, i, i + 1);
 							}}
 							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
 							type="button"
 							aria-label="Move item down"
-							disabled={i === question.answers.length - 1 || Boolean(selected_answer)}
+							disabled={i === answers.length - 1 || Boolean(selected_answer)}
 						>
 							<svg
 								class="w-8 h-8"
@@ -419,7 +426,7 @@ SPDX-License-Identifier: MPL-2.0
 						type="button"
 						disabled={Boolean(selected_answer)}
 						onclick={() => {
-							select_complex_answer(question.answers);
+							select_complex_answer(answers);
 						}}>{$t('words.submit')}</BrownButton
 					>
 				</div>

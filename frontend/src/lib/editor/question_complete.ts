@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-import { reach } from 'yup';
-import { ABCDQuestionSchema, dataSchema } from '$lib/yupSchemas';
+import { ABCDQuestionSchema, dataSchema, fieldIsValid } from '$lib/yupSchemas';
 import { QuizQuestionType } from '$lib/quiz_types';
 
 // The two types the MVP offers (D2), and old questions saved before `type` existed.
@@ -23,7 +22,7 @@ const CHECKED_TYPES = [undefined, null, QuizQuestionType.ABCD, QuizQuestionType.
  * must say the same thing.
  */
 export const isQuestionComplete = (question): boolean => {
-	if (!reach(dataSchema, 'questions[].question').isValidSync(question?.question)) {
+	if (!fieldIsValid(dataSchema, 'questions[].question', question?.question)) {
 		return false;
 	}
 	// The cut question types can no longer be created, but old quizzes still open, and
@@ -39,5 +38,5 @@ export const isQuestionComplete = (question): boolean => {
 	if (!question.answers.some((a) => a.right)) {
 		return false;
 	}
-	return question.answers.every((a) => reach(ABCDQuestionSchema, 'answer').isValidSync(a.answer));
+	return question.answers.every((a) => fieldIsValid(ABCDQuestionSchema, 'answer', a.answer));
 };

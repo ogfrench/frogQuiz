@@ -28,6 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { selected_question, check_choice = false, data = $bindable() }: Props = $props();
+	const answers = $derived(data.questions[selected_question].answers as Answer[]);
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
@@ -55,8 +56,8 @@ SPDX-License-Identifier: MPL-2.0
 		ANSWER_COLORS[index % ANSWER_COLORS.length];
 
 	const remove_answer = (index: number) => {
-		data.questions[selected_question].answers.splice(index, 1);
-		data.questions[selected_question].answers = data.questions[selected_question].answers;
+		answers.splice(index, 1);
+		data.questions[selected_question].answers = answers;
 	};
 	// An auto-growing textarea: height follows content, so the tile shows the whole
 	// answer instead of clipping it.
@@ -74,7 +75,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="grid w-full gap-3 sm:grid-cols-2">
 	{#if Array.isArray(data.questions[selected_question].answers)}
-		{#each data.questions[selected_question].answers as answer, index}
+		{#each answers as answer, index}
 			{@const color = slot_color(answer, index)}
 			{@const ink = get_foreground_color(color)}
 			<!-- min-w-0 is what stops the tile bursting out of its grid cell. A grid item
@@ -128,7 +129,7 @@ SPDX-License-Identifier: MPL-2.0
 						// previously-marked one correct too. CHECK (multi-select) keeps its
 						// independent toggle.
 						if (!check_choice && !answer.right) {
-							for (const other of data.questions[selected_question].answers) {
+							for (const other of answers) {
 								other.right = false;
 							}
 						}
@@ -151,16 +152,13 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{/each}
 	{/if}
-	{#if data.questions[selected_question].answers.length < 4}
+	{#if answers.length < 4}
 		<button
 			class="border-border text-muted-foreground hover:border-primary/50 hover:bg-muted focus-visible:ring-ring flex items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 transition focus-visible:ring-2 focus-visible:outline-none"
 			type="button"
 			in:fade={{ duration: 150 }}
 			onclick={() => {
-				data.questions[selected_question].answers = [
-					...data.questions[selected_question].answers,
-					{ ...get_empty_answer() }
-				];
+				data.questions[selected_question].answers = [...answers, { ...get_empty_answer() }];
 			}}
 		>
 			<Plus class="size-4" />

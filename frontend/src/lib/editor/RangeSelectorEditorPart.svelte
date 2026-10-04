@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { run } from 'svelte/legacy';
 
-	import type { EditorData } from '../quiz_types';
+	import type { EditorData, RangeQuizAnswer } from '../quiz_types';
 	import Spinner from '../Spinner.svelte';
 
 	interface Props {
@@ -16,9 +16,11 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { selected_question, data = $bindable() }: Props = $props();
+	const answers = $derived(data.questions[selected_question].answers as RangeQuizAnswer);
 
 	let question = data.questions[selected_question];
-	if (question.answers.max === undefined || question.answers.min_correct === undefined) {
+	const initial = question.answers as RangeQuizAnswer;
+	if (initial.max === undefined || initial.min_correct === undefined) {
 		question.answers = {
 			max: 10,
 			min: 0,
@@ -27,25 +29,19 @@ SPDX-License-Identifier: MPL-2.0
 		};
 	}
 
-	let answer = question.answers;
+	let answer = question.answers as RangeQuizAnswer;
 	let range_arr = $state([answer.min_correct, answer.max_correct]);
 	run(() => {
-		data.questions[selected_question].answers.min_correct = range_arr[0];
+		answers.min_correct = range_arr[0];
 	});
 	run(() => {
-		data.questions[selected_question].answers.max_correct = range_arr[1];
+		answers.max_correct = range_arr[1];
 	});
 	run(() => {
-		data.questions[selected_question].answers.min =
-			data.questions[selected_question].answers.min === null
-				? 0
-				: data.questions[selected_question].answers.min;
+		answers.min = answers.min === null ? 0 : answers.min;
 	});
 	run(() => {
-		data.questions[selected_question].answers.max =
-			data.questions[selected_question].answers.max === null
-				? 0
-				: data.questions[selected_question].answers.max;
+		answers.max = answers.max === null ? 0 : answers.max;
 	});
 
 	function sleep(ms) {
@@ -59,14 +55,14 @@ SPDX-License-Identifier: MPL-2.0
 			<input
 				type="number"
 				class="w-16 bg-transparent rounded-lg text-lg border-2 border-gray-500 p-1"
-				max={data.questions[selected_question].answers.max - 2}
-				bind:value={data.questions[selected_question].answers.min}
+				max={answers.max - 2}
+				bind:value={answers.min}
 			/>
 			<input
 				type="number"
 				class="w-16 bg-transparent rounded-lg text-lg border-2 border-gray-500 p-1"
-				min={data.questions[selected_question].answers.min + 2}
-				bind:value={data.questions[selected_question].answers.max}
+				min={answers.min + 2}
+				bind:value={answers.max}
 			/>
 		</div>
 	</div>
@@ -81,8 +77,8 @@ SPDX-License-Identifier: MPL-2.0
 			{:then _}
 				<c.default
 					bind:values={range_arr}
-					bind:min={data.questions[selected_question].answers.min}
-					bind:max={data.questions[selected_question].answers.max}
+					bind:min={answers.min}
+					bind:max={answers.max}
 					pips
 					float
 					all="label"

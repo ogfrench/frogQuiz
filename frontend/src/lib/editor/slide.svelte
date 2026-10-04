@@ -218,7 +218,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 		</div>
 		<div class="col-start-2 col-end-6 transition bg-transparent pt-2">
-			<EditMenu bind:selected_el />
+			<EditMenu {selected_el} />
 		</div>
 
 		<div class="flex flex-col pr-2 rounded-t-lg z-40 pt-2">

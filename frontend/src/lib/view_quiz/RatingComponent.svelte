@@ -8,9 +8,11 @@ SPDX-License-Identifier: MPL-2.0
 	import type { QuizData } from '$lib/quiz_types';
 	import Hoverable from '$lib/view_quiz/Hoverable.svelte';
 	import { createTippy } from 'svelte-tippy';
+	import type { Action } from 'svelte/action';
+	import type { Props as TippyProps } from 'tippy.js';
 
 	interface Props {
-		quiz: QuizData;
+		quiz: QuizData & { id: string };
 	}
 
 	let { quiz = $bindable() }: Props = $props();
@@ -19,11 +21,13 @@ SPDX-License-Identifier: MPL-2.0
 		dislike: false,
 		like: false
 	});
+	// tippy anchors on any Element; svelte-tippy types its action for HTMLElement only, and
+	// these anchor on <svg>.
 	const tippy = createTippy({
 		arrow: true,
 		animation: 'perspective-subtle',
 		placement: 'top'
-	});
+	}) as unknown as Action<Element, Partial<TippyProps>>;
 
 	const complete_action = async (positive: boolean) => {
 		const res = await fetch(`/api/v1/community/rate/${quiz.id}`, {

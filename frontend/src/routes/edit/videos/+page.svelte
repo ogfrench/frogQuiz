@@ -68,7 +68,8 @@ SPDX-License-Identifier: MPL-2.0
 			}
 			stats.time_elapsed = p.time ?? 0;
 			last_time_elapsed = stats.time_elapsed;
-			stats.progress = p.ratio ?? 0;
+			// ffmpeg.wasm 0.12 calls it `progress`; `ratio` was 0.11's name, so this sat at 0.
+			stats.progress = p.progress ?? 0;
 		});
 		await ffmpeg.load({
 			// log: true,
@@ -87,7 +88,7 @@ SPDX-License-Identifier: MPL-2.0
 		]);
 		const data = await ffmpeg.readFile('out.mp4');
 		file_size_in_mi = data.length / 1_048_576;
-		file_data = new Blob([data]);
+		file_data = new Blob([data as Uint8Array<ArrayBuffer>]);
 		status = Status.CompressDone;
 		stats.progress = 1;
 	};
@@ -101,7 +102,7 @@ SPDX-License-Identifier: MPL-2.0
                 bytesUploaded += chunk.byteLength;
                 console.log("upload progress:", bytesUploaded / totalBytes);
                 upload_stats.progress = bytesUploaded / totalBytes;
-                upload_stats.time_elapsed = (new Date() - upload_stats.upload_started) / 1000;
+                upload_stats.time_elapsed = (Date.now() - upload_stats.upload_started.getTime()) / 1000;
             },
             flush(_controller) {
                 console.log("completed stream");
@@ -117,11 +118,12 @@ SPDX-License-Identifier: MPL-2.0
                 });
                 const json = await response.json()*/
 		const xhr = new XMLHttpRequest();
-		const success = await new Promise((resolve) => {
+		const success = await new Promise<{ success: boolean; body: string }>((resolve) => {
 			xhr.upload.addEventListener('progress', (event) => {
 				if (event.lengthComputable) {
 					upload_stats.progress = event.loaded / event.total;
-					upload_stats.time_elapsed = (new Date() - upload_stats.upload_started) / 1000;
+					upload_stats.time_elapsed =
+						(Date.now() - upload_stats.upload_started.getTime()) / 1000;
 				}
 			});
 			xhr.addEventListener('loadend', () => {

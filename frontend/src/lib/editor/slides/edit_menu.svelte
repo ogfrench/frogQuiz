@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { run } from 'svelte/legacy';
 
-	import type { Konva, ShapeModel } from 'pikaso';
+	import type { Konva, LabelModel, ShapeModel } from 'pikaso';
 	import { fade } from 'svelte/transition';
 
 	interface Props {
@@ -53,18 +53,18 @@ SPDX-License-Identifier: MPL-2.0
 
 	const change_color = (e: Event) => {
 		if (available_modifiers.includes('text_color')) {
-			selected_el.updateText({
-				fill: e.target.value
+			(selected_el as LabelModel).updateText({
+				fill: (e.target as HTMLInputElement).value
 			});
 		} else if (available_modifiers.includes('fill_color')) {
-			selected_el.update({ fill: e.target.value });
+			selected_el.update({ fill: (e.target as HTMLInputElement).value });
 		}
 		opened_dropdown = null;
 	};
 
 	const change_fontsize = (e: Event) => {
-		selected_el.updateText({
-			fontSize: e.target.value
+		(selected_el as LabelModel).updateText({
+			fontSize: Number((e.target as HTMLInputElement).value)
 		});
 	};
 
@@ -150,7 +150,7 @@ SPDX-License-Identifier: MPL-2.0
 				<input
 					type="range"
 					onchange={change_fontsize}
-					value={selected_el?.node?.children?.[1]?.attrs?.fontSize}
+					value={(selected_el?.node as Konva.Group)?.children?.[1]?.attrs?.fontSize}
 					min="10"
 					max="250"
 				/>

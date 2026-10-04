@@ -8,8 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { fade } from 'svelte/transition';
 	import type { EditorData, TextQuizAnswer } from '$lib/quiz_types';
 	import { getLocalization } from '$lib/i18n';
-	import { reach } from 'yup';
-	import { TextQuestionSchema } from '$lib/yupSchemas';
+	import { TextQuestionSchema, fieldIsValid } from '$lib/yupSchemas';
 	import { createTippy } from 'svelte-tippy';
 
 	interface Props {
@@ -18,6 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { selected_question, data = $bindable() }: Props = $props();
+	const answers = $derived(data.questions[selected_question].answers as TextQuizAnswer[]);
 
 	const { t } = getLocalization();
 
@@ -25,9 +25,11 @@ SPDX-License-Identifier: MPL-2.0
 		data.questions[selected_question].answers = [];
 	}
 
-	for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-		data.questions[selected_question].answers[i] = {
-			answer: data.questions[selected_question].answers[i].answer,
+	// Setup runs once, so it reads the question directly rather than the reactive alias.
+	const initial = data.questions[selected_question].answers as TextQuizAnswer[];
+	for (let i = 0; i < initial.length; i++) {
+		initial[i] = {
+			answer: initial[i].answer,
 			case_sensitive: false
 		};
 	}
@@ -47,23 +49,20 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="grid grid-cols-2 gap-4 w-full px-10">
 	{#if Array.isArray(data.questions[selected_question].answers)}
-		{#each data.questions[selected_question].answers as answer, index}
+		{#each answers as answer, index}
 			<div
 				out:fade={{ duration: 150 }}
 				class="p-4 rounded-lg flex justify-center w-full transition relative"
 				class:dark:bg-gray-500={answer.answer}
 				class:bg-gray-300={answer.answer}
-				class:bg-yellow-500={!reach(TextQuestionSchema, 'answer').isValidSync(
-					answer.answer
-				)}
+				class:bg-yellow-500={!fieldIsValid(TextQuestionSchema, 'answer', answer.answer)}
 			>
 				<button
 					class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
 					type="button"
 					onclick={() => {
-						data.questions[selected_question].answers.splice(index, 1);
-						data.questions[selected_question].answers =
-							data.questions[selected_question].answers;
+						answers.splice(index, 1);
+						data.questions[selected_question].answers = answers;
 					}}
 				>
 					<svg
@@ -129,16 +128,13 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{/each}
 	{/if}
-	{#if data.questions[selected_question].answers.length < 4}
+	{#if answers.length < 4}
 		<button
 			class="p-4 rounded-lg bg-transparent border-gray-500 border-2 hover:bg-gray-300 transition dark:hover:bg-gray-600"
 			type="button"
 			in:fade={{ duration: 150 }}
 			onclick={() => {
-				data.questions[selected_question].answers = [
-					...data.questions[selected_question].answers,
-					{ ...get_empty_answer() }
-				];
+				data.questions[selected_question].answers = [...answers, { ...get_empty_answer() }];
 			}}
 		>
 			<span class="italic text-center">{$t('editor_page.add_an_answer')}</span>

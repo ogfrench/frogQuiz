@@ -22,7 +22,8 @@ SPDX-License-Identifier: MPL-2.0
 	let { data } = $props();
 	let { notice } = data;
 
-	let session_data = $state({});
+	// The sign-in methods the server offers at each step, from /api/v1/login/start.
+	let session_data = $state<{ step_1?: string[]; step_2?: string[] }>({});
 	let step = $state(0);
 	// The steps after the first had no idea who was signing in, so the card opened
 	// on a bare Password field with nothing above it and no way back to correct a

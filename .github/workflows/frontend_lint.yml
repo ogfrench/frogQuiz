@@ -51,3 +51,12 @@ jobs:
         working-directory: ./frontend
         run: |
           pnpm run test
+
+      # svelte-check, which was never run in CI: 1052 errors on 4 Oct 2026, 825 of them in
+      # bits-ui's .d.ts files (no skipLibCheck) and 227 in ours. All fixed; this keeps it at
+      # zero. Warnings do not fail it. svelte-kit sync writes the tsconfig ours extends.
+      - name: Type check
+        working-directory: ./frontend
+        run: |
+          pnpm exec svelte-kit sync
+          pnpm run check

@@ -25,13 +25,14 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { question, answers }: Props = $props();
+	const options = $derived(question.answers as { answer: string; right?: boolean }[]);
 
 	const get_answer_count_for_answer = (answer: string): number => {
 		let count = 0;
 		let answer_id = 0;
 		if (question.type === QuizQuestionType.CHECK) {
-			for (let i = 0; i < question.answers.length; i++) {
-				if (answer === question.answers[i].answer) {
+			for (let i = 0; i < options.length; i++) {
+				if (answer === options[i].answer) {
 					answer_id = i;
 					break;
 				}
@@ -56,7 +57,7 @@ SPDX-License-Identifier: MPL-2.0
 	<div class="bg-white p-2 -z-10 w-10/12 rounded-sm dark:bg-gray-700">
 		{#if question.type !== QuizQuestionType.ORDER && question.type !== QuizQuestionType.RANGE}
 			<div class="flex flex-col mb-4">
-				{#each question.answers as answer}
+				{#each options as answer}
 					<div class="grid grid-cols-4">
 						<p>{answer.answer}</p>
 						<div

@@ -11,13 +11,13 @@ SPDX-License-Identifier: MPL-2.0
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import Flag from '@lucide/svelte/icons/flag';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
-	import type { GameState } from '$lib/play/admin/game_state.ts';
+	import type { IGameState } from '$lib/play/admin/game_state.ts';
 
 	interface Props {
 		bg_color: string;
 		socket_game_controls: SocketGameControls;
 		game_token: string;
-		game_state: GameState;
+		game_state: IGameState;
 	}
 
 	let { bg_color, socket_game_controls, game_token, game_state = $bindable() }: Props = $props();
@@ -88,9 +88,7 @@ SPDX-License-Identifier: MPL-2.0
 		     move on. `scoreboard_open` is host-side only -- nothing new crosses the socket,
 		     because the totals are already here. -->
 		{#if show_scoreboard_step}
-			<button
-				onclick={() => (game_state.scoreboard_open = true)}
-				class="admin-button"
+			<button onclick={() => (game_state.scoreboard_open = true)} class="admin-button"
 				>{$t('admin_page.show_scoreboard')}
 			</button>
 		{:else if game_state.selected_question + 1 === game_state.quiz_data.questions.length && ((game_state.timer_res === '0' && game_state.question_results !== null) || game_state.quiz_data?.questions?.[game_state.selected_question]?.type === QuizQuestionType.SLIDE)}

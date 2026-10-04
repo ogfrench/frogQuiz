@@ -21,6 +21,8 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { open = $bindable(false), type, data = undefined }: Props = $props();
+	// The lobby popover is the one that carries the game, not a string.
+	const lobby = $derived(data as { game_pin: number | string; game_id: string });
 </script>
 
 {#if open}
@@ -42,7 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 					{$t('components.popover.copied_to_clipboard')}
 				{:else if type === PopoverTypes.GameInLobby}A game is currently in the lobby. Click <a
 						class="underline"
-						href="/remote?game_pin={data.game_pin}&game_id={data.game_id}">here</a
+						href="/remote?game_pin={lobby.game_pin}&game_id={lobby.game_id}">here</a
 					> to join as a remote.
 				{:else if type === PopoverTypes.Generic}
 					{@html data}

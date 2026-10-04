@@ -35,6 +35,13 @@ SPDX-License-Identifier: MPL-2.0
 	let players: Array<{ sid: string; username: string }> = $state([]);
 
 	let game_data: QuizData = $state();
+	const shown_answers = $derived(
+		game_data.questions[selected_question].answers as {
+			answer: string;
+			right?: boolean;
+			color?: string;
+		}[]
+	);
 	let shown_question_now: number;
 	let control_visible = $state(false);
 
@@ -258,7 +265,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 			{#if game_data.questions[selected_question].type === QuizQuestionType.ABCD || game_data.questions[selected_question].type === QuizQuestionType.VOTING}
 				<div class="grid grid-cols-2 gap-2 w-full p-4">
-					{#each game_data.questions[selected_question].answers as answer}
+					{#each shown_answers as answer}
 						<div
 							class="rounded-lg h-fit flex"
 							style="background-color: {answer.color ?? '#B45309'}"
@@ -283,8 +290,8 @@ SPDX-License-Identifier: MPL-2.0
 				<Spinner />
 			{:then c}
 				<c.default
-					bind:data={question_results}
-					bind:question={game_data.questions[selected_question]}
+					data={question_results}
+					question={game_data.questions[selected_question]}
 				/>
 			{/await}
 		{/if}

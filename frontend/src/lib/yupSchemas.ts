@@ -152,3 +152,8 @@ export const dataSchema = yup.object({
 		.min(1, 'You need at least one question')
 		.max(50, "You can't have more than 50 questions")
 });
+
+// `yup.reach` is typed to return a Reference as well, which has no isValidSync. Every path
+// passed here names a field, so the cast holds.
+export const fieldIsValid = (schema: yup.Schema, path: string, value: unknown): boolean =>
+	(yup.reach(schema, path) as yup.Schema).isValidSync(value);
