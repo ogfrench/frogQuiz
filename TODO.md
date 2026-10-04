@@ -11,9 +11,9 @@ this file is the running state, updated as things land.
 Audit that produced most of it: [`docs/audit-2026-10-01.md`](docs/audit-2026-10-01.md).
 
 **Branch:** `ccr-370df3e4-c44t1l` (PR #23) · **Suites:** 153 unit · 146 e2e · 168 backend (1 skipped)
-· **Last full green run:** 4 Oct — e2e **144/144** in 10.1m on a clean stack (`eba03fa`; the footer and navbar tests came after),
+· **Last full green run:** 4 Oct on `077f695` — e2e **146/146** in 10.0m on a clean stack,
 unit 153 passed, `pnpm build` OK, `eslint .` 0 errors; backend **168 passed** (1 skipped) and
-`flake8 .` 0 on `d932057`, with no backend change since
+`flake8 .` 0, with the sign-out revocation change
 
 ---
 
@@ -189,6 +189,11 @@ the explanation.
 - [ ] The input tier on hidden routes (`/quiztivity`, `/edit/files`, controllers, Pixabay) still draws form fields at three different radii. An `fq-field` utility would fold in the un-themed `bg-gray-500` / `focus:ring-blue-500` drift at the same time
 - [ ] `lib/components/ui/button/button.svelte` has two off-ladder steps (8px and 10px) from upstream. Defensible, but they are the last two
 - [ ] `/create` still renders upstream's "quiz created" modal, which nothing can open: `responseData.open` is a plain object never set to true. It carries `bg-white`, `text-gray-900` and a raw Heroicon `<svg>`. Dead code, so a removal candidate; left in place pending a decision rather than deleted
+- [ ] **Touch-sized press areas on phones (issue #24).** Measured 4 Oct at 390 with touch
+      emulation: the editor's timer input (40x20, under the 24px floor), "Mark as correct"
+      (28px), "Delete answer" (24px, and invisible on touch until the row has focus), answer
+      fields (28px tall), the 36px search and password inputs, 26px quiz title links. The
+      issue holds the table, frogConvert's approach, a recommendation and acceptance criteria
 - [ ] Tailwind scans the repo's Markdown, so the word "rounded" in `CLAUDE.md` emits three dead CSS rules. Harmless; noted so nobody re-chases it
 
 ## After V1

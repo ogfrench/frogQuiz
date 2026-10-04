@@ -14,8 +14,8 @@ against `master`.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **144 passed**, 10.1 min, clean stack, on `eba03fa`; 146 now, with the footer and navbar-height tests added after (their specs green) |
-| Backend | **168 passed**, 1 skipped, on `d932057` (no backend change since) |
+| e2e | **146 passed**, 10.0 min, clean stack, on `077f695` |
+| Backend | **168 passed**, 1 skipped, on `077f695` (includes the sign-out revocation change) |
 | Unit | **153 passed** |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
@@ -59,9 +59,9 @@ cd frogQuiz && docker compose pull && docker compose up -d   # prestart runs the
 
 Until then the backend half of this PR is not live, even though Netlify ships the new
 frontend within a minute of the merge: upload caps, the pixel check, text and quiz-shape
-limits, the disconnect fix, owner-only Excel, the token fixes and POST-only logout all
-run on the old code. (Log out itself keeps working in that gap: the button falls back to
-the old GET when the API answers 404.) The same is true of PR #23's deploy preview, which
+limits, the disconnect fix, owner-only Excel, the token fixes, immediate sign-out of other
+devices and POST-only logout all run on the old code. (Log out itself keeps working in
+that gap: the button falls back to the old GET when the API answers 404.) The same is true of PR #23's deploy preview, which
 runs this branch's frontend against the production API, so test backend changes on the
 local stack (`bash e2e/run.sh`), not on the preview.
 
@@ -176,13 +176,29 @@ questions shown on devices it overflowed by ~150px. Medal colors on a player's s
 were under AA in one theme or the other; the scoreboard's up/down labels were never
 read out.
 
+**Signing a device out takes effect at once** (4 Oct, François agreed). Deleting a session,
+"sign out everywhere", logging out, changing the password and resetting it used to remove
+only the refresh record, so the other device kept working for up to 30 minutes on its
+access token. Checked on the local stack before and after. Tokens now carry their session
+id (`sid`), revoking a session writes it to Redis for one token lifetime, and the four
+token checks in `frogquiz/auth.py` refuse a revoked one (one Redis read). Tokens minted
+before the deploy have no `sid` and lapse within 30 minutes as before. No schema change.
+
+**Walking the app as a user** (4 Oct). Every flow outside a live game, through the UI only,
+at 390 with touch and at 1440, both themes. The real bugs: changing a question's timer
+broke Save (422, a regression from this branch's editor rebuild); on a phone, taps inside
+an open question card hit the drag grip; True / False came pre-marked True; logging back
+in after a password change did nothing. Each has an e2e test that fails on the old code;
+the full list is in `TODO.md` under "Done — 4 Oct". Touch-sized press areas everywhere
+else are issue #24, not done.
+
 Everything else is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 3. The test suites, and why they are worth trusting
 
-115 → **137 e2e tests**, and six of the new ones are *user journeys* rather than feature
+115 → **146 e2e tests**, and six of the new ones are *user journeys* rather than feature
 tests. The distinction matters: the existing suite was organized by mechanism — sockets,
 editor, uploads, exits — and was thorough at it, but a journey fails for a different
 reason. Not "this control is wrong" but **"you cannot get from here to there."**
