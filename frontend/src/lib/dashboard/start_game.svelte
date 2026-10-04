@@ -161,24 +161,32 @@ SPDX-License-Identifier: MPL-2.0
 		     rather than self-controlled; onOpenChange keeps the two in step if bits-ui
 		     ever closes it itself (escape, a forced remount). -->
 		<Collapsible.Root open={custom_field_enabled} onOpenChange={on_custom_field_toggle}>
-			<div class="flex items-center gap-3">
-				<Switch
-					id="custom-field-enabled"
-					checked={custom_field_enabled}
-					onCheckedChange={on_custom_field_toggle}
-				/>
-				<Label for="custom-field-enabled">{$t('result_page.custom_field')}</Label>
+			<!-- Was "Custom field" with nothing to say what it does, and an English,
+			     Title Case "Phone Number or Email" placeholder outside the locale file. -->
+			<div class="grid gap-1.5">
+				<div class="flex items-center gap-3">
+					<Switch
+						id="custom-field-enabled"
+						checked={custom_field_enabled}
+						onCheckedChange={on_custom_field_toggle}
+						aria-describedby="custom-field-hint"
+					/>
+					<Label for="custom-field-enabled">{$t('start_game.custom_field')}</Label>
+				</div>
+				<p id="custom-field-hint" class="text-muted-foreground pl-14 text-sm">
+					{$t('start_game.custom_field_hint')}
+				</p>
 			</div>
 			<Collapsible.Content>
-				<div class="grid min-w-0 gap-2 pt-3">
+				<div class="grid min-w-0 gap-2 pt-3 pl-14">
 					<Label for="custom-field" class="sr-only">
-						{$t('result_page.custom_field')}
+						{$t('start_game.custom_field_name')}
 					</Label>
 					<Input
 						id="custom-field"
 						bind:value={custom_field}
 						maxlength={MAX_CUSTOM_FIELD_LENGTH}
-						placeholder="Phone Number or Email"
+						placeholder={$t('start_game.custom_field_placeholder')}
 					/>
 				</div>
 			</Collapsible.Content>

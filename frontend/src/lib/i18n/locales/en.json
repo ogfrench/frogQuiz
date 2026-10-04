@@ -660,7 +660,8 @@
         "claiming": "Claiming…",
         "delete_quiz": "Delete this quiz",
         "deleting": "Deleting…",
-        "delete_confirm": "Delete this quiz permanently? This cannot be undone.",
+        "delete_confirm": "This cannot be undone.",
+        "delete_confirm_named": "“{{title}}” will be deleted for good. This cannot be undone.",
         "delete_confirm_title": "Delete this quiz?",
         "delete_failed": "Could not delete this quiz. It may have already expired.",
         "claim_failed": "Could not claim this quiz. Try again, or log in again if your session has expired.",
@@ -686,7 +687,11 @@
         "start_failed": "Failed to start the game. Please try again.",
         "start_failed_signed_out": "Could not start the game. Your session may have expired, or the quiz no longer exists.",
         "show_on_devices": "Show questions and answers on players' devices",
-        "show_on_devices_hint": "Off, players see four colored shapes and read the question from your screen. Turn it on when nobody is looking at a shared screen, like on a call."
+        "show_on_devices_hint": "Off, players see four colored shapes and read the question from your screen. Turn it on when nobody is looking at a shared screen, like on a call.",
+        "custom_field": "Ask players for one more detail",
+        "custom_field_hint": "They fill it in when they join. It is in the spreadsheet from Download results at the end of the game.",
+        "custom_field_name": "What to ask for",
+        "custom_field_placeholder": "Team, or email"
     },
     "quiztivity": {
         "editor": {

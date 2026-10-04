@@ -6,6 +6,16 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- The Start game dialog's "Custom field" switch is "Ask players for one more detail",
+  with a line saying players fill it in when they join and that it lands in the
+  Download results spreadsheet. Its placeholder was a hard-coded "Phone Number or
+  Email"; it is "Team, or email" from the locale file. No spec covered the feature;
+  `join.e2e.ts` now runs it from the host's switch to a player answering it.
+- Deleting from My Quizzes names the quiz ("“Pond trivia” will be deleted for good").
+  The dialog asked "Delete this quiz?" and then "Delete this quiz permanently?", with
+  nothing to say which row it came from.
+- The signed-out quiz page's "Deleted in 30 days" banner text passes contrast in light
+  mode (4.05:1 before: muted text on the banner's tint).
 - Practice has a page heading on every screen: the quiz title (for screen readers)
   while answering, and "Practice finished" at the end. The intro's `h1` went with the
   intro, so the rest of the run had none. The multiple-answer hint reads "Pick every

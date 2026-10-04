@@ -276,7 +276,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 			<ConfirmAction
 				title={$t('view_quiz_page.delete_confirm_title')}
-				body={$t('view_quiz_page.delete_confirm')}
+				body={$t('view_quiz_page.delete_confirm_named', { title: quiz.title })}
 				confirmLabel={$t('words.delete')}
 				cancelLabel={$t('words.cancel')}
 				onconfirm={() => delete_quiz(quiz.id)}

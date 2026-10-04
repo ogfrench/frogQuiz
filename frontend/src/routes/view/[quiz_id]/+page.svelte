@@ -212,6 +212,8 @@ SPDX-License-Identifier: MPL-2.0
 			<!-- First thing on the page, because it is the one thing here with a deadline.
 			     Collapsed, it still says the fact that matters -- this quiz is going away and
 			     when; expanding gives the why and the way to keep it. -->
+			<!-- Secondary text here is foreground at 75%, not muted-foreground: on the
+			     bg-primary/10 tint, muted read 4.05:1 in light mode (axe, 2026-10-04). -->
 			<Collapsible.Root
 				class="border-primary/40 bg-primary/10 text-foreground rounded-xl border"
 			>
@@ -224,14 +226,14 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<span class="font-medium">{$t('view_quiz_page.anon_temporary')}</span>
 						{#if days_until_expiry !== null}
-							<span class="text-muted-foreground text-sm">
+							<span class="text-foreground/75 text-sm">
 								{$t('view_quiz_page.anon_expires_short', {
 									count: days_until_expiry
 								})}
 							</span>
 						{/if}
 					</span>
-					<span class="text-muted-foreground hidden text-sm sm:inline">
+					<span class="text-foreground/75 hidden text-sm sm:inline">
 						<span class="group-data-[state=open]:hidden"
 							>{$t('view_quiz_page.anon_more')}</span
 						>
@@ -246,7 +248,7 @@ SPDX-License-Identifier: MPL-2.0
 				</Collapsible.Trigger>
 				<Collapsible.Content>
 					<div class="flex flex-col gap-3 px-4 pb-4 pl-12 text-sm">
-						<div class="text-muted-foreground flex flex-col gap-1">
+						<div class="text-foreground/75 flex flex-col gap-1">
 							{#if expires_at}
 								<p>
 									{$t('view_quiz_page.anon_expires', {

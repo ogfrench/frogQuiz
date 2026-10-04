@@ -62,6 +62,11 @@ test('signed out: a browser quiz is listed with its expiry and can be deleted', 
 	await expectNoHorizontalOverflow(page);
 
 	await row.getByRole('button', { name: 'Delete' }).click();
+	// In a list, the confirmation has to say which quiz: it used to ask "Delete this
+	// quiz?" and then "Delete this quiz permanently?".
+	await expect(page.getByRole('alertdialog')).toContainText(
+		`“${title}” will be deleted for good.`
+	);
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
 	await expect(row).toHaveCount(0);
 	const gone = await request.get(`/api/v1/quiz/get/public/${saved.body.id}`);

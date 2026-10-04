@@ -159,3 +159,35 @@ test('a player can join with the keyboard alone', async ({ page, request }) => {
 	await expect(phone.getByText("You're in, Keys")).toBeVisible();
 	await phone.close();
 });
+
+test('the host can ask players for one more detail, and players are asked for it', async ({
+	browser,
+	page,
+	request
+}) => {
+	const saved = await saveQuiz(request, QUIZ);
+	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+	await page.goto(`/view/${saved.body.id}`);
+	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	const dialog = page.getByRole('dialog', { name: 'Start game' });
+	// It was a bare "Custom field" switch, with a Title Case English placeholder.
+	const ask = dialog.getByRole('switch', { name: 'Ask players for one more detail' });
+	await expect(ask).toHaveAccessibleDescription(/when they join/);
+	await ask.click();
+	const what = dialog.getByRole('textbox', { name: 'What to ask for' });
+	await expect(what).toHaveAttribute('placeholder', 'Team, or email');
+	await what.fill('Team');
+	await dialog.getByRole('button', { name: 'Start game' }).click();
+	await page.waitForURL(/\/admin\?/);
+	const pin = new URL(page.url()).searchParams.get('pin')!;
+
+	const player = await browser.newContext({ viewport: PHONE });
+	const phone = await player.newPage();
+	await gotoPlayHydrated(phone);
+	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await phone.getByRole('textbox', { name: 'Username' }).fill('Ana');
+	await phone.getByRole('textbox', { name: 'Team' }).fill('Frogs');
+	await phone.getByRole('button', { name: 'Join game' }).click();
+	await expect(page.getByText('Ana')).toBeVisible();
+	await player.close();
+});
