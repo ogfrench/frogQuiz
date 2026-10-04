@@ -167,24 +167,17 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	});
 
-	const get_div_height = (): string => {
-		if (game_mode === 'normal') {
-			if (question.image) {
-				return '66.666667';
-			} else {
-				return '83.333333';
-			}
-		} else {
-			return '100';
-		}
-	};
 </script>
 
 <!-- h-dvh w-full, not h-screen w-screen: on a real phone 100vh counts the browser's own
      toolbars, so the bottom row of answer tiles could sit underneath them, and 100vw
      includes a desktop scrollbar. Phone emulation has no toolbar, which is why no test
      ever saw it. -->
-<div class="h-dvh w-full">
+<!-- A flex column: the question header (when the phone shows it) takes its share, and
+     the tiles take whatever is left. The tiles' height used to be a percentage that
+     assumed a fixed header, so with questions shown on devices the multiple-answer
+     screen ran ~150px past a phone viewport and Submit sat below the fold. -->
+<div class="flex h-dvh w-full flex-col">
 	{#if game_mode !== 'normal'}
 		<!-- Shapes only on the phone (the question is on the shared screen), so the page had
 		     no heading at all. -->
@@ -193,12 +186,19 @@ SPDX-License-Identifier: MPL-2.0
 		</h1>
 	{/if}
 	{#if game_mode === 'normal'}
+		<!-- class:mt-10 was handed the array itself, which is always truthy, so every
+		     question got a margin meant for three question types. -->
 		<div
-			class="flex flex-col justify-start"
-			class:mt-10={[QuizQuestionType.RANGE, QuizQuestionType.ORDER, QuizQuestionType.TEXT]}
-			style="height: {question.image ? '33.333333' : '16.666667'}%"
+			class="flex shrink-0 flex-col justify-start"
+			class:mt-10={[QuizQuestionType.RANGE, QuizQuestionType.ORDER, QuizQuestionType.TEXT].includes(
+				question.type
+			)}
+			style={question.image ? 'height: 33.333333%' : undefined}
 		>
-			<h1 class="text-foreground lg:text-2xl text-lg text-center mt-2 wrap-anywhere mb-2">
+			<!-- Its own height when there is no image: a fixed sixth of the screen left a
+			     one-line question floating over a gap, and px-4 keeps a long one off the
+			     screen edges. -->
+			<h1 class="text-foreground lg:text-2xl text-lg text-center wrap-anywhere px-4 py-3 text-balance">
 				{@html sanitizeTitleHtml(question.question)}
 			</h1>
 			{#if question.image !== null && game_mode !== 'kahoot'}
@@ -213,14 +213,19 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 	{#if timer_res !== '0'}
 		{#if question.type === QuizQuestionType.ABCD || question.type === QuizQuestionType.VOTING}
-			<div class="w-full relative h-full" style="height: {get_div_height()}%">
+			<div class="relative min-h-0 w-full flex-1">
 				<div
 					class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-black shadow-2xl z-40"
 				>
 					<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 				</div>
 
-				<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-3 w-full p-4 h-full">
+				<!-- Equal columns: auto-cols-auto sized each column by its answer text, so
+				     with answers shown on the phone one tile could be half the width of
+				     its neighbor. -->
+				<div
+					class="grid grid-rows-2 grid-flow-col auto-cols-[minmax(0,1fr)] gap-3 w-full p-4 h-full"
+				>
 					{#each question.answers as answer, i}
 						{@const picked = selected_answer === answer.answer}
 						{@const waiting = selected_answer !== undefined && !picked}
@@ -338,7 +343,7 @@ SPDX-License-Identifier: MPL-2.0
 				class="fixed top-0 bg-red-500 h-8 transition-all"
 				style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
 			></span>
-			<div class="flex flex-col w-full h-full gap-4 px-4 py-6 mt-10">
+			<div class="flex min-h-0 w-full flex-1 flex-col gap-4 px-4 py-6 mt-10">
 				{#each question.answers as answer, i (answer.id)}
 					<div
 						class="w-full h-fit flex-row rounded-lg p-2 align-middle"
@@ -425,7 +430,7 @@ SPDX-License-Identifier: MPL-2.0
 				/>
 				<!-- The one action on this screen, so it is sized for a thumb: it was a
 				     half-width default button in a strip 5% of the screen tall. -->
-				<div class="flex h-18 items-start justify-center px-4">
+				<div class="flex h-18 shrink-0 items-start justify-center px-4">
 					<Button
 						type="button"
 						size="lg"
@@ -444,7 +449,7 @@ SPDX-License-Identifier: MPL-2.0
 		     that their answer was registered. The `answered` split matters: gating the whole
 		     block on a submitted answer left anyone who ran out of time staring at nothing,
 		     which is the worse case, because they cannot tell the app from a dead connection. -->
-		<div class="flex h-full w-full items-center justify-center p-6">
+		<div class="flex min-h-0 w-full flex-1 items-center justify-center p-6">
 			<div
 				class="motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 flex flex-col items-center gap-4 text-center"
 			>

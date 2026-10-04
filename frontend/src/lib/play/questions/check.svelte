@@ -50,7 +50,7 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<div class="h-[calc(100%-4.5rem)] w-full">
+<div class="relative min-h-0 w-full flex-1">
 	<div
 		class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-black shadow-2xl z-40"
 	>
@@ -58,7 +58,7 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 
 	<div
-		class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-3 w-full p-4 h-full"
+		class="grid grid-rows-2 grid-flow-col auto-cols-[minmax(0,1fr)] gap-3 w-full p-4 h-full"
 		class:has-picks={_selected_answers.some(Boolean)}
 	>
 		{#each question.answers as answer, i}

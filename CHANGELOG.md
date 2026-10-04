@@ -6,6 +6,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- The player's question screen is a flex column, so it fits the phone with questions shown
+  on devices too. Tile heights were percentages that assumed a fixed header: the
+  multiple-answer screen ran ~150px past the viewport and Submit sat below the fold.
+  Also: a margin meant for three hidden question types applied to every question
+  (`class:mt-10` was given an array, always truthy); the question header is its own
+  height with side padding instead of a fixed sixth of the screen; answer columns are
+  equal width instead of sized by their text.
 - A multiple-answer question no longer opens on the phone with every tile faded: the
   "unticked tiles recede" style applied before anything was ticked, so the question
   looked disabled. Ticked tiles get a tick badge, since the white ring alone was faint
