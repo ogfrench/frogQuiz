@@ -17,11 +17,9 @@ SPDX-License-Identifier: MPL-2.0
 	<div class="flex justify-center w-full pt-10">
 		<p>
 			{#if error === 'email'}
-				GitHub didn't respond with an email-address. Are you sure your email-address is
-				verified?
+				GitHub didn't send back an email address. Is yours verified on GitHub?
 			{:else}
-				There was an error authenticating you. Are you sure you've got an email? Is the
-				Email verified?
+				Sign-in failed. Does your account have an email address, and is it verified?
 			{/if}
 		</p>
 	</div>
@@ -30,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 			href="/account/login"
 			class="px-4 py-2 leading-5 text-black dark:text-white transition-colors duration-200 transform bg-gray-50 dark:bg-gray-700 rounded-sm text-center hover:bg-gray-600 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
 		>
-			Go back to login-page
+			Back to login
 		</a>
 	</div>
 	<div class="flex justify-center w-full pt-10">

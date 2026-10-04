@@ -59,7 +59,7 @@ SPDX-License-Identifier: MPL-2.0
 					body: "This shouldn't happen. Please try again.",
 					title: 'Unknown error'
 				});*/
-				alert('Unknown error');
+				alert('Something went wrong. Reloading the page.');
 				window.location.reload();
 			}
 			if (data.detail === 'totp wrong') {

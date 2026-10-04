@@ -6,6 +6,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Quality
 
+- Tightened UI copy: removed curly quotes, double hyphens and em-dashes from en.json, sentence-cased leftover Title Case labels (results table, downloader formats, controllers, shares) and shortened the import, storage, analytics, login and sign-in error wording. Reworded the import, join, TOTP and rating alerts and the OAuth error page the same way. The delete-quiz e2e assertion now expects straight quotes.
+- Trimmed the README: dropped the repeated tagline and the em-dashes in prose.
 - `/play` no longer asks for the signed-in user when nobody is signed in, so a signed-out
   player's console no longer shows a 401 on every visit.
 - Deleted upstream's "quiz created" modal from `/create` and its two `create_page` strings.

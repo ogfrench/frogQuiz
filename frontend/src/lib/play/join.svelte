@@ -171,7 +171,7 @@ SPDX-License-Identifier: MPL-2.0
                         body: "The captcha failed, which is normal, but most of the time it's fixed by reloading!",
                         title: 'Captcha failed'
                     });*/
-					alert('Captcha failed!');
+					alert('Captcha failed. Reloading the page.');
 					window.location.reload();
 				}
 			} else if (recaptcha_key) {

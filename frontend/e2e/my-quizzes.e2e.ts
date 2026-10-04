@@ -65,7 +65,7 @@ test('signed out: a browser quiz is listed with its expiry and can be deleted', 
 	// In a list, the confirmation has to say which quiz: it used to ask "Delete this
 	// quiz?" and then "Delete this quiz permanently?".
 	await expect(page.getByRole('alertdialog')).toContainText(
-		`“${title}” will be deleted for good.`
+		`"${title}" will be deleted for good.`
 	);
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
 	await expect(row).toHaveCount(0);

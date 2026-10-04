@@ -48,14 +48,14 @@ SPDX-License-Identifier: MPL-2.0
 				title: 'Import failed',
 				body: "This quiz isn't (yet) supported!"
 			});*/
-			alert("This quiz isn't (yet) supported!");
+			alert("This quiz isn't supported yet.");
 		} else if (res.status === 403) {
 			/*			alertModal.set({
 				open: true,
 				title: 'Import failed',
 				body: 'Unknown error while importing the quiz!'
 			});*/
-			alert('Quiz is probably private!');
+			alert('This quiz may be private.');
 		} else {
 			alert(`Kahoot replied with ${res.status}`);
 		}
@@ -79,7 +79,7 @@ SPDX-License-Identifier: MPL-2.0
 				body: formdata
 			});
 		} else {
-			alert('Wrong file type');
+			alert('Wrong file type. Use .xlsx or .cqa.');
 			is_loading = false;
 			return;
 		}
@@ -92,7 +92,7 @@ SPDX-License-Identifier: MPL-2.0
 				title: 'Import failed',
 				body: 'Something went wrong!'
 			});*/
-			alert('Something went wrong!');
+			alert('Something went wrong importing the file.');
 		}
 		is_loading = false;
 	};

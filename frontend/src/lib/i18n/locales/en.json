@@ -4,7 +4,7 @@
             "description": "The free Kahoot alternative. Host interactive quizzes right from your browser.",
             "title": "Home"
         },
-        "join_prompt": "Enter the 6-digit PIN from the host’s screen.",
+        "join_prompt": "Enter the 6-digit PIN from the host's screen.",
         "hosting": "Running the quiz?",
         "host_cta": "Go to your quizzes",
         "create_anon": "Create a quiz without an account",
@@ -60,7 +60,7 @@
                 "success_check_mail": "Logged in. Check your e-mail inbox.",
                 "success": "Logged in.",
                 "description": {
-                    "success_check_mail": "Please check your e-mail inbox for an e-mail with a link you can click to log in.",
+                    "success_check_mail": "Check your inbox for an email with a login link.",
                     "success": "Logged in."
                 }
             },
@@ -68,8 +68,8 @@
                 "wrong_creds": "Wrong e-mail address or password.",
                 "unexpected": "Unexpected error!",
                 "description": {
-                    "wrong_creds": "Please ensure your password and e-mail address are correct.",
-                    "unexpected": "There was the good old unexpected error!"
+                    "wrong_creds": "Check your email address and password.",
+                    "unexpected": "Something unexpected went wrong."
                 }
             }
         },
@@ -309,11 +309,11 @@
         "visit_docs": "Visit the documentation",
         "a_kahoot_quiz": "A Kahoot!-Quiz",
         "url_should_look_like_this": "The URL should look like this: https://create.kahoot.it/details/...",
-        "side_import_kahoot": "On this side you can import quizzes, which live on Kahoot!.",
+        "side_import_kahoot": "Import a quiz that lives on Kahoot!.",
         "frogquiz_quiz": "A frogQuiz-Quiz",
         "upload_file_ending": "Upload the file ending in .cqa or .xlsx",
-        "this_side_frogquiz": "On this side you can import quizzes, which were exported from frogQuiz.",
-        "this_side_frogquiz_excel": "You can also upload excel files, if you've filled out the following template. If a quiz with the title already exists, it will append the questions to the existing quiz.",
+        "this_side_frogquiz": "Import a quiz that was exported from frogQuiz.",
+        "this_side_frogquiz_excel": "You can also upload an Excel file filled out from the template below. If a quiz with that title already exists, the questions are appended to it.",
         "download_template_here": "Download the template",
         "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
         "choose_a_file": "Choose a file"
@@ -420,7 +420,7 @@
         "delete_confirm_button": "Delete my account",
         "delete_wrong_password": "That password isn't right.",
         "delete_too_many": "Too many attempts. Try again later.",
-        "delete_failed": "Couldn't delete the account. Nothing was changed -- try again.",
+        "delete_failed": "Couldn't delete the account. Nothing was changed. Try again.",
         "delete_oauth_account": "This account signs in with an external provider, so there's no password to confirm with.",
         "delete_scope_one": "This also deletes the {{count}} quiz you have made, and its results.",
         "delete_scope_other": "This also deletes the {{count}} quizzes you have made, and their results.",
@@ -494,7 +494,7 @@
     "dashboard": {
         "search_for_own_quizzes": "Search for your own quizzes",
         "views_n_plays": "Views & Plays",
-        "info_analytics": "The \"Plays\" only show how often the quiz was started (you included), whereas the \"Views\" count how often the \"View\"-page was visited, so it also counts bots (sorry for that).",
+        "info_analytics": "\"Plays\" counts how often the quiz was started (you included). \"Views\" counts visits to the view page, bots too (sorry).",
         "commandpalette_notice": "Press <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd>+<kbd>K</kbd> on a Mac) to open the command palette",
         "create_quiz": "Create a quiz"
     },
@@ -506,7 +506,7 @@
         "unknown_error_title": "Something went wrong",
         "quiz_404_title": "Quiz not found",
         "404_text": "The page you were looking for doesn't exist, or has been moved.",
-        "unknown_error_text": "Something went wrong on our end. Try again — if it keeps happening, let the team know.",
+        "unknown_error_text": "Something went wrong on our end. Try again, and if it keeps happening, let the team know.",
         "quiz_404_text": "That quiz doesn't exist, or is no longer shared."
     },
     "uploader": {
@@ -521,7 +521,7 @@
         "quota_reached": "Your storage is full. Delete an image from one of your quizzes to free some up.",
         "select_upload_type": "Choose what to add",
         "upload_a_video": "Upload a video",
-        "upload_video_popup_notice": "The popup is open; have a look at it for further information",
+        "upload_video_popup_notice": "The popup is open. Check it for details.",
         "upload_video": "Upload video",
         "visit_pixabay": "Visit Pixabay",
         "images_by_pixabay": "Images provided by Pixabay",
@@ -542,14 +542,14 @@
         "clothe_type": "Clothes",
         "clothe_color": "Clothing color",
         "clothe_graphic_type": "Graphic",
-        "thats_you": "That's You!",
+        "thats_you": "That's you!",
         "start_over": "Start over",
         "go_back": "Go back"
     },
     "results_page": {
         "no_results_so_far": "No results saved so far...",
-        "quiz_title": "Quiz Title",
-        "date_played": "Date Played",
+        "quiz_title": "Quiz title",
+        "date_played": "Date played",
         "player_count": "Player count",
         "general_overview": {
             "sentence": "The quiz \"<b>{{title}}</b>\", which was played on <b>{{date}}</b> had <b>{{player_count}}</b> players with an average score of <b>{{average_score}}</b>."
@@ -566,18 +566,18 @@
         "correct_answer_one": "{{count}} correct answer",
         "correct_answer_other": "{{count}} correct answers",
         "time_taken": "Time taken",
-        "player_score": "Player Score",
-        "player_correct_questions": "Correct Answers"
+        "player_score": "Player score",
+        "player_correct_questions": "Correct answers"
     },
     "controllers": {
         "add_new_controller": "Add new controller",
         "player_name": "Player name",
         "first_seen": "First seen",
         "last_seen": "Last seen",
-        "controller_name": "Controller Name",
+        "controller_name": "Controller name",
         "version_overview": "The newest version available is {{newest_version}} and version {{current_version}} is installed.",
         "already_latest_version": "You're already on the latest version",
-        "cancel_update": "Cancel Update!",
+        "cancel_update": "Cancel update",
         "update_from_to": "Update from {{current_version}} to {{newest_version}}"
     },
     "navbar": {
@@ -648,14 +648,14 @@
         "anon_more": "Details",
         "anon_less": "Hide",
         "anon_claim_hint": "Claim it to your account to keep it, make it searchable, and manage it from My Quizzes.",
-        "anon_sign_in_hint": "Create an account to keep it, make it searchable, and manage it from My Quizzes. You can carry on without one — you'll just lose the quiz when it expires.",
+        "anon_sign_in_hint": "Create an account to keep it, make it searchable, and manage it from My Quizzes. You can carry on without one, but you'll lose the quiz when it expires.",
         "anon_sign_up": "Create an account to keep this quiz",
         "claim_quiz": "Claim this quiz to your account",
         "claiming": "Claiming…",
         "delete_quiz": "Delete this quiz",
         "deleting": "Deleting…",
         "delete_confirm": "This cannot be undone.",
-        "delete_confirm_named": "“{{title}}” will be deleted for good. This cannot be undone.",
+        "delete_confirm_named": "\"{{title}}\" will be deleted for good. This cannot be undone.",
         "delete_confirm_title": "Delete this quiz?",
         "delete_failed": "Could not delete this quiz. It may have already expired.",
         "claim_failed": "Could not claim this quiz. Try again, or log in again if your session has expired.",
@@ -672,10 +672,10 @@
         "range_answer": "Any number from {{min_correct}} to {{max_correct}} is correct. Players can pick from {{min}} to {{max}}."
     },
     "start_game": {
-        "captcha_message": "If enabled, Google's ReCaptcha will load in the browser of players. Only enable if you really need it, since you need the consent of EVERY player to load the captcha.",
-        "normal_mode_description": "Question and answer will only be shown on admins screen. The players will only have colored buttons with symbols matching these on the screen of the admin.",
+        "captcha_message": "If enabled, Google's ReCaptcha will load in the browser of players. Only enable if you really need it, since you need the consent of every player to load the captcha.",
+        "normal_mode_description": "Question and answers are shown only on the admin's screen. Players get colored buttons with symbols matching the ones on the admin's screen.",
         "old_school_mode": "Old-School",
-        "old_school_mode_description": "Questions and images will be shown on both admins screen and on the screen of the players",
+        "old_school_mode_description": "Questions and images are shown on both the admin's screen and the players' screens",
         "start_game": "Start game",
         "randomize_answers": "Randomize answers",
         "start_failed": "Failed to start the game. Please try again.",
@@ -689,15 +689,15 @@
     },
     "quiztivity": {
         "editor": {
-            "select_page_type": "Select Page Type",
+            "select_page_type": "Select page type",
             "move_left": "Move left",
             "move_right": "Move right",
             "title_placeholder": "Enter title here",
             "add_new": "Add new",
             "delete": "Delete",
-            "open_shares_menu": "Open Shares menu",
+            "open_shares_menu": "Open shares menu",
             "shares": {
-                "add_new_share": "Add new Share",
+                "add_new_share": "Add new share",
                 "expires_on": "Expires on {{date}}",
                 "never_expires": "Never expires"
             }
@@ -740,7 +740,7 @@
         "edit_the_image": "Edit the image",
         "filename_word": "Filename",
         "alt_text": "Alt(ernate) text / Caption",
-        "storage_usage": "You've used {{used}} MiB out of {{total}} MiB of storage. That's equivalent to {{percent}}% of your storage."
+        "storage_usage": "You've used {{used}} of {{total}} MiB of storage ({{percent}}%)."
     },
     "video_uploader": {
         "time_elapsed": "Time elapsed",
@@ -751,8 +751,8 @@
         "excel_help": "An Excel spreadsheet of every question, its answers, the correct ones and the time limit. Good as a backup or a printout. Images are not included.",
         "excel_button": "Download .xlsx",
         "select_download_type": "Select download type",
-        "own_format": "Own Format",
-        "excel_format": "Excel Format",
+        "own_format": "Own format",
+        "excel_format": "Excel format",
         "help": "The own format (.cqa) also includes pictures and supports every question type, whereas the excel format only supports voting and multiple-choice questions."
     },
     "practice_page": {

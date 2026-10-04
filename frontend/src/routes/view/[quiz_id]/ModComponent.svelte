@@ -28,7 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 			window.history.back();
 		}
 		if (!res.ok) {
-			alert('Setting rating failed');
+			alert('Could not set the rating.');
 		}
 	};
 </script>
