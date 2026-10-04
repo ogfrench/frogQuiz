@@ -227,9 +227,11 @@ SPDX-License-Identifier: MPL-2.0
 					     the hidden avatar editor); the navbar's circle and this one now agree. -->
 					<UserAvatar name={user.username} class="size-20 text-2xl" />
 
-					<div class="min-w-0 flex-1">
+					<!-- basis-48 lets Log out wrap under the name on a phone: beside it, a
+					     13-character username was cut to "walkmut...". -->
+					<div class="min-w-0 flex-1 basis-48">
 						<p class="truncate text-lg font-semibold">{user.username}</p>
-						<p class="text-muted-foreground truncate text-sm">{user.email}</p>
+						<p class="text-muted-foreground text-sm wrap-anywhere">{user.email}</p>
 					</div>
 
 					<!-- Log out lives here now, not in the navbar: the avatar brings you to this
@@ -362,17 +364,24 @@ SPDX-License-Identifier: MPL-2.0
 											{formatDate(session.last_seen)}
 										</p>
 									</div>
-									<Button
-										type="button"
-										variant="destructive"
-										size="sm"
-										aria-label={$t('settings_page.delete_this_session')}
-										onclick={() => {
-											deleteSession(session.id);
-										}}
-									>
-										{$t('words.delete')}
-									</Button>
+									<!-- Not on this session: deleting it left the page signed in until
+									     the token ran out, then dropped you. Log out, above, is the way
+									     to leave from here. -->
+									{#if session.id !== this_session?.id}
+										<Button
+											type="button"
+											variant="destructive"
+											size="sm"
+											aria-label={$t('settings_page.delete_session_named', {
+												device: getFormattedUserAgent(session.user_agent)
+											})}
+											onclick={() => {
+												deleteSession(session.id);
+											}}
+										>
+											{$t('words.delete')}
+										</Button>
+									{/if}
 								</li>
 							{/each}
 						</ul>
@@ -428,16 +437,26 @@ SPDX-License-Identifier: MPL-2.0
 												{/if}
 											</td>
 											<td class="px-4 py-3 text-right whitespace-nowrap">
-												<Button
-													type="button"
-													variant="destructive"
-													size="sm"
-													onclick={() => {
-														deleteSession(session.id);
-													}}
-												>
-													{$t('words.delete')}
-												</Button>
+												{#if session.id !== this_session?.id}
+													<Button
+														type="button"
+														variant="destructive"
+														size="sm"
+														aria-label={$t(
+															'settings_page.delete_session_named',
+															{
+																device: getFormattedUserAgent(
+																	session.user_agent
+																)
+															}
+														)}
+														onclick={() => {
+															deleteSession(session.id);
+														}}
+													>
+														{$t('words.delete')}
+													</Button>
+												{/if}
 											</td>
 										</tr>
 									{/each}

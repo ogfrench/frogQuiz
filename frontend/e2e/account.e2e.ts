@@ -7,7 +7,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { PASSWORD, apiLogin, registerUser, signedInContext } from './accounts';
-import { expectNoHorizontalOverflow, mc, rememberAnonQuiz, saveQuiz } from './helpers';
+import { expectNoHorizontalOverflow, mc, PHONE, rememberAnonQuiz, saveQuiz } from './helpers';
 import {
 	closeAll,
 	finalResults,
@@ -261,4 +261,39 @@ test('Play is not offered on somebody else’s unlisted quiz', async ({ browser,
 	await expect(owner.page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
 	await owner.context.close();
 	await other.context.close();
+});
+
+test('My Account on a phone: the name reads in full, and only other devices can be deleted', async ({
+	browser,
+	request
+}) => {
+	const user = await registerUser(request);
+	// Another device, so there is a session that is not this one.
+	const other = await browser.newContext({
+		userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0'
+	});
+	await apiLogin(other.request, user.email);
+	const context = await browser.newContext({ viewport: PHONE, hasTouch: true, isMobile: true });
+	await apiLogin(context.request, user.email);
+	const page = await context.newPage();
+	await page.goto('/account/settings');
+	await expect(page.getByRole('listitem').getByText('This session')).toBeVisible();
+
+	// Log out sat beside the name and squeezed a 13-character username to "walkmut...".
+	const name = page.getByText(user.username, { exact: true });
+	await expect(name).toBeVisible();
+	expect(await name.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(false);
+	const email = page.getByText(user.email, { exact: true });
+	expect(await email.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(false);
+
+	// Delete on this session signed nothing out you could see: the page stayed, and you
+	// were dropped later when the token ran out. Log out, above, is the way to leave.
+	const deletes = page.getByRole('button', { name: /^Delete session/ });
+	await expect(deletes).toHaveCount(1);
+	await expect(deletes).toHaveAccessibleName(/Firefox/);
+	await deletes.tap();
+	await expect(page.getByText(/Firefox/)).toHaveCount(0);
+	await expectNoHorizontalOverflow(page);
+	await other.close();
+	await context.close();
 });

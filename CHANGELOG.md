@@ -6,6 +6,16 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- My Account on a phone: Log out wraps under the name instead of squeezing it (a
+  13-character username read "walkmut..."), and the email wraps rather than truncating.
+- My Account no longer offers Delete on the session you are using. Deleting it left the
+  page signed in, then dropped you when the access token ran out; Log out is the way to
+  leave from there. Each Delete is named for its device ("Delete session: Firefox 131.0
+  (Linux)") instead of every one being "Delete this session", which read like the
+  "This session" badge beside it.
+- TODO records that deleting a session, or changing the password, leaves the other
+  device signed in for up to 30 minutes (checked on the local stack), with a proposed
+  fix. Auth logic, so not changed unasked.
 - The editor header's status is readable on a phone. It shared one row with the title,
   the theme switch and Save and got 33px, so "Saved" showed as "S" and every draft
   warning as one letter. Below `sm`, "Saving" and "Saved" shrink to their icon (the

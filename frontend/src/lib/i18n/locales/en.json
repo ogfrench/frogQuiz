@@ -397,6 +397,7 @@
         "last_seen": "Last seen",
         "check_location": "Check location",
         "delete_this_session": "Delete this session",
+        "delete_session_named": "Delete session: {{device}}",
         "this_session?": "This session",
         "change_avatar": "Change avatar",
         "security_settings": "Security-Settings",

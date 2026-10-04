@@ -72,6 +72,15 @@ unit 153 passed, `pnpm build` OK, `eslint .` 0 errors; backend **168 passed** (1
       *Image upload* (row 15). The rest of Part A is either a hidden feature (video,
       `/import`, `/remote`, `/quiztivity`, `/moderation`, `/results`) or needs the deployed
       site. Part B's keep/cut decisions are recorded in [`docs/mvp-scope.md`](docs/mvp-scope.md)
+- [ ] **Decide: revoke access on session delete and password change** (auth, so not done
+      unasked). Checked on the local stack, 4 Oct: after device A deletes device B's
+      session, and even after A changes the password, B's `GET /api/v1/users/me` still
+      answers 200. Both only remove the refresh record (`UserSession`); B's access token is
+      a 30-minute JWT with no session in it, so it keeps working until it expires.
+      Proposal: put the session id in the access token and
+      check it is still live in `get_current_user` (one Redis lookup), and on password
+      change store a per-user "valid after" time that older tokens fail. Low urgency for
+      an internal tool, but "Delete" on a session reads as immediate and is not
 
 ## Found in the feature sweep — all cleared
 
