@@ -14,7 +14,7 @@ against `master`.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **144 passed**, 10.1 min, clean stack, on `eba03fa`; 145 with the footer test added after, its specs green |
+| e2e | **144 passed**, 10.1 min, clean stack, on `eba03fa`; 146 now, with the footer and navbar-height tests added after (their specs green) |
 | Backend | **168 passed**, 1 skipped, on `d932057` (no backend change since) |
 | Unit | **153 passed** |
 | `flake8 .` | 0 |
@@ -255,7 +255,7 @@ One judgment call left open on purpose, not blocking:
 ## 7. Running it
 
 ```bash
-bash e2e/run.sh                      # whole stack + 145 e2e tests, no Docker needed
+bash e2e/run.sh                      # whole stack + 146 e2e tests, no Docker needed
 KEEP_UP=1 bash e2e/run.sh --list     # leave it up at localhost:3000 to click around
 bash e2e/stop.sh                     # stop it
 cd frontend && pnpm test             # 153 unit tests, about a second

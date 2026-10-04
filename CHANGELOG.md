@@ -14,7 +14,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   taken while scrolled draws a fixed bar at the scroll offset. The live preview has none.)
 - `command-palette.e2e.ts` retries Ctrl+K until the palette has focus instead of waiting
   a fixed 800ms, which lost the keypress on a cold Vite compile.
-- HANDOVER and TODO carry the current suite numbers: e2e 144/144 on a clean stack (145 with the footer test), unit 153, backend 168.
+- HANDOVER and TODO carry the current suite numbers: e2e 144/144 on a clean stack (146 with the footer and navbar tests), unit 153, backend 168.
 - The footer lost its grey band. It is one line on the page ground with a hairline above
   that mirrors the navbar's, at the navbar's side padding: the credit on the left and
   Terms, Privacy and Attribution on the right from `sm` up, stacked and centered on a
