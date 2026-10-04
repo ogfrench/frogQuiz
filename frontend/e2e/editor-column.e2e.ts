@@ -48,7 +48,10 @@ test('every question is on the page, and one card is open at a time', async ({ p
 	// and this is what keeps the column cheap.
 	await expect(openCards(page)).toHaveCount(1);
 
-	await page.getByRole('button', { name: /Third question/ }).last().click();
+	await page
+		.getByRole('button', { name: /Third question/ })
+		.last()
+		.click();
 	await expect(openCards(page)).toHaveCount(1);
 	await expect(page.getByRole('button', { name: 'Move down' })).toBeDisabled();
 });
@@ -104,9 +107,9 @@ test('a question can be moved and deleted', async ({ page, request }) => {
 	// The column re-renders and scrolls the moved card into view; let it settle before
 	// pressing anything else, the way a hand would.
 	await expect(cards(page).nth(0)).toContainText('Second question?');
-	let texts = await cards(page).allInnerTexts();
-	expect(texts[0]).toContain('Second question?');
-	expect(texts[1]).toContain('First question?');
+	// Retrying, not a one-shot snapshot: the open card's rich-text field re-mounts after
+	// the move and takes up to a second under load to show its text again.
+	await expect(cards(page).nth(1)).toContainText('First question?');
 	// The card the author was editing traveled with them: it is still the open one.
 	await expect(openCards(page)).toHaveCount(1);
 	await expect(cards(page).nth(1).getByRole('textbox', { name: 'Question text' })).toBeVisible();
@@ -115,7 +118,7 @@ test('a question can be moved and deleted', async ({ page, request }) => {
 	await page.getByRole('button', { name: 'Delete question' }).click();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
 	await expect(cards(page)).toHaveCount(2);
-	texts = await cards(page).allInnerTexts();
+	const texts = await cards(page).allInnerTexts();
 	expect(texts.join(' ')).not.toContain('First question?');
 });
 
