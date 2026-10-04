@@ -197,6 +197,16 @@ Worth being exact, because the phrase gets stretched:
   types, both results screens, scoreboard, podium) walked by eye at 1440x900 and
   1920x1080, no overflow; the phone question screens too. axe passes every game state in
   dark as well.
+- **Walked as a user, 4 Oct: everything outside a live game.** Register, log in, forgot
+  password, change password and log back in, create a quiz with each question type,
+  image upload, save a draft, reopen and edit, Discover browse and search, a teammate's
+  quiz, Practice, My Quizzes (Play, Download, Delete), My Account and sessions, the
+  signed-out create-then-claim journey, the legal pages and the 404. Driven through the
+  UI only, at 390 (touch emulated) and 1440, light and dark, with axe, console errors and
+  overflow checked at each step. It found a Save-breaking timer bug, a phone-only tap bug
+  in the editor and a dead end after changing a password; TODO.md lists all of them.
+  Touch emulation matters: the editor tap bug does not reproduce with a mouse, and no spec
+  had run with a touch screen until then.
 - **Covered by tests now.** This line used to read "there are no frontend tests,
   and the frontend CI job runs eslint only". There are 57 under vitest and the CI
   job runs them, alongside eslint. They cover the answer palette, question

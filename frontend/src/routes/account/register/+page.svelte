@@ -356,7 +356,6 @@ SPDX-License-Identifier: MPL-2.0
 
 		{#if responseData.data === '200_verified'}
 			<div class="px-6 pt-2">
-				<!-- svelte-ignore a11y_autofocus -->
 				<Button href={login_href} class="w-full" autofocus>{$t('words.login')}</Button>
 			</div>
 		{:else}

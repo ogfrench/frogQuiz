@@ -6,6 +6,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- `frontend_lint` passes again: an unused `svelte-ignore` on the register page's Log in
+  button (a component, so the a11y warning it silenced never fires) is an error under
+  `svelte/no-unused-svelte-ignore`.
+- TODO and `docs/redesign-status.md` record the 4 Oct walk of every flow outside a live
+  game, what it covered, and what it found.
 - A signed-in visitor sees the "isn't saved to an account" banner open, with Claim in
   view. Someone who made an account through "Create an account to keep this quiz" was
   sent back to the quiz, which still said it wasn't saved, with Claim folded away.

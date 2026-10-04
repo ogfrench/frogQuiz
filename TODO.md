@@ -57,6 +57,25 @@ unit 153 passed, `pnpm build` OK, `eslint .` 0 errors; backend **168 passed** (1
 | **Every game state passes axe**, host and phone, both themes: `<h1>`s, scoreboard labels read out, medal inks per theme held to AA (`medal-contrast.test.ts`) | `lib/play/`, `lib/a11y/medal-contrast.test.ts` |
 | **The phone question screen fits a phone**: `h-dvh` flex column, equal answer columns, images that fit, a real Submit, no faded start, "Pick every correct answer" | `lib/play/question.svelte`, `lib/play/questions/check.svelte`, `lib/play/admin/question.svelte` |
 
+## Done — 4 Oct, walking the app as a user
+
+Every flow outside a live game, driven through the UI in a real browser at 390 and 1440 in
+both themes, with axe, console and overflow checked at each step. Each fix has a test that
+failed first.
+
+| What | Where |
+| --- | --- |
+| **Editing a question's timer broke Save** (422): a number input bound to a string field. Regression from this branch's editor rebuild | `lib/editor/question-card.svelte`, `e2e/editor.e2e.ts` |
+| **On a phone, taps inside an open question card hit the drag grip**: its touch hit area had no positioned parent and covered the card. No spec had run with a touch screen | `lib/editor/question-card.svelte`, `e2e/editor-column.e2e.ts` |
+| **True / False pre-marked True**, so a false statement shipped with the wrong answer, and clicking True un-marked it | `lib/editor/AddNewQuestionPopup.svelte` |
+| **Logging in again after a password change did nothing**: the reload kept `password_changed=true`, which suppresses the signed-in redirect | `routes/account/login/`, `e2e/account.e2e.ts` |
+| **The editor header status was one letter wide on a phone**, and "can't save" named the wrong missing piece | `lib/editor.svelte` |
+| **Signing up to keep a quiz** came back to a banner still saying "not saved", Claim folded away | `routes/view/[quiz_id]/+page.svelte` |
+| **My Account**: Delete on your own session (did nothing visible), name and email cut off on a phone | `routes/account/settings/+page.svelte` |
+| **Register** left the form live after success; **login** showed two pages at once on the way out | `routes/account/register/`, `routes/account/login/` |
+| **Copy**: "Custom field" explained, Delete names the quiz, "3 questions", no promise of a hidden import, practice headings, one contrast miss | `en.json`, `lib/dashboard/start_game.svelte`, `routes/practice/` |
+| **Found, not changed (auth)**: deleting a session or changing the password leaves the other device signed in up to 30 minutes | Open item below |
+
 ## Open — before sharing
 
 - [ ] **Run `MVP.md` §4.1 on the deployed site.** Nobody has. It is the only part that can still reorder the rest
