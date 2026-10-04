@@ -13,10 +13,13 @@ SPDX-License-Identifier: MPL-2.0
 	  --radius     14px on the card; the button sits tighter, at 11px (radius-md),
 	               as controls do in the app.
 
-	The look follows the app's: breathy, one loud element, the rainbow spent once.
-	The loud element is the Wordmark (the gradient mark plus "frogQuiz"), set
-	larger than anything around it and inside the card. Nothing else takes a
-	color; a second rainbow (a band, a tinted button) is what makes it generic.
+	The look follows the app's: breathy, and the Wordmark (the gradient mark plus
+	"frogQuiz") set larger than anything around it, inside the card.
+
+	One deliberate exception to "the rainbow is spent once": the mark's gradient
+	also runs as a band across the top of the card, so the email is recognisable
+	at a glance in an inbox (François's call, 2026-10-04). Nothing else takes a
+	color; the button stays zinc primary.
 
 	Email constraints this has to live inside:
 	  - Tables, not flex or grid. Outlook renders through Word.
@@ -66,8 +69,13 @@ SPDX-License-Identifier: MPL-2.0
 				<tr>
 					<td style="background-color: #FFFFFF; border: 1px solid #E4E4E7; border-radius: 14px">
 						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse">
+							<!-- The mark's gradient, edge to edge. Clients that drop gradients
+							     keep its middle green. -->
 							<tr>
-								<td class="fq-pad" style="padding: 44px 44px 40px">
+								<td height="8" bgcolor="#6bcf7f" style="height: 8px; line-height: 8px; font-size: 0; background-color: #6bcf7f; background-image: linear-gradient(90deg, #ff6b6b 0%, #ffb347 20%, #ffd93d 40%, #6bcf7f 60%, #4fc3f7 80%, #9775fa 100%); border-radius: 13px 13px 0 0">&nbsp;</td>
+							</tr>
+							<tr>
+								<td class="fq-pad" style="padding: 40px 44px 40px">
 
 									<!-- The Wordmark, as in the app's navbar but larger: the mark and
 									     the name. The one place the rainbow appears. -->

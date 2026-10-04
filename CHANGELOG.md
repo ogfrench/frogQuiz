@@ -9,6 +9,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - The sign-up and password-reset emails now open on the frogQuiz wordmark inside the card, larger than before, so the rainbow appears once, in the mark, as it does in the app.
 - The heading uses the app's display treatment (Inter semibold, -0.03em) at 30px, with more space around the card and its contents.
 - The button sits at an 11px radius, tighter than the 14px card, matching how controls and surfaces are tiered in the app.
+- The mark's rainbow also runs as a band across the top of the card, a deliberate exception to "the rainbow is spent once" so the emails stand out in an inbox.
 
 ### Editor autosave and drafts (MVP §4.5, D14)
 
