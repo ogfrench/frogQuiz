@@ -570,15 +570,21 @@ Impact is for an internal team; effort is S under a day, M up to a week, L longe
 1. Do you want results kept? If so, is automatic save at the podium acceptable, so a host
    cannot forget, and should an anonymous host's results attach to the quiz's anonymous
    secret? This reverses D4.
+   **F (2026-10-05): no, the Excel download is enough for now. D4 stands.**
 2. Is late joining acceptable by default with a lock to prevent it, as in Kahoot, or should
    frogQuiz keep refusing after Start? Which scoring a late joiner gets on questions already
    played (zero) needs agreeing.
+   **F (2026-10-05): yes, late join on by default, with a lock.**
 3. Should a late correct answer score near zero, as now, or half marks as Kahoot does? The
    whole ranking changes, so it should be a decision rather than a patch.
+   **F (2026-10-05): yes, half marks at the buzzer, as Kahoot does.**
 4. Should type answer, poll and slider come back, and in what order? Type answer needs
    tolerant matching before it is worth showing (open decision 4).
+   **F (2026-10-05): later, as a future issue.**
 5. What does "findable by the team" mean once the app leaves the internet-facing VM: a
    sign-in gate on Discover, or a third visibility value? Decision 6 left this open.
+   **F (2026-10-05): the sign-in gate, with sign-in by an emailed link or code for frog.co
+   and capgemini.com addresses only, and no passwords, as frogViz does.**
 6. Is copying someone else's public quiz acceptable to its author, or should only the owner be
    able to copy it? Owner-only answer keys (D18) suggest the second.
 7. Should the Excel and Kahoot-URL import return, and who tests the Kahoot URL path against a

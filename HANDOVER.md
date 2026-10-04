@@ -50,9 +50,9 @@ mail) and `MVP.md` §4.1 on the deployed site.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **169 passed** on `35a5e59a` (4 Oct, evening), clean stack with the arq worker. Two runs: a session restart cut the first after 134, the remaining 37 were rerun. 167 on `9c62681f` before that |
-| Backend | **171 passed**, 1 skipped, on `9c62681f`, CI settings on a fresh database |
-| Unit | **154 passed**, Windows included |
+| e2e | **190 passed** on the `e7ba45da` tree (5 Oct), clean stack with the arq worker; the one-line guard added after it was rerun with the edge-case and scoreboard specs. 169 on `35a5e59a` before that |
+| Backend | **175 passed**, 1 skipped, on `e7ba45da`, CI settings on a fresh database |
+| Unit | **157 passed**, Windows included |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
 | `svelte-check` | **0 errors** (1052 on 2 Oct), 36 warnings; CI runs it since `35a5e59a` |
