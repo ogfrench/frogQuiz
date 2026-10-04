@@ -173,22 +173,24 @@ SPDX-License-Identifier: MPL-2.0
 	let inflight: Promise<void> | null = null;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const AUTOSAVE_DELAY_MS = 2500;
+	// The version of the quiz this editor last saw. Sent with every save, so a tab left
+	// open behind a newer save is refused instead of writing its older copy over it (E8 in
+	// docs/edge-cases-2026-10.md). Kept out of `data`, or every save would change the
+	// snapshot and trigger another.
+	let base: string | null = (data as { updated_at?: string }).updated_at ?? null;
+
+	const startSession = (id: string | null) => {
+		const anon_secret = id === null ? null : getAnonSecret(id);
+		return fetch(
+			id === null
+				? `/api/v1/editor/start?edit=false`
+				: `/api/v1/editor/start?edit=true&quiz_id=${id}`,
+			{ method: 'POST', headers: anon_secret ? { 'X-Anon-Secret': anon_secret } : {} }
+		);
+	};
 
 	const getEditID = async () => {
-		const anon_secret = quiz_id === null ? null : getAnonSecret(quiz_id);
-		const headers: Record<string, string> = anon_secret ? { 'X-Anon-Secret': anon_secret } : {};
-		let res: Response;
-		if (quiz_id === null) {
-			res = await fetch(`/api/v1/editor/start?edit=false`, {
-				method: 'POST',
-				headers
-			});
-		} else {
-			res = await fetch(`/api/v1/editor/start?edit=true&quiz_id=${quiz_id}`, {
-				method: 'POST',
-				headers
-			});
-		}
+		const res = await startSession(quiz_id);
 		if (res.status === 200) {
 			const json = await res.json();
 			edit_id = json.token;
@@ -216,18 +218,32 @@ SPDX-License-Identifier: MPL-2.0
 		const body = snapshot;
 		const anon_secret = current_id === null ? null : getAnonSecret(current_id);
 		saving = true;
+		const post = () =>
+			fetch(
+				`/api/v1/editor/save?edit_id=${edit_id}${base ? `&base=${encodeURIComponent(base)}` : ''}`,
+				{
+					method: 'POST',
+					// Browsers refuse a keepalive request over 64 KB outright. A big quiz is sent
+					// normally; the leave prompt holds the page open while it goes.
+					keepalive: keepalive && body.length < 60_000,
+					headers: {
+						'Content-Type': 'application/json',
+						...(anon_secret ? { 'X-Anon-Secret': anon_secret } : {})
+					},
+					body
+				}
+			);
 		try {
-			const res = await fetch(`/api/v1/editor/save?edit_id=${edit_id}`, {
-				method: 'POST',
-				// Browsers refuse a keepalive request over 64 KB outright. A big quiz is sent
-				// normally; the leave prompt holds the page open while it goes.
-				keepalive: keepalive && body.length < 60_000,
-				headers: {
-					'Content-Type': 'application/json',
-					...(anon_secret ? { 'X-Anon-Secret': anon_secret } : {})
-				},
-				body
-			});
+			let res = await post();
+			// An edit session lapses an hour after its last save. Start another and send
+			// again, rather than failing every save until a reload throws the typing away (E2).
+			if (res.status === 401) {
+				const fresh = await startSession(current_id);
+				if (fresh.ok) {
+					edit_id = (await fresh.json()).token;
+					res = await post();
+				}
+			}
 			if (!res.ok) {
 				let detail = '';
 				try {
@@ -243,6 +259,7 @@ SPDX-License-Identifier: MPL-2.0
 				return;
 			}
 			const saved = await res.json();
+			base = saved.updated_at ?? null;
 			// The server only ever hands back a secret for a quiz created without an
 			// account, once, on the save that creates it.
 			const new_anon_secret = res.headers.get('X-Anon-Secret');
@@ -251,8 +268,9 @@ SPDX-License-Identifier: MPL-2.0
 			}
 			if (current_id === null) {
 				current_id = saved.id;
-				// A reload now reopens the saved quiz instead of an empty /create.
-				replaceState(`/edit?quiz_id=${saved.id}`, {});
+				// A reload now reopens the saved quiz instead of an empty /create. Not once the
+				// editor is gone: this save may be the one sent on the way out (below).
+				if (mounted) replaceState(`/edit?quiz_id=${saved.id}`, {});
 			}
 			saved_snapshot = body;
 			save_error = null;
@@ -284,7 +302,14 @@ SPDX-License-Identifier: MPL-2.0
 		clearTimeout(timer);
 		timer = setTimeout(() => flush(), AUTOSAVE_DELAY_MS);
 	});
-	onDestroy(() => clearTimeout(timer));
+	// Leaving inside the app (a back swipe, a link) unmounts the editor without the leave
+	// prompt, and only clearing the timer here dropped whatever was typed in the last couple
+	// of seconds (E14 in docs/edge-cases-2026-10.md). Send it on the way out instead.
+	let mounted = true;
+	onDestroy(() => {
+		mounted = false;
+		flush(true);
+	});
 
 	const confirmUnload = (event: BeforeUnloadEvent) => {
 		if (!unsaved) {
@@ -339,7 +364,9 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {/snippet}
 
-<svelte:window onbeforeunload={confirmUnload} />
+<!-- ononline: a save that failed for want of a network stayed failed until the next
+     keystroke, with the header red after the connection was back (E15). -->
+<svelte:window onbeforeunload={confirmUnload} ononline={() => flush()} />
 {#await getEditID()}
 	<Spinner />
 {:then _}

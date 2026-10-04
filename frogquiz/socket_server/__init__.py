@@ -7,6 +7,7 @@
 import base64
 import hashlib
 import json
+import math
 import os
 import random
 
@@ -29,6 +30,7 @@ from datetime import datetime
 from frogquiz.socket_server.helpers import (
     check_answer,
     check_captcha,
+    has_already_answered,
     record_answer_once,
 )
 from .models import (
@@ -185,20 +187,24 @@ async def rejoin_game(sid: str, data: dict):
     )
     # A reload mid-question used to leave the player on a waiting screen until the next
     # question. Send the one that is up.
+    index = game_data.current_question
     if (
         game_data.started
         and game_data.question_show
-        and game_data.current_question >= 0
-        and game_data.questions[game_data.current_question].type != QuizQuestionType.SLIDE
+        and index >= 0
+        and game_data.questions[index].type != QuizQuestionType.SLIDE
+        # A phone woken after answering swapped "Answer locked in" for the tiles again,
+        # inviting an answer the server refuses (E7 in docs/edge-cases-2026-10.md).
+        and not await has_already_answered(data.game_pin, index, data.username)
     ):
-        await sio.emit(
-            "set_question_number",
-            {
-                "question_index": game_data.current_question,
-                "question": question_for_players(game_data, game_data.current_question),
-            },
-            room=sid,
-        )
+        question = question_for_players(game_data, index)
+        # The phone counts down from what it is sent. The full time made it show seconds
+        # the server would no longer accept (E5).
+        shown_at = await redis.get(f"game:{data.game_pin}:current_time")
+        if shown_at is not None:
+            elapsed = (datetime.now() - datetime.fromisoformat(shown_at)).total_seconds()
+            question["time"] = str(max(1, math.ceil(float(question["time"]) - elapsed)))
+        await sio.emit("set_question_number", {"question_index": index, "question": question}, room=sid)
 
 
 @sio.event
@@ -297,7 +303,8 @@ async def register_as_admin(sid: str, data: dict):
         return
     game_pin = data.game_pin
     game_id = data.game_id
-    if await verify_host(game_pin, game_id) is None:
+    game = await verify_host(game_pin, game_id)
+    if game is None:
         await sio.emit("already_registered_as_admin", room=sid)
         return
     old_session = await redis.get(f"game_session:{game_pin}")
@@ -314,6 +321,9 @@ async def register_as_admin(sid: str, data: dict):
         existing_session.admin = sid
         await existing_session.save(game_pin)
     players = [json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")]
+    answer_count = 0
+    if game.current_question >= 0:
+        answer_count = len(await AnswerDataList.get_redis_or_empty(game_pin, game.current_question))
     await sio.emit(
         "registered_as_admin",
         {
@@ -322,6 +332,11 @@ async def register_as_admin(sid: str, data: dict):
             # The host rebuilds its player list from this, so a reconnect doesn't
             # lose everyone who joined while it was away.
             "players": players,
+            # And where the question stands: answers and "everyone answered" sent while
+            # the host was reconnecting never reached it, so its projector waited out
+            # the full timer on a question that was over (E11).
+            "answer_count": answer_count,
+            "question_open": game.question_show,
         },
         room=sid,
     )
@@ -432,11 +447,10 @@ async def submit_answer(sid: str, data: dict):
         return
     # Only after the answer is recorded, so a refused duplicate never adds points.
     await redis.hincrby(f"game_session:{game_pin}:player_scores", username, score)
-    player_count = await redis.scard(f"game_session:{game_pin}:players")
     # Both were emitted with no room, so to every client in every game: one game's last
     # answer ended the question in all the others.
     await sio.emit("player_answer", {}, room=f"admin:{game_pin}")
-    if len(answers) >= player_count:
+    if await everyone_here_answered(game_pin, answers):
         game_data = await PlayGame.get_from_redis(game_pin)
         game_data.question_show = False
         await game_data.save(game_pin)
@@ -652,13 +666,26 @@ async def leave_game(sid: str, _data: dict | None = None):
     await end_question_if_everyone_answered(game_pin)
 
 
+async def everyone_here_answered(game_pin: str, answers: AnswerDataList) -> bool:
+    """Whether every player still in the game has answered.
+
+    By name, not by count. An answer from somebody who has since dropped stays in the
+    list, so comparing the count with the players left let one locked phone end the
+    question on a player who was still choosing (E4 in docs/edge-cases-2026-10.md).
+    """
+    here = {
+        GamePlayer.model_validate_json(p).username for p in await redis.smembers(f"game_session:{game_pin}:players")
+    }
+    return bool(here) and here <= {a.username for a in answers}
+
+
 async def end_question_if_everyone_answered(game_pin: str) -> None:
     """Close the current question if nobody who is still here owes an answer.
 
-    "Everyone answered" is measured against `scard` of the players set, so whenever the
-    set shrinks the comparison has to be made again -- otherwise the question stays open
-    on a count that includes somebody who has gone, and the host waits out the full
-    timer. Called from leave_game and from disconnect.
+    "Everyone answered" is measured against the players set, so whenever the set shrinks
+    the comparison has to be made again -- otherwise the question stays open on somebody
+    who has gone, and the host waits out the full timer. Called from leave_game and from
+    disconnect.
     """
     raw = await redis.get(f"game:{game_pin}")
     if raw is None:
@@ -667,8 +694,7 @@ async def end_question_if_everyone_answered(game_pin: str) -> None:
     if not (game_data.question_show and game_data.current_question >= 0):
         return
     answers = await AnswerDataList.get_redis_or_empty(game_pin, game_data.current_question)
-    player_count = await redis.scard(f"game_session:{game_pin}:players")
-    if player_count > 0 and len(answers) >= player_count:
+    if await everyone_here_answered(game_pin, answers):
         game_data.question_show = False
         await game_data.save(game_pin)
         await sio.emit("everyone_answered", {}, room=game_pin)

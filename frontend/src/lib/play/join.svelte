@@ -127,7 +127,7 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	$effect(() => {
-		if (game_pin.length > 5) {
+		if (/^\d{6}$/.test(game_pin)) {
 			set_game_pin();
 		}
 	});
@@ -208,12 +208,13 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('username_already_exists', () => {
 		error_message = $t('play_page.username_taken');
 	});
+	// Digits only, six at most. The box has no maxlength: it cut "123 456" pasted from a
+	// chat to "123 45" before the space could be stripped (E10 in docs/edge-cases-2026-10.md).
 	$effect(() => {
-		const cleaned = game_pin.replace(/\D/g, '');
-		if (game_pin.replace(/\D/g, '') === game_pin) {
-			return;
+		const cleaned = game_pin.replace(/\D/g, '').slice(0, 6);
+		if (cleaned !== game_pin) {
+			game_pin = cleaned;
 		}
-		game_pin = cleaned;
 	});
 </script>
 
@@ -258,7 +259,6 @@ SPDX-License-Identifier: MPL-2.0
 				<Input
 					id="game-pin"
 					bind:value={game_pin}
-					maxlength={6}
 					inputmode="numeric"
 					pattern="[0-9]*"
 					autocomplete="one-time-code"

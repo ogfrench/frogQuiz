@@ -4,6 +4,54 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Edge-case pass
+
+Findings E1 to E15 are in `docs/edge-cases-2026-10.md`. Each has a test that failed
+before its fix: in `frontend/e2e/edge-cases.e2e.ts`, for E9 and E12 in
+`frogquiz/tests/test_ratelimit.py` and `test_storage_cleanup.py`, for E13 in
+`lib/practice/score.test.ts`.
+
+- Signing in lasts again. The access cookie had been cut to 30 minutes along with the token
+  inside it (12 Sep), so it vanished before the remember-me path could renew it: everyone was
+  signed out half an hour after logging in, and an open editor failed every save with a 403.
+  The cookie lives a year again; the token still expires in 30 minutes (E1).
+- Page loads treat an expired token the API refuses to renew (its session was revoked on
+  another device) as signed out. They used to fall through and trust the token's email,
+  which the 30-minute cookie had hidden.
+- "Everyone answered" now checks that every player still in the game has answered, by name.
+  It compared counts, so a player who answered and then dropped could end the question for
+  somebody still choosing (E4).
+- Leaving `/play` inside the app (a back swipe mid-game) disconnects the socket, and coming
+  back reconnects and rejoins. It used to leave a ghost player that held every later
+  question to its full timer, while the real player saw an empty join form with their
+  nickname taken (E6).
+- The editor starts a new edit session and saves again when its session has lapsed after an
+  hour without a save, instead of failing every save until a reload (E2).
+- Login finds an address regardless of case, as password reset already did. An address
+  registered with capitals could not log in typed the same way (E3).
+- A player who reconnects mid-question is sent the seconds left, not the full time, so the
+  phone no longer offers seconds the server refuses (E5). A player who had already answered
+  is not sent the question again (E7).
+- Editor saves carry the version they were based on, and a save from a tab left behind a
+  newer one is refused with a 409 and a message to reload, instead of overwriting it (E8).
+- Editor saves are limited per edit session (60 a minute) rather than per address, plus 600
+  a minute per address. An office shares one address, so a few people editing at once hit
+  the old limit (E9). The registration and login limits have the same problem and are left
+  for a decision.
+- The PIN boxes on `/play` and the home page take "123 456" pasted with a space; `maxlength`
+  used to cut it to five digits before the space was stripped (E10).
+- A host whose connection drops mid-question gets the answer count and whether the question
+  is over when it reconnects, so the projector no longer waits out the timer (E11).
+- Storage accounting is done in single SQL statements. A claim that landed while the worker
+  was hashing the image lost the image's owner and never counted it, and two uploads hashed
+  at once could lose one of the two counts (E12).
+- The editor sends its pending save when it unmounts. Going back inside the app straight
+  after typing used to drop the last couple of seconds of edits, with no prompt (E14).
+- A save that failed because the network dropped is sent again when the browser comes back
+  online, rather than waiting for the next keystroke (E15).
+- Practice no longer scores a draft's question that has no answer marked right. Every pick
+  read "Not quite" and counted against the total (E13).
+
 ### Quality
 
 - Tightened UI copy: removed curly quotes, double hyphens and em-dashes from en.json, sentence-cased leftover Title Case labels (results table, downloader formats, controllers, shares) and shortened the import, storage, analytics, login and sign-in error wording. Reworded the import, join, TOTP and rating alerts and the OAuth error page the same way. The delete-quiz e2e assertion now expects straight quotes.

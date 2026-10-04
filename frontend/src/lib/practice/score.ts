@@ -9,7 +9,9 @@
 //   either).
 // - CHECK: all or nothing -- the ticked set must equal the right set exactly
 //   (check_check_question in frogquiz/socket_server/helpers.py).
-// - VOTING has no right answer and is not scored.
+// - VOTING has no right answer and is not scored. Nor is a draft's question that has no
+//   answer marked right yet: every pick used to read "Not quite" and count against you
+//   (E13 in docs/edge-cases-2026-10.md).
 import { QuizQuestionType, type Question } from '$lib/quiz_types';
 
 type Tile = { right?: boolean };
@@ -22,7 +24,10 @@ export const isPracticable = (q: Question): boolean =>
 	q.type === QuizQuestionType.VOTING;
 
 export const isScored = (q: Question): boolean =>
-	q.type === undefined || q.type === QuizQuestionType.ABCD || q.type === QuizQuestionType.CHECK;
+	(q.type === undefined ||
+		q.type === QuizQuestionType.ABCD ||
+		q.type === QuizQuestionType.CHECK) &&
+	(q.answers as Tile[]).some((a) => a.right);
 
 export function isCorrect(q: Question, picked: boolean[]): boolean {
 	const answers = q.answers as Tile[];

@@ -12,7 +12,9 @@ from random import randint
 
 import ormar.exceptions
 
+from frogquiz.db import database
 from frogquiz.helpers import (
+    adjust_storage_used,
     check_image_string,
     extract_image_ids_from_quiz,
     generate_spreadsheet,
@@ -25,7 +27,7 @@ from pydantic import ValidationError, BaseModel
 
 from frogquiz.auth import get_current_user, get_current_user_optional, verify_anon_secret
 from frogquiz.config import redis, settings, meilisearch
-from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType, StorageItem
+from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
 from frogquiz.helpers.ratelimit import rate_limit
@@ -242,20 +244,25 @@ async def claim_quiz(
     # ownerless, they counted against nobody's quota and outlived the account. Only the
     # ones already hashed are counted here; calculate_hash counts the rest when it runs,
     # now that they have an owner, so nothing is counted twice.
+    #
+    # One statement per image, because calculate_hash may be writing the same row. Read,
+    # changed and saved whole, the job's stale copy put the owner back to nobody, and
+    # neither side counted the bytes (E12 in docs/edge-cases-2026-10.md). Postgres runs the
+    # two updates one after the other, so whichever comes second sees the other's write:
+    # exactly one of them counts the image.
     counted = 0
     for image in extract_image_ids_from_quiz(quiz):
         item_id = check_image_string(str(image))[1]
-        item = await StorageItem.objects.get_or_none(id=item_id, deleted_at=None) if item_id else None
-        if item is None or item.user is not None:
+        if item_id is None:
             continue
-        item.user = user
-        await item.update()
-        if item.hash is not None:
-            counted += item.size
-    if counted:
-        owner = await User.objects.get(id=user.id)
-        owner.storage_used += counted
-        await owner.update()
+        row = await database.fetch_one(
+            'UPDATE storage_items SET "user" = :user WHERE id = :id AND "user" IS NULL'
+            " AND deleted_at IS NULL RETURNING hash, size",
+            {"user": user.id.hex, "id": item_id.hex},
+        )
+        if row is not None and row["hash"] is not None:
+            counted += row["size"]
+    await adjust_storage_used(user.id, counted)
     return quiz
 
 

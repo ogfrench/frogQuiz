@@ -13,6 +13,7 @@ from fastapi import HTTPException
 from openpyxl import load_workbook
 
 
+from frogquiz.db import database
 from frogquiz.db.models import Quiz, User, QuizQuestion, ABCDQuizAnswer, StorageItem
 import xlsxwriter
 from aiohttp import ClientSession
@@ -331,13 +332,24 @@ async def delete_storage_item_if_unreferenced(item: StorageItem) -> None:
     await item.update()
     if item.user is None or item.size <= 0:
         return
-    owner = await User.objects.get_or_none(id=item.user.id)
-    if owner is None:
+    await adjust_storage_used(item.user.id, -item.size)
+
+
+async def adjust_storage_used(user_id: uuid.UUID | str, delta: int) -> None:
+    """Add `delta` bytes (negative to release) to an account's storage_used, in one statement.
+
+    Every caller used to read the user, change the figure and write the whole row back.
+    Two jobs side by side (Uppy sends several files at once, and arq runs them together)
+    lost one of the two changes, and the stale row could undo anything else changed on
+    the account in between (E12 in docs/edge-cases-2026-10.md). Clamped at zero: rows
+    uploaded before sizes were measured store 0, and the column declares minimum=0.
+    """
+    if not delta:
         return
-    # Clamped: rows uploaded before sizes were measured store 0, and the column declares
-    # minimum=0, so an unclamped subtraction would raise rather than no-op.
-    owner.storage_used = max(0, owner.storage_used - item.size)
-    await owner.update()
+    await database.execute(
+        "UPDATE users SET storage_used = GREATEST(0, storage_used + :delta) WHERE id = :id",
+        {"delta": delta, "id": uuid.UUID(str(user_id)).hex},
+    )
 
 
 async def release_quiz_images(image_ids: list[str | uuid.UUID]) -> None:

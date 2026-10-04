@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -16,6 +17,11 @@ settings = settings()
 
 # Deployments served over HTTPS must not leak auth cookies over plain HTTP.
 COOKIE_SECURE = str(settings.root_address).startswith("https://")
+# The access token inside expires in access_token_expire_minutes; the cookie carrying it
+# must not. rememberme_middleware renews an expired token, but only one it is sent. Cut to
+# the token's own 30 minutes, the cookie vanished with it and everybody was signed out
+# half an hour after logging in (E1 in docs/edge-cases-2026-10.md).
+ACCESS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 
 async def log_user_in(user: User | None, request: Request, response: Response):
@@ -44,7 +50,7 @@ async def log_user_in(user: User | None, request: Request, response: Response):
         httponly=True,
         samesite="lax",
         secure=COOKIE_SECURE,
-        max_age=settings.access_token_expire_minutes * 60,
+        max_age=ACCESS_COOKIE_MAX_AGE,
     )
     response.set_cookie(
         key="rememberme_token",
@@ -75,7 +81,7 @@ async def rememberme_check(rememberme_token: str, response: Response):
         httponly=True,
         samesite="lax",
         secure=COOKIE_SECURE,
-        max_age=settings.access_token_expire_minutes * 60,
+        max_age=ACCESS_COOKIE_MAX_AGE,
     )
     response.set_cookie(key="expiry", value="", max_age=settings.access_token_expire_minutes * 60)
     response.status_code = 200

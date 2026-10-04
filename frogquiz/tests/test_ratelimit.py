@@ -11,13 +11,15 @@ until it matters, hence the table.
 """
 
 import base64
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
 
 from frogquiz.config import redis, settings
+from frogquiz.db.models import Quiz
 from frogquiz.helpers.ratelimit import client_ip
-from frogquiz.tests import test_client  # noqa: F401
+from frogquiz.tests import example_quiz, test_client  # noqa: F401
 
 
 class _FakeClient:
@@ -95,3 +97,31 @@ def test_anonymous_uploads_are_rate_limited(test_client: TestClient, monkeypatch
         test_client.portal.call(redis.delete, bucket)
     assert statuses[-1] == 429, statuses
     assert statuses.count(200) == 30, statuses
+
+
+# E9 in docs/edge-cases-2026-10.md. Autosave was limited per address, and an office shares
+# one: a handful of people editing at once used up 60 saves a minute between them. Each edit
+# session now has its own bucket, so one busy editor cannot stall the others.
+def test_editor_saves_are_limited_per_edit_session(test_client: TestClient, monkeypatch):  # noqa: F811
+    on = settings().model_copy(update={"rate_limit_enabled": True})
+    monkeypatch.setattr("frogquiz.helpers.ratelimit.settings", lambda: on)
+    busy = test_client.post("/api/v1/editor/start?edit=false").json()["token"]
+    other = test_client.post("/api/v1/editor/start?edit=false").json()["token"]
+    keys = [
+        f"ratelimit:editor_save_session:{busy}",
+        "ratelimit:editor_save:testclient",
+        "ratelimit:editor_start:testclient",
+    ]
+    # The busy session has used its whole minute.
+    test_client.portal.call(lambda: redis.set(keys[0], 60, ex=60))
+    saved = None
+    try:
+        assert test_client.post(f"/api/v1/editor/save?edit_id={busy}", json=example_quiz).status_code == 429
+        saved = test_client.post(f"/api/v1/editor/save?edit_id={other}", json=example_quiz)
+        assert saved.status_code == 200
+    finally:
+        for key in keys:
+            test_client.portal.call(redis.delete, key)
+        # TestStats counts quizzes and expects none left behind.
+        if saved is not None and saved.status_code == 200:
+            test_client.portal.call(lambda: Quiz.objects.filter(id=uuid.UUID(saved.json()["id"])).delete())

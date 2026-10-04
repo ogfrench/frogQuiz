@@ -13,8 +13,10 @@ import xxhash
 from frogquiz.config import storage
 from tempfile import SpooledTemporaryFile
 
-from frogquiz.db.models import StorageItem, Quiz, User
+from frogquiz.db import database
+from frogquiz.db.models import StorageItem, Quiz
 from frogquiz.helpers import (
+    adjust_storage_used,
     delete_storage_item_if_unreferenced,
     extract_image_ids_from_quiz,
     release_quiz_images,
@@ -89,18 +91,21 @@ async def calculate_hash(ctx, file_id_as_str: str):
     while chunk := file.read(6400):
         hash_obj.update(chunk)
     file_data.hash = hash_obj.digest()
-    await file_data.update()
     file.close()
-    # An upload made without an account has no quota to count against. This read
-    # `file_data.user.id` unguarded, so the job raised on every anonymous upload (C6).
-    # Claiming its quiz counts it later (routers/quiz.py claim_quiz).
-    if file_data.user is None:
+    # Only the columns this job computes, and the owner read back in the same statement.
+    # Saving the whole row it read a moment ago put the owner back to nobody when the quiz
+    # was claimed meanwhile, and neither side counted the bytes (E12 in
+    # docs/edge-cases-2026-10.md). claim_quiz does the mirror image, so exactly one counts.
+    row = await database.fetch_one(
+        "UPDATE storage_items SET hash = :hash, size = :size, thumbhash = :thumbhash"
+        ' WHERE id = :id AND deleted_at IS NULL RETURNING "user"',
+        {"hash": file_data.hash, "size": file_data.size, "thumbhash": file_data.thumbhash, "id": file_id.hex},
+    )
+    # An upload made without an account has no quota to count against (C6); claiming its
+    # quiz counts it later.
+    if row is None or row["user"] is None:
         return
-    user: User | None = await User.objects.get_or_none(id=file_data.user.id)
-    if user is None:
-        return
-    user.storage_used += file_data.size
-    await user.update()
+    await adjust_storage_used(row["user"], file_data.size)
 
 
 # skipcq: PYL-W0613

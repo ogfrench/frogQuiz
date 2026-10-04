@@ -14,7 +14,7 @@ from frogquiz.auth import get_current_user, get_current_user_optional
 from frogquiz.config import settings, storage, arq, UPLOAD_LIMITS
 from frogquiz.image_dimensions import image_dimensions, HEADER_BYTES
 from frogquiz.db.models import User, StorageItem, PublicStorageItem, UpdateStorageItem, PrivateStorageItem, Quiz
-from frogquiz.helpers import check_image_string, extract_image_ids_from_quiz
+from frogquiz.helpers import adjust_storage_used, check_image_string, extract_image_ids_from_quiz
 from frogquiz.helpers.ratelimit import rate_limit
 from frogquiz.storage.errors import DownloadingFailedError
 from uuid import uuid4, UUID
@@ -40,11 +40,7 @@ async def release_storage_quota(user: User | None, size: int) -> None:
     """
     if user is None or size <= 0:
         return
-    fresh = await User.objects.get_or_none(id=user.id)
-    if fresh is None:
-        return
-    fresh.storage_used = max(0, fresh.storage_used - size)
-    await fresh.update()
+    await adjust_storage_used(user.id, -size)
 
 
 def headers_from_storage_item(item: StorageItem) -> dict[str, str]:

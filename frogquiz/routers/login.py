@@ -109,9 +109,12 @@ async def start_login(data: StartLoginInput, request: Request):
     # keys on comes from a header the caller can forge by reaching Caddy directly.
     # This one keys on what is being attacked instead, which cannot be forged.
     await rate_limit_key(f"login_start_addr:{data.email.strip().lower()}", limit=20, window_seconds=300)
+    # Addresses are stored folded (create_user); the exact match is for rows from before
+    # that rule. Matching only exactly refused "Ana@Frog.co" typed the way it was registered.
+    folded = data.email.strip().lower()
     user = (
         await User.objects.select_related("fidocredentialss")
-        .filter((User.email == data.email) | (User.username == data.email))
+        .filter((User.email == folded) | (User.email == data.email) | (User.username == data.email))
         .get_or_none()
     )
     step_1: set[StartLoginResponseTypes] = set()

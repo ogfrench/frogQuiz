@@ -29,12 +29,14 @@ SPDX-License-Identifier: MPL-2.0
 	const share_url = $derived(`${origin}/`);
 
 	let pin = $state('');
-	let ready = $derived(pin.trim().length === 6);
+	// Digits only: no maxlength, which cut "123 456" pasted from a chat to "123 45" (E10).
+	const digits = $derived(pin.replace(/\D/g, '').slice(0, 6));
+	let ready = $derived(digits.length === 6);
 
 	const join = (e: Event) => {
 		e.preventDefault();
 		if (!ready) return;
-		goto(`/play?pin=${encodeURIComponent(pin.trim())}`);
+		goto(`/play?pin=${digits}`);
 	};
 </script>
 
@@ -80,7 +82,6 @@ SPDX-License-Identifier: MPL-2.0
 					<Input
 						id="game-pin"
 						bind:value={pin}
-						maxlength={6}
 						inputmode="numeric"
 						autocomplete="off"
 						class="h-11 text-center font-mono text-lg tracking-[0.35em]"

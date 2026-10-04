@@ -52,6 +52,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 			}
 			return resp;
 		}
+		// The API answered and refused: the session behind the token is gone (signed out
+		// everywhere, deleted, password changed). The cookie outlives its token now (E1 in
+		// docs/edge-cases-2026-10.md), so falling through would render a signed-in page whose
+		// every API call fails.
+		if (res?.status === 401) {
+			event.locals.email = null;
+			return resolve(event);
+		}
 	}
 	event.locals.email = jwt.sub;
 	return resolve(event);

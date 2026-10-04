@@ -15,11 +15,22 @@ about 210 files, roughly +13700 / -3600 against `master`, which has not moved si
 ### Reviewing and merging (5 Oct)
 
 Read the PR #23 description top to bottom. It is grouped by theme, with dates, and each
-section names the doc that holds the detail. Only one thing in it needs the two of you:
-**D16 and D18** (`MVP.md` §4.0) are François's calls from 2 Oct and still need Gonçalo's
-tick. D16 is the host-side "show questions and answers on players' devices" switch, off by
-default as in Kahoot. D18 makes downloading a quiz's results owner-only. Every other
-decision in the PR is already agreed and recorded in `docs/mvp-scope.md`.
+section names the doc that holds the detail. Two things in it need the two of you:
+
+- **D16 and D18** (`MVP.md` §4.0) are François's calls from 2 Oct and still need Gonçalo's
+  tick. D16 is the host-side "show questions and answers on players' devices" switch, off
+  by default as in Kahoot. D18 makes downloading a quiz's results owner-only.
+- **Registration and login rate limits** (found in the edge-case pass, 4 Oct late). They are
+  per address, and an office shares one, so the eleventh person registering in the same
+  room is locked out for an hour. An auth limit, so it was left as it is. The suggestion is
+  in `TODO.md`.
+
+Every other decision in the PR is already agreed and recorded in `docs/mvp-scope.md`.
+
+The last thing added is the edge-case pass ([`docs/edge-cases-2026-10.md`](docs/edge-cases-2026-10.md),
+E1 to E15, all fixed). Read its three High findings first. E1 in particular: since 12 Sep,
+everyone has been signed out 30 minutes after logging in, which is also why an editor left
+open that long stopped saving.
 
 To read code by area rather than commit by commit:
 `git diff master...ccr-370df3e4-c44t1l --stat -- frogquiz/` for the backend (auth, uploads,
@@ -57,6 +68,7 @@ is clean at the commit that added this section, CI is green on it, and PR #23 is
 | Suites | At the cloud handoff: e2e 146/146 and backend 168 on `077f695`; unit 153. Current numbers are in the table at the top |
 | Open issues | #3 (MVP 1, Part A partly done), #4 (MVP 2), #22 (Oracle VM, **31 Oct**), #24 (touch targets, fixed 4 Oct on this branch; a real-phone check is left) |
 | Decisions open | Gonçalo's tick on D16 and D18 (see `MVP.md` §4.0). Scoring stays all-or-nothing; sign-out revocation is done |
+| Edge-case pass, 4 Oct late | 15 bugs found and fixed (E1 to E15 in [`docs/edge-cases-2026-10.md`](docs/edge-cases-2026-10.md)), each with a test that failed first. One decision left open: the per-address registration and login limits |
 | CRUD audit, 4 Oct | Done on the laptop and pushed to this PR: 14 bugs found and fixed (C1 to C18 in [`docs/crud-audit-2026-10.md`](docs/crud-audit-2026-10.md)), each with a regression test. `e2e/run.sh` now starts the arq worker, which is how three of them were found. C13: usernames do not change, decided 4 Oct and recorded in `docs/mvp-scope.md` |
 
 ### Getting it onto the laptop

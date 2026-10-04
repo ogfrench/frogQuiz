@@ -14,7 +14,9 @@ delete the marker.
 
 The CRUD audit of 2026-10-04 is a separate list, numbered C1 to C18, in
 [`crud-audit-2026-10.md`](crud-audit-2026-10.md). Its bugs went through the same
-convention and were fixed the same day.
+convention and were fixed the same day. The edge-case pass of the same evening (time
+passing, dropped connections, a back swipe, a capital letter) is E1 to E15, in
+[`edge-cases-2026-10.md`](edge-cases-2026-10.md).
 
 ## How each was fixed
 
@@ -59,7 +61,7 @@ Found, not fixed:
   and `captcha_enabled` (which defaulted to **True** on `/quiz/start`) defaults off and
   is refused outright without a key — so a game demanding an uncheckable captcha cannot
   be opened.
-- The editor's yup schema caps a quiz at 50 questions, but its message says 32. The server has no cap (500 questions tested fine).
+- ~~The editor's yup schema caps a quiz at 50 questions, but its message says 32~~ -- the message has said 50 since `cab8d363` (found stale on 2026-10-04). The server has no cap (500 questions tested fine).
 - **Host events race on the stored game** (found 2026-09-29 writing the exit tests). python-socketio runs each event in its own task, and `start_game`, `set_question_number` and `get_question_results` all read `game:{pin}`, change one field and write the whole thing back. Sent back to back, `set_question_number` can read the game before `start_game` has saved it and then write `started=False` back over it. The host UI can't do this -- it offers "next" only after the server's `start_game` arrives -- so it is a protocol-level gap, not a live bug. A crafted or scripted host could hit it. The fix is per-field storage (`HSET`) or a `WATCH` transaction like `record_answer_once`.
 
   **This paragraph used to end "the socket specs wait for `start_game` before showing a question for this reason". They did not** -- all ten `start_game` emits in `live-socket.e2e.ts` were fire-and-forget. That is what made *an answer after the host showed the results is refused* flaky: when `current_question` is the field lost to the race, `submit_answer` sees the wrong index, answers `question_not_active` and never emits `player_answer`, so the test failed on its **first** assertion. Measured 2 failures in 10 runs in isolation, which also disproves the earlier note that it only failed under full-suite load. `startGame()` in `e2e/sockets.ts` now waits for the echo, and the test passes 12/12. The server-side race is still there and still worth the `WATCH` transaction; the specs simply no longer provoke it. (Checked whether the new `disconnect` handler contributed: 8/10 with it, 9/10 without -- a one-run difference at n=10, i.e. noise, and it failed with the handler disabled too.)

@@ -139,6 +139,12 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.quiz_data = JSON.parse(data['game']);
 		console.log(game_state.quiz_data);
 		game_state.players = data['players'] ?? [];
+		// After a dropped connection, not a reload: what happened to the question while
+		// this screen was away. Without it the projector waited out the full timer (E11).
+		if (game_state.selected_question >= 0) {
+			game_state.answer_count = data['answer_count'] ?? game_state.answer_count;
+			if (data['question_open'] === false) game_state.timer_res = '0';
+		}
 		success = true;
 	});
 	socket.on('player_joined', (int_data) => {

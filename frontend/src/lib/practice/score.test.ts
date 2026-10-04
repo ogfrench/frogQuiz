@@ -44,4 +44,9 @@ describe('practice scoring matches the live game', () => {
 			expect(isPracticable(q(t, []))).toBe(false);
 		}
 	});
+
+	it('a draft question with no answer marked right is not scored', () => {
+		expect(isScored(q(QuizQuestionType.ABCD, [false, false]))).toBe(false);
+		expect(isScored(q(QuizQuestionType.CHECK, [false, false, false]))).toBe(false);
+	});
 });

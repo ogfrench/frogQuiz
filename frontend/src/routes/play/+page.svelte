@@ -21,6 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import House from '@lucide/svelte/icons/house';
 	import LogOut from '@lucide/svelte/icons/log-out';
+	import { onMount } from 'svelte';
 	const { t } = getLocalization();
 
 	interface Props {
@@ -109,6 +110,16 @@ SPDX-License-Identifier: MPL-2.0
 			event.returnValue = '';
 		}
 	};
+
+	// The socket is a module and outlives this page, because the app navigates without
+	// unloading. A back swipe mid-game left the player connected and counted with no screen
+	// to answer on, and coming forward showed an empty join form with their own nickname
+	// taken (E6 in docs/edge-cases-2026-10.md). Leaving now drops the connection, as
+	// closing the tab does; coming back connects again and the handler below rejoins.
+	onMount(() => {
+		if (!socket.connected) socket.connect();
+		return () => socket.disconnect();
+	});
 
 	socket.on('time_sync', (data) => {
 		socket.emit('echo_time_sync', data);

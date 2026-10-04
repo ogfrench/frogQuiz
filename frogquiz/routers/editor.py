@@ -24,7 +24,7 @@ from frogquiz.config import (
 )
 from frogquiz.db.models import Quiz, QuizInput, User, QuizQuestionType, StorageItem
 from frogquiz.auth import get_current_user_optional, hash_anon_secret, verify_anon_secret
-from frogquiz.helpers.ratelimit import rate_limit
+from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 import os
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -146,6 +146,7 @@ async def save_edit(
     quiz_input: QuizInput,
     user: User | None = Depends(get_current_user_optional),
     x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+    base: datetime | None = None,
 ):
     """Save and keep editing: the editor's autosave (MVP.md D14).
 
@@ -153,8 +154,12 @@ async def save_edit(
     its hour starts again, so an editor left open no longer loses its session mid-edit.
     The first save of a new quiz creates it, and the session then edits that quiz.
     """
-    await rate_limit(request, "editor_save", limit=60, window_seconds=60)
-    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=True)
+    # Per edit session: an office shares one public address, and a per-address limit of
+    # 60 a minute was reached by a handful of people editing at once (E9 in
+    # docs/edge-cases-2026-10.md). The address limit stays, generous, against scripts.
+    await rate_limit_key(f"editor_save_session:{edit_id}", limit=60, window_seconds=60)
+    await rate_limit(request, "editor_save", limit=600, window_seconds=60)
+    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=True, base=base)
 
 
 async def _persist(
@@ -165,6 +170,7 @@ async def _persist(
     x_anon_secret: str | None,
     *,
     keep_session: bool,
+    base: datetime | None = None,
 ):
     session_data = await redis.get(f"edit_session:{edit_id}")
     if session_data is None:
@@ -250,6 +256,13 @@ async def _persist(
         if old_quiz_data is None:
             # The quiz was deleted while its editor was still open.
             raise HTTPException(status_code=404, detail="Quiz not found")
+        # `base` is the version the editor last saw. Every save sends the whole quiz, so a
+        # tab left open behind a newer save wrote its older copy over it (E8).
+        if base is not None and old_quiz_data.updated_at != base:
+            raise HTTPException(
+                status_code=409,
+                detail="this quiz was changed in another tab or device. Reload to get that version",
+            )
         # arq pickles its arguments here, so updating this object below does not reach
         # the job: it still diffs the images against the quiz as it was.
         await arq.enqueue_job("quiz_update", old_quiz_data, old_quiz_data.id, _defer_by=2)

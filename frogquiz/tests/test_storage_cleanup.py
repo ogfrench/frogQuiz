@@ -117,3 +117,42 @@ def test_an_admin_deleting_an_account_cleans_up_like_the_account_itself(test_cli
 
     res = test_client.request("DELETE", "/api/v1/users/me", json={"password": PASSWORD}, cookies=admin)
     assert res.status_code == 200, res.text
+
+
+RACER = "hash-race@byom.de"
+
+
+# E12 in docs/edge-cases-2026-10.md. calculate_hash read the upload, hashed it and saved the
+# whole row back, so a claim that gave the image an owner in between was undone, and neither
+# side counted the bytes. The job now writes only its own columns and reads the owner back.
+def test_claim_during_hashing_keeps_owner_and_counts(test_client: TestClient, monkeypatch):  # noqa: F811
+    from frogquiz.worker import storage as job
+
+    _create(test_client, RACER)
+    cookies = _log_in(test_client, RACER)
+    owner = UUID(test_client.get("/api/v1/users/me", cookies=cookies).json()["id"])
+    # Anonymous. The client keeps every cookie a response sets, the login's included, so
+    # the jar is emptied for the upload and put back after. Nothing runs the job here.
+    jar = dict(test_client.cookies)
+    test_client.cookies.clear()
+    image = _upload(test_client)
+    test_client.cookies.update(jar)
+
+    measure = job.storage.get_file_size
+
+    async def measure_while_claimed(file_name):
+        # The claim lands after the job has read the row and before it writes.
+        await StorageItem.objects.filter(id=UUID(image)).update(user=owner)
+        return await measure(file_name=file_name)
+
+    monkeypatch.setattr(job.storage, "get_file_size", measure_while_claimed)
+
+    async def hash_it():
+        await job.calculate_hash({"job_try": 1}, image)
+        item = await StorageItem.objects.get(id=UUID(image))
+        return item.user.id if item.user else None, (await User.objects.get(id=owner)).storage_used
+
+    assert test_client.portal.call(hash_it) == (owner, len(PNG))
+
+    res = test_client.request("DELETE", "/api/v1/users/me", json={"password": PASSWORD}, cookies=cookies)
+    assert res.status_code == 200, res.text
