@@ -57,11 +57,11 @@ SPDX-License-Identifier: MPL-2.0
 	<div
 		class="w-full max-w-2xl overflow-hidden rounded-2xl border border-neutral-200 bg-white text-neutral-900 shadow-sm lg:max-w-4xl"
 	>
-		<h2
+		<h1
 			class="border-b border-neutral-200 bg-neutral-100 px-6 py-3 text-center text-sm font-semibold tracking-wider uppercase lg:text-base"
 		>
 			{$t('admin_page.scoreboard')}
-		</h2>
+		</h1>
 		<ul class="divide-y divide-neutral-200">
 			{#each top as player (player.name)}
 				{@const moved = (place_before[player.name] ?? player.place) - player.place}
@@ -76,29 +76,30 @@ SPDX-License-Identifier: MPL-2.0
 						{player.name}
 					</span>
 					<!-- Up, down or held. Shape as well as direction, so it does not rest on
-					     a color nobody can see from four meters away. -->
-					<span
-						class="flex w-10 shrink-0 items-center justify-center text-neutral-500"
-						aria-label={moved > 0
-							? $t('admin_page.moved_up', { count: moved })
-							: moved < 0
-								? $t('admin_page.moved_down', { count: -moved })
-								: $t('admin_page.held_place')}
-					>
+					     a color nobody can see from four meters away. The words are sr-only
+					     text, not an aria-label: a label on a plain span is not read. -->
+					<span class="flex w-10 shrink-0 items-center justify-center text-neutral-500">
 						{#if moved > 0}
-							<ChevronUp class="size-5 lg:size-7" />
+							<ChevronUp class="size-5 lg:size-7" aria-hidden="true" />
 						{:else if moved < 0}
-							<ChevronDown class="size-5 lg:size-7" />
+							<ChevronDown class="size-5 lg:size-7" aria-hidden="true" />
 						{:else}
-							<Minus class="size-4 lg:size-5" />
+							<Minus class="size-4 lg:size-5" aria-hidden="true" />
 						{/if}
+						<span class="sr-only">
+							{moved > 0
+								? $t('admin_page.moved_up', { count: moved })
+								: moved < 0
+									? $t('admin_page.moved_down', { count: -moved })
+									: $t('admin_page.held_place')}
+						</span>
 					</span>
 					<span class="w-20 text-right text-lg font-semibold tabular-nums lg:w-28 lg:text-3xl">
 						{player.score}
 					</span>
 					<span
 						class="w-16 text-right text-sm tabular-nums lg:w-24 lg:text-xl"
-						class:text-neutral-400={!gained[player.name]}
+						class:text-neutral-500={!gained[player.name]}
 						in:fly|global={{ x: 40, duration: dur(DUR.surface), delay: stagger(player.place, 60) }}
 					>
 						+{gained[player.name] ?? 0}

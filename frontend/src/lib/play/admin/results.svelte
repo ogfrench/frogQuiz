@@ -86,15 +86,18 @@ SPDX-License-Identifier: MPL-2.0
 	<div
 		class="w-full max-w-2xl overflow-hidden rounded-2xl border border-neutral-200 bg-white text-neutral-900 shadow-sm lg:max-w-4xl"
 	>
-		{#if [QuizQuestionType.ABCD, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
+		<!-- CHECK was missing from this list, so after a multiple-answer question the
+		     projector showed an empty card: no question, no correct answers, no split.
+		     VotingResults already counted CHECK submissions; nothing ever rendered it. -->
+		{#if [QuizQuestionType.ABCD, QuizQuestionType.CHECK, QuizQuestionType.VOTING, QuizQuestionType.TEXT].includes(question.type)}
 			<section class="flex flex-col gap-[var(--fq-space-group)] p-6 sm:p-8">
 				<!-- This screen is read from the back of a room, not from a laptop: the question
 				     screen before it sets its type at ~90px and this one was still at 18px. -->
-				<h2
+				<h1
 					class="text-center text-lg font-semibold tracking-tight text-balance wrap-anywhere lg:text-3xl"
 				>
 					{@html sanitizeTitleHtml(question.question)}
-				</h2>
+				</h1>
 				<VotingResults data={new_data} {question} />
 			</section>
 		{/if}

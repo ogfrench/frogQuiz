@@ -60,6 +60,8 @@ SPDX-License-Identifier: MPL-2.0
      component goes, which is the moment the first question appears. -->
 <LobbyMusic />
 
+<h1 class="sr-only">{$t('admin_page.lobby_title')}</h1>
+
 <div class="fq-stage">
 	<!-- The join details are the whole point of this screen, so they get the
 	     center and the largest type rather than being split across three

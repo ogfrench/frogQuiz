@@ -179,16 +179,25 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<div class="h-screen w-screen">
+<!-- h-dvh w-full, not h-screen w-screen: on a real phone 100vh counts the browser's own
+     toolbars, so the bottom row of answer tiles could sit underneath them, and 100vw
+     includes a desktop scrollbar. Phone emulation has no toolbar, which is why no test
+     ever saw it. -->
+<div class="h-dvh w-full">
+	{#if game_mode !== 'normal'}
+		<!-- Shapes only on the phone (the question is on the shared screen), so the page had
+		     no heading at all. -->
+		<h1 class="sr-only">
+			{$t('play_page.question_number', { n: Number(question_index) + 1 })}
+		</h1>
+	{/if}
 	{#if game_mode === 'normal'}
 		<div
 			class="flex flex-col justify-start"
 			class:mt-10={[QuizQuestionType.RANGE, QuizQuestionType.ORDER, QuizQuestionType.TEXT]}
 			style="height: {question.image ? '33.333333' : '16.666667'}%"
 		>
-			<h1
-				class="lg:text-2xl text-lg text-center text-black dark:text-white mt-2 wrap-anywhere mb-2"
-			>
+			<h1 class="text-foreground lg:text-2xl text-lg text-center mt-2 wrap-anywhere mb-2">
 				{@html sanitizeTitleHtml(question.question)}
 			</h1>
 			{#if question.image !== null && game_mode !== 'kahoot'}

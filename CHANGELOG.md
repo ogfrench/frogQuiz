@@ -6,6 +6,18 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Navigation, one way to log in, and a UI best-practice pass
 
+- Fixed the host's results screen after a multiple-answer question, which showed an
+  empty card: no question, no correct answers, no split. The screen listed the question
+  types it drew and left that one out. `scoreboard.e2e` plays one through the UI.
+- The live game passes axe in every state, host and phone, in both themes. Fixed on the
+  way: no `<h1>` on most game screens; the scoreboard's up/down/no-change labels sat on
+  plain spans that screen readers skip, and its "+0" was 2.6:1; the medal on a player's
+  score pill was 3.25:1 in light (gold) and under 3.8:1 in dark (silver, bronze), now
+  per-theme inks held to AA by `medal-contrast.test.ts`; result bars told screen readers
+  "2 players are waiting" instead of "2 players chose this".
+- The player's question screen is `h-dvh w-full`, not `h-screen w-screen`: on a real
+  phone 100vh counts the browser's toolbars, so the bottom answer tiles could sit under
+  them.
 - The command palette's entries read like the rest of the app: "Create a quiz",
   "Discover" (was "Explore Quizzes", "Opens the Explore-page"), "Close" (was "Close
   CommandPalette"), and its argument hint is muted instead of indigo, an accent the app

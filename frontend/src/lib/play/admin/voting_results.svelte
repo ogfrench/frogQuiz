@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import { answerColor } from '$lib/play/answer_colors';
+	import Check from '@lucide/svelte/icons/check';
 	import { getLocalization } from '$lib/i18n';
 
 	const { t } = getLocalization();
@@ -70,21 +71,12 @@ SPDX-License-Identifier: MPL-2.0
 						{answer.answer}
 					</span>
 					{#if correct}
-						<svg
+						<Check
 							class="size-4 shrink-0 text-neutral-900 lg:size-6"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="3"
-							role="img"
-							aria-label={$t('words.correct')}
-						>
-							<path
-								d="M5 13l4 4L19 7"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
+							strokeWidth={3}
+							aria-hidden="true"
+						/>
+						<span class="sr-only">{$t('words.correct')}</span>
 					{/if}
 				</span>
 
@@ -102,7 +94,7 @@ SPDX-License-Identifier: MPL-2.0
 				<span class="w-14 shrink-0 text-right text-base font-semibold tabular-nums lg:text-2xl">
 					{count}
 					<span class="sr-only">
-						{$t('play_page.players_waiting', { count })}
+						{$t('admin_page.chose_this', { count })}
 					</span>
 				</span>
 			</li>

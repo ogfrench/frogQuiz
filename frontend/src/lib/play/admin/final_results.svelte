@@ -64,10 +64,13 @@ SPDX-License-Identifier: MPL-2.0
 		place === 1 ? 'is-gold' : place === 2 ? 'is-silver' : 'is-bronze';
 	// Only on a player's own screen, and only for the three places that are a place.
 	// Ink rather than a filled chip: the pill it sits in is already a surface.
+	// The ink is a class, not a hex: it sits on bg-card, which flips with the theme, and
+	// one fixed gold was 3.25:1 on white while silver and bronze were under 3.8:1 on the
+	// dark card. medal-contrast.test.ts holds all six to AA.
 	const MEDALS: Record<number, { ink: string; key: string }> = {
-		1: { ink: '#b8860b', key: 'play_page.1st_place' },
-		2: { ink: '#71717a', key: 'play_page.2nd_place' },
-		3: { ink: '#a8622f', key: 'play_page.3rd place' }
+		1: { ink: 'medal-ink-1', key: 'play_page.1st_place' },
+		2: { ink: 'medal-ink-2', key: 'play_page.2nd_place' },
+		3: { ink: 'medal-ink-3', key: 'play_page.3rd place' }
 	};
 	let place_label = (place: number) =>
 		place === 1
@@ -102,6 +105,7 @@ SPDX-License-Identifier: MPL-2.0
 	></canvas>
 
 	<div class="fq-stage">
+		<h1 class="sr-only">{$t('admin_page.final_results_title')}</h1>
 		<!-- The blocks need a floor, or they read as floating cards rather than a
 		     podium. border-b-2 border-border was too faint to register as one at
 		     projector distance: the blocks looked cut off rather than stood on
@@ -210,8 +214,7 @@ SPDX-License-Identifier: MPL-2.0
 				     difference between "you finished" and "you placed". -->
 				{#if medal}
 					<span
-						class="flex shrink-0 items-center gap-1.5 font-semibold whitespace-nowrap"
-						style="color: {medal.ink}"
+						class="flex shrink-0 items-center gap-1.5 font-semibold whitespace-nowrap {medal.ink}"
 					>
 						<Medal class="size-5" aria-hidden="true" />
 						{$t(medal.key)}
@@ -235,6 +238,27 @@ SPDX-License-Identifier: MPL-2.0
 {/if}
 
 <style>
+	/* The medal on a player's own score pill, which is bg-card: white in light, zinc-900
+	   in dark. */
+	.medal-ink-1 {
+		color: #8a6500;
+	}
+	.medal-ink-2 {
+		color: #71717a;
+	}
+	.medal-ink-3 {
+		color: #a8622f;
+	}
+	:global(html.dark) .medal-ink-1 {
+		color: #b8860b;
+	}
+	:global(html.dark) .medal-ink-2 {
+		color: #a1a1aa;
+	}
+	:global(html.dark) .medal-ink-3 {
+		color: #c98450;
+	}
+
 	/* The podium had gold, silver and bronze gradients with a white inset highlight, which
 	   is a lot of color for a screen whose job is to say who won -- and it put a third
 	   accent in an identity that is "zinc neutrals plus one loud element" (CLAUDE.md).

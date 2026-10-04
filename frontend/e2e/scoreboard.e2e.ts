@@ -6,7 +6,14 @@
 // then the next question. The standings used to share the answers screen.
 
 import { test, expect } from '@playwright/test';
-import { mc, saveQuiz, rememberAnonQuiz, hostFromViewPage, gotoPlayHydrated } from './helpers';
+import {
+	mc,
+	saveQuiz,
+	rememberAnonQuiz,
+	hostFromViewPage,
+	gotoPlayHydrated,
+	joinAsPlayer
+} from './helpers';
 test('the host advances answers \u2192 scoreboard \u2192 next question', async ({ browser, request }) => {
 	test.setTimeout(6 * 60_000);
 	const saved = await saveQuiz(request, { title: 'Frog Anatomy', description: 'two',
@@ -57,11 +64,56 @@ test('the host advances answers \u2192 scoreboard \u2192 next question', async (
 	// Five rows, the rest counted, and the movement called out: Eve overtook Bo.
 	await expect(host.getByRole('listitem')).toHaveCount(5);
 	await expect(host.getByText(/and 1 more player/)).toBeVisible();
-	await expect(host.getByLabel(/^up /)).toHaveCount(1);
-	await expect(host.getByLabel(/^down /)).toHaveCount(1);
+	// Screen-reader text, not an aria-label: a label on a plain span is never read.
+	await expect(host.getByText(/^up \d/)).toHaveCount(1);
+	await expect(host.getByText(/^down \d/)).toHaveCount(1);
 
 	// Last question: the scoreboard comes before the podium, not instead of it.
 	await expect(host.getByRole('button', { name: 'Get final results' })).toBeVisible();
 	await hostCtx.close();
 	for (const m of made) await m.c.close();
+});
+
+// The results screen listed the question types it drew and left CHECK out, so after a
+// multiple-answer question the projector showed an empty card: no question, no correct
+// answers, no split. The counting for CHECK already existed; nothing rendered it.
+test('a multiple-answer question gets a results screen', async ({ page, browser, request }) => {
+	const saved = await saveQuiz(request, {
+		title: 'Check results',
+		description: 'one',
+		questions: [
+			{
+				question: 'Which are amphibians?',
+				time: '20',
+				type: 'CHECK',
+				answers: [
+					{ answer: 'Frog', right: true },
+					{ answer: 'Newt', right: true },
+					{ answer: 'Lizard', right: false }
+				]
+			}
+		]
+	});
+	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+	const pin = await hostFromViewPage(page, saved.body.id);
+	const ana = await joinAsPlayer(browser, pin, 'Ana');
+	const ben = await joinAsPlayer(browser, pin, 'Ben');
+	await expect(page.getByRole('button', { name: /Ben/ })).toBeVisible();
+	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
+	for (const [p, picks] of [
+		[ana.page, ['Frog', 'Newt']],
+		[ben.page, ['Frog', 'Lizard']]
+	] as const) {
+		for (const a of picks) await p.getByRole('button', { name: a, exact: true }).click();
+		await p.getByRole('button', { name: 'Submit' }).click();
+	}
+	await page.getByRole('button', { name: /Show results/ }).click({ timeout: 30_000 });
+
+	await expect(page.getByRole('heading', { name: 'Which are amphibians?' })).toBeVisible();
+	await expect(page.getByText('2 players chose this')).toHaveCount(1); // Frog
+	await expect(page.getByText('1 player chose this')).toHaveCount(2); // Newt, Lizard
+	await expect(page.getByText('2 answers submitted')).toBeVisible();
+	await ana.context.close();
+	await ben.context.close();
 });

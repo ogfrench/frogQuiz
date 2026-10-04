@@ -295,7 +295,7 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			{:else}
 				<div class="fq-stage">
-					<h2 class="text-center text-3xl">{$t('words.result', { count: 2 })}</h2>
+					<h1 class="text-center text-3xl">{$t('words.result', { count: 2 })}</h1>
 					{#key unique}
 						<KahootResults {username} question_results={answer_results} bind:scores />
 					{/key}
