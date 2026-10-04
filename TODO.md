@@ -208,14 +208,14 @@ the explanation.
       (RANGE, ORDER, VOTING are not in the editor's allowlist), so they are gated code that
       could be excluded rather than fixed
 - [ ] The input tier on hidden routes (`/quiztivity`, `/edit/files`, controllers, Pixabay) still draws form fields at three different radii. An `fq-field` utility would fold in the un-themed `bg-gray-500` / `focus:ring-blue-500` drift at the same time
-- [ ] `lib/components/ui/button/button.svelte` has two off-ladder steps (8px and 10px) from upstream. Defensible, but they are the last two
-- [ ] `/create` still renders upstream's "quiz created" modal, which nothing can open: `responseData.open` is a plain object never set to true. It carries `bg-white`, `text-gray-900` and a raw Heroicon `<svg>`. Dead code, so a removal candidate; left in place pending a decision rather than deleted
+- [x] `lib/components/ui/button/button.svelte` has two off-ladder steps (8px and 10px) from upstream. Defensible, but they are the last two
+- [x] `/create` still renders upstream's "quiz created" modal, which nothing can open: `responseData.open` is a plain object never set to true. It carries `bg-white`, `text-gray-900` and a raw Heroicon `<svg>`. Deleted on 4 Oct: unreachable, so no feature went with it
 - [ ] **Touch-sized press areas on phones (issue #24).** Measured 4 Oct at 390 with touch
       emulation: the editor's timer input (40x20, under the 24px floor), "Mark as correct"
       (28px), "Delete answer" (24px, and invisible on touch until the row has focus), answer
       fields (28px tall), the 36px search and password inputs, 26px quiz title links. The
       issue holds the table, frogConvert's approach, a recommendation and acceptance criteria
-- [ ] Tailwind scans the repo's Markdown, so the word "rounded" in `CLAUDE.md` emits three dead CSS rules. Harmless; noted so nobody re-chases it
+- [x] Tailwind scanned `radius-scale.test.ts`, whose list of banned classes emitted dead `.rounded`, `.rounded-t` and `.rounded-b` rules. Not Markdown, as this entry first said. `app.css` now excludes `*.test.ts`
 
 ## After V1
 

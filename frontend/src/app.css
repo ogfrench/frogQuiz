@@ -8,6 +8,9 @@ SPDX-License-Identifier: MPL-2.0
 @import 'tippy.js/dist/tippy.css';
 /* Write your global styles here, in PostCSS syntax */
 @import 'tailwindcss';
+/* Tests name classes as strings (radius-scale.test.ts lists the banned ones), which
+   Tailwind would otherwise compile into dead rules. */
+@source not './**/*.test.ts';
 @import 'tw-animate-css';
 @import 'shadcn-svelte/tailwind.css';
 /*

@@ -47,6 +47,14 @@ describe('the radius scale', () => {
 		expect(offenders, 'use a step: rounded-sm/md/lg/xl/2xl/full').toEqual([]);
 	});
 
+	it('has no arbitrary rounded-[...] value off the ladder', () => {
+		// The button's xs and sm sizes carried min(var(--radius-md), 8px / 10px) from upstream.
+		const offenders = files.filter((f) =>
+			/\brounded(-[a-z]+)?-\[/.test(readFileSync(f, 'utf8'))
+		);
+		expect(offenders.map((f) => f.replace(SRC, ''))).toEqual([]);
+	});
+
 	it('declares every step it offers, so none falls back to Tailwind s own', () => {
 		const css = readFileSync(join(SRC, 'app.css'), 'utf8');
 		for (const step of ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl']) {

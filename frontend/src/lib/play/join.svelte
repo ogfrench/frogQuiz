@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { hcaptcha_site_key, recaptcha_key } from '$lib/config';
+	import { signedIn } from '$lib/stores';
 
 	const { t } = getLocalization();
 
@@ -86,6 +87,8 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	const prefetch_username = async () => {
+		// Signed out, the request can only 401, and the browser logs that as an error.
+		if (!$signedIn) return;
 		const res = await fetch('/api/v1/users/me');
 		if (res.status !== 200) {
 			return;

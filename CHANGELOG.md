@@ -4,6 +4,18 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Quality
+
+- `/play` no longer asks for the signed-in user when nobody is signed in, so a signed-out
+  player's console no longer shows a 401 on every visit.
+- Deleted upstream's "quiz created" modal from `/create` and its two `create_page` strings.
+  Nothing could open it: the flag behind it was a plain object never set to true.
+- The button's `xs` and `sm` sizes now use the radius ladder (`rounded-sm`, and the base
+  `rounded-md`) instead of upstream's `min(var(--radius-md), 8px / 10px)`. A unit test now
+  rejects any arbitrary `rounded-[...]` value.
+- Tailwind no longer scans `*.test.ts`, which turned the class names a test lists as banned
+  into four dead rules. The TODO entry blamed Markdown; excluding Markdown changed nothing.
+
 ### CRUD audit
 
 - Audited who can create, read, change and delete every entity, what each change leaves

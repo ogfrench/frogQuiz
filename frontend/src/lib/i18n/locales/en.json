@@ -20,12 +20,6 @@
         "success_update_title": "Quiz updated.",
         "success_update_body": "Nobody will expect the inquizition."
     },
-    "create_page": {
-        "success": {
-            "title": "Quiz created.",
-            "body": "Let the games begin."
-        }
-    },
     "register_page": {
         "greeting": "Nice to meet you!",
         "create_account": "Create account",
