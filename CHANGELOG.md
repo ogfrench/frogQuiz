@@ -18,8 +18,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Tailwind no longer scans `*.test.ts`, which turned the class names a test lists as banned
   into four dead rules. The TODO entry blamed Markdown; excluding Markdown changed nothing.
 - Touch-sized press areas on phones (issue #24). On a coarse pointer every text field grows
-  to 44px, the editor's "Mark as correct" grows to 44px, its timer field to 44px at 16px
-  text, and "Delete answer" shows without a hover. Quiz title links and the drawer's home
+  to 44px, the editor's "Mark as correct" grows to 44px, the timer's pill gets a 44px press
+  area (its input renders at 16px; growing the input itself made the pill taller than the
+  button beside it), and "Delete answer" shows without a hover. Quiz title links and the drawer's home
   link get a 44px press area, and the crowded icon rows on quiz cards and the editor's card
   footer get 8px gaps so neighbouring press areas no longer overlap. `fq-touch-target` now
   keys on `any-pointer: coarse`, which also catches touch laptops. Desktop with a mouse is

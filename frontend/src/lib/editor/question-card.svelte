@@ -170,9 +170,11 @@ SPDX-License-Identifier: MPL-2.0
 					<div class="ml-auto flex flex-wrap items-center gap-1.5">
 						<!-- The input inside drops its own outline, so the pill shows focus for it,
 						     the way the shadcn Input does. Without this the only sign of focus was
-						     the selected value, gone as soon as you typed. -->
+						     the selected value, gone as soon as you typed. On touch the pill, not the
+						     input, is the 44px press area: tapping a label focuses its input, and a
+						     44px-tall input made the pill taller than the button beside it. -->
 						<label
-							class="border-input bg-background text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 flex min-h-9 items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-[color,box-shadow] focus-within:ring-3"
+							class="fq-touch-target relative border-input bg-background text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 flex min-h-9 items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-[color,box-shadow] focus-within:ring-3"
 						>
 							<Clock class="size-4" />
 							<span class="sr-only">{$t('editor.time_in_seconds')}</span>
@@ -180,7 +182,7 @@ SPDX-License-Identifier: MPL-2.0
 								type="number"
 								max="999"
 								min="1"
-								class="text-foreground any-pointer-coarse:w-11 any-pointer-coarse:text-base w-10 bg-transparent text-right tabular-nums outline-none"
+								class="text-foreground any-pointer-coarse:min-h-0 any-pointer-coarse:text-base w-10 bg-transparent text-right tabular-nums outline-none"
 								bind:value={getTime, setTime}
 							/>
 							<span>s</span>

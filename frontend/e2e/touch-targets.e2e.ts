@@ -60,20 +60,23 @@ async function audit(page: Page, root = 'body'): Promise<string[]> {
 			const own = (el: Element, hit: Element | null) =>
 				!hit || el.contains(hit) || hit.closest('label')?.control === el;
 			for (const el of document.querySelector(root)!.querySelectorAll(sel)) {
+				// A field inside its <label> is pressed through the label, so measure that.
+				const label = el.closest('label');
+				const box = label?.control === el ? label : el;
 				const cs = getComputedStyle(el);
 				if (cs.visibility === 'hidden' || cs.display === 'none' || exempt(el)) continue;
 				if (!el.getBoundingClientRect().width) continue;
 				el.scrollIntoView({ block: 'center', inline: 'nearest' });
-				const r = el.getBoundingClientRect();
+				const r = box.getBoundingClientRect();
 				if (r.right < 0 || r.left > innerWidth || r.bottom < 0 || r.top > innerHeight)
 					continue;
-				const after = getComputedStyle(el, '::after');
+				const after = getComputedStyle(box, '::after');
 				let w = r.width;
 				let h = r.height;
 				if (
 					after.content !== 'none' &&
 					after.position === 'absolute' &&
-					cs.position !== 'static'
+					getComputedStyle(box).position !== 'static'
 				) {
 					w = Math.max(w, parseFloat(after.width) || 0);
 					h = Math.max(h, parseFloat(after.height) || 0);

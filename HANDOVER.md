@@ -54,7 +54,7 @@ is clean at the commit that added this section, CI is green on it, and PR #23 is
 | --- | --- |
 | Branch | `ccr-370df3e4-c44t1l`, clean, pushed |
 | PR #23 | Open, mergeable, CI green. Waiting on a merge decision; nothing on it is waiting on Claude |
-| Suites | e2e 146/146 and backend 168 on `077f695`; unit 153; lint clean. Since then the CRUD audit (below) |
+| Suites | At the cloud handoff: e2e 146/146 and backend 168 on `077f695`; unit 153. Current numbers are in the table at the top |
 | Open issues | #3 (MVP 1, Part A partly done), #4 (MVP 2), #22 (Oracle VM, **31 Oct**), #24 (touch targets, fixed 4 Oct on this branch; a real-phone check is left) |
 | Decisions open | Gonçalo's tick on D16 and D18 (see `MVP.md` §4.0). Scoring stays all-or-nothing; sign-out revocation is done |
 | CRUD audit, 4 Oct | Done on the laptop and pushed to this PR: 14 bugs found and fixed (C1 to C18 in [`docs/crud-audit-2026-10.md`](docs/crud-audit-2026-10.md)), each with a regression test. `e2e/run.sh` now starts the arq worker, which is how three of them were found. C13: usernames do not change, decided 4 Oct and recorded in `docs/mvp-scope.md` |
