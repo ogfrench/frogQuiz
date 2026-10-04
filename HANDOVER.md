@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 For François and Gonçalo, 2–3 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
-**State: green and ready to merge.** 79 commits, about 185 files, roughly +11100 / −3200
+**State: green and ready to merge.** About 80 commits and 185 files, roughly +11100 / −3200
 against `master`.
 
 | Suite | Result |
