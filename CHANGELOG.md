@@ -25,6 +25,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Passwords are off: login, registration, reset, resend-confirmation and change answer 404
   unless `ENABLE_PASSWORD_LOGIN` is on, and their pages redirect to sign-in. Nothing was
   removed. Deleting an account asks for its address to be typed instead of its password.
+- The navbar and My Account say Sign in and Sign out, as the sign-in page does.
 - Discover, search, the sitemap and the community listings need a signed-in account, so a
   public quiz is visible to the team rather than to the internet (open decision 6).
 - An account that set up an authenticator before TOTP was cut is still asked for its code
