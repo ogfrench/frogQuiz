@@ -61,8 +61,8 @@ mail) and `MVP.md` §4.1 on the deployed site.
 
 | Suite | Result |
 | --- | --- |
-| e2e | **190 passed** on the `e7ba45da` tree (5 Oct), clean stack with the arq worker; the one-line guard added after it was rerun with the edge-case and scoreboard specs. 169 on `35a5e59a` before that |
-| Backend | **175 passed**, 1 skipped, on `e7ba45da`, CI settings on a fresh database |
+| e2e | 201 tests on `ef1b4262` (5 Oct, evening). One full run, on battery, passed **196**; the other 5 pass on rerun, three of them load and two fixed in the specs (see the PR's Testing section). The 85 tests that make accounts were rerun green after the account helper changed. 190 on `e7ba45da` before that |
+| Backend | **188 passed**, 1 skipped, on `ef1b4262`, CI settings on a fresh database |
 | Unit | **157 passed**, Windows included |
 | `flake8 .` | 0 |
 | `eslint .` | 0 errors |
