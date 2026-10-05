@@ -210,6 +210,50 @@ Three things to check, in this order:
 3. Check the spam and quarantine folders. Landing there is a pass for the code and a
    fail for the deployment.
 
+## Clean slate when the sign-in change ships
+
+François's call on 5 Oct: start production from empty rather than carry accounts over,
+since the sign-in change (D21) locks out every account not on frog.co or capgemini.com
+anyway. **It deletes Gonçalo's account and quizzes too, so agree it with him first.**
+There is no way to bring a single quiz back except from the backup below: Excel and
+`.cqa` import are hidden (D6).
+
+On the VM, in the directory that holds `docker-compose.yml`:
+
+```bash
+docker compose pull && docker compose up -d      # the sign-in change goes live first
+docker compose stop api worker                    # nothing writes while this runs
+
+# 1. A backup, in case a quiz turns out to be wanted. Kept outside the app's volumes.
+docker compose exec -T db pg_dump -U postgres frogquiz | gzip > ~/frogquiz-before-wipe-$(date +%F).sql.gz
+tar czf ~/frogquiz-uploads-before-wipe-$(date +%F).tgz uploads
+
+# 2. Every account, quiz, upload record, game result, session and API key. One statement,
+#    so it is all or nothing. The schema, the migration record and instance_data stay.
+docker compose exec -T db psql -U postgres -d frogquiz -c "TRUNCATE users, quiz, storage_items CASCADE;"
+
+# 3. The uploaded files (./uploads is mounted at /app/data).
+sudo find uploads -mindepth 1 -delete
+
+# 4. Sessions, cached users, live games, sign-in links and rate limits.
+docker compose exec redis valkey-cli FLUSHALL
+
+# 5. The search index, which still lists the public quizzes.
+docker compose run --rm --no-deps api python -c "from frogquiz.config import settings, meilisearch; meilisearch.index(settings().meilisearch_index).delete_all_documents()"
+
+docker compose start api worker
+```
+
+Then check: `docker compose exec -T db psql -U postgres -d frogquiz -c "select count(*) from users;"`
+says 0, and signing in with a frog.co address makes a new account.
+
+Rehearsed on the local stack on 5 Oct, after seeding it with the e2e specs: the TRUNCATE
+reached every table that points at an account or a quiz (sessions, API keys, passkeys,
+results, ratings, controllers, QuizTivity and both image link tables) and left
+`alembic_version` alone; clearing Redis and the search index worked the same way; and 22
+specs then passed on the empty database, signing up, building quizzes, hosting and
+searching. Steps 1 and 3 are standard and were not rehearsed.
+
 ## Managed Postgres (Neon)
 
 The `db` container can be swapped for Neon when the app host has no persistent disk.

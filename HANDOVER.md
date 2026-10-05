@@ -20,9 +20,11 @@ section names the doc that holds the detail. Three things in it need the two of 
 - **Sign-in by emailed link, no passwords (D21, 5 Oct).** François asked for frogViz's
   gate: a link or six-digit code by email, frog.co and capgemini.com addresses only, and
   Discover and search for signed-in accounts only. Password login and registration are
-  hidden behind `ENABLE_PASSWORD_LOGIN`, not removed. **Before deploying:** an account on
-  any other domain can no longer sign in, so check the production users' domains, and mail
-  must work, since nobody can sign in without it. The detail is in `docs/mvp-scope.md`
+  hidden behind `ENABLE_PASSWORD_LOGIN`, not removed. **Before deploying:** mail must
+  work, since nobody can sign in without it. An account on any other domain could no
+  longer sign in, so François chose a clean slate: every account, quiz and upload goes
+  when this deploys, with a backup first. That includes Gonçalo's. The steps are in
+  `DEPLOY.md` ("Clean slate"), rehearsed on the local stack. The detail is in `docs/mvp-scope.md`
   ("Sign-in"). D19 (late join with a lock) and D20 (Kahoot's score curve) came the same day
   and need Gonçalo's tick too.
 

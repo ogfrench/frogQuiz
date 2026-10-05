@@ -358,8 +358,9 @@ not seen it yet.
   for its address to be typed instead of its password.
 - **What it does to existing accounts.** An account whose address is on a team domain signs
   in by link with the same address and keeps everything. **An account on any other domain
-  can no longer sign in**; its quizzes stay in the database. Check the production users'
-  domains before deploying. An account with an authenticator set up before TOTP was cut is
+  can no longer sign in.** François's answer, the same day: start production from a clean
+  slate when this deploys, with a backup first (`DEPLOY.md`, "Clean slate"). That deletes
+  Gonçalo's account and quizzes too, so it waits for him. An account with an authenticator set up before TOTP was cut is
   still asked for its code after the link.
 - **Mail is now required to sign in at all.** Without a relay, nobody can (503).
 
