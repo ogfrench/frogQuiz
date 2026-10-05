@@ -11,16 +11,10 @@ import { signedInContext } from './accounts';
 import { mc, rememberAnonQuiz, saveQuiz } from './helpers';
 
 const WIDTHS = [390, 834, 1440];
-const PUBLIC = [
-	'/',
-	'/play',
-	'/explore',
-	'/account/login',
-	'/account/register',
-	'/create',
-	'/my-quizzes'
-];
-const SIGNED_IN = ['/my-quizzes', '/account/settings'];
+// /explore is for signed-in accounts since 5 Oct, and /account/register is a redirect to
+// sign-in, which is already on the list.
+const PUBLIC = ['/', '/play', '/account/login', '/create', '/my-quizzes'];
+const SIGNED_IN = ['/my-quizzes', '/explore', '/account/settings'];
 
 const overflow = () => document.documentElement.scrollWidth - document.documentElement.clientWidth;
 

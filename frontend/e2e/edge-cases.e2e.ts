@@ -13,7 +13,8 @@ import { resolve } from 'node:path';
 import { expect, test, type Page, type WebSocketRoute } from '@playwright/test';
 import { SignJWT } from 'jose';
 import { io } from 'socket.io-client';
-import { apiLogin, PASSWORD, registerUser, signedInContext } from './accounts';
+import { apiLogin, registerUser, signedInContext } from './accounts';
+import { signInMail } from './mail';
 import {
 	advancePastResults,
 	advanceToFinalResults,
@@ -116,22 +117,23 @@ test.describe('sessions', () => {
 		await ctx.close();
 	});
 
-	// E3. Registration stores the address folded to lower case; login compared it exactly,
-	// so "Ana@Frog.co" registered fine and then got "wrong credentials" typed the same way.
-	test('an address registered with capitals logs in as typed', async ({ request }) => {
-		const username = `Edge${Date.now().toString(36)}`;
-		const email = `${username}@Example.com`;
-		const created = await request.post('/api/v1/users/create', {
-			data: { email, username, password: PASSWORD }
-		});
-		expect(created.status(), await created.text()).toBe(200);
-		for (const typed of [email, email.toUpperCase(), ` ${email.toLowerCase()} `]) {
-			const start = await request.post('/api/v1/login/start', { data: { email: typed } });
-			const { session_id } = await start.json();
-			const step = await request.post(`/api/v1/login/step/1?session_id=${session_id}`, {
-				data: { auth_type: 'PASSWORD', data: PASSWORD }
-			});
-			expect(step.status(), `log in as ${JSON.stringify(typed)}`).toBe(200);
+	// E3. Registration stored the address folded to lower case and login compared it
+	// exactly, so "Ana@Frog.co" registered fine and then got "wrong credentials" typed the
+	// same way. Sign-in is by emailed link since 5 Oct; the rule still has to hold.
+	test('an address typed with capitals or spaces signs in to the same account', async ({
+		request
+	}) => {
+		const { email } = await registerUser(request, 'Edge');
+		for (const typed of [email.toUpperCase(), ` ${email} `]) {
+			const since = Date.now();
+			const sent = await request.post('/api/v1/login/email', { data: { email: typed } });
+			expect(sent.status(), `ask as ${JSON.stringify(typed)}`).toBe(200);
+			const { token } = await signInMail(email, since);
+			const res = await request.post('/api/v1/login/email/verify', { data: { token } });
+			expect(await res.json(), 'the same account, not a new sign-up').not.toHaveProperty(
+				'signup'
+			);
+			expect((await (await request.get('/api/v1/users/me')).json()).email).toBe(email);
 		}
 	});
 });

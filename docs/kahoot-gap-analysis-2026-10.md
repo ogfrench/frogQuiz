@@ -52,6 +52,12 @@ Ten gaps most worth closing for an internal team, in order:
 9. **Preview as a host.** Practice is solo and in the browser; nobody can see the host and phone views together before going live.
 10. **Media beyond one still image per question.** No video, audio, GIF, or images as answers (uploads.md, `video_upload` flag).
 
+**Closed since, on 5 Oct, on François's answers below:** 3 (late join, with a lock on the
+host's screen in the lobby and mid-game) and 4 (Kahoot's curve: full marks inside half a
+second, 500 at the buzzer). 6 is half closed: Discover and search need a signed-in account,
+and only frog.co and capgemini.com addresses can sign in, so "public" means the team. There
+is still no co-editing. The body of this report describes the app before those changes.
+
 ## 1. Creating a quiz
 
 ### Kahoot
@@ -545,8 +551,8 @@ Impact is for an internal team; effort is S under a day, M up to a week, L longe
 | --- | --- | --- | --- | --- |
 | Results | No saved results or history; export is a one-shot token | High | M. Flag `SAVE_RESULTS_ENABLED`, unhide `/results` and Analytics, auto-save at final results, add an e2e spec, design pass on Analytics; anonymous hosts need an ownership link | Yes, D4 (hide). Both ticked it |
 | Reuse | No duplicate-a-quiz, no copy of a question across quizzes, no question bank | High | S to M. A `POST /quiz/{id}/duplicate` must copy images and update `storage_used` through `adjust_storage_used`; copy across quizzes needs a picker | No |
-| Game control | Late join refused after Start; no lock; no way to stop a stranger with the PIN | High | M. `join_game` and a `locked` field on `PlayGame`; a late joiner needs score init and the current question, as `rejoin_game` already sends | No |
-| Scoring | Late correct answer scores about 0, Kahoot about 500; no double or no points | Medium | S. One function plus a start-modal field for points mode; changes how every past game would have ranked | No recorded rule except CHECK being all or nothing (`mvp-scope.md`, reconfirmed 4 Oct) |
+| Game control | Closed 5 Oct: late join, and a lock in the lobby and mid-game. Was: late join refused after Start; no lock; no way to stop a stranger with the PIN | Done | M. `join_game` and a `locked` field on `PlayGame`; a late joiner needs score init and the current question, as `rejoin_game` already sends | No |
+| Scoring | Curve closed 5 Oct (500 at the buzzer, full marks inside half a second). Still no double or no points | Low | S. One function plus a start-modal field for points mode; changes how every past game would have ranked | No recorded rule except CHECK being all or nothing (`mvp-scope.md`, reconfirmed 4 Oct) |
 | Question types | No type answer, poll, slider, puzzle or word cloud in the picker | Medium | S to re-list a type, M to L to make TEXT matching tolerant and each screen design-reviewed | Yes, the five cut types, open decision 4 (confirm with Gonçalo); D2 matched Kahoot's free tier |
 | Sharing | No team visibility tier; no co-editing; public means internet | Medium | M for auth on search, L for a `visibility` column, migration and per-quiz permissions | Yes, open decision 6 (settled as is) and D13 |
 | Import | Kahoot URL, Excel and `.cqa` import hidden and untested end to end | Medium | S to unhide, M to test all three; the Kahoot URL path calls Kahoot's API and can break | Yes, D6 (hide) |

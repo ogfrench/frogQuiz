@@ -147,6 +147,9 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		success = true;
 	});
+	socket.on('locked', (int_data) => {
+		game_state.quiz_data.locked = int_data.locked;
+	});
 	socket.on('player_joined', (int_data) => {
 		game_state.players = [...game_state.players, int_data];
 	});

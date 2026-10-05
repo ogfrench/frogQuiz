@@ -205,13 +205,18 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 | D16 | Do players need the question and answer text on their own phone? Today they see shapes only, as Kahoot does — right in a room with a projector, wrong on a call | **F (2026-10-02): "make it like Kahoot"** — and Kahoot does not force the choice: it ships a free host-side setting, *Show questions & answers on participants' devices*, off by default. So does the start modal now. Both render paths already existed (upstream's "Normal" / "Old-School" modes); the modal was hardcoding one. Per game, not remembered | ☐ | ☑ |
 | D17 | `--primary` is shadcn's zinc default, so every primary control is black. `CLAUDE.md` said theme `green` made it the frog green; it does not | **F (2026-10-01): stay zinc.** `CLAUDE.md` corrected instead | ☐ | ☑ |
 | D18 | Does a non-owner get the answer key? The view page hid the correct answers from a non-owner (`show_answers = is_owner`) while the Download button beside it, gated only on `disabled={!logged_in}`, handed over a spreadsheet containing them | **F (2026-10-02): lock results to the owner.** `GET /eximport/excel/{id}` is scoped to `user_id`, 404 for anybody else; the button is behind `{#if is_owner}`. Sharing a quiz is still Discover, Play and the view page | ☐ | ☑ |
+| D19 | Can somebody join a game that has started? It refused everyone once the host pressed Start | **F (2026-10-05): yes, as in Kahoot, with a lock.** A late joiner starts at 0 with the question that is up. The host locks and unlocks from the lobby and from the bar during the game. A finished game still refuses | ☐ | ☑ |
+| D20 | Score curve. A right answer at the buzzer scored about 0 | **F (2026-10-05): Kahoot's.** 1000 inside half a second, falling to 500 at the buzzer. Multiple-answer questions stay all or nothing | ☐ | ☑ |
+| D21 | Who can sign in, and how. "Public" meant the internet (open decision 6 in `docs/mvp-scope.md`) | **F (2026-10-05): an emailed link or six-digit code, frog.co and capgemini.com addresses only, no passwords, as frogViz does. Discover, search and the sitemap need a signed-in account.** A first sign-in picks a username, which makes the account. Password login, registration, reset and change are hidden behind `ENABLE_PASSWORD_LOGIN`, not removed. Anonymous create, host and play are unchanged | ☐ | ☑ |
 
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
 asking for each to be explained; D2 and D16 he answered with "like Kahoot" the same day,
 and D18 is his. D1 to D15 are agreed by both. D17 is his alone and needs no second
 signature. **D16 and D18 still need Gonçalo's tick**: both are François's calls from
-2 Oct, and D18 narrows who can download a quiz's results.
+2 Oct, and D18 narrows who can download a quiz's results. **D19 to D21 are François's
+calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
+the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on
 François's sign-off, including hiding Docs and GitHub. Everything hidden since is

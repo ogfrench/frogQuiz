@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type APIRequestContext } from '@playwright/test';
-import { PASSWORD, signedInContext } from './accounts';
+import { signedInContext } from './accounts';
 import { PNG, mc, saveQuiz, uploadPng } from './helpers';
 
 const DATA = path.resolve(process.cwd(), '../e2e/.data');
@@ -120,13 +120,13 @@ test('deleting an account takes its quizzes, its files and its session with it',
 	browser,
 	request
 }) => {
-	const { context } = await signedInContext(browser, request);
+	const { context, user } = await signedInContext(browser, request);
 	const as = context.request;
 	const image = await countedUpload(as);
 	const id = await quizWithImage(as, `Gone ${Date.now()}`, image);
 	const cookies = await context.storageState();
 
-	const res = await as.delete('/api/v1/users/me', { data: { password: PASSWORD } });
+	const res = await as.delete('/api/v1/users/me', { data: { email: user.email } });
 	expect(res.status(), await res.text()).toBe(200);
 	expect(onDisk(image)).toBe(false);
 	expect((await request.get(`/api/v1/quiz/get/public/${id}`)).status()).toBe(404);
@@ -166,10 +166,10 @@ test('after an account is deleted, its images are gone from the API too', async 
 	browser,
 	request
 }) => {
-	const { context } = await signedInContext(browser, request);
+	const { context, user } = await signedInContext(browser, request);
 	const as = context.request;
 	const image = await uploadPng(as);
-	expect((await as.delete('/api/v1/users/me', { data: { password: PASSWORD } })).status()).toBe(
+	expect((await as.delete('/api/v1/users/me', { data: { email: user.email } })).status()).toBe(
 		200
 	);
 	expect.soft((await request.get(`/api/v1/storage/info/${image}`)).status(), 'info').toBe(404);

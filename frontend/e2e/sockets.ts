@@ -83,7 +83,8 @@ export async function join(pin: string, username: string) {
 	const joined = next(s, 'joined_game');
 	const refused = Promise.race([
 		next(s, 'username_already_exists').then((d) => d && 'username_already_exists'),
-		next(s, 'game_already_started').then((d) => d && 'game_already_started'),
+		next(s, 'game_locked').then((d) => d && 'game_locked'),
+		next(s, 'game_finished').then((d) => d && 'game_finished'),
 		next(s, 'game_not_found').then((d) => d && 'game_not_found'),
 		next(s, 'error').then((d) => d && 'error')
 	]);

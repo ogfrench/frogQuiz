@@ -143,6 +143,8 @@ test('every control on the signed-in screens is touch-sized', async ({ page, req
 	found['editor'] = await audit(page);
 
 	await page.goto('/');
+	// A tap before the page hydrates opens nothing, and under full-suite load it did.
+	await page.waitForLoadState('networkidle');
 	await page.getByRole('button', { name: 'Open menu' }).tap();
 	await expect(page.getByRole('dialog')).toBeVisible();
 	found['menu drawer'] = await audit(page, '[role=dialog]');

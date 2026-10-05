@@ -360,6 +360,9 @@ class PlayGame(BaseModel):
     background_image: str | None = None
     custom_field: str | None = None
     question_show: bool = False
+    # Set by the host. Nobody new can join a locked game; anyone can join an unlocked one,
+    # started or not, as in Kahoot.
+    locked: bool = False
 
     @classmethod
     async def get_from_redis(self, game_pin: str) -> Self:

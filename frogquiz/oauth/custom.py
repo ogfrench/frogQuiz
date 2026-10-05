@@ -76,6 +76,10 @@ async def auth(request: Request, response: Response):
         user_data = OpenIDResponse(**user_data).userinfo
     except (TypeError, ValidationError):
         raise HTTPException(status_code=401, detail="Something went wrong.")
+    # Only the team's domains sign in, by link or by a provider (5 Oct). These providers are
+    # off unless configured, and would otherwise make an account for any address.
+    if not settings.email_domain_allowed(user_data.email):
+        raise HTTPException(status_code=403, detail="Sign in with a frog or Capgemini address")
 
     user = await User.objects.get_or_none(
         email=user_data.email,

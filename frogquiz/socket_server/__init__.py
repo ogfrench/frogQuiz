@@ -92,9 +92,14 @@ async def generate_final_results(game_data: PlayGame, game_pin: str) -> dict:
 
 
 def calculate_score(z: float, t: int) -> int:
+    # Kahoot's curve, François's call on 5 Oct: full marks inside half a second, then
+    # falling to half marks at the buzzer. It used to fall to zero, so a right answer on
+    # the last second scored about nothing. A late answer inside ANSWER_GRACE_MS keeps
+    # the buzzer's 500.
+    if z < 500:
+        return 1000
     t = t * 1000
-    res = (t - z) / t
-    return int(res * 1000)
+    return round(1000 * (1 - min(z, t) / t / 2))
 
 
 # How long after a question's timer an answer is still taken. Players see the question
@@ -192,7 +197,12 @@ async def rejoin_game(sid: str, data: dict):
         await sio.emit("final_results", json.loads(final), room=sid)
         return
     # A reload mid-question used to leave the player on a waiting screen until the next
-    # question. Send the one that is up.
+    # question.
+    await send_open_question(sid, game_data, data.username)
+
+
+async def send_open_question(sid: str, game_data: PlayGame, username: str) -> None:
+    """Send a player who arrives mid-question (a reload, or a late join) the question that is up."""
     index = game_data.current_question
     if (
         game_data.started
@@ -201,12 +211,12 @@ async def rejoin_game(sid: str, data: dict):
         and game_data.questions[index].type != QuizQuestionType.SLIDE
         # A phone woken after answering swapped "Answer locked in" for the tiles again,
         # inviting an answer the server refuses (E7 in docs/edge-cases-2026-10.md).
-        and not await has_already_answered(data.game_pin, index, data.username)
+        and not await has_already_answered(game_data.game_pin, index, username)
     ):
         question = question_for_players(game_data, index)
         # The phone counts down from what it is sent. The full time made it show seconds
         # the server would no longer accept (E5).
-        shown_at = await redis.get(f"game:{data.game_pin}:current_time")
+        shown_at = await redis.get(f"game:{game_data.game_pin}:current_time")
         if shown_at is not None:
             elapsed = (datetime.now() - datetime.fromisoformat(shown_at)).total_seconds()
             question["time"] = str(max(1, math.ceil(float(question["time"]) - elapsed)))
@@ -226,8 +236,13 @@ async def join_game(sid: str, data: dict):
         print(e)
         return
     game_data = PlayGame.model_validate_json(redis_res)
-    if game_data.started:
-        await sio.emit("game_already_started", room=sid)
+    # A started game used to refuse everyone. Now, as in Kahoot, a late joiner gets in with
+    # no points so far, unless the host has locked the game (François, 5 Oct).
+    if game_data.locked:
+        await sio.emit("game_locked", room=sid)
+        return
+    if await redis.exists(f"game:{data.game_pin}:final_results"):
+        await sio.emit("game_finished", room=sid)
         return
     # +++ START checking captcha +++
     if game_data.captcha_enabled:
@@ -282,6 +297,20 @@ async def join_game(sid: str, data: dict):
     await sio.emit("time_sync", encrypted_datetime, room=sid)
     # --- Time-Sync ---
     await sio.enter_room(sid, data.game_pin)
+    # Read again: the host may have moved on since the lookup above.
+    current = await redis.get(f"game:{data.game_pin}")
+    if game_data.started and current is not None:
+        await send_open_question(sid, PlayGame.model_validate_json(current), data.username)
+
+
+@sio.event
+async def set_locked(sid: str, data: dict):
+    session = await get_session(sid, sio)
+    if not session["admin"] or not isinstance(data, dict):
+        return
+    locked = data.get("locked") is True
+    if await update_game(session["game_pin"], lambda g: setattr(g, "locked", locked)) is not None:
+        await sio.emit("locked", {"locked": locked}, room=f"admin:{session['game_pin']}")
 
 
 @sio.event

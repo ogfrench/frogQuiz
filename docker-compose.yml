@@ -61,6 +61,9 @@ services:
       # Was hardcoded to "True", so no deployment ever asked for a confirmation
       # and every account was verified on creation regardless of .env.
       SKIP_EMAIL_VERIFICATION: ${SKIP_EMAIL_VERIFICATION:-False}
+      # Who can sign in (an emailed link or code, no passwords, since 5 Oct): the part after
+      # the @, matched exactly, comma-separated. Mail above is required for anybody to sign in.
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-frog.co,capgemini.com}
 
       # --- EXTERNAL API CONFIG ---
       # HCAPTCHA_KEY: ""

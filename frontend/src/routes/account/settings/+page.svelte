@@ -22,6 +22,10 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 
+	// Sign-in is by emailed link since 5 Oct; true brings the change-password card back,
+	// together with ENABLE_PASSWORD_LOGIN on the server.
+	const PASSWORDS = false;
+
 	interface UserAccount {
 		id: string;
 		email: string;
@@ -250,82 +254,92 @@ SPDX-License-Identifier: MPL-2.0
 				</Card.Content>
 			</Card.Root>
 
-			<Card.Root>
-				<Card.Header>
-					<Card.Title>{$t('settings_page.password_section')}</Card.Title>
-					<Card.Description>{$t('settings_page.password_requirements')}</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					{#if user.auth_type !== 'LOCAL'}
-						<!-- OAuth accounts are created with no password at all (frogquiz/oauth/*),
+			<!-- Passwords are off since 5 Oct (sign-in by emailed link); this card comes back
+			     with ENABLE_PASSWORD_LOGIN. -->
+			{#if PASSWORDS}
+				<Card.Root>
+					<Card.Header>
+						<Card.Title>{$t('settings_page.password_section')}</Card.Title>
+						<Card.Description
+							>{$t('settings_page.password_requirements')}</Card.Description
+						>
+					</Card.Header>
+					<Card.Content>
+						{#if user.auth_type !== 'LOCAL'}
+							<!-- OAuth accounts are created with no password at all (frogquiz/oauth/*),
 						     so PUT /password/update 400s for them. Same reasoning as
 						     delete-account.svelte: say so up front rather than after a submit
 						     that can never succeed. -->
-						<p class="text-muted-foreground text-sm">
-							{$t('settings_page.password_change_oauth')}
-						</p>
-					{:else}
-						<!-- Stacked, not md:flex-row: three password fields side by side is
+							<p class="text-muted-foreground text-sm">
+								{$t('settings_page.password_change_oauth')}
+							</p>
+						{:else}
+							<!-- Stacked, not md:flex-row: three password fields side by side is
 						     cramped at every width and gives each one about a word of room. -->
-						<form class="grid max-w-sm gap-4" onsubmit={changePassword}>
-							<div class="grid gap-2">
-								<Label for="old-password">{$t('settings_page.old_password')}</Label>
-								<Input
-									id="old-password"
-									type="password"
-									autocomplete="current-password"
-									bind:value={changePasswordData.oldPassword}
-								/>
-							</div>
-							<div class="grid gap-2">
-								<Label for="new-password">{$t('settings_page.new_password')}</Label>
-								<Input
-									id="new-password"
-									type="password"
-									autocomplete="new-password"
-									bind:value={changePasswordData.newPassword}
-								/>
-							</div>
-							<div class="grid gap-2">
-								<Label for="repeat-password"
-									>{$t('settings_page.repeat_password')}</Label
-								>
-								<Input
-									id="repeat-password"
-									type="password"
-									autocomplete="new-password"
-									aria-invalid={mismatch}
-									bind:value={changePasswordData.newPasswordConfirm}
-								/>
-								{#if mismatch}
-									<p class="text-destructive text-sm">
-										{$t('settings_page.passwords_do_not_match')}
+							<form class="grid max-w-sm gap-4" onsubmit={changePassword}>
+								<div class="grid gap-2">
+									<Label for="old-password"
+										>{$t('settings_page.old_password')}</Label
+									>
+									<Input
+										id="old-password"
+										type="password"
+										autocomplete="current-password"
+										bind:value={changePasswordData.oldPassword}
+									/>
+								</div>
+								<div class="grid gap-2">
+									<Label for="new-password"
+										>{$t('settings_page.new_password')}</Label
+									>
+									<Input
+										id="new-password"
+										type="password"
+										autocomplete="new-password"
+										bind:value={changePasswordData.newPassword}
+									/>
+								</div>
+								<div class="grid gap-2">
+									<Label for="repeat-password"
+										>{$t('settings_page.repeat_password')}</Label
+									>
+									<Input
+										id="repeat-password"
+										type="password"
+										autocomplete="new-password"
+										aria-invalid={mismatch}
+										bind:value={changePasswordData.newPasswordConfirm}
+									/>
+									{#if mismatch}
+										<p class="text-destructive text-sm">
+											{$t('settings_page.passwords_do_not_match')}
+										</p>
+									{/if}
+								</div>
+								{#if passwordError !== ''}
+									<p class="text-destructive text-sm" aria-live="polite">
+										{passwordError}
 									</p>
 								{/if}
-							</div>
-							{#if passwordError !== ''}
-								<p class="text-destructive text-sm" aria-live="polite">
-									{passwordError}
-								</p>
-							{/if}
-							<div>
-								<Button
-									disabled={!passwordChangeDataValid || isSubmittingPassword}
-									type="submit"
-								>
-									{#if isSubmittingPassword}
-										<LoaderCircle
-											class="size-4 animate-spin"
-											aria-hidden="true"
-										/>
-									{/if}
-									{$t('settings_page.change_password_submit')}
-								</Button>
-							</div>
-						</form>
-					{/if}
-				</Card.Content>
-			</Card.Root>
+								<div>
+									<Button
+										disabled={!passwordChangeDataValid || isSubmittingPassword}
+										type="submit"
+									>
+										{#if isSubmittingPassword}
+											<LoaderCircle
+												class="size-4 animate-spin"
+												aria-hidden="true"
+											/>
+										{/if}
+										{$t('settings_page.change_password_submit')}
+									</Button>
+								</div>
+							</form>
+						{/if}
+					</Card.Content>
+				</Card.Root>
+			{/if}
 
 			<Card.Root>
 				<Card.Header>
@@ -467,7 +481,7 @@ SPDX-License-Identifier: MPL-2.0
 				</Card.Content>
 			</Card.Root>
 
-			<DeleteAccount authType={user.auth_type} />
+			<DeleteAccount email={user.email} />
 		</div>
 	{/await}
 </div>

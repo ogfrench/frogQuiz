@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import Flag from '@lucide/svelte/icons/flag';
+	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
 
@@ -80,6 +81,22 @@ SPDX-License-Identifier: MPL-2.0
 				<Flag />
 				{$t('admin_page.end_game')}
 			</ConfirmAction>
+			<!-- Late joiners need the PIN once the lobby has gone, as Kahoot keeps it on screen. -->
+			{#if !game_state.quiz_data.locked}
+				<p
+					class="rounded-full border border-border bg-card/80 px-3 py-1 text-base font-semibold
+						tabular-nums shadow-sm backdrop-blur max-md:hidden"
+				>
+					<span class="text-muted-foreground">{$t('words.pin')}</span>
+					{game_state.quiz_data.game_pin}
+				</p>
+			{/if}
+			<LockToggle
+				locked={game_state.quiz_data.locked}
+				{socket_game_controls}
+				compact
+				class="bg-card/80 backdrop-blur"
+			/>
 		{/if}
 	</div>
 	<div>

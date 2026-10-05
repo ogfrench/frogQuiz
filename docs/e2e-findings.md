@@ -174,7 +174,8 @@ These were tested and passed. They're worth knowing before anyone "fixes" them.
   - A duplicate nickname is refused, including one with extra spaces around it.
   - Over 50 characters, or blank, is refused.
   - Emoji, accents and Arabic script are accepted.
-  - Nobody can join after the game has started.
+  - Anyone can join a started game unless the host has locked it, and nobody can join one
+    that has finished (since 5 Oct; it used to refuse everyone after Start).
   - A second answer to the same question, or an answer to a question that isn't showing, is refused.
 - **Multiple-answer questions** score the exact set only, as documented.
 - **Accounts:**

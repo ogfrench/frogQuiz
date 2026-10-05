@@ -4,6 +4,38 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### From the Kahoot report, 5 Oct
+
+- Anyone with the PIN can join a game that has started, as in Kahoot, and gets the question
+  that is up with the time left. It used to refuse everyone once the host pressed Start. A
+  finished game still refuses ("That game has finished").
+- The host can lock a game, in the lobby and from the bar during the game, and a phone that
+  tries to join a locked game is told so. The PIN stays on the host's bar while the game is
+  unlocked, for whoever arrives late.
+- Kahoot's score curve: a right answer inside half a second scores 1000, and the score falls
+  to 500 at the buzzer instead of to zero. Answers taken in the grace period after the buzzer
+  score 500.
+
+### Sign-in by emailed link, 5 Oct
+
+- Sign-in is by an emailed link or six-digit code, for frog.co and capgemini.com addresses
+  only (`ALLOWED_EMAIL_DOMAINS`), as frogViz does. A first sign-in asks for a username and
+  that makes the account. The link lasts its 15 minutes rather than working once, because
+  Outlook's Safe Links opens it first; a code gets five tries, and an address ten a day.
+- Passwords are off: login, registration, reset, resend-confirmation and change answer 404
+  unless `ENABLE_PASSWORD_LOGIN` is on, and their pages redirect to sign-in. Nothing was
+  removed. Deleting an account asks for its address to be typed instead of its password.
+- Discover, search, the sitemap and the community listings need a signed-in account, so a
+  public quiz is visible to the team rather than to the internet (open decision 6).
+- An account that set up an authenticator before TOTP was cut is still asked for its code
+  after the link.
+- The Google, GitHub and custom OpenID sign-ins, off unless configured, refuse addresses
+  outside the allowed domains too, instead of making an account for any address.
+- The e2e suite makes and signs in every account through a real email read back from the
+  mail sink. `sign-in.e2e.ts` replaced the password-recovery journey; the password tests in
+  `account.e2e.ts` and `crud-account.e2e.ts` went with the feature, and the backend suite
+  still covers the password routes with the flag on.
+
 ### Kahoot gap analysis
 
 - Added `docs/kahoot-gap-analysis-2026-10.md`: frogQuiz against Kahoot, step by step from

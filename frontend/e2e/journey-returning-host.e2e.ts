@@ -9,7 +9,7 @@
 // (François, 2026-10-02). If any step here breaks, an account buys nothing.
 
 import { expect, test } from '@playwright/test';
-import { PASSWORD, apiLogin, registerUser } from './accounts';
+import { apiLogin, askForSignIn, registerUser } from './accounts';
 import {
 	advanceToFinalResults,
 	joinAsPlayer,
@@ -43,12 +43,10 @@ test('somebody comes back, finds their quiz, changes it and runs it again', asyn
 	expect(saved.status).toBe(200);
 	expect(saved.secret, 'a signed-in save is not anonymous').toBeFalsy();
 
-	await test.step('they log in', async () => {
+	await test.step('they sign in with the link from their email', async () => {
 		await page.goto('/account/login');
-		await page.getByRole('textbox', { name: 'Email or username' }).fill(user.email);
-		await page.getByRole('button', { name: 'Continue' }).click();
-		await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
-		await page.getByRole('button', { name: 'Continue' }).last().click();
+		const { link } = await askForSignIn(page, user.email);
+		await page.goto(link);
 		await page.waitForURL((u) => !u.pathname.startsWith('/account/login'), {
 			timeout: 15_000
 		});

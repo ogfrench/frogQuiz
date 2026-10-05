@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
@@ -34,6 +35,8 @@ SMTP_TIMEOUT_SECONDS = 15
 
 # Matches the wording in forgotten_password.jinja2 -- change both together.
 RESET_TOKEN_TTL_SECONDS = 3600
+# Matches the wording in sign_in.jinja2 -- change both together.
+SIGN_IN_TTL_SECONDS = 15 * 60
 
 
 class MailNotConfigured(RuntimeError):
@@ -174,3 +177,14 @@ async def send_forgotten_password_email(user: User):
     except Exception:
         await redis.delete(f"reset_passwd:{token}", f"reset_passwd_current:{user.id}")
         raise
+
+
+async def send_sign_in_email(email: str, link: str, code: str):
+    # The code is in the subject so a phone's notification is enough to sign in on a laptop.
+    html_body, text_body = await _render("sign_in", base_url=settings.root_address, link=link, code=code)
+    await _sendMail(
+        html_body=html_body,
+        text_body=text_body,
+        to=email,
+        subject=f"Your frogQuiz sign-in code: {code}",
+    )

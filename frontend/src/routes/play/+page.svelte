@@ -193,6 +193,9 @@ SPDX-License-Identifier: MPL-2.0
 	// Socket-events
 	socket.on('joined_game', (data) => {
 		gameData = data;
+		// A late joiner arrives in a game that has started; the question that is up, if
+		// any, follows straight after.
+		if (data.started) gameMeta.started = true;
 		rememberJoinedGame();
 	});
 	socket.on('rejoined_game', (data) => {

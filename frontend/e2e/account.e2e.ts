@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-// The signed-in side: registering, logging in, owning quizzes, claiming an anonymous one,
-// publishing to Explore, and keeping game results.
+// The signed-in side: owning quizzes, claiming an anonymous one, publishing to Discover,
+// and keeping game results. Signing in and up is sign-in.e2e.ts, since there are no
+// passwords (5 Oct).
 
-import { expect, test, type Page } from '@playwright/test';
-import { PASSWORD, apiLogin, registerUser, signedInContext } from './accounts';
+import { expect, test } from '@playwright/test';
+import { apiLogin, registerUser, signedInContext } from './accounts';
 import { expectNoHorizontalOverflow, mc, PHONE, rememberAnonQuiz, saveQuiz } from './helpers';
 import {
 	closeAll,
@@ -31,47 +32,6 @@ const quiz = (title: string, extra: Record<string, unknown> = {}) => ({
 });
 
 test.afterEach(closeAll);
-
-/** The login page is two forms: identify, then prove. Each has its own Continue. */
-async function logInThroughUI(page: Page, email: string, password: string) {
-	await page.getByRole('textbox', { name: 'Email or username' }).fill(email);
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByRole('textbox', { name: 'Password' }).fill(password);
-	await page.getByRole('button', { name: 'Continue' }).last().click();
-}
-
-test('register and log in through the UI', async ({ page }) => {
-	const username = `ui${Date.now().toString(36)}`;
-	const email = `${username}@example.com`;
-	await page.goto('/account/register');
-	await page.getByRole('textbox', { name: 'Email address' }).fill(email);
-	await page.getByRole('textbox', { name: 'Username' }).fill(username);
-	await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
-	await page.getByRole('textbox', { name: 'Repeat password' }).fill(PASSWORD);
-	await page.getByRole('checkbox', { name: /Privacy policy/ }).check();
-	await page.getByRole('checkbox', { name: /Terms of Service/ }).check();
-	await page.getByRole('button', { name: 'Register' }).click();
-	// It stays on the page and reports in place; with verification skipped, it is ready.
-	await expect(page.getByRole('status')).toBeVisible();
-	await expect(page.getByRole('status')).not.toHaveClass(/destructive/);
-	// The filled form used to stay, Register still live, and a second press said "taken".
-	await expect(page.getByRole('button', { name: 'Register' })).toHaveCount(0);
-	await expect(page.getByRole('link', { name: 'Log in' }).last()).toBeFocused();
-	await expectNoHorizontalOverflow(page);
-
-	await page.getByRole('link', { name: 'Log in' }).last().click();
-	await logInThroughUI(page, email, PASSWORD);
-	await expect(page).toHaveURL(/\/my-quizzes/);
-	await expectNoHorizontalOverflow(page);
-});
-
-test('a wrong password is refused and the page says so', async ({ page, request }) => {
-	const { email } = await registerUser(request);
-	await page.goto('/account/login');
-	await logInThroughUI(page, email, 'not-the-password');
-	await expect(page).toHaveURL(/\/account\/login/);
-	await expect(page.getByText("That email address and password don't match.")).toBeVisible();
-});
 
 test("a signed-in user's quiz is on their My Quizzes, and nobody else's", async ({
 	browser,
@@ -156,7 +116,8 @@ test('a public quiz shows up in Explore search; an unlisted one does not', async
 		(await saveQuiz(owner.context.request, quiz(`Public ${tag}`, { public: true }))).status
 	).toBe(200);
 	expect((await saveQuiz(owner.context.request, quiz(`Private ${tag}`))).status).toBe(200);
-	const page = await browser.newPage();
+	// Discover is for signed-in accounts since 5 Oct: a teammate, not a passer-by.
+	const { page } = await signedInContext(browser, request);
 	await expect
 		.poll(
 			async () => {
@@ -194,30 +155,6 @@ test('saving results still works, but the results page is hidden', async ({ brow
 });
 
 test.describe('regressions', () => {
-	test('signing up from "keep this quiz" brings you back to the quiz', async ({
-		page,
-		request
-	}) => {
-		const saved = await saveQuiz(request, quiz(`Return ${Date.now()}`));
-		await rememberAnonQuiz(page, saved.body.id, saved.secret!);
-		await page.goto(`/view/${saved.body.id}`);
-		await page.getByRole('button', { name: /isn't saved to an account/ }).click();
-		await page.getByRole('link', { name: 'Create an account to keep this quiz' }).click();
-		await expect(page).toHaveURL(/returnTo=/);
-		const username = `rt${Date.now().toString(36)}`;
-		await page.getByRole('textbox', { name: 'Email address' }).fill(`${username}@example.com`);
-		await page.getByRole('textbox', { name: 'Username' }).fill(username);
-		await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
-		await page.getByRole('textbox', { name: 'Repeat password' }).fill(PASSWORD);
-		await page.getByRole('checkbox', { name: /Privacy policy/ }).check();
-		await page.getByRole('checkbox', { name: /Terms of Service/ }).check();
-		await page.getByRole('button', { name: 'Register' }).click();
-		await expect(page.getByRole('status')).toBeVisible();
-		await page.getByRole('link', { name: 'Log in' }).last().click();
-		await logInThroughUI(page, `${username}@example.com`, PASSWORD);
-		await expect(page).toHaveURL(new RegExp(`/view/${saved.body.id}`));
-	});
-
 	test('signing in does not lock you out of a quiz you made anonymously', async ({
 		browser,
 		request
@@ -300,25 +237,5 @@ test('My Account on a phone: the name reads in full, and only other devices can 
 	await expect(page.getByText(/Firefox/)).toHaveCount(0);
 	await expectNoHorizontalOverflow(page);
 	await other.close();
-	await context.close();
-});
-
-test('after changing the password, logging in again lands you in the app', async ({
-	browser,
-	request
-}) => {
-	const { context, page, user } = await signedInContext(browser, request);
-	await page.goto('/account/settings');
-	await page.getByLabel('Old password').fill(PASSWORD);
-	await page.getByLabel('New password', { exact: true }).fill('Changed-e2e-password-2');
-	await page.getByLabel('Repeat password').fill('Changed-e2e-password-2');
-	await page.getByRole('button', { name: 'Change password' }).click();
-	await page.waitForURL(/password_changed=true/);
-	await expect(page.getByText('Password changed.')).toBeVisible();
-
-	await logInThroughUI(page, user.username, 'Changed-e2e-password-2');
-	// Success reloaded the same URL, and password_changed=true is what tells the page not
-	// to redirect a signed-in visitor: you were signed in, on an empty login form.
-	await page.waitForURL(/\/my-quizzes/);
 	await context.close();
 });

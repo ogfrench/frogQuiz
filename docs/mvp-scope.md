@@ -333,6 +333,36 @@ Deferred as a result, and not to be re-litigated without both teammates:
 Account **deletion** is not deferred — it is treated as a bug, not a feature, because the
 deployment publishes a GDPR deletion route. See the open decisions below.
 
+## Sign-in: an emailed link or code, team addresses only, no passwords
+
+François's call on 2026-10-05 (D21 in `MVP.md`), modelled on frogViz's gate. Gonçalo has
+not seen it yet.
+
+- **How people sign in.** The sign-in page asks for an address. If its domain is on
+  `ALLOWED_EMAIL_DOMAINS` (`frog.co,capgemini.com` by default, matched exactly, so
+  `mail.capgemini.com` is refused), the server mails a link and a six-digit code, each good
+  for 15 minutes. The link stays good until it expires rather than working once, because
+  Outlook's Safe Links opens it before the person does; frogViz made the same call. A code
+  gets five tries, and an address ten a day.
+- **A first sign-in makes the account.** The page asks for a username (3 to 20 characters,
+  unique whatever the case, fixed for good as C13 decided), and that is registration.
+- **Who can see what.** Discover, `/api/v1/search/`, the sitemap and the community listings
+  need a signed-in account. With sign-in limited to the team's domains, that makes "public"
+  mean "the team", which closes open decision 6 below. Anonymous create, host and play are
+  unchanged, and so are unlisted links.
+- **What was hidden, not removed.** Password login, registration, reset, resend-confirmation
+  and change, behind `ENABLE_PASSWORD_LOGIN` (off). The old pages redirect to sign-in; the
+  change-password card is behind `PASSWORDS` in `routes/account/settings/+page.svelte`; the
+  login page's old step components are beside it, unused. Turning passwords back on is the
+  flag, that constant, and the four `+page.server.ts` redirects. Deleting an account asks
+  for its address to be typed instead of its password.
+- **What it does to existing accounts.** An account whose address is on a team domain signs
+  in by link with the same address and keeps everything. **An account on any other domain
+  can no longer sign in**; its quizzes stay in the database. Check the production users'
+  domains before deploying. An account with an authenticator set up before TOTP was cut is
+  still asked for its code after the link.
+- **Mail is now required to sign in at all.** Without a relay, nobody can (503).
+
 ## Open decisions
 
 Collected so they can be settled in one pass rather than rediscovered:
@@ -350,7 +380,9 @@ Collected so they can be settled in one pass rather than rediscovered:
 5. **English only, and the 33 deleted locale files** — same rule, and the one cut on
    this page that removed files from the tree rather than gating them. See
    [Languages](#languages) for the argument and for how to restore any one of them.
-6. **There is no team-visible tier. Settled: leave it as-is for MVP1.** Only
+6. **Settled differently on 2026-10-05: Discover and search need a signed-in account, and
+   only team addresses can sign in** (D21, the section above). What follows is the record
+   from before. **There is no team-visible tier. Settled: leave it as-is for MVP1.** Only
    `public=True` quizzes are indexed, and `POST /api/v1/search/` has no auth dependency,
    so on an internet-facing deployment "make it findable by the team" and "publish it to
    the world" are the same switch. This is now a known and accepted property, not an

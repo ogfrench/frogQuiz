@@ -116,6 +116,19 @@ class Settings(BaseSettings):
     pixabay_api_key: str | None = None
     mods: list[str] = []
     registration_disabled: bool = False
+    # Sign-in is by an emailed link or six-digit code, for these domains only (the part
+    # after the @, matched exactly), as frogViz does: François, 5 Oct. Empty lets any
+    # address in, which only the backend test suite wants. A comma-separated list.
+    allowed_email_domains: Annotated[list[str], NoDecode] = ["frog.co", "capgemini.com"]
+    # Passwords are off since 5 Oct: no password login, registration, reset or change.
+    # The code is kept, and this brings it back. The backend suite turns it on to keep
+    # testing it.
+    enable_password_login: bool = False
+
+    def email_domain_allowed(self, email: str) -> bool:
+        """Whether an address may sign in: its domain is on the list, or the list is empty."""
+        domain = email.strip().lower().rpartition("@")[2]
+        return not self.allowed_email_domains or domain in self.allowed_email_domains
 
     @property
     def mail_configured(self) -> bool:
@@ -148,6 +161,13 @@ class Settings(BaseSettings):
     # NoDecode keeps pydantic-settings from JSON-parsing this first, which is what
     # made the documented comma-separated form raise before the validator below ran.
     cors_origins: Annotated[list[str], NoDecode] = []
+
+    @field_validator("allowed_email_domains", mode="before")
+    @classmethod
+    def _split_domains(cls, v):
+        if isinstance(v, str):
+            return [d.strip().lower() for d in v.split(",") if d.strip()]
+        return v
 
     @field_validator("cors_origins", mode="before")
     @classmethod

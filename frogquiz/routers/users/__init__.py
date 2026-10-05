@@ -82,6 +82,12 @@ async def find_user_by_email(email: str) -> User | None:
     return user
 
 
+def _passwords_on() -> None:
+    """Sign-in is by emailed link since 5 Oct; the password routes answer only with the flag on."""
+    if not settings.enable_password_login:
+        raise HTTPException(status_code=404, detail="Not found")
+
+
 async def _sign_out_everywhere(user: User) -> None:
     # Revoked first, so the access tokens those sessions handed out stop working now
     # rather than when they expire; see revoke_sessions.
@@ -102,6 +108,7 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     # Was 10 an hour per address, and an office shares one: the eleventh person signing up in
     # the same room was locked out for an hour (E16 in docs/edge-cases-2026-10.md).
     await rate_limit(request, "register", limit=50, window_seconds=3600)
+    _passwords_on()
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
     # Checked before anything is written. Without it the row is created, the send
@@ -260,6 +267,7 @@ async def change_password(
     # row should never meet it, and a session-stealer grinding at the password still
     # meets it quickly.
     await rate_limit_key(f"password_update:{user.id}", limit=10, window_seconds=3600)
+    _passwords_on()
     if user.password is None:
         raise HTTPException(status_code=400, detail="This account has no password to change")
     if not verify_password(password_data.old_password, user.password):
@@ -318,6 +326,7 @@ async def forgotten_password(forgot_password: ForgotPassword, request: Request):
     # Unrated, this endpoint can be used to spam a victim's inbox or hammer the DB.
     # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
     await rate_limit(request, "forgot_password", limit=20, window_seconds=3600)
+    _passwords_on()
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     # Limited per address as well as per source IP. The IP bucket is what stops
@@ -355,6 +364,7 @@ async def resend_verification(body: ResendVerification, request: Request):
     """
     # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
     await rate_limit(request, "resend_verification", limit=20, window_seconds=3600)
+    _passwords_on()
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     await rate_limit_key(f"resend_verification_addr:{body.email.strip().lower()}", limit=3, window_seconds=3600)
@@ -381,6 +391,7 @@ class ResetPassword(BaseModel):
 
 @router.post("/reset-password")
 async def reset_password_with_token(reset_password: ResetPassword, response: Response):
+    _passwords_on()
     # GETDEL rather than GET-then-DELETE, so two concurrent requests for the same
     # token can't both pass the check before either invalidates it.
     redis_res = await redis.getdel(f"reset_passwd:{reset_password.token}")
@@ -514,7 +525,9 @@ async def delete_account(user: User, access_token: str | None = None) -> None:
 
 
 class DeleteUserInput(BaseModel):
-    password: str
+    password: str | None = None
+    # With passwords off (sign-in by emailed link, 5 Oct), the account's address, typed out.
+    email: str | None = None
 
 
 @router.delete("/me")
@@ -532,10 +545,11 @@ async def delete_user_account(
     # OAuth accounts are created with no password at all (frogquiz/oauth/*), and
     # verify_password(x, None) raises rather than returning False -- a 500 with no
     # explanation for the one person who cannot act on it.
-    if user.password is None:
-        raise HTTPException(status_code=400, detail="This account has no password to confirm with")
-    if not verify_password(input_data.password, user.password):
-        raise HTTPException(status_code=400, detail="Incorrect password")
+    if settings.enable_password_login and user.password is not None:
+        if not verify_password(input_data.password or "", user.password):
+            raise HTTPException(status_code=400, detail="Incorrect password")
+    elif (input_data.email or "").strip().lower() != user.email.lower():
+        raise HTTPException(status_code=400, detail="That is not this account's email address")
 
     await delete_account(user, request.cookies.get("access_token"))
     response.delete_cookie("access_token")

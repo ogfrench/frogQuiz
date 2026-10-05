@@ -34,6 +34,11 @@ export class SocketGameControls {
 		this.socket.emit('get_final_results', {});
 	}
 
+	/** Locked, nobody new can join; unlocked, anyone can, started or not. */
+	set_locked(locked: boolean) {
+		this.socket.emit('set_locked', { locked });
+	}
+
 	start_game() {
 		this.socket.emit('start_game', '');
 	}

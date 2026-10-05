@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import X from '@lucide/svelte/icons/x';
+	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state';
 
@@ -53,6 +54,9 @@ SPDX-License-Identifier: MPL-2.0
 		<X />
 		{$t('admin_page.cancel_game')}
 	</ConfirmAction>
+</div>
+<div class="fixed top-3 right-3 z-30">
+	<LockToggle locked={game_state.quiz_data?.locked} {socket_game_controls} />
 </div>
 
 <!-- The lobby is the one screen with nothing to do on it: people are walking in and

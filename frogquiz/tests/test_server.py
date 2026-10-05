@@ -494,13 +494,13 @@ class TestQuiz:
 
     @pytest.mark.asyncio
     async def test_search_get(self, test_client: TestClient):  # noqa : F811
-        resp = test_client.get("/api/v1/search/?q=*")
+        resp = test_client.get("/api/v1/search/?q=*", cookies=ValueStorage.cookies)
         assert resp.status_code == 200
         assert len(resp.json()["hits"]) > 0
 
     @pytest.mark.asyncio
     async def test_search_post(self, test_client: TestClient):  # noqa : F811
-        resp = test_client.post("/api/v1/search/", json={"q": "*"})
+        resp = test_client.post("/api/v1/search/", json={"q": "*"}, cookies=ValueStorage.cookies)
         assert resp.status_code == 200
         assert len(resp.json()["hits"]) > 0
 
@@ -598,16 +598,18 @@ class TestCommunity:
     async def test_get_user_by_id(self, test_client: TestClient):  # noqa : F811
         user = test_client.get("/api/v1/users/me", cookies=ValueStorage.cookies)
         user_id = user.json()["id"]
-        resp = test_client.get(f"/api/v1/community/user/{user_id}")
+        resp = test_client.get(f"/api/v1/community/user/{user_id}", cookies=ValueStorage.cookies)
         assert resp.status_code == 200
-        resp = test_client.get("/api/v1/community/user/e673c9ca-0cdf-4ebf-bad2-7d009ef5c62b")
+        resp = test_client.get(
+            "/api/v1/community/user/e673c9ca-0cdf-4ebf-bad2-7d009ef5c62b", cookies=ValueStorage.cookies
+        )
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
     async def test_get_quizzes_from_user(self, test_client: TestClient):  # noqa : F811
         user = test_client.get("/api/v1/users/me", cookies=ValueStorage.cookies)
         user_id = user.json()["id"]
-        resp = test_client.get(f"/api/v1/community/quizzes/{user_id}")
+        resp = test_client.get(f"/api/v1/community/quizzes/{user_id}", cookies=ValueStorage.cookies)
         data = resp.json()
         assert type(data) is list
 
@@ -615,9 +617,9 @@ class TestCommunity:
 class TestSitemap:
     @pytest.mark.asyncio
     async def test_get_sitemap(self, test_client: TestClient):  # noqa : F811
-        resp = test_client.get("/api/v1/sitemap/get")
+        resp = test_client.get("/api/v1/sitemap/get", cookies=ValueStorage.cookies)
         assert resp.status_code == 200
-        resp = test_client.get("/api/v1/sitemap/get")
+        resp = test_client.get("/api/v1/sitemap/get", cookies=ValueStorage.cookies)
         assert resp.status_code == 200
 
 

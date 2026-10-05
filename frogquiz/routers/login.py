@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -6,16 +7,27 @@
 import base64
 import enum
 import hmac
+import json
+import logging
 import os
+import secrets
 import urllib.parse
 import uuid
+from datetime import datetime
+from typing import Annotated
 
+import asyncpg.exceptions
+import bleach
 import pyotp
+from email_validator import EmailNotValidError, validate_email
 from fastapi import APIRouter, HTTPException, Request, Response
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, StringConstraints, ValidationError
 
 from frogquiz.auth import hash_session_key, verify_password
+from frogquiz.cache import clear_cache_for_account
 from frogquiz.config import redis, settings
+from frogquiz.emails import SIGN_IN_TTL_SECONDS, send_sign_in_email
+from frogquiz.helpers.avatar import gzipped_user_avatar
 
 from frogquiz.db.models import User, FidoCredentials
 from webauthn import (
@@ -35,6 +47,7 @@ from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 
 settings = settings()
 router = APIRouter()
+LOGGER = logging.getLogger("frogquiz.login")
 
 
 class StartLoginInput(BaseModel):
@@ -103,6 +116,9 @@ def verify_webauthn(data, fidocredentialss: list[FidoCredentials], login_session
 
 @router.post("/start")
 async def start_login(data: StartLoginInput, request: Request):
+    # The password login's first step. Sign-in is by emailed link since 5 Oct (/email below).
+    if not settings.enable_password_login:
+        raise HTTPException(status_code=404, detail="Not found")
     # Without this, password guessing against /step is unthrottled. Sized for an office behind
     # one address (E16 in docs/edge-cases-2026-10.md); the per-account bucket below is the
     # one that stops guessing at a single account.
@@ -191,6 +207,8 @@ async def step_1_endpoint(session_id: str, data: StepInput, request: Request, re
         raise HTTPException(401)
     user = await User.objects.select_related("fidocredentialss").get_or_none(id=uuid.UUID(login_session.user_id))
     if data.auth_type == StartLoginResponseTypes.PASSWORD:
+        if not settings.enable_password_login or user.password is None:
+            raise HTTPException(401, detail="wrong credentials")
         if verify_password(data.data, user.password):
             if len(login_session.step_2) == 0 or (step_id == 2 and login_session.step1_success is True):
                 return await log_user_in(user, request, response)
@@ -229,3 +247,163 @@ async def step_1_endpoint(session_id: str, data: StepInput, request: Request, re
             return await log_user_in(user, request, response)
         else:
             raise HTTPException(401, detail="totp wrong")
+
+
+# Sign-in by an emailed link or six-digit code, for addresses on ALLOWED_EMAIL_DOMAINS, with
+# no passwords: François's call on 5 Oct, modelled on frogViz's gate. The link stays good
+# until it expires rather than working once, because Outlook's Safe Links opens it before
+# the person does; frogViz made the same choice for the same reason.
+
+# A code can be guessed, so it gets this many tries, and an address this many a day.
+CODE_TRIES = 5
+CODE_TRIES_PER_ADDRESS_PER_DAY = 10
+
+
+def _safe_return_to(value: str | None) -> str | None:
+    """A path on this site, or nothing. It is handed back to the page after sign-in."""
+    if value and value.startswith("/") and not value.startswith("//") and "\\" not in value:
+        return value
+    return None
+
+
+class EmailSignInInput(BaseModel):
+    email: str
+    return_to: str | None = None
+
+
+@router.post("/email")
+async def email_sign_in(data: EmailSignInInput, request: Request):
+    """Mail a sign-in link and code. The answer is the same whether the address has an account or not."""
+    await rate_limit(request, "login_email", limit=100, window_seconds=300)
+    try:
+        email = validate_email(data.email.strip(), check_deliverability=False).normalized.lower()
+    except EmailNotValidError:
+        raise HTTPException(status_code=400, detail="That is not an email address")
+    if not settings.email_domain_allowed(email):
+        raise HTTPException(status_code=403, detail="That address is not on an allowed domain")
+    if not settings.mail_configured:
+        raise HTTPException(status_code=503, detail="This server has no mail server configured.")
+    # Per recipient, so one inbox cannot be flooded from many source addresses.
+    await rate_limit_key(f"login_email_addr:{email}", limit=5, window_seconds=3600)
+
+    token = secrets.token_urlsafe(32)
+    challenge = secrets.token_urlsafe(16)
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    # Only hashes are stored, so a read of Redis hands over no working link or code.
+    link_key = f"login_link:{hash_session_key(token)}"
+    code_key = f"login_code:{challenge}"
+    claim = {"email": email, "return_to": _safe_return_to(data.return_to)}
+    await redis.set(link_key, json.dumps(claim), ex=SIGN_IN_TTL_SECONDS)
+    await redis.set(code_key, json.dumps({**claim, "code": hash_session_key(code)}), ex=SIGN_IN_TTL_SECONDS)
+    try:
+        await send_sign_in_email(email, f"{settings.root_address}/account/login?token={token}", code)
+    except Exception:
+        LOGGER.exception("Could not send a sign-in email")
+        await redis.delete(link_key, code_key)
+        raise HTTPException(status_code=502, detail="Could not send the email. Try again in a minute.")
+    return {"challenge": challenge}
+
+
+class EmailVerifyInput(BaseModel):
+    token: str | None = None
+    challenge: str | None = None
+    code: str | None = None
+
+
+@router.post("/email/verify")
+async def email_verify(data: EmailVerifyInput, request: Request, response: Response):
+    """Sign in with the link's token, or with the challenge the page holds and the code from the email."""
+    await rate_limit(request, "login_email_verify", limit=100, window_seconds=300)
+    if data.token:
+        raw = await redis.get(f"login_link:{hash_session_key(data.token)}")
+        if raw is None:
+            raise HTTPException(status_code=401, detail="This link has expired")
+        claim = json.loads(raw)
+    elif data.challenge and data.code:
+        code_key = f"login_code:{data.challenge}"
+        raw = await redis.get(code_key)
+        if raw is None:
+            raise HTTPException(status_code=401, detail="This code has expired")
+        claim = json.loads(raw)
+        tries = await redis.incr(f"{code_key}:tries")
+        await redis.expire(f"{code_key}:tries", SIGN_IN_TTL_SECONDS)
+        if tries > CODE_TRIES:
+            await redis.delete(code_key)
+            raise HTTPException(status_code=429, detail="Too many tries")
+        await rate_limit_key(
+            f"login_code_addr:{claim['email']}", limit=CODE_TRIES_PER_ADDRESS_PER_DAY, window_seconds=86400
+        )
+        if not hmac.compare_digest(hash_session_key(data.code.strip()), claim["code"]):
+            raise HTTPException(status_code=401, detail="Wrong code")
+    else:
+        raise HTTPException(status_code=400, detail="A token, or a challenge and a code")
+    return await _finish_sign_in(claim["email"], claim.get("return_to"), request, response)
+
+
+async def _finish_sign_in(email: str, return_to: str | None, request: Request, response: Response) -> dict:
+    # Case-insensitive: addresses from before they were stored folded keep their account. Two
+    # rows that differ only in case can predate that rule too; the folded one wins.
+    matches = await User.objects.filter(User.email.iexact(email)).all()
+    user = next((u for u in matches if u.email == email), matches[0] if matches else None)
+    if user is None:
+        if settings.registration_disabled:
+            raise HTTPException(status_code=423, detail="Registration is closed")
+        # A first sign-in: the page asks for a username, then /email/signup makes the account.
+        signup = secrets.token_urlsafe(16)
+        await redis.set(
+            f"signup:{signup}", json.dumps({"email": email, "return_to": return_to}), ex=SIGN_IN_TTL_SECONDS
+        )
+        return {"signup": signup, "return_to": return_to}
+    if not user.verified:
+        # The link or code proves the mailbox, which is all verification ever asserted.
+        user.verified = True
+        user.verify_key = None
+        await user.update()
+        await clear_cache_for_account(user)
+    if user.totp_secret is not None:
+        # Somebody who turned on an authenticator before it was cut still has to use it.
+        session_id = os.urandom(16).hex()
+        login_session = LoginSession(
+            user_id=user.id.hex, step_1=set(), step_2={StartLoginResponseTypes.TOTP}, step1_success=True
+        )
+        await redis.set(f"login_session:{session_id}", login_session.model_dump_json(), ex=600)
+        response.status_code = 202
+        return {"session_id": session_id, "step_2": ["TOTP"], "return_to": return_to}
+    await log_user_in(user, request, response)
+    return {"return_to": return_to}
+
+
+class EmailSignupInput(BaseModel):
+    signup: str
+    # The register form's rule, as RouteUser has it (E17).
+    username: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=20)]
+
+
+@router.post("/email/signup")
+async def email_signup(data: EmailSignupInput, request: Request, response: Response):
+    """Make the account for a first sign-in, once the person has picked a username."""
+    await rate_limit(request, "register", limit=50, window_seconds=3600)
+    raw = await redis.get(f"signup:{data.signup}")
+    if raw is None:
+        raise HTTPException(status_code=401, detail="This sign-in has expired")
+    claim = json.loads(raw)
+    username = bleach.clean(data.username, tags=[], strip=True)
+    if await User.objects.filter(User.username.iexact(username)).exists():
+        raise HTTPException(status_code=409, detail="That username is taken")
+    user = User(
+        id=uuid.uuid4(),
+        email=claim["email"],
+        username=username,
+        password=None,
+        verified=True,
+        avatar=gzipped_user_avatar(),
+        created_at=datetime.now(),
+    )
+    try:
+        await user.save()
+    except asyncpg.exceptions.UniqueViolationError:
+        # The username, or the same address finishing twice (a double click).
+        raise HTTPException(status_code=409, detail="That username is taken")
+    await redis.delete(f"signup:{data.signup}", "global_user_count")
+    await log_user_in(user, request, response)
+    return {"return_to": claim.get("return_to")}

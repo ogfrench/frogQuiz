@@ -151,9 +151,11 @@ second gunicorn worker or a second API replica breaks live games.
 
 ## Email
 
-Two things need mail: the confirmation link at registration, and password recovery.
-Neither is optional in a way the app can paper over -- without a relay, a forgotten
-password can only be fixed in the database.
+Since 5 Oct mail is how everybody signs in: an emailed link or six-digit code, for the
+domains on `ALLOWED_EMAIL_DOMAINS` (`frog.co,capgemini.com` by default), with no passwords.
+Without a relay nobody can sign in at all, and the sign-in page says so with a 503. The
+registration and password-recovery mails below are only sent with `ENABLE_PASSWORD_LOGIN`
+on, which it is not.
 
 Set the `MAIL_*` block in `.env` and restart `api` and `worker`:
 
@@ -190,24 +192,23 @@ startup.
 
 ### Testing it for real
 
-The mail path cannot be proved by the test suite: the suite registers
-`*@example.com` addresses and never reads an inbox. Somebody has to run it once
-against a live relay.
+The suite reads every sign-in mail back from a local sink (`e2e/mailsink.py`), so the
+templates and the links are tested. Whether a real provider delivers to a frog or
+Capgemini inbox is not, and somebody has to check it once against the live relay.
 
-Use **francois.prevot@hotmail.com** as the test recipient (François, 2026-10-02) --
-an external address on a provider that is strict about SPF and DKIM, which is the
-point: a relay misconfiguration that an internal address would wave through gets
-caught here.
+The hotmail address chosen on 2026-10-02 can no longer sign in, since only team domains
+can. Use a frog.co address, which is also the filter that matters: frogViz's own sender
+was held back by frog's mail filter until its domain was a month old, and sends from
+frogQuiz's for now.
 
 Three things to check, in this order:
 
-1. Register a new account with that address. The confirmation mail should arrive,
-   the link in it should open the real site (`ROOT_ADDRESS`, not the API host), and
-   the account should come out verified.
-2. Request a password reset for it. The mail should arrive and the link should let a
-   new password be set.
-3. Check the spam folder on both. Landing in spam is a pass for the code and a fail
-   for the deployment, and it is the most likely outcome on a fresh sender domain.
+1. Sign in with that address. The mail should arrive with the code in its subject, and
+   the link in it should open the real site (`ROOT_ADDRESS`, not the API host) and sign
+   in. A first sign-in asks for a username.
+2. Sign in again from a second device by typing the code instead.
+3. Check the spam and quarantine folders. Landing there is a pass for the code and a
+   fail for the deployment.
 
 ## Managed Postgres (Neon)
 

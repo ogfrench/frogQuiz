@@ -201,9 +201,13 @@ SPDX-License-Identifier: MPL-2.0
 		game_pin = '';
 		error_message = $t('play_page.game_not_found');
 	});
-	socket.on('game_already_started', () => {
+	socket.on('game_locked', () => {
 		game_pin = '';
-		error_message = $t('play_page.game_already_started');
+		error_message = $t('play_page.game_locked');
+	});
+	socket.on('game_finished', () => {
+		game_pin = '';
+		error_message = $t('play_page.game_finished');
 	});
 	socket.on('username_already_exists', () => {
 		error_message = $t('play_page.username_taken');

@@ -15,7 +15,16 @@ about 210 files, roughly +13700 / -3600 against `master`, which has not moved si
 ### Reviewing and merging (5 Oct)
 
 Read the PR #23 description top to bottom. It is grouped by theme, with dates, and each
-section names the doc that holds the detail. Two things in it need the two of you:
+section names the doc that holds the detail. Three things in it need the two of you:
+
+- **Sign-in by emailed link, no passwords (D21, 5 Oct).** François asked for frogViz's
+  gate: a link or six-digit code by email, frog.co and capgemini.com addresses only, and
+  Discover and search for signed-in accounts only. Password login and registration are
+  hidden behind `ENABLE_PASSWORD_LOGIN`, not removed. **Before deploying:** an account on
+  any other domain can no longer sign in, so check the production users' domains, and mail
+  must work, since nobody can sign in without it. The detail is in `docs/mvp-scope.md`
+  ("Sign-in"). D19 (late join with a lock) and D20 (Kahoot's score curve) came the same day
+  and need Gonçalo's tick too.
 
 - **D16 and D18** (`MVP.md` §4.0) are François's calls from 2 Oct and still need Gonçalo's
   tick. D16 is the host-side "show questions and answers on players' devices" switch, off
@@ -29,8 +38,10 @@ Every other decision in the PR is already agreed and recorded in `docs/mvp-scope
 
 **For after the review:** [`docs/kahoot-gap-analysis-2026-10.md`](docs/kahoot-gap-analysis-2026-10.md)
 compares frogQuiz with Kahoot step by step (creating, hosting, playing, results) and ranks the
-ten gaps most worth closing. Its top three: results are not kept after a game (D4), there is
-no way to duplicate a quiz, and nobody can join once a game has started.
+ten gaps most worth closing. Its top three: results are not kept after a game (D4, kept as
+is: the Excel download is enough for now), there is no way to duplicate a quiz, and nobody
+could join once a game had started. François answered its questions on 5 Oct, and late join
+with a lock, Kahoot's score curve and sign-in by emailed link are on this branch since.
 
 The last thing added is the edge-case pass ([`docs/edge-cases-2026-10.md`](docs/edge-cases-2026-10.md),
 E1 to E27, all fixed). Read its three High findings first. E1 in particular: since 12 Sep,

@@ -79,16 +79,22 @@ failed first.
 ## Open — before sharing
 
 - [ ] **Run `MVP.md` §4.1 on the deployed site.** Nobody has. It is the only part that can still reorder the rest
-- [ ] **Real mail end to end**: register → confirm → reset, with `MAIL_*` set on the
-      production API. Send to **francois.prevot@hotmail.com** (François, 2 Oct) —
-      external and strict about SPF/DKIM, so a relay misconfiguration shows up.
-      Steps in [`DEPLOY.md`](DEPLOY.md#testing-it-for-real); check spam on both mails
+- [ ] **Real mail end to end**: since 5 Oct it is how everybody signs in, so it is no
+      longer optional. Sign in with a frog.co address by the link, then by the code on a
+      second device, with `MAIL_*` set on the production API. The hotmail address chosen on
+      2 Oct can no longer sign in (team domains only). Steps in
+      [`DEPLOY.md`](DEPLOY.md#testing-it-for-real); check spam and quarantine
+- [ ] **Before deploying the sign-in change (D21): list the production accounts whose
+      address is not on frog.co or capgemini.com.** They can no longer sign in. Their
+      quizzes stay in the database; decide with their owners before the deploy
 - [ ] **Confirm the `worker` container runs in production**, or the 30-day deletion the anonymous copy promises is not kept
 - [ ] **Gonçalo's tick on D16 and D18.** François signed D1 and D3–D15 on 2 Oct after
       asking for each to be explained; D2 and D16 are his "like Kahoot", D8, D9 and D18 are
       his, D17 was already his. The `MVP.md` table still has Gonçalo's column empty for D16
       (questions on players' phones) and D18 (results owner-only). Not blocking, but it
-      is not "both" until he ticks them
+      is not "both" until he ticks them. **D19 to D21 (5 Oct) too**: late join with a lock,
+      Kahoot's score curve, and sign-in by emailed link for team addresses with no
+      passwords. D21 is an auth change, so read it first
 - [ ] **#3 Part A** — two more boxes are now true: *Player disconnect / rejoin* (row 16) and
       *Image upload* (row 15). The rest of Part A is either a hidden feature (video,
       `/import`, `/remote`, `/quiztivity`, `/moderation`, `/results`) or needs the deployed
