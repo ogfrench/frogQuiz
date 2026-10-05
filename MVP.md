@@ -230,8 +230,9 @@ because they may reorder everything else.
 
 - [ ] Host a real game: laptop on a projector, 3+ phones (iOS and Android), signed-in host
 - [ ] Same with an anonymous host (`/create` signed out → edit → start → play → podium)
-- [ ] Register with a real inbox: confirmation mail arrives, link works, a second click still works
-- [ ] Forgot password with a real inbox: mail arrives, reset works, old password rejected
+- [ ] Sign in with a frog.co address and a real inbox (D21): the link signs you in, a second
+      click inside 15 minutes still works, and the code works on another device
+- [ ] ~~Register and forgot password with a real inbox~~: hidden since D21 (5 Oct), nothing to test
 - [ ] Delete a test account that owns a quiz and an uploaded image; confirm both are gone
 - [ ] Check `MAIL_*` is set on the production API (`DEPLOY.md` → Email)
 - [x] Run `bash e2e/run.sh` locally and record the result here: 146/146 on `077f695`, clean stack, 2026-10-04

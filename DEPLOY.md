@@ -218,13 +218,21 @@ anyway. **It deletes Gonçalo's account and quizzes too, so agree it with him fi
 There is no way to bring a single quiz back except from the backup below: Excel and
 `.cqa` import are hidden (D6).
 
-On the VM, in the directory that holds `docker-compose.yml`:
+On the VM, in the directory that holds `docker-compose.yml`. First check where Postgres
+lives, since issue #22 found the repo cannot say:
+`docker compose exec api printenv DB_URL | sed -E 's#//[^@]*@#//***@#'`. A host of
+`db:5432` means the `db` container, and the steps below work as written. A host ending
+`.neon.tech` means Neon: run steps 1 and 2 with `pg_dump "<that URI>"` and
+`psql "<that URI>" -c "..."` from any machine with the Postgres client instead of
+`docker compose exec db`, and do the same for the check at the end. Run `docker compose`
+with whatever `-f` files the VM already uses (#22: the command is not recorded either).
 
 ```bash
 docker compose pull && docker compose up -d      # the sign-in change goes live first
 docker compose stop api worker                    # nothing writes while this runs
 
-# 1. A backup, in case a quiz turns out to be wanted. Kept outside the app's volumes.
+# 1. A backup, in case a quiz turns out to be wanted. Kept outside the app's volumes, but
+#    on the VM's disk, which has no backup (#22): copy both files off the box before step 2.
 docker compose exec -T db pg_dump -U postgres frogquiz | gzip > ~/frogquiz-before-wipe-$(date +%F).sql.gz
 tar czf ~/frogquiz-uploads-before-wipe-$(date +%F).tgz uploads
 

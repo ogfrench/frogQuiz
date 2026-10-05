@@ -9,8 +9,8 @@ SPDX-License-Identifier: MPL-2.0
 For François and Gonçalo, 2–4 October 2026. Read this first; everything else is linked from
 here. It is PR #23.
 
-**State: ready to merge. François and Gonçalo review it together on 5 Oct.** About 100 commits and
-about 210 files, roughly +13700 / -3600 against `master`, which has not moved since 29 Sep.
+**State: ready to merge. François and Gonçalo review it together on 5 Oct.** About 115 commits and
+about 270 files, roughly +17900 / -4300 against `master`, which has not moved since 29 Sep.
 
 ### Reviewing and merging (5 Oct)
 
