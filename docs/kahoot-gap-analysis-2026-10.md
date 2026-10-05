@@ -586,7 +586,7 @@ Impact is for an internal team; effort is S under a day, M up to a week, L longe
    **F (2026-10-05): yes, half marks at the buzzer, as Kahoot does.**
 4. Should type answer, poll and slider come back, and in what order? Type answer needs
    tolerant matching before it is worth showing (open decision 4).
-   **F (2026-10-05): later, as a future issue.**
+   **F (2026-10-05): later, as a future issue.** Tracked on issue #4.
 5. What does "findable by the team" mean once the app leaves the internet-facing VM: a
    sign-in gate on Discover, or a third visibility value? Decision 6 left this open.
    **F (2026-10-05): the sign-in gate, with sign-in by an emailed link or code for frog.co
