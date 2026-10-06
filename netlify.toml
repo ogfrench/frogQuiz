@@ -37,9 +37,10 @@ force = true
 # WebSockets. The browser connects straight to VITE_API_ORIGIN instead, which
 # requires CORS_ORIGINS on the backend to list this site's URL.
 
-# Out of search results, for every page and file. A header rather than only the tag in
-# app.html, so a file with no HTML (the manifest, an image) is covered too. Link previews
-# ignore it; see static/robots.txt for why that file does not disallow the site.
+# Out of search results, for static files. Netlify applies this to files it serves itself
+# (the manifest, images, robots.txt) but not to the server-rendered pages, which carry the
+# tag in app.html instead; together every response is covered. Link previews ignore both;
+# see static/robots.txt for why that file does not disallow the site.
 [[headers]]
 for = "/*"
   [headers.values]

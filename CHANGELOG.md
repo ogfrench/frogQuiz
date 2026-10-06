@@ -6,7 +6,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Search engines, and what a pasted link shows
 
-- Kept the site out of search results. It answered 200 to anyone with no sign-in and nothing telling a crawler to stay out. Every page now carries `noindex, nofollow` as a tag (`app.html`) and as an `X-Robots-Tag` header (`netlify.toml`), so files with no HTML are covered too.
+- Kept the site out of search results. It answered 200 to anyone with no sign-in and nothing telling a crawler to stay out. Every page now carries `noindex, nofollow` as a tag in `app.html`, and every static file (robots.txt, the manifest, images) gets it as an `X-Robots-Tag` header from `netlify.toml`. Checked on the deploy preview: the tag is in the served HTML, and the header is on those files. The server-rendered pages themselves do not get the header from Netlify, which is why the tag matters.
 - Added `static/robots.txt` that disallows nothing. A `Disallow: /` would also stop Slack and Teams from reading a pasted link to build its preview, so the keeping-out is done by the noindex tag and header instead. Before, `/robots.txt` answered with the app's HTML. A test fails if the file ever disallows the site.
 - A link to a quiz (`/view/<id>`) now previews with the quiz's own title, a line from its description and its cover image, or the site card when it has no cover. Before, only the home page had preview tags. The tags come from `src/lib/share_meta.ts`, with tests, and are rendered on the server, which is where a preview reads them.
 - Not changed: the home page's wording ("The free Kahoot alternative.") and its share image, which says the same. That is for the team to decide.
