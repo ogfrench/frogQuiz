@@ -166,3 +166,27 @@ async def test_a_sign_in_stored_before_this_change_still_takes_its_code(env):
         {"email": "someone@frog.co", "return_to": None, "code": login.hash_session_key("123456")}
     )
     assert (await enter("legacy", "123456"))["signed_in"] == "someone@frog.co"
+
+
+@pytest.mark.parametrize(
+    "wrap",
+    [
+        lambda c: f"{c[:3]} {c[3:]}",
+        lambda c: f"{c[:3]}\u00a0{c[3:]}",
+        lambda c: f" {c[:3]}\u202f{c[3:]} \n",
+        lambda c: f"{c[:3]}-{c[3:]}",
+    ],
+    ids=["space", "non-breaking space", "thin space and blanks", "hyphen"],
+)
+async def test_a_code_signs_in_as_copied_from_the_email(env, wrap):
+    _, sent = env
+    challenge = await ask("someone@frog.co")
+    assert (await enter(challenge, wrap(sent[0]["code"])))["signed_in"] == "someone@frog.co"
+
+
+async def test_a_code_with_no_digits_is_wrong_not_an_error(env):
+    _, sent = env
+    challenge = await ask("someone@frog.co")
+    with pytest.raises(HTTPException) as err:
+        await enter(challenge, " - ")
+    assert err.value.status_code == 401
