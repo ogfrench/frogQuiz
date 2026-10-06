@@ -6,6 +6,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Sign-in and confirmation email: a minute between asks, and a countdown
 
+- The countdown's logic now comes from `frontend/src/lib/vendor/resend-cooldown.ts`, a file shared with frogViz and copied whole from its `vendor/`; `resend_cooldown.svelte.ts` only makes it reactive. A test fails if the copy is edited here instead of in frogViz, and `test_vendored_cooldown.py` fails if the server's minute and the shared file's part. The pages look as before.
 - The sign-in email (`POST /api/v1/login/email`) is held for 60 seconds per address, and the code step of `/account/login` gains a "Send a new code" button that counts the minute down, the same button frogViz's gate has. Before, the only way to ask again was "Use a different address" and retyping the same one, and five quick asks spent the address's hour.
 - A sign-in email that fails to send releases its cooldown, so the "try again in a minute" it asks for is not refused.
 - "Send a new code" adds to the sign-in the page already holds instead of starting another, so the code in a slow first email, arriving after the resend, still works. Every code sent for one sign-in works (up to four), and they share one set of tries. A failed resend leaves the codes already sent working.

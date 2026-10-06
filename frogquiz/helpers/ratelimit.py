@@ -14,10 +14,9 @@ from fastapi import HTTPException, Request
 
 from frogquiz.config import redis, settings
 
-# The wait between one confirmation email and the next for the same address. The page
-# counts it down (RESEND_COOLDOWN_SECONDS in frontend/src/lib/resend_cooldown.svelte.ts)
-# and this is the rule behind the countdown: a client that never ran the page's script
-# gets the same answer. Change both together.
+# The wait between one email to an address and the next. The page counts it down from the
+# shared file frontend/src/lib/vendor/resend-cooldown.ts (copied from frogViz), and this is
+# the rule behind the countdown; test_vendored_cooldown.py fails if the two numbers part.
 RESEND_COOLDOWN_SECONDS = 60
 
 

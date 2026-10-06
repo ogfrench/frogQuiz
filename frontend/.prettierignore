@@ -6,3 +6,5 @@
 src/lib/i18n/locales/*.json
 pnpm-lock.yaml
 src/app.html
+# Copied whole from frogViz; its hash covers every byte, so it is never reformatted here
+src/lib/vendor/

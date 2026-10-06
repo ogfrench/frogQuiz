@@ -115,3 +115,20 @@ describe('createCooldown', () => {
 		expect(vi.getTimerCount()).toBe(0);
 	});
 });
+
+describe('the vendored file', () => {
+	/* Copied whole from frogViz's vendor/resend-cooldown.ts. Its first line carries a hash
+	   of the rest, computed as frogViz computes it, so an edit made here instead of there
+	   fails here. To change it: edit it in frogViz, run its tools/vendor-stamp.mjs, and
+	   copy the file over this one. */
+	it('has not been edited since it was copied', async () => {
+		const { readFileSync } = await import('node:fs');
+		const { createHash } = await import('node:crypto');
+		const text = readFileSync(new URL('./vendor/resend-cooldown.ts', import.meta.url), 'utf8');
+		const said = text.match(/sha256:([0-9a-f]{64})/)?.[1];
+		const actual = createHash('sha256')
+			.update(text.replace(/sha256:([0-9a-f]{64}|pending)/, 'sha256:'))
+			.digest('hex');
+		expect(said).toBe(actual);
+	});
+});
