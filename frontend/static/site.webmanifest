@@ -1,7 +1,7 @@
 {
 	"name": "frogQuiz",
 	"short_name": "frogQuiz",
-	"description": "The free Kahoot alternative.",
+	"description": "Host a live quiz. Join from any phone.",
 	"icons": [
 		{ "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
 		{ "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" },

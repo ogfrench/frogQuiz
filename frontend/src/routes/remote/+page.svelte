@@ -185,6 +185,10 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
+<svelte:head>
+	<title>frogQuiz - Remote</title>
+</svelte:head>
+
 <svelte:window onbeforeunload={confirmUnload} />
 {#if game_started}
 	{#if selected_question + 1 === game_data.questions.length && ((timer_res === '0' && question_results !== null) || game_data?.questions?.[selected_question]?.type === QuizQuestionType.SLIDE)}

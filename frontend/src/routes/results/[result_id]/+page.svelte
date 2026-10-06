@@ -33,6 +33,10 @@ SPDX-License-Identifier: MPL-2.0
 	let selected_tab: SelectedTab = $state(SelectedTab.Overview);
 </script>
 
+<svelte:head>
+	<title>frogQuiz - Results</title>
+</svelte:head>
+
 <div class="w-full">
 	<div class="flex flex-row w-full justify-around border-b-2 border-gray-500 mb-4">
 		<div
