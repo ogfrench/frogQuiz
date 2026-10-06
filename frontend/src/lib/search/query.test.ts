@@ -102,7 +102,7 @@ describe('normaliseHits', () => {
 		expect(normaliseHits({ detail: 'Not found' })).toEqual([]);
 	});
 
-	it('normalises every hit', () => {
+	it('normalizes every hit', () => {
 		expect(
 			normaliseHits({
 				hits: [

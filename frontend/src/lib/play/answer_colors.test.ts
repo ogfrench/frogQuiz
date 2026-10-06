@@ -8,13 +8,13 @@ import { readFileSync } from 'node:fs';
 import { contrastRatio, deltaE, rgbDistance, simulateCvd } from '$lib/a11y/contrast';
 
 /**
- * The palette was derived in OKLCH and checked once, by hand, against colour-vision
+ * The palette was derived in OKLCH and checked once, by hand, against color-vision
  * separation and contrast. These pin that work down. The first attempt at this palette
  * paired amber with green at ΔE 8.6, which is genuinely hard to tell apart -- the point
  * of the tests is that nobody reintroduces something like it by nudging a hex value.
  */
 describe('answer palette', () => {
-	it('has one colour per answer slot', () => {
+	it('has one color per answer slot', () => {
 		expect(ANSWER_COLORS).toHaveLength(4);
 	});
 
@@ -46,11 +46,11 @@ describe('answer palette', () => {
 		}
 	});
 
-	it('does not rely on colour surviving colour-vision deficiency', () => {
+	it('does not rely on color surviving color-vision deficiency', () => {
 		// This asserts the limitation rather than hiding it. Four hues at one lightness
 		// cannot be told apart by a dichromat: under deuteranopia coral and green differ
 		// by 4 of 255. The design is accessible because every tile also carries a shape,
-		// not because the colours are separable -- so if someone ever "fixes" the palette
+		// not because the colors are separable -- so if someone ever "fixes" the palette
 		// to pass here, that is a real change and this test should be rewritten
 		// deliberately, not deleted to make a build pass.
 		const worst = (kind: 'protanopia' | 'deuteranopia' | 'tritanopia') => {
@@ -72,9 +72,9 @@ describe('answer palette', () => {
 		expect(worst('protanopia')).toBeLessThan(60);
 	});
 
-	it('has a shape for every colour, which is what carries identity', () => {
+	it('has a shape for every color, which is what carries identity', () => {
 		// The redundant channel the palette depends on. If AnswerShape ever stops
-		// covering all four slots, the colours alone are not enough.
+		// covering all four slots, the colors alone are not enough.
 		const shapes = readFileSync(
 			new URL('./kahoot_mode_assets/AnswerShape.svelte', import.meta.url),
 			'utf8'
@@ -94,5 +94,26 @@ describe('answer palette', () => {
 		// because the host's screen is in a different theme from their phone, which is
 		// why there is one array rather than a light and a dark one.
 		expect(ANSWER_COLORS.every((c) => /^#[0-9a-f]{6}$/i.test(c))).toBe(true);
+	});
+
+	it.each([
+		'src/lib/play/question.svelte',
+		'src/lib/play/questions/check.svelte',
+		'src/lib/play/admin/question.svelte',
+		'src/lib/play/admin/voting_results.svelte',
+		'src/lib/editor/ABCDEditorPart.svelte',
+		'src/routes/view/[quiz_id]/+page.svelte',
+		'src/routes/practice/+page.svelte'
+	])('%s colors tiles from the palette, not from the answer', (file) => {
+		// Every one of these read `answer.color ?? palette`, so a quiz from upstream
+		// ClassQuiz drew its brown and green defaults and an API client could draw pure
+		// red; only an untouched quiz was pastel. Indexing the four-color array directly
+		// also left answers five to ten uncolored. The palette, wrapped, is the one source.
+		const src = readFileSync(file, 'utf8');
+		// The order question (not a choice tile) keeps its own `answer.color ?? '#…'`.
+		expect(src).not.toMatch(
+			/answer\.color\s*\?\?\s*(default_colors|answerColor|ANSWER_COLORS)/
+		);
+		expect(src).not.toMatch(/default_colors\[i\]/);
 	});
 });

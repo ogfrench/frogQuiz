@@ -7,15 +7,12 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import Editor from '$lib/editor.svelte';
-	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import { getAnonSecret } from '$lib/anon_quiz';
 
 	navbarVisible.visible = false;
-
-	const { t } = getLocalization();
 
 	interface Data {
 		public: boolean;
@@ -78,7 +75,7 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {:then _}
 	{#if quiz_data !== undefined}
-		<Editor bind:data={quiz_data} submit_button_text={$t('words.save')} bind:quiz_id />
+		<Editor bind:data={quiz_data} {quiz_id} />
 	{/if}
 {:catch err}
 	<div class="text-center">

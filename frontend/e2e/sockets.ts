@@ -83,7 +83,8 @@ export async function join(pin: string, username: string) {
 	const joined = next(s, 'joined_game');
 	const refused = Promise.race([
 		next(s, 'username_already_exists').then((d) => d && 'username_already_exists'),
-		next(s, 'game_already_started').then((d) => d && 'game_already_started'),
+		next(s, 'game_locked').then((d) => d && 'game_locked'),
+		next(s, 'game_finished').then((d) => d && 'game_finished'),
 		next(s, 'game_not_found').then((d) => d && 'game_not_found'),
 		next(s, 'error').then((d) => d && 'error')
 	]);
@@ -108,6 +109,28 @@ export async function finalResults(host: Socket): Promise<Record<string, AnswerR
 	const r = await got;
 	expect(r, 'final_results').not.toBeNull();
 	return r!;
+}
+
+/**
+ * Starts the game and waits for the server to say it has.
+ *
+ * `host.emit('start_game', {})` on its own is fire-and-forget, and every spec in
+ * live-socket.e2e.ts did exactly that before calling showQuestion. python-socketio runs
+ * each event in its own task, and start_game and set_question_number both read
+ * `game:{pin}`, change one field and write the whole object back -- so back to back, the
+ * second can read the game before the first has saved and then clobber it. When
+ * `current_question` is the field that gets lost, submit_answer sees the wrong index,
+ * answers with question_not_active and never emits `player_answer`, which is precisely
+ * how "an answer after the host showed the results is refused" failed: on its *first*
+ * assertion, two runs in ten.
+ *
+ * `docs/e2e-findings.md` describes this race and says the specs wait for start_game for
+ * this reason. They did not. Now they do.
+ */
+export async function startGame(host: Socket) {
+	const started = next(host, 'start_game');
+	host.emit('start_game', {});
+	expect(await started, 'game started').not.toBeNull();
 }
 
 export async function showQuestion(host: Socket, index: number) {

@@ -2,13 +2,22 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-// The signed-in side: registering, logging in, owning quizzes, claiming an anonymous one,
-// publishing to Explore, and keeping game results.
+// The signed-in side: owning quizzes, claiming an anonymous one, publishing to Discover,
+// and keeping game results. Signing in and up is sign-in.e2e.ts, since there are no
+// passwords (5 Oct).
 
-import { expect, test, type Page } from '@playwright/test';
-import { PASSWORD, apiLogin, registerUser, signedInContext } from './accounts';
-import { expectNoHorizontalOverflow, mc, rememberAnonQuiz, saveQuiz } from './helpers';
-import { closeAll, finalResults, hostGame, joinAll, next, showQuestion } from './sockets';
+import { expect, test } from '@playwright/test';
+import { apiLogin, registerUser, signedInContext } from './accounts';
+import { expectNoHorizontalOverflow, mc, PHONE, rememberAnonQuiz, saveQuiz } from './helpers';
+import {
+	closeAll,
+	finalResults,
+	hostGame,
+	joinAll,
+	next,
+	showQuestion,
+	startGame
+} from './sockets';
 
 const quiz = (title: string, extra: Record<string, unknown> = {}) => ({
 	title,
@@ -23,44 +32,6 @@ const quiz = (title: string, extra: Record<string, unknown> = {}) => ({
 });
 
 test.afterEach(closeAll);
-
-/** The login page is two forms: identify, then prove. Each has its own Continue. */
-async function logInThroughUI(page: Page, email: string, password: string) {
-	await page.getByRole('textbox', { name: 'Email or Username' }).fill(email);
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await page.getByRole('textbox', { name: 'Password' }).fill(password);
-	await page.getByRole('button', { name: 'Continue' }).last().click();
-}
-
-test('register and log in through the UI', async ({ page }) => {
-	const username = `ui${Date.now().toString(36)}`;
-	const email = `${username}@example.com`;
-	await page.goto('/account/register');
-	await page.getByRole('textbox', { name: 'E-mail address' }).fill(email);
-	await page.getByRole('textbox', { name: 'Username' }).fill(username);
-	await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
-	await page.getByRole('textbox', { name: 'Repeat password' }).fill(PASSWORD);
-	await page.getByRole('checkbox', { name: /Privacy policy/ }).check();
-	await page.getByRole('checkbox', { name: /Terms of Service/ }).check();
-	await page.getByRole('button', { name: 'Register' }).click();
-	// It stays on the page and reports in place; with verification skipped, it is ready.
-	await expect(page.getByRole('status')).toBeVisible();
-	await expect(page.getByRole('status')).not.toHaveClass(/destructive/);
-	await expectNoHorizontalOverflow(page);
-
-	await page.getByRole('link', { name: 'Log in' }).last().click();
-	await logInThroughUI(page, email, PASSWORD);
-	await expect(page).toHaveURL(/\/my-quizzes/);
-	await expectNoHorizontalOverflow(page);
-});
-
-test('a wrong password is refused and the page says so', async ({ page, request }) => {
-	const { email } = await registerUser(request);
-	await page.goto('/account/login');
-	await logInThroughUI(page, email, 'not-the-password');
-	await expect(page).toHaveURL(/\/account\/login/);
-	await expect(page.getByText("That email address and password don't match.")).toBeVisible();
-});
 
 test("a signed-in user's quiz is on their My Quizzes, and nobody else's", async ({
 	browser,
@@ -114,9 +85,11 @@ test('an anonymous quiz can be claimed after signing up', async ({ browser, requ
 	const user = await signedInContext(browser, request);
 	await rememberAnonQuiz(user.page, saved.body.id, saved.secret!);
 	await user.page.goto(`/view/${saved.body.id}`);
-	// The notice is a collapsed banner; its actions live inside it.
-	await user.page.getByRole('button', { name: /isn't saved to an account/ }).click();
-	await user.page.getByRole('button', { name: 'Claim this quiz to your account' }).click();
+	// Signed in, the banner opens on its own. Someone who had just made an account to keep
+	// this quiz came back to it collapsed, still saying "isn't saved", Claim inside it.
+	await user.page
+		.getByRole('button', { name: 'Claim this quiz to your account' })
+		.click({ timeout: 5_000 });
 	await expect(user.page.getByText("This quiz isn't saved to an account")).toHaveCount(0);
 	await user.page.goto('/my-quizzes');
 	await expect(user.page.getByText(title)).toBeVisible();
@@ -143,7 +116,8 @@ test('a public quiz shows up in Explore search; an unlisted one does not', async
 		(await saveQuiz(owner.context.request, quiz(`Public ${tag}`, { public: true }))).status
 	).toBe(200);
 	expect((await saveQuiz(owner.context.request, quiz(`Private ${tag}`))).status).toBe(200);
-	const page = await browser.newPage();
+	// Discover is for signed-in accounts since 5 Oct: a teammate, not a passer-by.
+	const { page } = await signedInContext(browser, request);
 	await expect
 		.poll(
 			async () => {
@@ -166,7 +140,7 @@ test('saving results still works, but the results page is hidden', async ({ brow
 	const title = `Results ${Date.now()}`;
 	const { host, pin } = await hostGame(owner.context.request, quiz(title));
 	const [p] = await joinAll(pin, ['scorer']);
-	host.emit('start_game', {});
+	await startGame(host);
 	await showQuestion(host, 0);
 	p.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
 	await new Promise((r) => setTimeout(r, 300));
@@ -181,30 +155,6 @@ test('saving results still works, but the results page is hidden', async ({ brow
 });
 
 test.describe('regressions', () => {
-	test('signing up from "keep this quiz" brings you back to the quiz', async ({
-		page,
-		request
-	}) => {
-		const saved = await saveQuiz(request, quiz(`Return ${Date.now()}`));
-		await rememberAnonQuiz(page, saved.body.id, saved.secret!);
-		await page.goto(`/view/${saved.body.id}`);
-		await page.getByRole('button', { name: /isn't saved to an account/ }).click();
-		await page.getByRole('link', { name: 'Create an account to keep this quiz' }).click();
-		await expect(page).toHaveURL(/returnTo=/);
-		const username = `rt${Date.now().toString(36)}`;
-		await page.getByRole('textbox', { name: 'E-mail address' }).fill(`${username}@example.com`);
-		await page.getByRole('textbox', { name: 'Username' }).fill(username);
-		await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
-		await page.getByRole('textbox', { name: 'Repeat password' }).fill(PASSWORD);
-		await page.getByRole('checkbox', { name: /Privacy policy/ }).check();
-		await page.getByRole('checkbox', { name: /Terms of Service/ }).check();
-		await page.getByRole('button', { name: 'Register' }).click();
-		await expect(page.getByRole('status')).toBeVisible();
-		await page.getByRole('link', { name: 'Log in' }).last().click();
-		await logInThroughUI(page, `${username}@example.com`, PASSWORD);
-		await expect(page).toHaveURL(new RegExp(`/view/${saved.body.id}`));
-	});
-
 	test('signing in does not lock you out of a quiz you made anonymously', async ({
 		browser,
 		request
@@ -227,4 +177,65 @@ test.describe('regressions', () => {
 		expect(del.status()).toBeLessThan(300);
 		await ctx.close();
 	});
+});
+
+// routers/quiz.py start_quiz only lets a signed-in visitor host a quiz that is public.
+// The view page offered Play regardless, so hosting somebody else's unlisted quiz got a
+// button that answered "quiz not found".
+test('Play is not offered on somebody else’s unlisted quiz', async ({ browser, request }) => {
+	const owner = await signedInContext(browser, request);
+	const unlisted = await saveQuiz(owner.context.request, quiz(`Unlisted ${Date.now()}`));
+	const open = await saveQuiz(owner.context.request, {
+		...quiz(`Public ${Date.now()}`),
+		public: true
+	});
+
+	const other = await signedInContext(browser, request);
+	await other.page.goto(`/view/${unlisted.body.id}`);
+	await expect(other.page.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
+	await expect(other.page.getByText('only the person who made it can host it')).toBeVisible();
+
+	await other.page.goto(`/view/${open.body.id}`);
+	await expect(other.page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+
+	// Its owner can still host it.
+	await owner.page.goto(`/view/${unlisted.body.id}`);
+	await expect(owner.page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+	await owner.context.close();
+	await other.context.close();
+});
+
+test('My Account on a phone: the name reads in full, and only other devices can be deleted', async ({
+	browser,
+	request
+}) => {
+	const user = await registerUser(request);
+	// Another device, so there is a session that is not this one.
+	const other = await browser.newContext({
+		userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0'
+	});
+	await apiLogin(other.request, user.email);
+	const context = await browser.newContext({ viewport: PHONE, hasTouch: true, isMobile: true });
+	await apiLogin(context.request, user.email);
+	const page = await context.newPage();
+	await page.goto('/account/settings');
+	await expect(page.getByRole('listitem').getByText('This session')).toBeVisible();
+
+	// Log out sat beside the name and squeezed a 13-character username to "walkmut...".
+	const name = page.getByText(user.username, { exact: true });
+	await expect(name).toBeVisible();
+	expect(await name.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(false);
+	const email = page.getByText(user.email, { exact: true });
+	expect(await email.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(false);
+
+	// Delete on this session signed nothing out you could see: the page stayed, and you
+	// were dropped later when the token ran out. Log out, above, is the way to leave.
+	const deletes = page.getByRole('button', { name: /^Delete session/ });
+	await expect(deletes).toHaveCount(1);
+	await expect(deletes).toHaveAccessibleName(/Firefox/);
+	await deletes.tap();
+	await expect(page.getByText(/Firefox/)).toHaveCount(0);
+	await expectNoHorizontalOverflow(page);
+	await other.close();
+	await context.close();
 });

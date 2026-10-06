@@ -6,6 +6,8 @@
 import { redirect } from '@sveltejs/kit';
 import { safeReturnTo } from '$lib/return_to';
 
+const NOTICES = ['true', 'expired', 'deleted', 'password_changed'] as const;
+
 export async function load({ parent, url }) {
 	// One channel for every "something just happened to your account" notice, since
 	// they all land on this page and only one can be true at a time.
@@ -30,7 +32,8 @@ export async function load({ parent, url }) {
 	if (email && notice !== 'deleted' && notice !== 'password_changed') {
 		redirect(302, returnTo);
 	}
+	// Only the notices the badge has words for. Anything else in `verified` showed "confirmed".
 	return {
-		notice
+		notice: NOTICES.find((n) => n === notice) ?? null
 	};
 }

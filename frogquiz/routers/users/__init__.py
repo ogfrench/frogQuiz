@@ -10,6 +10,7 @@ import os
 
 import asyncpg.exceptions
 from datetime import datetime
+from typing import Annotated
 
 import ormar
 import pydantic
@@ -25,13 +26,14 @@ import base64
 from frogquiz.auth import (
     get_password_hash,
     hash_session_key,
+    revoke_sessions,
     revoke_token,
     verify_password,
     get_current_user,
 )
 from frogquiz.cache import clear_cache_for_account
 from frogquiz.config import redis, settings, meilisearch, storage
-from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
+from frogquiz.helpers.ratelimit import enforce_resend_cooldown, rate_limit, rate_limit_key
 import uuid
 import bleach
 from pydantic import BaseModel
@@ -54,7 +56,10 @@ router.include_router(twofa.router, prefix="/2fa")
 
 
 class RouteUser(pydantic.BaseModel):
-    username: str
+    # The register form's rule (3 to 20 characters), trimmed. The API took any string, so a
+    # script could register an empty name, or "Ana " beside "Ana" (E17 in
+    # docs/edge-cases-2026-10.md).
+    username: Annotated[str, pydantic.StringConstraints(strip_whitespace=True, min_length=3, max_length=20)]
     # Mirrors the rule the register form enforces; without it the API accepted
     # a one-character password.
     password: str = pydantic.Field(min_length=8, max_length=100)
@@ -77,7 +82,16 @@ async def find_user_by_email(email: str) -> User | None:
     return user
 
 
+def _passwords_on() -> None:
+    """Sign-in is by emailed link since 5 Oct; the password routes answer only with the flag on."""
+    if not settings.enable_password_login:
+        raise HTTPException(status_code=404, detail="Not found")
+
+
 async def _sign_out_everywhere(user: User) -> None:
+    # Revoked first, so the access tokens those sessions handed out stop working now
+    # rather than when they expire; see revoke_sessions.
+    await revoke_sessions([session.id for session in await UserSession.objects.filter(user=user).all()])
     await UserSession.objects.filter(user=user).delete()
     await clear_cache_for_account(user)
 
@@ -91,7 +105,10 @@ router.include_router(oauth.router, tags=["users", "oauth"], prefix="/oauth")
     response_model_include={"id": ..., "verified": ..., "email": ...},
 )
 async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
-    await rate_limit(request, "register", limit=10, window_seconds=3600)
+    # Was 10 an hour per address, and an office shares one: the eleventh person signing up in
+    # the same room was locked out for an hour (E16 in docs/edge-cases-2026-10.md).
+    await rate_limit(request, "register", limit=50, window_seconds=3600)
+    _passwords_on()
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
     # Checked before anything is written. Without it the row is created, the send
@@ -125,7 +142,8 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     # source addresses.
     await rate_limit_key(f"register_addr:{user.email}", limit=5, window_seconds=3600)
     user.verify_key = str(os.urandom(16).hex())
-    res = await User.objects.filter((User.email == user.email) | (User.username == user.username)).all()
+    # Case-insensitively: "Ana" and "ana" would read as one person everywhere a name is shown.
+    res = await User.objects.filter((User.email == user.email) | (User.username.iexact(user.username))).all()
     if len(res) != 0:
         raise HTTPException(status_code=409, detail="User already exists")
 
@@ -164,10 +182,24 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
 
 
 @router.get("/logout")
+async def logout_link():
+    # Logging out used to be this GET, so any page could sign a user out just by
+    # sending them here: a link or a redirect is a top-level navigation, and the
+    # session cookies are SameSite=Lax, which carries them on exactly that. Old links
+    # and bookmarks now land on My Account, where Log out is a button.
+    return RedirectResponse("/account/settings", status_code=303)
+
+
+@router.post("/logout")
 async def logout(request: Request, response: Response):
+    # A POST, from the button on My Account. A cross-site form post does not carry
+    # SameSite=Lax cookies, so another site cannot trigger it.
     remember_token = request.cookies.get("rememberme_token")
     if remember_token is not None:
-        await UserSession.objects.filter(session_key=hash_session_key(remember_token)).delete()
+        session = await UserSession.objects.get_or_none(session_key=hash_session_key(remember_token))
+        if session is not None:
+            await revoke_sessions([session.id])
+            await session.delete()
     # Clearing the cookie only affects this browser; dropping the Redis entry is
     # what actually ends the session for a token that has already been copied.
     access_token = request.cookies.get("access_token")
@@ -177,7 +209,9 @@ async def logout(request: Request, response: Response):
     response.delete_cookie("expiry")
     response.delete_cookie("rememberme")
     response.delete_cookie("rememberme_token")
-    response.status_code = 302
+    # 303, not 302: the browser follows it with a GET of the home page rather than
+    # re-posting the form there.
+    response.status_code = 303
     response.headers["Location"] = "/"
     return response
 
@@ -190,7 +224,7 @@ async def check_token(user: User = Depends(get_current_user)):
 @router.get("/verify/{verify_key}")
 async def verify_user(verify_key: str, request: Request):
     # The key is 128 bits of os.urandom, so this is not guessable and the limit is
-    # defence in depth -- it keeps an unauthenticated endpoint from being used to
+    # defense in depth -- it keeps an unauthenticated endpoint from being used to
     # hammer the database. Generous, because a real person may click the same link
     # a few times.
     await rate_limit(request, "verify_email", limit=30, window_seconds=3600)
@@ -233,14 +267,14 @@ async def change_password(
     # row should never meet it, and a session-stealer grinding at the password still
     # meets it quickly.
     await rate_limit_key(f"password_update:{user.id}", limit=10, window_seconds=3600)
+    _passwords_on()
     if user.password is None:
         raise HTTPException(status_code=400, detail="This account has no password to change")
     if not verify_password(password_data.old_password, user.password):
         raise HTTPException(status_code=400, detail="Incorrect password")
     user.password = get_password_hash(password_data.new_password)
     await user.update()
-    await clear_cache_for_account(user)
-    await UserSession.objects.filter(user=user).delete()
+    await _sign_out_everywhere(user)
     response.delete_cookie("access_token")
     response.delete_cookie("expiry")
     response.delete_cookie("rememberme")
@@ -290,7 +324,9 @@ _RESET_ACK = {"message": "If that address has an account, a reset link is on its
 @router.post("/forgot-password")
 async def forgotten_password(forgot_password: ForgotPassword, request: Request):
     # Unrated, this endpoint can be used to spam a victim's inbox or hammer the DB.
-    await rate_limit(request, "forgot_password", limit=5, window_seconds=3600)
+    # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
+    await rate_limit(request, "forgot_password", limit=20, window_seconds=3600)
+    _passwords_on()
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     # Limited per address as well as per source IP. The IP bucket is what stops
@@ -315,7 +351,8 @@ async def forgotten_password(forgot_password: ForgotPassword, request: Request):
 
 
 class ResendVerification(BaseModel):
-    email: str
+    # The longest address SMTP allows. It becomes a Redis key, so it is bounded.
+    email: str = pydantic.Field(max_length=254)
 
 
 @router.post("/resend-verification")
@@ -326,7 +363,13 @@ async def resend_verification(body: ResendVerification, request: Request):
     sent while the relay was down, the address stayed unverified and re-registering
     returned 409 forever.
     """
-    await rate_limit(request, "resend_verification", limit=5, window_seconds=3600)
+    _passwords_on()
+    # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
+    # First, so one client cannot mint cooldown keys without ever meeting a limit.
+    await rate_limit(request, "resend_verification", limit=20, window_seconds=3600)
+    # Before the per-recipient bucket, so an early ask is refused without spending it. Its
+    # Retry-After is how the page knows this was the short wait and not the hourly limit.
+    await enforce_resend_cooldown(body.email)
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     await rate_limit_key(f"resend_verification_addr:{body.email.strip().lower()}", limit=3, window_seconds=3600)
@@ -353,6 +396,7 @@ class ResetPassword(BaseModel):
 
 @router.post("/reset-password")
 async def reset_password_with_token(reset_password: ResetPassword, response: Response):
+    _passwords_on()
     # GETDEL rather than GET-then-DELETE, so two concurrent requests for the same
     # token can't both pass the check before either invalidates it.
     redis_res = await redis.getdel(f"reset_passwd:{reset_password.token}")
@@ -390,7 +434,11 @@ async def list_sessions(user: User = Depends(get_current_user)):
 
 @router.delete("/sessions/{session_id}")
 async def delete_session(session_id: uuid.UUID, user: User = Depends(get_current_user)):
-    await UserSession.objects.filter(user=user, id=session_id).delete()
+    # Looked up as this user's, so nobody can revoke a session that is not theirs.
+    session = await UserSession.objects.get_or_none(user=user, id=session_id)
+    if session is not None:
+        await revoke_sessions([session.id])
+        await session.delete()
     return {"message": "Session deleted"}
 
 
@@ -409,30 +457,13 @@ async def get_session(request: Request, user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Session not found")
 
 
-class DeleteUserInput(BaseModel):
-    password: str
+async def delete_account(user: User, access_token: str | None = None) -> None:
+    """Delete an account and everything it owns: quizzes, uploads, sessions, API keys.
 
-
-@router.delete("/me")
-async def delete_user_account(
-    input_data: DeleteUserInput,
-    request: Request,
-    response: Response,
-    user: User = Depends(get_current_user),
-):
-    # Keyed on the account, not the source address: the caller is already
-    # authenticated, so the account is the thing being attacked, and each attempt
-    # costs a deliberately expensive argon2 verify. Unthrottled, this is both a
-    # password oracle behind a borrowed session and a cheap way to burn CPU.
-    await rate_limit_key(f"delete_account:{user.id}", limit=5, window_seconds=3600)
-    # OAuth accounts are created with no password at all (frogquiz/oauth/*), and
-    # verify_password(x, None) raises rather than returning False -- a 500 with no
-    # explanation for the one person who cannot act on it.
-    if user.password is None:
-        raise HTTPException(status_code=400, detail="This account has no password to confirm with")
-    if not verify_password(input_data.password, user.password):
-        raise HTTPException(status_code=400, detail="Incorrect password")
-
+    Shared by DELETE /users/me and the admin routes, which used to be a bare
+    User.objects.delete() that left the files on disk, the search documents in the
+    index and the user cached in Redis, still able to sign in for a day (C9).
+    """
     # Everything the cleanup needs, read before anything is destroyed.
     #
     # Deliberately NOT re-reading the user from the database first. get_current_user
@@ -443,8 +474,7 @@ async def delete_user_account(
     # what is used below.
     public_quiz_ids = [str(quiz.id) for quiz in await Quiz.objects.filter(user_id=user, public=True).all()]
     storage_names = [
-        item.storage_path or item.id.hex
-        for item in await StorageItem.objects.filter(user=user, deleted_at=None).all()
+        item.storage_path or item.id.hex for item in await StorageItem.objects.filter(user=user, deleted_at=None).all()
     ]
     api_keys = [row.key for row in await ApiKey.objects.filter(user=user).all()]
 
@@ -454,6 +484,10 @@ async def delete_user_account(
     # controller foreign keys were made to cascade (c3f8a1d47b62).
     async with database.transaction():
         await UserSession.objects.filter(user=user).delete()
+        # Marked deleted while they still name their owner: the foreign key sets the owner
+        # to NULL when the account row goes, and those ownerless rows with no deleted_at
+        # kept answering /storage/info and /storage/download (C8 in docs/crud-audit-2026-10.md).
+        await StorageItem.objects.filter(user=user, deleted_at=None).update(deleted_at=datetime.now())
         await Quiz.objects.filter(user_id=user).delete()
         await User.objects.filter(id=user.id).delete()
 
@@ -464,16 +498,8 @@ async def delete_user_account(
     # The cache clear is the load-bearing one: get_current_user reads the user out of
     # Redis, where this very request just warmed an entry, so without it a deleted
     # account keeps authenticating for up to cache_expiry (24h).
-    # Cookies first, because setting them on the response cannot fail. Redis can,
-    # and if it did before this point the browser would still be holding a session
-    # for an account that no longer exists.
-    response.delete_cookie("access_token")
-    response.delete_cookie("expiry")
-    response.delete_cookie("rememberme")
-    response.delete_cookie("rememberme_token")
     try:
         await clear_cache_for_account(user)
-        access_token = request.cookies.get("access_token")
         if access_token is not None:
             await revoke_token(access_token.removeprefix("Bearer "))
         for key in api_keys:
@@ -502,6 +528,39 @@ async def delete_user_account(
         except Exception:
             LOGGER.exception("Could not delete a deleted user's uploads")
 
+
+class DeleteUserInput(BaseModel):
+    password: str | None = None
+    # With passwords off (sign-in by emailed link, 5 Oct), the account's address, typed out.
+    email: str | None = None
+
+
+@router.delete("/me")
+async def delete_user_account(
+    input_data: DeleteUserInput,
+    request: Request,
+    response: Response,
+    user: User = Depends(get_current_user),
+):
+    # Keyed on the account, not the source address: the caller is already
+    # authenticated, so the account is the thing being attacked, and each attempt
+    # costs a deliberately expensive argon2 verify. Unthrottled, this is both a
+    # password oracle behind a borrowed session and a cheap way to burn CPU.
+    await rate_limit_key(f"delete_account:{user.id}", limit=5, window_seconds=3600)
+    # OAuth accounts are created with no password at all (frogquiz/oauth/*), and
+    # verify_password(x, None) raises rather than returning False -- a 500 with no
+    # explanation for the one person who cannot act on it.
+    if settings.enable_password_login and user.password is not None:
+        if not verify_password(input_data.password or "", user.password):
+            raise HTTPException(status_code=400, detail="Incorrect password")
+    elif (input_data.email or "").strip().lower() != user.email.lower():
+        raise HTTPException(status_code=400, detail="That is not this account's email address")
+
+    await delete_account(user, request.cookies.get("access_token"))
+    response.delete_cookie("access_token")
+    response.delete_cookie("expiry")
+    response.delete_cookie("rememberme")
+    response.delete_cookie("rememberme_token")
     return {"message": "Account deleted"}
 
 
@@ -509,9 +568,7 @@ async def delete_user_account(
 async def get_own_avatar(user: User = Depends(get_current_user)):
     # See routers/avatar.py: a patched Content-Type left text/plain in place as a
     # second header and every avatar rendered as a broken image.
-    return Response(
-        content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml"
-    )
+    return Response(content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml")
 
 
 @router.get("/avatar/{user_id}")
@@ -519,9 +576,7 @@ async def get_other_avatar(user_id: uuid.UUID):
     user = await User.objects.filter(id=user_id).get_or_none()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return Response(
-        content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml"
-    )
+    return Response(content=gzip.decompress(base64.b64decode(user.avatar)), media_type="image/svg+xml")
 
 
 class InternalAuthData(BaseModel):

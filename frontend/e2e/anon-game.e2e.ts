@@ -4,6 +4,8 @@
 
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 import {
+	advancePastResults,
+	advanceToFinalResults,
 	expectNoHorizontalOverflow,
 	hostFromViewPage,
 	joinAsPlayer,
@@ -66,7 +68,7 @@ async function playGame(
 
 	await page.getByRole('button', { name: 'Start game' }).click();
 
-	await page.getByRole('button', { name: /Next Question/ }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
 	await ana.getByRole('button', { name: 'Lisbon' }).click();
 	await bruno.getByRole('button', { name: 'Lisbon' }).click();
 	await carla.getByRole('button', { name: 'Porto' }).click();
@@ -74,7 +76,7 @@ async function playGame(
 	await page.getByRole('button', { name: 'Show results' }).click();
 	await page.waitForTimeout(resultsDwellMs);
 
-	await page.getByRole('button', { name: /Next Question/ }).click();
+	await advancePastResults(page);
 	await ana.getByRole('button', { name: '4', exact: true }).click();
 	await carla.getByRole('button', { name: '5', exact: true }).click();
 	// Nobody ends the question: the 5 s timer has to.
@@ -85,9 +87,16 @@ async function playGame(
 	await page.getByRole('button', { name: 'Show results' }).click();
 	await page.waitForTimeout(resultsDwellMs);
 
-	await page.getByRole('button', { name: /final results/i }).click();
-	await expect(ana.getByText('1st Place')).toBeVisible();
-	await expect(page.getByText('1st Place')).toBeVisible();
+	await advanceToFinalResults(page);
+	// Scoped to the podium block, not the page. The host screen legitimately says
+	// "1st place" twice -- once on the gold block and once in the standings row for the
+	// winner -- so a bare getByText is a strict-mode violation rather than a real check.
+	// The player's own medal bar, not the page. Their screen shows the podium too, and
+	// the block's place label is now in the DOM at phone width as well -- it used to be
+	// `hidden sm:block`, which removed it, and is `max-sm:sr-only` so a screen reader
+	// still gets it. That made a bare getByText ambiguous on this side as well.
+	await expect(ana.locator('.fixed.bottom-0').getByText('1st place')).toBeVisible();
+	await expect(page.locator('.podium-block.is-gold').getByText('1st place')).toBeVisible();
 
 	// Players' podiums are rendered from the server's totals, so they are the reference.
 	const truth: Record<string, number> = {};
@@ -102,14 +111,20 @@ test('anonymous host runs a full game with three players', async ({ page, reques
 	expect(truth.bruno).toBeGreaterThan(0);
 	expect(truth.carla).toBe(0);
 	await expect(ana.getByText(`Your score: ${truth.anabela}`)).toBeVisible();
-	await expect(ana.getByText("You're on place 1!")).toBeVisible();
+	// The winner gets a medal instead of their place in words -- never both. This still
+	// asserted the words, which player-medal.e2e.ts explicitly asserts the winner does
+	// NOT get, so the two specs contradicted each other.
+	await expect(ana.locator('.fixed.bottom-0').getByText('1st place')).toBeVisible();
+	await expect(ana.locator('.fixed.bottom-0').getByText(/You.re on place/)).toHaveCount(0);
 
 	for (const name of NAMES) {
 		expect(await podiumScore(page, name), `host podium score for ${name}`).toBe(truth[name]);
 	}
 	// An anonymous host has nowhere to save results to; export still works.
 	await expect(page.getByRole('button', { name: 'Save results' })).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Request result download' })).toBeVisible();
+	// One press now: the button says what it does rather than minting a token and then
+	// renaming itself. 'Request result download' is the old label.
+	await expect(page.getByRole('button', { name: 'Download results' })).toBeVisible();
 	for (const p of [page, ana]) await expectNoHorizontalOverflow(p);
 	for (const { context } of players) await context.close();
 });

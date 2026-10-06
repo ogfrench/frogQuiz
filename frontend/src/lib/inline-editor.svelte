@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { run } from 'svelte/legacy';
 
-	// ckeditor5 touches `document` while its modules initialise, which crashes any
+	// ckeditor5 touches `document` while its modules initialize, which crashes any
 	// server-side render. It is only ever used in onMount, so load it there.
 	import 'ckeditor5/ckeditor5.css';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
@@ -21,11 +21,17 @@ SPDX-License-Identifier: MPL-2.0
 	interface Props {
 		// import Autoformat from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 		text?: string;
+		/**
+		 * Accessible name for the editable. CKEditor labels every instance "Rich Text
+		 * Editor", so with the quiz title and every question's text on one page they were
+		 * indistinguishable to a screen reader -- and to anything else driving the page.
+		 */
+		label?: string;
 	}
 
-	let { text = $bindable('') }: Props = $props();
+	let { text = $bindable(''), label = '' }: Props = $props();
 
-	let html_el = $state();
+	let html_el = $state<HTMLElement>();
 
 	// Sanitizes on every assignment, not just our own triggerChange, so a value
 	// coming in from the parent (e.g. legacy unsanitized data loaded from the
@@ -69,10 +75,8 @@ SPDX-License-Identifier: MPL-2.0
 		Editor.create(html_el, {
 			licenseKey: 'GPL',
 			// plugins: [Strikethrough],
-			config: {
-				enterMode: BalloonEditor.ENTER_DIV,
-				shiftEnterMode: BalloonEditor.ENTER_BR
-			},
+			// A `config: { enterMode, shiftEnterMode }` block sat here: CKEditor 4 options.
+			// CKEditor 5 has neither constant, so both were undefined and it was ignored.
 			toolbar: [
 				'bold',
 				'italic',
@@ -86,6 +90,9 @@ SPDX-License-Identifier: MPL-2.0
 		})
 			.then((newEditor) => {
 				editor = newEditor;
+				if (label) {
+					newEditor.ui.getEditableElement()?.setAttribute('aria-label', label);
+				}
 				editor.setData(text);
 				editor.model.document.on('change:data', () => {
 					triggerChange();
@@ -102,7 +109,7 @@ SPDX-License-Identifier: MPL-2.0
 <div
 	bind:this={html_el}
 	contenteditable="true"
-	class="border-input bg-background focus-within:ring-ring min-w-[5rem] resize-none rounded-lg border px-3 py-2 text-center focus-within:ring-2 focus-within:outline-none"
+	class="border-input bg-background focus-within:ring-ring min-w-[5rem] resize-none rounded-md border px-3 py-2 text-center focus-within:ring-2 focus-within:outline-none"
 ></div>
 
 <style>
@@ -110,7 +117,7 @@ SPDX-License-Identifier: MPL-2.0
 		display: none;
 	}
 
-	/* ckeditor5.css sets its own text colour, which is a near-black constant. It does
+	/* ckeditor5.css sets its own text color, which is a near-black constant. It does
 	   not know about the theme, so in dark mode the question title rendered black on
 	   a dark ground and was all but invisible. Hand it the tokens instead of letting
 	   it pick. The balloon toolbar needs the same, or it arrives as a white slab. */
@@ -125,7 +132,7 @@ SPDX-License-Identifier: MPL-2.0
 		min-height: 2.75rem;
 		padding: 0.5rem 0.75rem;
 		border: 1px solid var(--input);
-		border-radius: var(--radius);
+		border-radius: var(--radius-md);
 		background: var(--background);
 	}
 

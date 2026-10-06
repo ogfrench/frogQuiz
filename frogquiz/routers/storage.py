@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 from base64 import b64encode
@@ -10,15 +11,36 @@ from fastapi.responses import StreamingResponse, RedirectResponse
 from pydantic import BaseModel
 
 from frogquiz.auth import get_current_user, get_current_user_optional
-from frogquiz.config import settings, storage, arq, ALLOWED_MIME_TYPES
-from frogquiz.db.models import User, StorageItem, PublicStorageItem, UpdateStorageItem, PrivateStorageItem
-from frogquiz.helpers import check_image_string
+from frogquiz.config import settings, storage, arq, UPLOAD_LIMITS
+from frogquiz.image_dimensions import image_dimensions, HEADER_BYTES
+from frogquiz.db.models import User, StorageItem, PublicStorageItem, UpdateStorageItem, PrivateStorageItem, Quiz
+from frogquiz.helpers import adjust_storage_used, check_image_string, extract_image_ids_from_quiz
+from frogquiz.helpers.ratelimit import rate_limit
 from frogquiz.storage.errors import DownloadingFailedError
 from uuid import uuid4, UUID
 
 settings = settings()
 
 router = APIRouter()
+
+
+async def release_storage_quota(user: User | None, size: int) -> None:
+    """Give a user back the bytes a deleted file was using.
+
+    `storage_used` was only ever incremented -- by the calculate_hash worker job, once
+    per upload -- and nothing anywhere decremented it: not this delete endpoint, not the
+    quiz-update job that unlinks a replaced image, not account deletion. So the figure
+    was a lifetime upload counter, not usage, and the quota built on it was a lifetime
+    cap. Swap a cover image enough times and you are locked out for good with no way to
+    reclaim anything, which only became reachable once the quota was actually enforced.
+
+    Clamped at zero because the column declares `minimum=0`: a double release on a row
+    whose size was never measured (every row predating the size fix stores 0) would
+    otherwise raise rather than no-op.
+    """
+    if user is None or size <= 0:
+        return
+    await adjust_storage_used(user.id, -size)
 
 
 def headers_from_storage_item(item: StorageItem) -> dict[str, str]:
@@ -41,7 +63,9 @@ async def download_file(file_name: str):
     if not checked_image_string[0]:
         raise HTTPException(status_code=400, detail="Invalid file name")
     if checked_image_string[1] is not None:
-        item = await StorageItem.objects.get_or_none(id=checked_image_string[1])
+        # A deleted image keeps its row, so without deleted_at here it stayed downloadable,
+        # and the local backend answers 200 with no body for a file that is gone (C8, C18).
+        item = await StorageItem.objects.get_or_none(id=checked_image_string[1], deleted_at=None)
         if item is None:
             print("Item not found")
             raise HTTPException(status_code=404, detail="File not found")
@@ -81,7 +105,7 @@ async def get_basic_file_info(file_name: str) -> Response:
     if not checked_image_string[0]:
         raise HTTPException(status_code=404, detail="Invalid file name")
     if checked_image_string[1] is not None:
-        item = await StorageItem.objects.get_or_none(id=checked_image_string[1])
+        item = await StorageItem.objects.get_or_none(id=checked_image_string[1], deleted_at=None)
         if item is None:
             raise HTTPException(status_code=404, detail="File not found")
         # return PublicStorageItem.from_db_model(item)
@@ -100,7 +124,7 @@ async def download_file_head(file_name: str) -> Response:
     if not checked_image_string[0]:
         raise HTTPException(status_code=404, detail="Invalid file name")
     if checked_image_string[1] is not None:
-        item = await StorageItem.objects.get_or_none(id=checked_image_string[1])
+        item = await StorageItem.objects.get_or_none(id=checked_image_string[1], deleted_at=None)
         if item is None:
             raise HTTPException(status_code=404, detail="File not found")
         # return PublicStorageItem.from_db_model(item)
@@ -117,20 +141,100 @@ async def download_file_head(file_name: str) -> Response:
     return resp
 
 
+class UploadLimits(BaseModel):
+    """What the editor's file picker is allowed to offer."""
+
+    # mime type -> largest file in bytes
+    per_type: dict[str, int]
+    # The smallest of those, which is the number to show a person: the picker does not
+    # know which type they are about to choose.
+    max_file_size: int
+    accepted_types: list[str]
+
+
+@router.get("/limits")
+async def get_upload_limits() -> UploadLimits:
+    """The upload rules, so the browser does not carry its own copy of them.
+
+    The editor used to hardcode a 10MB cap and its own list of four mime types in
+    `uploader.svelte`, neither of which matched the server. Reading them means a
+    change to `config.py` moves both.
+    """
+    return UploadLimits(
+        per_type=UPLOAD_LIMITS,
+        max_file_size=min(UPLOAD_LIMITS.values()),
+        accepted_types=list(UPLOAD_LIMITS),
+    )
+
+
+def _reject_oversized_pixels(header: bytes) -> None:
+    """413 if the image is larger than max_image_dimension on either side.
+
+    Unreadable headers pass: the format allow-list already gates what may be stored, the
+    worker hashes rather than decodes, and the editor only ever sends the four image types
+    this parser knows. The goal is to stop the pathological raster, not to be a second
+    content-type gate.
+    """
+    dims = image_dimensions(header)
+    if dims is None:
+        return
+    cap = settings.max_image_dimension
+    width, height = dims
+    if width > cap or height > cap:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Image is too large: {width}x{height} pixels, limit is {cap}x{cap}",
+        )
+
+
 @router.post("/")
 async def upload_file(
-    file: UploadFile = File(), user: User | None = Depends(get_current_user_optional)
+    request: Request, file: UploadFile = File(), user: User | None = Depends(get_current_user_optional)
 ) -> PublicStorageItem:
     # Cover/background/question images are uploaded from the quiz editor, which an
     # anonymous host can use end to end (see routers/editor.py). Requiring a login
     # here made every upload from that flow fail silently in the UI -- there is no
     # per-user quota to check without a user, so anonymous uploads skip it.
-    if file.content_type not in ALLOWED_MIME_TYPES:
+    if user is None:
+        # With no quota either, this was the one way to fill the disk without an account
+        # (C5 in docs/crud-audit-2026-10.md). Thirty in ten minutes is a quiz with an image
+        # on every question; clean_orphaned_uploads deletes what never reaches a quiz.
+        await rate_limit(request, "upload_anon", limit=30, window_seconds=600)
+    limit = UPLOAD_LIMITS.get(file.content_type)
+    if limit is None:
         raise HTTPException(status_code=422, detail="Unsupported")
-    if user is not None and user.storage_used > settings.free_storage_limit:
+    # The size, before anything is written. This route used to pass size=0 into storage
+    # and store 0 on the row, so nothing in the request path ever knew how big the file
+    # was: the only cap in the product was Uppy's, in the browser, and this endpoint
+    # takes anonymous uploads. `request_size_guard` in frogquiz/__init__.py rejects on
+    # Content-Length before the body is read; this is the check that cannot be lied to,
+    # because by now the bytes are counted.
+    #
+    # Starlette fills .size from the multipart parser. It is None only if the part
+    # carried no length, in which case fall back to measuring the spooled file.
+    file_size = file.size
+    if file_size is None:
+        file_size = file.file.seek(0, 2)
+        file.file.seek(0)
+    if file_size > limit:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File is too large: {file_size} bytes, limit is {limit}",
+        )
+    if file_size == 0:
+        raise HTTPException(status_code=422, detail="File is empty")
+    # Pixels, not just bytes: a 20000x20000 PNG of one color is under the byte cap and a
+    # ~1.6GB bitmap in every browser that renders it. Read from the spooled file and seek
+    # back, so nothing is re-read and nothing is decoded.
+    header = file.file.read(HEADER_BYTES)
+    file.file.seek(0)
+    _reject_oversized_pixels(header)
+    # Checked against the file in hand, not just the account's running total, so the
+    # last upload before the quota cannot be an arbitrarily large one. The total is
+    # maintained by the calculate_hash worker job.
+    if user is not None and user.storage_used + file_size > settings.free_storage_limit:
         raise HTTPException(status_code=409, detail="Storage limit reached")
     file_id = uuid4()
-    file_size = 0
     file_obj = StorageItem(
         id=file_id,
         uploaded_at=datetime.now(),
@@ -156,18 +260,45 @@ async def upload_file(
 async def upload_raw_file(request: Request, user: User = Depends(get_current_user)) -> PublicStorageItem:
     if user.storage_used > settings.free_storage_limit:
         raise HTTPException(status_code=409, detail="Storage limit reached")
+    mime_type = request.headers.get("Content-Type")
+    limit = UPLOAD_LIMITS.get(mime_type)
+    if limit is None:
+        raise HTTPException(status_code=422, detail="Unsupported")
     file_id = uuid4()
     data_file = SpooledTemporaryFile(max_size=1000)
+    # This one reads the body itself, so unlike the multipart route it can stop in the
+    # middle of a transfer rather than measuring the whole thing after the fact. It
+    # stored size=0 and had no cap at all, which on the S3 backend means the payload
+    # is then read into memory in one piece to be signed.
+    file_size = 0
     async for chunk in request.stream():
+        file_size += len(chunk)
+        if file_size > limit:
+            data_file.close()
+            raise HTTPException(status_code=413, detail=f"File is too large: limit is {limit} bytes")
         data_file.write(chunk)
+    if file_size == 0:
+        data_file.close()
+        raise HTTPException(status_code=422, detail="File is empty")
+    data_file.seek(0)
+    header = data_file.read(HEADER_BYTES)
+    data_file.seek(0)
+    try:
+        _reject_oversized_pixels(header)
+    except HTTPException:
+        data_file.close()
+        raise
+    if user.storage_used + file_size > settings.free_storage_limit:
+        data_file.close()
+        raise HTTPException(status_code=409, detail="Storage limit reached")
     data_file.seek(0)
     file_obj = StorageItem(
         id=file_id,
         uploaded_at=datetime.now(),
-        mime_type=request.headers.get("Content-Type"),
+        mime_type=mime_type,
         hash=None,
         user=user,
-        size=0,
+        size=file_size,
         deleted_at=None,
         alt_text=None,
     )
@@ -176,7 +307,8 @@ async def upload_raw_file(request: Request, user: User = Depends(get_current_use
         file_name=file_id.hex,
         # skipcq: PYL-W0212
         file_data=data_file._file,
-        mime_type=request.headers.get("Content-Type"),
+        mime_type=mime_type,
+        size=file_size,
     )
     await file_obj.save()
     await arq.enqueue_job("calculate_hash", file_id.hex)
@@ -196,12 +328,21 @@ async def mark_file_as_deleted(file_id: UUID, user: User = Depends(get_current_u
     file_data = await StorageItem.objects.get_or_none(id=file_id, user=user, deleted_at=None)
     if file_data is None:
         raise HTTPException(status_code=404, detail="File not found")
+    # Deleting it would leave the quiz showing a broken image (C10). Images go with their
+    # quiz, or by taking them off it in the editor. Only the owner's quizzes are read: no
+    # other account can put this image on a quiz (routers/editor.py).
+    for quiz in await Quiz.objects.filter(user_id=user.id).all():
+        if str(file_id) in {str(image) for image in extract_image_ids_from_quiz(quiz)}:
+            raise HTTPException(status_code=409, detail="This image is used by one of your quizzes")
     storage_path = file_data.storage_path
     if storage_path is None:
         storage_path = file_data.id.hex
-    await storage.delete(storage_path)
+    # A list: given a string, the local backend deleted one file per character of the name
+    # and kept the real one, while the quota below was released anyway (C18).
+    await storage.delete([storage_path])
     file_data.deleted_at = datetime.now()
     await file_data.update()
+    await release_storage_quota(user, file_data.size)
     return
 
 
@@ -249,6 +390,7 @@ async def get_latest_images(count: int = 50, user: User = Depends(get_current_us
     count = min(count, 50)
     items = (
         await StorageItem.objects.filter(user=user)
+        .filter(StorageItem.deleted_at == None)  # noqa: E711  (C11)
         .limit(count)
         .select_related([StorageItem.quizzes, StorageItem.quiztivities])
         .order_by(StorageItem.uploaded_at.desc())

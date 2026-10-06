@@ -14,17 +14,38 @@ import { htmlToPlainText } from './sanitize';
 // counters share this exact number instead of a second hardcoded copy.
 export const TITLE_MAX_LENGTH = 100;
 export const DESCRIPTION_MAX_LENGTH = 500;
+// Question text is rich text like the title, so it is measured the same way. Answers are
+// plain. Both are new on 2026-10-02: the editor bounded the title and description and
+// nothing bounded these, so a question or answer of any length could be typed, saved and
+// then rendered to a whole room. The matching server-side bounds are MAX_QUESTION_LENGTH
+// and MAX_ANSWER_LENGTH in frogquiz/db/models.py -- keep the four numbers in step.
+export const QUESTION_MAX_LENGTH = 250;
+export const ANSWER_MAX_LENGTH = 100;
+// Mirror frogquiz/db/models.py. MAX_ANSWERS_PER_QUESTION is a hard ceiling (scoring
+// concatenates one-digit option indices) and MAX_QUESTION_SECONDS is the server's timer
+// bound; both must match the server or the editor lets through a quiz that 422s on save.
+// The question COUNT is deliberately not shared: the editor caps at 50 for UX while the
+// server allows 1000 as a DoS ceiling -- those are meant to differ, so they are not pinned.
+export const MAX_ANSWERS_PER_QUESTION = 10;
+export const MAX_QUESTION_SECONDS = 999;
 
 export const ABCDQuestionSchema = yup
 	.array()
 	.of(
 		yup.object({
 			right: yup.boolean().required(),
-			answer: yup.string().trim().required('You need an answer')
+			answer: yup
+				.string()
+				.trim()
+				.required('You need an answer')
+				.max(
+					ANSWER_MAX_LENGTH,
+					`An answer has to be shorter than ${ANSWER_MAX_LENGTH} characters`
+				)
 		})
 	)
 	.min(2, 'You need at least 2 answers')
-	.max(16, "You can't have more than 16 answers");
+	.max(MAX_ANSWERS_PER_QUESTION, `You can't have more than ${MAX_ANSWERS_PER_QUESTION} answers`);
 
 export const VotingQuestionSchema = yup
 	.array()
@@ -35,7 +56,7 @@ export const VotingQuestionSchema = yup
 		})
 	)
 	.min(2, 'You need at least 2 answers')
-	.max(16, "You can't have more than 16 answers");
+	.max(MAX_ANSWERS_PER_QUESTION, `You can't have more than ${MAX_ANSWERS_PER_QUESTION} answers`);
 
 export const RangeQuestionSchema = yup.object({
 	min: yup.number(),
@@ -53,7 +74,7 @@ export const TextQuestionSchema = yup
 		})
 	)
 	.min(1, 'You need at least 1 answer')
-	.max(16, "You can't have more than 16 answers");
+	.max(MAX_ANSWERS_PER_QUESTION, `You can't have more than ${MAX_ANSWERS_PER_QUESTION} answers`);
 
 export const dataSchema = yup.object({
 	public: yup.boolean().required(),
@@ -97,10 +118,17 @@ export const dataSchema = yup.object({
 					)
 					.test(
 						'max-length',
-						'The question-title has to be shorter than 299 characters',
-						(value) => htmlToPlainText(value ?? '').length <= 299
+						`The question-title has to be shorter than ${QUESTION_MAX_LENGTH} characters`,
+						(value) => htmlToPlainText(value ?? '').length <= QUESTION_MAX_LENGTH
 					),
-				time: yup.number().required().positive('The time has to be positive'),
+				time: yup
+					.number()
+					.required()
+					.positive('The time has to be positive')
+					.max(
+						MAX_QUESTION_SECONDS,
+						`The time can be at most ${MAX_QUESTION_SECONDS} seconds`
+					),
 				image: yup.string().nullable().lowercase(),
 				answers: yup.lazy((v) => {
 					if (Array.isArray(v)) {
@@ -124,3 +152,8 @@ export const dataSchema = yup.object({
 		.min(1, 'You need at least one question')
 		.max(50, "You can't have more than 50 questions")
 });
+
+// `yup.reach` is typed to return a Reference as well, which has no isValidSync. Every path
+// passed here names a field, so the cast holds.
+export const fieldIsValid = (schema: yup.Schema, path: string, value: unknown): boolean =>
+	(yup.reach(schema, path) as yup.Schema).isValidSync(value);

@@ -106,6 +106,10 @@ async def auth(request: Request, response: Response):
     user_data = GitHubOauthResponse(**data)
     if user_data.email is None:
         return RedirectResponse("/account/oauth-error?error=email")
+    # Only the team's domains sign in, by link or by a provider (5 Oct). These providers are
+    # off unless configured, and would otherwise make an account for any address.
+    if not settings.email_domain_allowed(user_data.email):
+        raise HTTPException(status_code=403, detail="Sign in with a frog or Capgemini address")
         # REGISTER USER
     user = await User.objects.get_or_none(
         email=user_data.email,

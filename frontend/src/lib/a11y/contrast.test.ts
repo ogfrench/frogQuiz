@@ -5,13 +5,13 @@
 import { describe, expect, it } from 'vitest';
 import { aaThreshold, contrastRatio, deltaE, hexToRgb, oklchToRgb } from './contrast';
 
-describe('colour parsing', () => {
+describe('color parsing', () => {
 	it('reads both hex lengths', () => {
 		expect(hexToRgb('#fff')).toEqual([255, 255, 255]);
 		expect(hexToRgb('#f98e8a')).toEqual([249, 142, 138]);
 	});
 
-	it('rejects anything that is not a colour', () => {
+	it('rejects anything that is not a color', () => {
 		expect(() => hexToRgb('#12345')).toThrow();
 		expect(() => oklchToRgb('#fff')).toThrow();
 	});
@@ -54,11 +54,11 @@ describe('aaThreshold', () => {
 });
 
 describe('deltaE', () => {
-	it('is zero for a colour against itself', () => {
+	it('is zero for a color against itself', () => {
 		expect(deltaE('#f98e8a', '#f98e8a')).toBeCloseTo(0, 6);
 	});
 
-	it('separates colours that look different', () => {
+	it('separates colors that look different', () => {
 		expect(deltaE('#f98e8a', '#46bff4')).toBeGreaterThan(deltaE('#f98e8a', '#fa8f8b'));
 	});
 });

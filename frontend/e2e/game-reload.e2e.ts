@@ -55,7 +55,7 @@ test('a player who reloads in the lobby is still in the game and can answer', as
 	const { player } = await setUp(page, request, browser);
 	await reloadHydrated(player.page);
 	await page.getByRole('button', { name: 'Start game' }).click();
-	await page.getByRole('button', { name: /Next Question/ }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
 	await player.page.getByRole('button', { name: 'Yes' }).click();
 	await expect(page.getByText('1 answer submitted')).toBeVisible({ timeout: 5000 });
 	await player.context.close();
@@ -64,11 +64,17 @@ test('a player who reloads in the lobby is still in the game and can answer', as
 test('the host can reload mid-game and carry on', async ({ page, request, browser }) => {
 	const { player } = await setUp(page, request, browser);
 	await page.getByRole('button', { name: 'Start game' }).click();
-	await page.getByRole('button', { name: /Next Question/ }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
 	await player.page.getByRole('button', { name: 'Yes' }).click();
 	await page.reload();
 	// Whatever screen it comes back on, the host must be able to move the game on.
-	const next = page.getByRole('button', { name: /Next Question|Show results|Start game/ });
+	// Scoreboard is in the list because the standings are now a host step of their own,
+	// so a reload timed just after the answers can legitimately come back on it. This
+	// passes today only because the reload lands mid-question; without it the test is one
+	// timing change away from a confusing failure.
+	const next = page.getByRole('button', {
+		name: /Next question|Show results|Scoreboard|Start game/
+	});
 	await expect(next.first()).toBeVisible({ timeout: 15_000 });
 	test.info().annotations.push({
 		type: 'host came back on',
@@ -89,7 +95,7 @@ test.describe('repeated and mid-question reloads', () => {
 		await reloadHydrated(player.page);
 		await reloadHydrated(player.page);
 		await page.getByRole('button', { name: 'Start game' }).click();
-		await page.getByRole('button', { name: /Next Question/ }).click();
+		await page.getByRole('button', { name: /Next question/ }).click();
 		await expect(player.page.getByRole('button', { name: 'Yes' })).toBeVisible({
 			timeout: 5000
 		});
@@ -103,7 +109,7 @@ test.describe('repeated and mid-question reloads', () => {
 	}) => {
 		const { player } = await setUp(page, request, browser);
 		await page.getByRole('button', { name: 'Start game' }).click();
-		await page.getByRole('button', { name: /Next Question/ }).click();
+		await page.getByRole('button', { name: /Next question/ }).click();
 		await expect(player.page.getByRole('button', { name: 'Yes' })).toBeVisible();
 		await reloadHydrated(player.page);
 		await expect(player.page.getByRole('button', { name: 'Yes' })).toBeVisible({

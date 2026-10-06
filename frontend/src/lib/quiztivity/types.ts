@@ -46,7 +46,7 @@ export interface Abcd {
 export interface QuizTivityPage {
 	title?: string;
 	type: QuizTivityTypes;
-	data: Pdf | Memory | Markdown;
+	data: Pdf | Memory | Markdown | Abcd;
 	id?: string;
 }
 

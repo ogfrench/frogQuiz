@@ -17,7 +17,8 @@ import {
 	joinAll,
 	next,
 	record,
-	showQuestion
+	showQuestion,
+	startGame
 } from './sockets';
 
 const QUIZ = {
@@ -59,7 +60,7 @@ test.describe('crowd', () => {
 			await expect.poll(() => joinedOnHost.length).toBe(50);
 
 			const started = players.map((p) => next(p, 'start_game'));
-			host.emit('start_game', {});
+			await startGame(host);
 			expect((await Promise.all(started)).every(Boolean)).toBe(true);
 
 			await showQuestion(host, 0);
@@ -120,14 +121,92 @@ test.describe('joining', () => {
 		expect((await join(pin, '   ')).outcome).toBe('error');
 		expect((await join(pin, '🐸 Zoë ناصر')).outcome).toBe('joined');
 	});
+});
 
-	test('nobody can join once the game has started', async ({ request }) => {
+// François, 5 Oct: as in Kahoot, anyone with the PIN can join a game that has started,
+// unless the host has locked it. A started game used to refuse everyone.
+test.describe('late join and the lock', () => {
+	test('a late joiner gets the question that is up, with the time left, and can score', async ({
+		request
+	}) => {
 		const { host, pin } = await hostGame(request, QUIZ);
 		await joinAll(pin, ['early']);
-		host.emit('start_game', {});
-		await new Promise((r) => setTimeout(r, 300));
-		expect((await join(pin, 'latecomer')).outcome).toBe('game_already_started');
+		await startGame(host);
+		await showQuestion(host, 0);
+		await new Promise((r) => setTimeout(r, 2000));
+
+		const late = await connect();
+		const question = next<{ question_index: number; question: { time: string } }>(
+			late,
+			'set_question_number'
+		);
+		const onHost = next<{ username: string }>(host, 'player_joined');
+		late.emit('join_game', { username: 'latecomer', game_pin: pin });
+		expect((await onHost)?.username).toBe('latecomer');
+		const shown = await question;
+		expect(shown?.question_index).toBe(0);
+		expect(Number(shown?.question.time)).toBeLessThanOrEqual(18);
+
+		await new Promise((r) => setTimeout(r, 200));
+		const counted = next(host, 'player_answer');
+		late.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
+		expect(await counted, 'the late answer counted').not.toBeNull();
+		const rows = (await finalResults(host))['0'];
+		expect(rows.find((r) => r.username === 'latecomer')).toMatchObject({ right: true });
 	});
+
+	test('a locked game refuses new players, and unlocking lets them in', async ({ request }) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const locked = next(host, 'locked');
+		host.emit('set_locked', { locked: true });
+		expect(await locked).toEqual({ locked: true });
+		expect((await join(pin, 'shut-out')).outcome).toBe('game_locked');
+
+		const unlocked = next(host, 'locked');
+		host.emit('set_locked', { locked: false });
+		expect(await unlocked).toEqual({ locked: false });
+		expect((await join(pin, 'let-in')).outcome).toBe('joined');
+
+		// And mid-game, which is when a lock is for.
+		await startGame(host);
+		const relocked = next(host, 'locked');
+		host.emit('set_locked', { locked: true });
+		expect(await relocked).toEqual({ locked: true });
+		expect((await join(pin, 'mid-game')).outcome).toBe('game_locked');
+	});
+
+	test('a player cannot lock the game', async ({ request }) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const [player] = await joinAll(pin, ['sneaky']);
+		const locked = next(host, 'locked', 1500);
+		player.emit('set_locked', { locked: true });
+		expect(await locked).toBeNull();
+		expect((await join(pin, 'still-welcome')).outcome).toBe('joined');
+	});
+
+	test('nobody can join a game that has finished', async ({ request }) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		await joinAll(pin, ['finisher']);
+		await startGame(host);
+		await finalResults(host);
+		expect((await join(pin, 'too-late')).outcome).toBe('game_finished');
+	});
+});
+
+// Kahoot's curve, François's call on 5 Oct: a right answer on the last second used to
+// score about nothing, and now scores about half.
+test('a right answer at the buzzer scores half marks', async ({ request }) => {
+	const { host, pin } = await hostGame(request, QUIZ);
+	const [player] = await joinAll(pin, ['buzzer', 'other']);
+	await startGame(host);
+	await showQuestion(host, 1);
+	await new Promise((r) => setTimeout(r, 1850));
+	const counted = next(host, 'player_answer');
+	player.emit('submit_answer', { question_index: 1, answer: 'yes' });
+	expect(await counted).not.toBeNull();
+	const row = (await finalResults(host))['1'].find((r) => r.username === 'buzzer');
+	expect(row?.score).toBeGreaterThanOrEqual(500);
+	expect(row?.score).toBeLessThan(600);
 });
 
 test.describe('answering', () => {
@@ -136,7 +215,7 @@ test.describe('answering', () => {
 		// A second player keeps the question open: with one, the first answer is
 		// "everyone answered", and the retry is refused as question_not_active instead.
 		const [p] = await joinAll(pin, ['twice', 'bystander']);
-		host.emit('start_game', {});
+		await startGame(host);
 		await showQuestion(host, 0);
 		p.emit('submit_answer', { question_index: 0, answer: 'Porto' });
 		const again = next(p, 'already_replied');
@@ -151,7 +230,7 @@ test.describe('answering', () => {
 	test('an answer to a question that is not showing is refused', async ({ request }) => {
 		const { host, pin } = await hostGame(request, QUIZ);
 		const [p] = await joinAll(pin, ['ahead']);
-		host.emit('start_game', {});
+		await startGame(host);
 		await showQuestion(host, 0);
 		const refused = next(p, 'question_not_active');
 		p.emit('submit_answer', { question_index: 1, answer: 'yes' });
@@ -164,7 +243,7 @@ test.describe('answering', () => {
 		}) => {
 			const { host, pin } = await hostGame(request, QUIZ);
 			const [p] = await joinAll(pin, ['slowpoke']);
-			host.emit('start_game', {});
+			await startGame(host);
 			await showQuestion(host, 1); // 2 s timer
 			await new Promise((r) => setTimeout(r, 4000));
 			p.emit('submit_answer', { question_index: 1, answer: 'yes' });
@@ -182,7 +261,7 @@ test.describe('answering', () => {
 		test('an answer after the host showed the results is refused', async ({ request }) => {
 			const { host, pin } = await hostGame(request, QUIZ);
 			const [a, b] = await joinAll(pin, ['prompt', 'peeker']);
-			host.emit('start_game', {});
+			await startGame(host);
 			await showQuestion(host, 0);
 			const recorded = next(host, 'player_answer');
 			a.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
@@ -262,7 +341,7 @@ test.describe('host control', () => {
 		const b = await hostGame(request, QUIZ);
 		const [pa] = await joinAll(a.pin, ['in_a']);
 		await joinAll(b.pin, ['in_b']);
-		a.host.emit('start_game', {});
+		await startGame(a.host);
 		await showQuestion(a.host, 0);
 		const leak = next(b.host, 'everyone_answered', 1500);
 		pa.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
@@ -298,7 +377,7 @@ test.describe('leaving', () => {
 		host.close();
 	});
 
-	test('a started game is not cancelled by end_game; it ends through the final results', async ({
+	test('a started game is not canceled by end_game; it ends through the final results', async ({
 		request
 	}) => {
 		const { host, pin } = await hostGame(request, QUIZ);
@@ -307,12 +386,12 @@ test.describe('leaving', () => {
 		// sent back to back, the two handlers race on the stored game (see
 		// docs/e2e-findings.md) and the question can save over `started`.
 		const started = next(p, 'start_game');
-		host.emit('start_game', {});
+		await startGame(host);
 		await started;
 		await showQuestion(host, 0);
 		const ended = next(p, 'game_ended', 1500);
 		host.emit('end_game', {});
-		expect(await ended, 'a running game was cancelled').toBeNull();
+		expect(await ended, 'a running game was canceled').toBeNull();
 
 		// "End game" mid-game on the host screen is get_final_results.
 		p.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
@@ -346,7 +425,7 @@ test.describe('leaving', () => {
 		const { host, pin } = await hostGame(request, QUIZ);
 		const [a, b] = await joinAll(pin, ['answers', 'walks-off']);
 		const started = next(a, 'start_game');
-		host.emit('start_game', {});
+		await startGame(host);
 		await started;
 		await showQuestion(host, 0);
 		const nobodyYet = next(host, 'everyone_answered', 800);

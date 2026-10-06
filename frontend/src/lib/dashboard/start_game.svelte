@@ -24,13 +24,20 @@ SPDX-License-Identifier: MPL-2.0
 	// and the host's answer to it is shown to them as the heading above that box. It
 	// used to be pre-filled from localStorage on mount, so a value typed once -- in
 	// practice somebody's own email -- silently re-applied to every game started in
-	// that browser from then on, and every player saw it labelling a mystery input.
+	// that browser from then on, and every player saw it labeling a mystery input.
 	// It is now an explicit opt-in that starts empty for every game, and nothing is
 	// persisted: the only thing the stored value was ever used for was that
 	// auto-prefill, so keeping the write would leave a value nothing reads. The
 	// feature itself, and its whole wire path, is untouched.
 	let custom_field_enabled = $state(false);
 	let randomized_answers = $state(false);
+	// Kahoot's own "Show questions & answers on participants' devices", which is free on
+	// every Kahoot plan and off by default. Off, the phone shows four colored shapes and
+	// the question lives on the shared screen; on, the phone carries the question text,
+	// its image and the answer text too. That is the difference between a room with a
+	// projector and a video call, which is why it is the host's choice per game and not a
+	// product decision (MVP.md D16).
+	let show_on_devices = $state(false);
 	let error = $state<string | null>(null);
 	// Set when the failure looks like "you are not signed in" rather than a real
 	// error, so the message can offer a way back rather than just saying no.
@@ -52,9 +59,10 @@ SPDX-License-Identifier: MPL-2.0
 	// server does not bound the prompt itself, hence the client-side cap.
 	const MAX_CUSTOM_FIELD_LENGTH = 200;
 
-	// Mode picker (Normal / Old-School) was cut: Old-School was never used, and Normal
-	// is now the only option. The API still accepts game_mode=normal, so it can come
-	// back without a backend change if that's ever wanted.
+	// `game_mode` is what carries the switch above. Both render paths already existed and
+	// both work -- upstream exposed them as two game modes, a choice made before the game
+	// started and labeled "Normal" and "Old-School", which told a host nothing about what
+	// it did. Same wire value, named after its effect.
 	const start_game = async (id: string) => {
 		loading = true;
 		error = null;
@@ -67,7 +75,7 @@ SPDX-License-Identifier: MPL-2.0
 		// value; a `#` made everything after it a fragment, so the server never saw it.
 		const params = new URLSearchParams({
 			captcha_enabled: 'False',
-			game_mode: 'kahoot',
+			game_mode: show_on_devices ? 'normal' : 'kahoot',
 			custom_field,
 			cqcs_enabled: 'False',
 			randomize_answers: randomized_answers ? 'True' : 'False'
@@ -138,6 +146,8 @@ SPDX-License-Identifier: MPL-2.0
 		// from this same dashboard without a reload.
 		custom_field_enabled = false;
 		custom_field = '';
+		randomized_answers = false;
+		show_on_devices = false;
 	};
 </script>
 
@@ -151,24 +161,32 @@ SPDX-License-Identifier: MPL-2.0
 		     rather than self-controlled; onOpenChange keeps the two in step if bits-ui
 		     ever closes it itself (escape, a forced remount). -->
 		<Collapsible.Root open={custom_field_enabled} onOpenChange={on_custom_field_toggle}>
-			<div class="flex items-center gap-3">
-				<Switch
-					id="custom-field-enabled"
-					checked={custom_field_enabled}
-					onCheckedChange={on_custom_field_toggle}
-				/>
-				<Label for="custom-field-enabled">{$t('result_page.custom_field')}</Label>
+			<!-- Was "Custom field" with nothing to say what it does, and an English,
+			     Title Case "Phone Number or Email" placeholder outside the locale file. -->
+			<div class="grid gap-1.5">
+				<div class="flex items-center gap-3">
+					<Switch
+						id="custom-field-enabled"
+						checked={custom_field_enabled}
+						onCheckedChange={on_custom_field_toggle}
+						aria-describedby="custom-field-hint"
+					/>
+					<Label for="custom-field-enabled">{$t('start_game.custom_field')}</Label>
+				</div>
+				<p id="custom-field-hint" class="text-muted-foreground pl-14 text-sm">
+					{$t('start_game.custom_field_hint')}
+				</p>
 			</div>
 			<Collapsible.Content>
-				<div class="grid min-w-0 gap-2 pt-3">
+				<div class="grid min-w-0 gap-2 pt-3 pl-14">
 					<Label for="custom-field" class="sr-only">
-						{$t('result_page.custom_field')}
+						{$t('start_game.custom_field_name')}
 					</Label>
 					<Input
 						id="custom-field"
 						bind:value={custom_field}
 						maxlength={MAX_CUSTOM_FIELD_LENGTH}
-						placeholder="Phone Number or Email"
+						placeholder={$t('start_game.custom_field_placeholder')}
 					/>
 				</div>
 			</Collapsible.Content>
@@ -177,6 +195,20 @@ SPDX-License-Identifier: MPL-2.0
 		<div class="flex items-center gap-3">
 			<Switch id="randomize-answers" bind:checked={randomized_answers} />
 			<Label for="randomize-answers">{$t('start_game.randomize_answers')}</Label>
+		</div>
+
+		<div class="grid gap-1.5">
+			<div class="flex items-center gap-3">
+				<Switch
+					id="show-on-devices"
+					bind:checked={show_on_devices}
+					aria-describedby="show-on-devices-hint"
+				/>
+				<Label for="show-on-devices">{$t('start_game.show_on_devices')}</Label>
+			</div>
+			<p id="show-on-devices-hint" class="text-muted-foreground pl-14 text-sm">
+				{$t('start_game.show_on_devices_hint')}
+			</p>
 		</div>
 
 		{#if error}

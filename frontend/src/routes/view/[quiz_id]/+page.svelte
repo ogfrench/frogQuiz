@@ -37,6 +37,7 @@ SPDX-License-Identifier: MPL-2.0
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Play from '@lucide/svelte/icons/play';
+	import LogIn from '@lucide/svelte/icons/log-in';
 	import Repeat from '@lucide/svelte/icons/repeat';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 
@@ -85,8 +86,10 @@ SPDX-License-Identifier: MPL-2.0
 	const visitor_order = (answers: { answer: string }[]) =>
 		[...answers].sort((a, b) => a.answer.localeCompare(b.answer));
 
-	// Anyone signed in can host a public quiz; signed out, only its anonymous creator.
-	const can_start = $derived(logged_in || owns_anonymously);
+	// What the server actually allows (routers/quiz.py, start_quiz): its own creator, or
+	// anyone signed in if the quiz is public. Offering Play on somebody else's unlisted
+	// quiz gave a signed-in visitor a button that answered "quiz not found".
+	const can_start = $derived(owns_anonymously || (logged_in && (quiz.public || owns_on_account)));
 
 	// A draft is a quiz with at least one unfinished question -- the same rule the
 	// server uses (frogquiz/helpers/completeness.py) to refuse POST /quiz/start.
@@ -132,6 +135,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	let claiming = $state(false);
 	let claim_error = $state(false);
+	let banner_open = $state(logged_in);
 
 	const claim_quiz = async () => {
 		const anon_secret = getAnonSecret(quiz.id);
@@ -196,7 +200,7 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <div class="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
-	<!-- fq-section's rhythm, but stretched: fq-section centres its children, which
+	<!-- fq-section's rhythm, but stretched: fq-section centers its children, which
 	     would shrink every card to its content width. -->
 	<div class="flex flex-col gap-(--fq-space-group)">
 		{#if mod_view}
@@ -209,7 +213,13 @@ SPDX-License-Identifier: MPL-2.0
 			<!-- First thing on the page, because it is the one thing here with a deadline.
 			     Collapsed, it still says the fact that matters -- this quiz is going away and
 			     when; expanding gives the why and the way to keep it. -->
+			<!-- Secondary text here is foreground at 75%, not muted-foreground: on the
+			     bg-primary/10 tint, muted read 4.05:1 in light mode (axe, 2026-10-04). -->
+			<!-- Open from the start when signed in: then the action inside is Claim, and
+			     whoever just made an account to keep this quiz lands back here. Collapsed,
+			     it still said "isn't saved" with Claim out of sight. -->
 			<Collapsible.Root
+				bind:open={banner_open}
 				class="border-primary/40 bg-primary/10 text-foreground rounded-xl border"
 			>
 				<Collapsible.Trigger
@@ -221,14 +231,14 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<span class="font-medium">{$t('view_quiz_page.anon_temporary')}</span>
 						{#if days_until_expiry !== null}
-							<span class="text-muted-foreground text-sm">
+							<span class="text-foreground/75 text-sm">
 								{$t('view_quiz_page.anon_expires_short', {
 									count: days_until_expiry
 								})}
 							</span>
 						{/if}
 					</span>
-					<span class="text-muted-foreground hidden text-sm sm:inline">
+					<span class="text-foreground/75 hidden text-sm sm:inline">
 						<span class="group-data-[state=open]:hidden"
 							>{$t('view_quiz_page.anon_more')}</span
 						>
@@ -243,7 +253,7 @@ SPDX-License-Identifier: MPL-2.0
 				</Collapsible.Trigger>
 				<Collapsible.Content>
 					<div class="flex flex-col gap-3 px-4 pb-4 pl-12 text-sm">
-						<div class="text-muted-foreground flex flex-col gap-1">
+						<div class="text-foreground/75 flex flex-col gap-1">
 							{#if expires_at}
 								<p>
 									{$t('view_quiz_page.anon_expires', {
@@ -314,16 +324,13 @@ SPDX-License-Identifier: MPL-2.0
 					{#if is_draft}
 						<Badge variant="outline">{$t('draft.badge')}</Badge>
 					{/if}
-					<span>
-						{quiz.questions.length}
-						{$t('words.question', { count: quiz.questions.length })}
-					</span>
+					<span>{$t('words.question_count', { count: quiz.questions.length })}</span>
 					{#if quiz.imported_from_kahoot}
 						<Badge variant="outline">{$t('view_quiz_page.imported')}</Badge>
 					{/if}
 					{#if quiz.user_id}
 						<!-- Plain text: public profiles are hidden for the MVP (see MVP.md). -->
-						<span>{$t('view_quiz_page.made_by')} @{quiz.user_id.username}</span>
+						<span>{$t('view_quiz_page.made_by')} {quiz.user_id.username}</span>
 					{/if}
 				</div>
 			</Card.Header>
@@ -332,19 +339,32 @@ SPDX-License-Identifier: MPL-2.0
 				class="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center"
 			>
 				<!-- Start is the one primary action; everything else is outline or ghost. -->
-				<Button
-					size="lg"
-					disabled={!can_start || is_draft}
-					onclick={() => (start_game = quiz.id)}
-					aria-describedby={is_draft
-						? 'draft-hint'
-						: can_start
-							? undefined
-							: 'signed-out-hint'}
-				>
-					<Play />
-					{$t('words.play')}
-				</Button>
+				{#if !logged_in && !can_start && !is_draft}
+					<!-- Signed out, Play was drawn disabled with the reason in small print
+					     below. Logging in is the way through, so the button is that, and it
+					     comes back here afterwards. -->
+					<Button
+						size="lg"
+						href="/account/login?returnTo={encodeURIComponent(page.url.pathname)}"
+					>
+						<LogIn />
+						{$t('view_quiz_page.log_in_to_host')}
+					</Button>
+				{:else}
+					<Button
+						size="lg"
+						disabled={!can_start || is_draft}
+						onclick={() => (start_game = quiz.id)}
+						aria-describedby={is_draft
+							? 'draft-hint'
+							: can_start
+								? undefined
+								: 'signed-out-hint'}
+					>
+						<Play />
+						{$t('words.play')}
+					</Button>
+				{/if}
 				{#if is_owner}
 					<Button href="/edit?quiz_id={quiz.id}" variant="outline" size="lg">
 						<Pencil />
@@ -355,16 +375,22 @@ SPDX-License-Identifier: MPL-2.0
 					<Repeat />
 					{$t('words.practice')}
 				</Button>
-				<Button
-					variant="outline"
-					size="lg"
-					disabled={!logged_in}
-					onclick={() => (download_id = quiz.id)}
-					aria-describedby={logged_in ? undefined : 'signed-out-hint'}
-				>
-					<Download />
-					{$t('words.download')}
-				</Button>
+				<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`
+				     above already hides it from a non-owner on screen. Still disabled while
+				     signed out, because the endpoint needs a session -- an anonymous owner
+				     holds the quiz in this browser, not in an account. -->
+				{#if is_owner}
+					<Button
+						variant="outline"
+						size="lg"
+						disabled={!logged_in}
+						onclick={() => (download_id = quiz.id)}
+						aria-describedby={logged_in ? undefined : 'signed-out-hint'}
+					>
+						<Download />
+						{$t('words.download')}
+					</Button>
+				{/if}
 				{#if quiz.imported_from_kahoot && quiz.kahoot_id}
 					<Button
 						href="https://create.kahoot.it/details/{quiz.kahoot_id}"
@@ -441,6 +467,10 @@ SPDX-License-Identifier: MPL-2.0
 						? $t('view_quiz_page.download_signed_out_hint')
 						: $t('view_quiz_page.start_signed_out_hint')}
 				</p>
+			{:else if !can_start && !is_draft}
+				<p id="signed-out-hint" class="text-muted-foreground -mt-2 px-6 text-sm">
+					{$t('view_quiz_page.unlisted_not_yours')}
+				</p>
 			{/if}
 		</Card.Root>
 
@@ -458,7 +488,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 
 			<!-- Each question is the editor's canvas, read-only: the same toolbar facts above
-			     it, the same centred title and the same answer tiles, so a quiz looks the same
+			     it, the same centered title and the same answer tiles, so a quiz looks the same
 			     here as it did to the person who built it. Always open -- a list of bars you
 			     have to click one by one hid the only content on the page. -->
 			{#each quiz.questions as question, index_question}
@@ -502,7 +532,7 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 
 					<div
-						class="border-border bg-card flex flex-col gap-6 rounded-xl border p-4 shadow-sm sm:p-6"
+						class="border-border bg-card flex flex-col gap-6 rounded-2xl border p-4 shadow-sm sm:p-6"
 					>
 						{#if question.type === QuizQuestionType.SLIDE}
 							{#await import('$lib/play/admin/slide.svelte')}
@@ -522,7 +552,7 @@ SPDX-License-Identifier: MPL-2.0
 							{#if question.image}
 								<div class="mx-auto h-56 max-w-full">
 									<MediaComponent
-										css_classes="h-full w-auto max-w-full rounded-md"
+										css_classes="h-full w-auto max-w-full rounded-lg"
 										src={question.image}
 										muted={true}
 									/>
@@ -532,7 +562,7 @@ SPDX-License-Identifier: MPL-2.0
 							{#if is_tile_question(question)}
 								<ul class="grid w-full gap-3 sm:grid-cols-2">
 									{#each question.answers as answer, index_answer}
-										{@const bg = answer.color ?? answerColor(index_answer)}
+										{@const bg = answerColor(index_answer)}
 										{@const ink = get_foreground_color(bg)}
 										<!-- min-w-0: a grid item won't shrink below its content otherwise. -->
 										<li

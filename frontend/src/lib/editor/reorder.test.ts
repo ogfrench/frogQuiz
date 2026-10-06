@@ -16,7 +16,7 @@ import { moveItem, selectionAfterMove } from './reorder';
  */
 
 // The drag is the shipped helper. The buttons step one place, which is the same
-// rearrangement as dragging onto the neighbouring slot -- asserted below.
+// rearrangement as dragging onto the neighboring slot -- asserted below.
 const moveTo = moveItem;
 
 const step = <T>(list: T[], index: number, delta: number): { list: T[]; index: number } => {
@@ -47,7 +47,7 @@ describe('drag to an arbitrary position', () => {
 });
 
 describe('stepping one place', () => {
-	it('trades with the neighbour and follows the question', () => {
+	it('trades with the neighbor and follows the question', () => {
 		expect(step(q, 1, -1)).toEqual({ list: ['b', 'a', 'c', 'd'], index: 0 });
 		expect(step(q, 1, 1)).toEqual({ list: ['a', 'c', 'b', 'd'], index: 2 });
 	});

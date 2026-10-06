@@ -74,18 +74,33 @@ What is actually free:
 | ---------------------------------- | --------------------------- | -------------------------------------- |
 | Frontend                           | Netlify                     | 100 GB bandwidth/month                 |
 | Postgres                           | Neon                        | 0.5 GB storage, autosuspend            |
-| API + worker + Redis + Meilisearch | Oracle Cloud Always Free VM | 4 ARM cores / 24 GB RAM, no time limit |
+| API + worker + Redis + Meilisearch | Oracle Cloud Always Free VM | 2 ARM cores / 12 GB RAM, no time limit |
 
 Oracle's Always Free ARM instance runs this whole compose stack with room to spare, and
 the images are all multi-arch. Signup needs a card for verification (not charged) and ARM
 capacity is often unavailable in busy regions -- retry or pick another region. If that
-fails, a Hetzner CX22 is about EUR 4/month and takes ten minutes.
+fails, a Hetzner CX23 is EUR 5.49/month plus EUR 0.50 for the IPv4 and takes ten minutes.
+
+**The Always Free ARM allowance was halved.** It is now 1,500 OCPU hours and 9,000 GB
+hours a month, which Oracle states as **2 OCPUs and 12 GB** for an Always Free tenancy --
+this file said 4 OCPU / 24 GB until 2026-10-02, which was right when it was written and is
+now double the limit. That is not a soft cap: if a tenancy has more A1 provisioned than the
+allowance permits, **every** A1 instance in it is disabled and then deleted after 30 days,
+not trimmed to fit. Oracle gave no notice of the change. Check the current figure on
+[Oracle's own page](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
+before you create anything, rather than trusting this paragraph either.
+
+Also worth knowing before you rely on it: Oracle reclaims *idle* Always Free instances,
+and for ARM shapes the test is all three of CPU p95, network and memory under 20% over
+seven days. A quiz tool used once a week meets all three. See issue #22.
 
 ### Oracle Cloud Always Free, step by step
 
 1. Create the instance: Compute > Instances > Create.
-   - Image: **Ubuntu 24.04**. Shape: **VM.Standard.A1.Flex**, 4 OCPUs / 24 GB (the whole
-     Always Free ARM allowance). Region: **eu-frankfurt-1**, next to the Neon project.
+   - Image: **Ubuntu 24.04**. Shape: **VM.Standard.A1.Flex**, 2 OCPUs / 12 GB (the whole
+     Always Free ARM allowance -- confirm it against Oracle's page above, it has changed
+     once already). It must be in your tenancy's **home region**, or neither the instance
+     nor its volumes are Always Free; `eu-frankfurt-1` is next to the Neon project.
    - Paste your public SSH key.
    - Show advanced options > Cloud-init script: paste `deploy/oracle-cloud-init.yaml`.
    - "Out of capacity" is the usual failure. Retry, or try another availability domain.
@@ -136,9 +151,11 @@ second gunicorn worker or a second API replica breaks live games.
 
 ## Email
 
-Two things need mail: the confirmation link at registration, and password recovery.
-Neither is optional in a way the app can paper over -- without a relay, a forgotten
-password can only be fixed in the database.
+Since 5 Oct mail is how everybody signs in: an emailed link or six-digit code, for the
+domains on `ALLOWED_EMAIL_DOMAINS` (`frog.co,capgemini.com` by default), with no passwords.
+Without a relay nobody can sign in at all, and the sign-in page says so with a 503. The
+registration and password-recovery mails below are only sent with `ENABLE_PASSWORD_LOGIN`
+on, which it is not.
 
 Set the `MAIL_*` block in `.env` and restart `api` and `worker`:
 
@@ -172,6 +189,78 @@ To run without mail at all, leave the block blank and set
 `SKIP_EMAIL_VERIFICATION=True`. Registration then works and recovery does not;
 the API says so with a 503 rather than pretending, and the app logs a warning at
 startup.
+
+### Testing it for real
+
+The suite reads every sign-in mail back from a local sink (`e2e/mailsink.py`), so the
+templates and the links are tested. Whether a real provider delivers to a frog or
+Capgemini inbox is not, and somebody has to check it once against the live relay.
+
+The hotmail address chosen on 2026-10-02 can no longer sign in, since only team domains
+can. Use a frog.co address, which is also the filter that matters: frogViz's own sender
+was held back by frog's mail filter until its domain was a month old, and sends from
+frogQuiz's for now.
+
+Three things to check, in this order:
+
+1. Sign in with that address. The mail should arrive with the code in its subject, and
+   the link in it should open the real site (`ROOT_ADDRESS`, not the API host) and sign
+   in. A first sign-in asks for a username.
+2. Sign in again from a second device by typing the code instead.
+3. Check the spam and quarantine folders. Landing there is a pass for the code and a
+   fail for the deployment.
+
+## Clean slate when the sign-in change ships
+
+François's call on 5 Oct: start production from empty rather than carry accounts over,
+since the sign-in change (D21) locks out every account not on frog.co or capgemini.com
+anyway. **It deletes Gonçalo's account and quizzes too, so agree it with him first.**
+There is no way to bring a single quiz back except from the backup below: Excel and
+`.cqa` import are hidden (D6).
+
+On the VM, in the directory that holds `docker-compose.yml`. First check where Postgres
+lives, since issue #22 found the repo cannot say:
+`docker compose exec api printenv DB_URL | sed -E 's#//[^@]*@#//***@#'`. A host of
+`db:5432` means the `db` container, and the steps below work as written. A host ending
+`.neon.tech` means Neon: run steps 1 and 2 with `pg_dump "<that URI>"` and
+`psql "<that URI>" -c "..."` from any machine with the Postgres client instead of
+`docker compose exec db`, and do the same for the check at the end. Run `docker compose`
+with whatever `-f` files the VM already uses (#22: the command is not recorded either).
+
+```bash
+docker compose pull && docker compose up -d      # the sign-in change goes live first
+docker compose stop api worker                    # nothing writes while this runs
+
+# 1. A backup, in case a quiz turns out to be wanted. Kept outside the app's volumes, but
+#    on the VM's disk, which has no backup (#22): copy both files off the box before step 2.
+docker compose exec -T db pg_dump -U postgres frogquiz | gzip > ~/frogquiz-before-wipe-$(date +%F).sql.gz
+tar czf ~/frogquiz-uploads-before-wipe-$(date +%F).tgz uploads
+
+# 2. Every account, quiz, upload record, game result, session and API key. One statement,
+#    so it is all or nothing. The schema, the migration record and instance_data stay.
+docker compose exec -T db psql -U postgres -d frogquiz -c "TRUNCATE users, quiz, storage_items CASCADE;"
+
+# 3. The uploaded files (./uploads is mounted at /app/data).
+sudo find uploads -mindepth 1 -delete
+
+# 4. Sessions, cached users, live games, sign-in links and rate limits.
+docker compose exec redis valkey-cli FLUSHALL
+
+# 5. The search index, which still lists the public quizzes.
+docker compose run --rm --no-deps api python -c "from frogquiz.config import settings, meilisearch; meilisearch.index(settings().meilisearch_index).delete_all_documents()"
+
+docker compose start api worker
+```
+
+Then check: `docker compose exec -T db psql -U postgres -d frogquiz -c "select count(*) from users;"`
+says 0, and signing in with a frog.co address makes a new account.
+
+Rehearsed on the local stack on 5 Oct, after seeding it with the e2e specs: the TRUNCATE
+reached every table that points at an account or a quiz (sessions, API keys, passkeys,
+results, ratings, controllers, QuizTivity and both image link tables) and left
+`alembic_version` alone; clearing Redis and the search index worked the same way; and 22
+specs then passed on the empty database, signing up, building quizzes, hosting and
+searching. Steps 1 and 3 are standard and were not rehearsed.
 
 ## Managed Postgres (Neon)
 

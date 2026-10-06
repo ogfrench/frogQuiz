@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 import enum
@@ -14,7 +15,8 @@ from frogquiz.auth import get_current_user
 from frogquiz.config import settings
 from frogquiz.db.models import User, Quiz, Rating
 
-router = APIRouter()
+# Signed in only, like search: these list a person's public quizzes (5 Oct).
+router = APIRouter(dependencies=[Depends(get_current_user)])
 settings = settings()
 
 

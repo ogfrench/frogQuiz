@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -15,7 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import '@fontsource-variable/inter';
 	import '../app.css';
 	import Navbar from '$lib/navbar.svelte';
-	import { pathname } from '$lib/stores';
+	import Footer from '$lib/footer.svelte';
 	import { navbarVisible } from '$lib/stores.svelte';
 
 	import { initLocalizationContext } from '$lib/i18n';
@@ -29,7 +30,6 @@ SPDX-License-Identifier: MPL-2.0
 	let { children }: Props = $props();
 
 	if (browser) {
-		pathname.set(window.location.pathname);
 		if (
 			localStorage.theme === 'dark' ||
 			(!('theme' in localStorage) &&
@@ -45,13 +45,28 @@ SPDX-License-Identifier: MPL-2.0
 
 <AmbientBackground />
 
-{#if navbarVisible.visible}
-	<Navbar />
-	<div class="pt-16">
-		<div class="z-40"></div>
-	</div>
-{/if}
-{@render children?.()}
+<!-- One structure for every page: skip link, navbar, main, footer. There was no <main>
+     anywhere, so a screen-reader user had no landmark to jump to, and the footer was
+     pasted into four pages and missing from the rest (Discover, a quiz, My Account,
+     the 404). Screens that hide the navbar -- the editor and the game -- hide the
+     footer with it. -->
+<a
+	href="#main-content"
+	class="bg-background text-foreground focus-visible:ring-ring sr-only z-50 rounded-md px-4 py-2 text-sm font-medium shadow-md focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus-visible:ring-2"
+	>Skip to content</a
+>
+<div class="flex min-h-dvh flex-col">
+	{#if navbarVisible.visible}
+		<Navbar />
+		<div class="h-16 shrink-0"></div>
+	{/if}
+	<main id="main-content" tabindex="-1" class="flex-1 outline-none">
+		{@render children?.()}
+	</main>
+	{#if navbarVisible.visible}
+		<Footer />
+	{/if}
+</div>
 <CommandPalette />
 
 <style lang="scss">

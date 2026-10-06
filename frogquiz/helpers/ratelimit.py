@@ -14,6 +14,11 @@ from fastapi import HTTPException, Request
 
 from frogquiz.config import redis, settings
 
+# The wait between one email to an address and the next. The page counts it down from the
+# shared file frontend/src/lib/vendor/resend-cooldown.ts (copied from frogViz), and this is
+# the rule behind the countdown; test_vendored_cooldown.py fails if the two numbers part.
+RESEND_COOLDOWN_SECONDS = 60
+
 
 def client_ip(request: Request) -> str:
     """Best-effort client address.
@@ -67,3 +72,28 @@ async def rate_limit_key(bucket_key: str, limit: int, window_seconds: int) -> No
 async def rate_limit(request: Request, bucket: str, limit: int, window_seconds: int) -> None:
     """Raise 429 once `limit` attempts from one address occur inside the window."""
     await rate_limit_key(f"{bucket}:{client_ip(request)}", limit=limit, window_seconds=window_seconds)
+
+
+def _cooldown_key(email: str, purpose: str) -> str:
+    """The bucket rate_limit_key keeps, less the "ratelimit:" it adds in front."""
+    return f"resend_cooldown:{purpose}:{email.strip().lower()}"
+
+
+async def enforce_resend_cooldown(email: str, purpose: str = "verification") -> None:
+    """Raise 429, with the seconds left in Retry-After, if this address was mailed too recently.
+
+    Mail from a young sender can take a minute to arrive, and a second message sent into
+    the same filter does not help the first through. What it does is spend the address's
+    hourly budget, after which the person who was only impatient is told to come back in
+    an hour. So an early ask is refused here, before it touches the hourly bucket.
+
+    `purpose` keeps the sign-in email and the confirmation email on separate clocks.
+    Keyed on the canonical address and answered the same for an address nobody has
+    registered, so it says nothing about who is on file.
+    """
+    await rate_limit_key(_cooldown_key(email, purpose), limit=1, window_seconds=RESEND_COOLDOWN_SECONDS)
+
+
+async def release_resend_cooldown(email: str, purpose: str = "verification") -> None:
+    """Undo the cooldown after a send that failed: nothing arrived, so there is nothing to wait for."""
+    await redis.delete(f"ratelimit:{_cooldown_key(email, purpose)}")

@@ -49,10 +49,12 @@ test('practice runs a quiz end to end and scores it like the game', async ({ pag
 	await expect(page.getByText('3 questions.')).toBeVisible();
 	await expectNoHorizontalOverflow(page);
 
-	await page.getByRole('button', { name: 'Start practising' }).click();
+	await page.getByRole('button', { name: 'Start practicing' }).click();
 
 	// ABCD: one click reveals. The title is rendered, not shown as raw HTML.
 	await expect(page.getByRole('heading', { name: 'Capital of France?' })).toBeVisible();
+	// The intro's h1 went with the intro: every question screen and the end had none.
+	await expect(page.getByRole('heading', { level: 1, name: title })).toHaveCount(1);
 	await page.getByRole('button', { name: 'Paris' }).click();
 	await expect(page.getByRole('status')).toHaveText('Right!');
 	await expect(page.getByText('1 of 1 right')).toBeVisible();
@@ -75,6 +77,7 @@ test('practice runs a quiz end to end and scores it like the game', async ({ pag
 	await page.getByRole('button', { name: 'Right' }).click();
 	await page.getByRole('button', { name: 'See my score' }).click();
 	await expect(page.getByText('2 / 3')).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Practice finished' })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Practice again' }).click();
 	await expect(page.getByRole('heading', { name: 'Capital of France?' })).toBeVisible();
@@ -94,7 +97,10 @@ test('Download offers the Excel file and fetches a real spreadsheet', async ({
 }) => {
 	const { context, page } = await signedInContext(browser, request);
 	const title = `Sheet ${Date.now()}`;
-	const saved = await saveQuiz(request, quiz(title));
+	// Saved through the signed-in context, so this user owns it. Download is owner-only
+	// (MVP.md D18); saving through the bare `request` fixture makes an anonymous quiz,
+	// which is what this test used to do.
+	const saved = await saveQuiz(context.request, quiz(title));
 	await page.goto(`/view/${saved.body.id}`);
 
 	// Download is server-rendered enabled for a signed-in visitor, so a click that lands
@@ -119,4 +125,30 @@ test('Download offers the Excel file and fetches a real spreadsheet', async ({
 	// An .xlsx is a zip archive.
 	expect((await res.body()).subarray(0, 2).toString()).toBe('PK');
 	await context.close();
+});
+
+test("Download is not offered on, or reachable for, somebody else's quiz", async ({
+	browser,
+	request
+}) => {
+	// The sheet carries the answer key, so a teammate who is about to play your quiz must
+	// not be able to read the answers out of it (MVP.md D18). It was any signed-in user
+	// until 2026-10-02, and the page offered the button to them.
+	const owner = await signedInContext(browser, request);
+	const title = `Not yours ${Date.now()}`;
+	const saved = await saveQuiz(owner.context.request, { ...quiz(title), public: true });
+	expect(saved.status).toBe(200);
+
+	const other = await signedInContext(browser, request);
+	await other.page.goto(`/view/${saved.body.id}`);
+	// Public, so the page itself opens and offers Play. Download is simply absent.
+	await expect(other.page.getByRole('button', { name: 'Play' })).toBeVisible();
+	await expect(other.page.getByRole('button', { name: 'Download' })).toHaveCount(0);
+
+	// And the endpoint behind it refuses, so hiding the button is not the only guard.
+	const res = await other.context.request.get(`/api/v1/eximport/excel/${saved.body.id}`);
+	expect(res.status()).toBe(404);
+
+	await owner.context.close();
+	await other.context.close();
 });

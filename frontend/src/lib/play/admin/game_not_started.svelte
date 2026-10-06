@@ -6,14 +6,16 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	// import AudioPlayer from '$lib/play/audio_player.svelte';
+	import LobbyMusic from '$lib/play/lobby_music.svelte';
 	import ControllerCodeDisplay from '$lib/components/controller/code.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { fade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { Button } from '$lib/components/ui/button';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import X from '@lucide/svelte/icons/x';
+	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state';
 
@@ -53,10 +55,20 @@ SPDX-License-Identifier: MPL-2.0
 		{$t('admin_page.cancel_game')}
 	</ConfirmAction>
 </div>
+<div class="fixed top-3 right-3 z-30">
+	<LockToggle locked={game_state.quiz_data?.locked} {socket_game_controls} />
+</div>
+
+<!-- The lobby is the one screen with nothing to do on it: people are walking in and
+     reading a PIN off a wall. Music belongs here and nowhere else, and it stops when the
+     component goes, which is the moment the first question appears. -->
+<LobbyMusic />
+
+<h1 class="sr-only">{$t('admin_page.lobby_title')}</h1>
 
 <div class="fq-stage">
 	<!-- The join details are the whole point of this screen, so they get the
-	     centre and the largest type rather than being split across three
+	     center and the largest type rather than being split across three
 	     unaligned columns. -->
 	<div class="flex flex-col items-center gap-8 md:flex-row md:items-center md:gap-12">
 		<div class="flex flex-col items-center gap-3 md:items-start">
@@ -80,7 +92,7 @@ SPDX-License-Identifier: MPL-2.0
 		<button
 			type="button"
 			onclick={() => (fullscreen_open = true)}
-			aria-label={$t('play_page.join_by_entering_code')}
+			aria-label={$t('play_page.show_qr_full_screen')}
 			class="rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
 		>
 			<img
@@ -109,11 +121,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	<div class="flex w-full max-w-5xl flex-col items-center gap-4">
 		<p class="text-xl text-muted-foreground" aria-live="polite">
-			{#if game_state.players.length <= 1}
-				{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
-			{:else}
-				{$t('play_page.players_waiting_plural', { count: game_state.players.length ?? 0 })}
-			{/if}
+			<!-- i18next picks _one / _other from the count; the old _plural suffix was
+			     i18next v20's and printed the raw key on the projector. -->
+			{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
 		</p>
 
 		{#if game_state.players.length > 0}
@@ -135,7 +145,12 @@ SPDX-License-Identifier: MPL-2.0
 								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
 							in:fly|global={{ y: 8, duration: 220 }}
 						>
-							<span class="group-hover:line-through">{player.username}</span>
+							<!-- Wraps inside the pill rather than stretching it past the projector: the
+						     list is flex-wrap, so a chip that is wider than the screen overflows
+						     the page instead of going to the next line. -->
+							<span class="block max-w-[20ch] wrap-anywhere group-hover:line-through"
+								>{player.username}</span
+							>
 						</button>
 					</li>
 				{/each}
@@ -144,30 +159,25 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 </div>
 
-{#if fullscreen_open}
-	<!-- Was `w-screen h-screen`. 100vw includes the vertical scrollbar, so the overlay
-	     overflowed by its width on any page that scrolls, and 100vh is the wrong number
-	     on a phone. inset-0 is how a fixed overlay fills the viewport. -->
-	<div
-		class="fixed inset-0 z-50 flex bg-black/50 p-2"
-		transition:fade|global={{ duration: 80 }}
-		onclick={() => (fullscreen_open = false)}
-		tabindex="0"
-		role="button"
-		aria-label="Close modal"
-		onkeydown={(e) =>
-			e.key === 'Enter' || e.key === ' '
-				? () => {
-						fullscreen_open = false;
-					}
-				: null}
+<!-- The shadcn Dialog: Escape, a click anywhere, or Enter on the focused code closes it.
+     It was a div with role="button" whose Enter/Space handler returned a function
+     instead of calling it, and with no Escape at all, so from the keyboard it could be
+     opened on the projector and never closed. Before that it was `w-screen h-screen`,
+     which overflowed by the scrollbar width. -->
+<Dialog.Root bind:open={fullscreen_open}>
+	<Dialog.Content
+		showCloseButton={false}
+		class="grid h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-none place-items-center bg-transparent p-0 ring-0 sm:max-w-none"
 	>
-		<!-- bg-white here and on the thumbnail above is deliberate and must not become a
-		     token: a QR code needs a light quiet zone to scan, in either theme. -->
-		<img
-			alt="QR code to join the game"
-			src="/api/v1/utils/qr/{game_pin}"
-			class="object-contain rounded-sm m-auto h-full bg-white"
-		/>
-	</div>
-{/if}
+		<Dialog.Title class="sr-only">{$t('play_page.qr_code_title')}</Dialog.Title>
+		<Dialog.Close
+			aria-label={$t('words.close')}
+			class="focus-visible:ring-ring aspect-square w-[min(100%,calc(100dvh-1rem))] rounded-2xl bg-white p-[4%] outline-none focus-visible:ring-4"
+		>
+			<!-- bg-white and the padding, here and on the thumbnail above, are deliberate and
+			     must not become tokens: the code image runs to its own edge, and a QR code
+			     needs a light quiet zone around it to scan, in either theme. -->
+			<img alt="" src="/api/v1/utils/qr/{game_pin}" class="size-full object-contain" />
+		</Dialog.Close>
+	</Dialog.Content>
+</Dialog.Root>

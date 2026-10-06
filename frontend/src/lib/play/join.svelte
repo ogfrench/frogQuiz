@@ -11,8 +11,12 @@ SPDX-License-Identifier: MPL-2.0
 	import { browser } from '$app/environment';
 	import { getLocalization } from '$lib/i18n';
 	import Cookies from 'js-cookie';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import Wordmark from '$lib/components/Wordmark.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
 	import { hcaptcha_site_key, recaptcha_key } from '$lib/config';
+	import { signedIn } from '$lib/stores';
 
 	const { t } = getLocalization();
 
@@ -41,18 +45,13 @@ SPDX-License-Identifier: MPL-2.0
 	// phone is a system dialog that reads like the page has crashed.
 
 	// The server takes any non-blank nickname. The old minimum of four rejected "Ana"
-	// and "Rui" with a greyed-out button and no word of why.
+	// and "Rui" with a grayed-out button and no word of why.
 	const MIN_NICKNAME = 2;
 
 	// Mirrors MAX_CUSTOM_FIELD_LENGTH in frogquiz/socket_server/models.py. Without
 	// it a player could type past the server's cap and only find out by having the
 	// join rejected, with nothing shown on this screen to say why.
 	const MAX_CUSTOM_FIELD_LENGTH = 200;
-
-	// The three inputs on this screen are identical apart from their bindings, and
-	// were three hand-copied class lists that had already drifted.
-	const input_class =
-		'border-input bg-background text-foreground w-full min-w-0 self-center border text-center ring-0 outline-hidden p-2 rounded-lg focus:shadow-2xl transition-all';
 
 	let hcaptchaSitekey = hcaptcha_site_key;
 
@@ -88,6 +87,8 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	const prefetch_username = async () => {
+		// Signed out, the request can only 401, and the browser logs that as an error.
+		if (!$signedIn) return;
 		const res = await fetch('/api/v1/users/me');
 		if (res.status !== 200) {
 			return;
@@ -126,7 +127,7 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	$effect(() => {
-		if (game_pin.length > 5) {
+		if (/^\d{6}$/.test(game_pin)) {
 			set_game_pin();
 		}
 	});
@@ -170,7 +171,7 @@ SPDX-License-Identifier: MPL-2.0
                         body: "The captcha failed, which is normal, but most of the time it's fixed by reloading!",
                         title: 'Captcha failed'
                     });*/
-					alert('Captcha failed!');
+					alert('Captcha failed. Reloading the page.');
 					window.location.reload();
 				}
 			} else if (recaptcha_key) {
@@ -200,19 +201,24 @@ SPDX-License-Identifier: MPL-2.0
 		game_pin = '';
 		error_message = $t('play_page.game_not_found');
 	});
-	socket.on('game_already_started', () => {
+	socket.on('game_locked', () => {
 		game_pin = '';
-		error_message = $t('play_page.game_already_started');
+		error_message = $t('play_page.game_locked');
+	});
+	socket.on('game_finished', () => {
+		game_pin = '';
+		error_message = $t('play_page.game_finished');
 	});
 	socket.on('username_already_exists', () => {
 		error_message = $t('play_page.username_taken');
 	});
+	// Digits only, six at most. The box has no maxlength: it cut "123 456" pasted from a
+	// chat to "123 45" before the space could be stripped (E10 in docs/edge-cases-2026-10.md).
 	$effect(() => {
-		const cleaned = game_pin.replace(/\D/g, '');
-		if (game_pin.replace(/\D/g, '') === game_pin) {
-			return;
+		const cleaned = game_pin.replace(/\D/g, '').slice(0, 6);
+		if (cleaned !== game_pin) {
+			game_pin = cleaned;
 		}
-		game_pin = cleaned;
 	});
 </script>
 
@@ -227,83 +233,121 @@ SPDX-License-Identifier: MPL-2.0
 
 <!-- fq-stage, not min-h-screen: 100vh counts browser chrome that is not there on a
      phone, which is where every player is, and pushed the submit button below the
-     fold. The measure is capped so the column does not stretch on a laptop, and each
-     input is a real labelled control rather than an <h1> floating above a box. -->
-<div class="fq-stage">
-	{#if game_pin === '' || game_pin.length < 6}
-		<!-- No submit handler of its own: the sixth digit advances it. Without this,
-		     Enter did a native submit and reloaded the page. -->
-		<form class="flex w-full max-w-xs flex-col gap-4" onsubmit={(e) => e.preventDefault()}>
-			<div class="flex flex-col gap-1.5">
-				<label class="text-center text-lg" for="game-pin">{$t('words.game_pin')}</label>
-				<input
+     fold.
+     This screen is the first thing every player sees, and it was a floating label, an
+     unlabeled box and a gray Submit on an empty page -- while the landing page next
+     door already did the same job in a card. Same card here: the mark, so you can see
+     you are in the right place, one field, and one full-width primary action. -->
+<!-- fq-stage centers on both axes, which is right for the game surfaces a room reads and
+     wrong for a form: at 1440x900 the card floated with roughly 40% of the viewport empty
+     above it and read as a page that had failed to load. Centered on a phone, where it is
+     correct and where every player actually is; biased upward from `sm` so a host testing
+     on a laptop sees a form rather than a void. fq-stage itself is untouched. -->
+<div class="fq-stage sm:justify-start sm:pt-[14vh]">
+	<div class="flex w-full max-w-sm flex-col items-center gap-6">
+		<!-- The page had no heading at all; the mark and the card say it visually. -->
+		<h1 class="sr-only">{$t('play_page.join_title')}</h1>
+		<Wordmark size={44} />
+
+		{#if game_pin === '' || game_pin.length < 6}
+			<!-- No submit handler of its own: the sixth digit advances it. Without this,
+			     Enter did a native submit and reloaded the page. -->
+			<form
+				class="border-border/70 bg-card w-full rounded-xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
+				onsubmit={(e) => e.preventDefault()}
+			>
+				<Label for="game-pin" class="text-sm font-medium">{$t('words.game_pin')}</Label>
+				<p class="text-muted-foreground mt-1.5 text-sm">
+					{$t('index_page.join_prompt')}
+				</p>
+				<Input
 					id="game-pin"
-					class={input_class}
 					bind:value={game_pin}
-					maxlength="6"
 					inputmode="numeric"
 					pattern="[0-9]*"
 					autocomplete="one-time-code"
+					class="mt-4 h-12 text-center font-mono text-xl tracking-[0.35em]"
 					autofocus
 				/>
-			</div>
-			<!--				use:tippy={{content: "Please enter the game pin", sticky: true, placement: 'top'}}-->
-
-			<div class="flex justify-center">
-				<BrownButton disabled={game_pin.length < 6}>{$t('words.submit')}</BrownButton>
-			</div>
-		</form>
-	{:else}
-		<form onsubmit={setUsername} class="flex w-full max-w-xs flex-col gap-4">
-			<div class="flex flex-col gap-1.5">
-				<label class="text-center text-lg" for="join-username">{$t('words.username')}</label
+				{#if error_message}
+					<p class="text-destructive mt-3 text-sm text-balance" role="alert">
+						{error_message}
+					</p>
+				{/if}
+				<Button
+					type="submit"
+					size="lg"
+					class="mt-4 h-12 w-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
+					disabled={game_pin.length < 6}
 				>
+					<!-- "Join", as on the landing page's PIN box, which does the same thing.
+					     Both steps here said "Submit", which names the mechanism, not the act. -->
+					{$t('words.join')}
+				</Button>
+			</form>
+		{:else}
+			<form
+				onsubmit={setUsername}
+				class="border-border/70 bg-card w-full rounded-xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
+			>
+				<Label for="join-username" class="text-sm font-medium">{$t('words.username')}</Label
+				>
+				<p id="join-username-hint" class="text-muted-foreground mt-1.5 text-sm">
+					{$t('play_page.nickname_hint', { count: MIN_NICKNAME })}
+				</p>
 				<!-- autocomplete="nickname", not the browser default of guessing: with no
 				     token at all Chrome and Safari read this as an account field and
 				     offered the player's saved email address for what is a game nickname
-				     shown to the whole room. -->
-				<input
+				     shown to the whole room. autofocus because the sixth PIN digit swaps
+				     this form in and removes the field that had focus: without it focus fell
+				     to <body>, a phone's keyboard closed between the two fields, and a
+				     typed name went nowhere. -->
+				<Input
 					id="join-username"
-					class={input_class}
 					bind:value={username}
-					maxlength="17"
+					maxlength={17}
 					autocomplete="nickname"
 					aria-describedby="join-username-hint"
+					class="mt-4 h-12 text-center text-lg"
+					autofocus
 				/>
-				<p id="join-username-hint" class="text-muted-foreground text-center text-sm">
-					{$t('play_page.nickname_hint', { count: MIN_NICKNAME })}
-				</p>
-			</div>
-			{#if custom_field}
-				<div class="flex flex-col gap-1.5">
-					<!-- The label text is whatever the host typed when starting the game,
-					     so it is tied to the input with for/id rather than left as a
-					     heading that happens to sit above it. -->
-					<label class="text-center text-lg text-balance" for="join-custom-field">
+
+				{#if custom_field}
+					<!-- The label text is whatever the host typed when starting the game, so it
+					     is tied to the input with for/id rather than left as a heading that
+					     happens to sit above it. -->
+					<Label
+						for="join-custom-field"
+						class="mt-5 block text-sm font-medium text-balance"
+					>
 						{custom_field}
-					</label>
-					<input
+					</Label>
+					<Input
 						id="join-custom-field"
-						class={input_class}
 						bind:value={custom_field_value}
 						maxlength={MAX_CUSTOM_FIELD_LENGTH}
 						autocomplete="off"
+						class="mt-2 h-12 text-center"
 					/>
-				</div>
-			{/if}
+				{/if}
 
-			<div class="flex justify-center">
-				<BrownButton disabled={username.trim().length < MIN_NICKNAME} onclick={setUsername}
-					>{$t('words.submit')}</BrownButton
+				{#if error_message}
+					<p class="text-destructive mt-3 text-sm text-balance" role="alert">
+						{error_message}
+					</p>
+				{/if}
+				<Button
+					type="submit"
+					size="lg"
+					class="mt-4 h-12 w-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
+					disabled={username.trim().length < MIN_NICKNAME}
+					onclick={setUsername}
 				>
-			</div>
-		</form>
-	{/if}
-	{#if error_message}
-		<p class="text-destructive max-w-xs text-center text-sm text-balance" role="alert">
-			{error_message}
-		</p>
-	{/if}
+					{$t('play_page.join_game')}
+				</Button>
+			</form>
+		{/if}
+	</div>
 </div>
 <div
 	id="hcaptcha"

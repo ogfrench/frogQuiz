@@ -22,6 +22,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <ErrorPage
 	{status}
+	title={status === 404 ? $t('error_page.quiz_404_title') : undefined}
 	description={status === 404
 		? $t('error_page.quiz_404_text')
 		: $t('error_page.unknown_error_text')}

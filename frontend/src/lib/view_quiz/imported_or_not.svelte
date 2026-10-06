@@ -6,17 +6,21 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { createTippy } from 'svelte-tippy';
+	import type { Action } from 'svelte/action';
+	import type { Props as TippyProps } from 'tippy.js';
 
 	interface Props {
 		imported: boolean | undefined;
 	}
 
 	let { imported }: Props = $props();
+	// tippy anchors on any Element; svelte-tippy types its action for HTMLElement only, and
+	// these anchor on <svg>.
 	const tippy = createTippy({
 		arrow: true,
 		animation: 'perspective-subtle',
 		placement: 'right'
-	});
+	}) as unknown as Action<Element, Partial<TippyProps>>;
 </script>
 
 {#if imported === true}

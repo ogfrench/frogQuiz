@@ -8,11 +8,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { run } from 'svelte/legacy';
 	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 
-	import type { EditorData } from '../quiz_types';
+	import type { EditorData, VotingAnswer } from '../quiz_types';
 	import { fade } from 'svelte/transition';
-	import { reach } from 'yup';
 	import { getLocalization } from '$lib/i18n';
-	import { VotingQuestionSchema } from '$lib/yupSchemas';
+	import { VotingQuestionSchema, fieldIsValid } from '$lib/yupSchemas';
 	import { get_foreground_color } from '$lib/helpers';
 
 	const { t } = getLocalization();
@@ -24,21 +23,24 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { selected_question, data = $bindable() }: Props = $props();
+	const answers = $derived(data.questions[selected_question].answers as VotingAnswer[]);
 
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
 	try {
-		if (typeof data.questions[selected_question].answers[0].right === 'boolean') {
+		// Answers carried over from a multiple-choice question still have `right`.
+		const first = (data.questions[selected_question].answers as VotingAnswer[])[0];
+		if (typeof (first as { right?: boolean }).right === 'boolean') {
 			data.questions[selected_question].answers = [];
 		}
 		// eslint-disable-next-line no-empty
 	} catch {}
 
 	const set_colors_if_unset = () => {
-		for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-			if (!data.questions[selected_question].answers[i].color) {
-				data.questions[selected_question].answers[i].color = default_colors[i];
+		for (let i = 0; i < answers.length; i++) {
+			if (!answers[i].color) {
+				answers[i].color = default_colors[i];
 			}
 		}
 	};
@@ -47,24 +49,22 @@ SPDX-License-Identifier: MPL-2.0
 		data;
 		selected_question;
 	});
-	/*console.log(data.questions[selected_question].answers, 'moIn!', data.questions[selected_question].answers.length);
+	/*console.log(answers, 'moIn!', answers.length);
     onMount(() => {
-        for (let i = 0; i < data.questions[selected_question].answers; i++) {
-            console.log(data.questions[selected_question].answers[i], 'iterate');
-            data.questions[selected_question].answers[i].right = undefined;
+        for (let i = 0; i < answers; i++) {
+            console.log(answers[i], 'iterate');
+            answers[i].right = undefined;
         }
     });*/
 </script>
 
 <div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-4 w-full px-10">
 	{#if Array.isArray(data.questions[selected_question].answers)}
-		{#each data.questions[selected_question].answers as answer, index}
+		{#each answers as answer, index}
 			<div
 				out:fade={{ duration: 150 }}
 				class="p-4 rounded-lg flex justify-center w-full transition relative"
-				class:bg-yellow-500={!reach(VotingQuestionSchema, 'answer').isValidSync(
-					answer.answer
-				)}
+				class:bg-yellow-500={!fieldIsValid(VotingQuestionSchema, 'answer', answer.answer)}
 				class:dark:bg-gray-500={answer.answer}
 				class:bg-gray-300={answer.answer}
 			>
@@ -72,9 +72,8 @@ SPDX-License-Identifier: MPL-2.0
 					class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
 					type="button"
 					onclick={() => {
-						data.questions[selected_question].answers.splice(index, 1);
-						data.questions[selected_question].answers =
-							data.questions[selected_question].answers;
+						answers.splice(index, 1);
+						data.questions[selected_question].answers = answers;
 					}}
 				>
 					<svg
@@ -112,19 +111,19 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{/each}
 	{/if}
-	{#if data.questions[selected_question].answers.length < 4}
+	{#if answers.length < 4}
 		<button
 			class="p-4 rounded-lg bg-transparent border-gray-500 border-2 hover:bg-gray-300 transition dark:hover:bg-gray-600"
 			type="button"
 			in:fade={{ duration: 150 }}
 			onclick={() => {
 				data.questions[selected_question].answers = [
-					...data.questions[selected_question].answers,
+					...answers,
 					{
 						...{
 							answer: '',
 							image: undefined,
-							color: default_colors[data.questions[selected_question].answers.length]
+							color: default_colors[answers.length]
 						}
 					}
 				];

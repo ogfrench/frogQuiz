@@ -12,7 +12,6 @@ from datetime import datetime
 from typing import Any
 
 import bleach
-import ormar.exceptions
 import xlsxwriter
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
@@ -88,10 +87,11 @@ class UUIDEncoder(json.JSONEncoder):
 
 
 @router.get("/{quiz_id}")
-async def export_quiz(quiz_id: uuid.UUID, _: User = Depends(get_current_user)):
-    try:
-        quiz: Quiz = await Quiz.objects.filter(Quiz.id == quiz_id).first()
-    except ormar.exceptions.NoMatch:
+async def export_quiz(quiz_id: uuid.UUID, user: User = Depends(get_current_user)):
+    # The owner's only, like the Excel export below (MVP.md D18): the file carries the
+    # answer key. It took the user as `_` and exported any quiz to anyone signed in (C1).
+    quiz: Quiz | None = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+    if quiz is None:
         raise HTTPException(status_code=404, detail="Quiz not found")
     image_urls = {}
     for i, question in enumerate(quiz.questions):
@@ -189,10 +189,23 @@ async def import_quiz(file: UploadFile = File(), user: User = Depends(get_curren
 
 
 @router.get("/excel/{quiz_id}")
-async def export_quiz_as_excel(quiz_id: uuid.UUID, _: User = Depends(get_current_user)):
-    try:
-        quiz: Quiz = await Quiz.objects.filter(Quiz.id == quiz_id).first()
-    except ormar.exceptions.NoMatch:
+async def export_quiz_as_excel(quiz_id: uuid.UUID, user: User = Depends(get_current_user)):
+    """The owner only. The spreadsheet contains the answer key.
+
+    This used to be any signed-in user, which is what the view page offered. It sat badly
+    beside the same page's `show_answers = is_owner`: the screen hid the correct answers
+    from a non-owner while this handed them over as a file, so anybody on the team could
+    read the answers to a quiz they were about to play. Francois closed it to the owner on
+    2026-10-02 (MVP.md D18).
+
+    404 rather than 403 for somebody else's quiz, matching `quiz/start`: a stranger learns
+    nothing about whether the id exists.
+
+    Sharing a quiz with the team is still Discover, Play and the view page. What is gone is
+    reading the answer key of a quiz you do not own.
+    """
+    quiz: Quiz | None = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+    if quiz is None:
         raise HTTPException(status_code=404, detail="Quiz not found")
     storage = io.BytesIO()
     workbook = xlsxwriter.Workbook(storage, {"in_memory": True})

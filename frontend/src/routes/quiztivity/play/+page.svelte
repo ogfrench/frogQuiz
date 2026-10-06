@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { QuizTivityPage } from '$lib/quiztivity/types';
+	import type { Abcd, Markdown, Memory, QuizTivityPage } from '$lib/quiztivity/types';
 	import { QuizTivityTypes } from '$lib/quiztivity/types';
 	import NavigationBar from './navigation_bar.svelte';
 
@@ -30,15 +30,15 @@ SPDX-License-Identifier: MPL-2.0
 	<div class="w-full h-full">
 		{#if current_slide.type === QuizTivityTypes.MARKDOWN}
 			{#await import('$lib/quiztivity/components/markdown/play.svelte') then c}
-				<c.default data={current_slide.data} />
+				<c.default data={current_slide.data as Markdown} />
 			{/await}
 		{:else if current_slide.type === QuizTivityTypes.MEMORY}
 			{#await import('$lib/quiztivity/components/memory/play.svelte') then c}
-				<c.default data={current_slide.data} />
+				<c.default data={current_slide.data as Memory} />
 			{/await}
 		{:else if current_slide.type === QuizTivityTypes.ABCD}
 			{#await import('$lib/quiztivity/components/abcd/play.svelte') then c}
-				<c.default data={current_slide.data} />
+				<c.default data={current_slide.data as Abcd} />
 			{/await}
 		{/if}
 	</div>

@@ -17,8 +17,14 @@ SPDX-License-Identifier: MPL-2.0
 	import DeleteAccount from './delete-account.svelte';
 	import UnverifiedBanner from './unverified-banner.svelte';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import LogOut from '@lucide/svelte/icons/log-out';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 
 	const { t } = getLocalization();
+
+	// Sign-in is by emailed link since 5 Oct; true brings the change-password card back,
+	// together with ENABLE_PASSWORD_LOGIN on the server.
+	const PASSWORDS = false;
 
 	interface UserAccount {
 		id: string;
@@ -50,10 +56,7 @@ SPDX-License-Identifier: MPL-2.0
 	// was no feedback at all while a slow request was pending.
 	let isSubmittingPassword = $state(false);
 
-	let this_session = $state();
-	// The avatar endpoint can 404, and a failed <img> paints its alt text across the
-	// layout, which is what put "Profile image of reviewer" beside the heading.
-	let avatar_ok = $state(true);
+	let this_session = $state<{ id: string }>();
 
 	let mismatch = $derived(
 		changePasswordData.newPasswordConfirm !== '' &&
@@ -164,6 +167,29 @@ SPDX-License-Identifier: MPL-2.0
 		return `${result.browser.name ?? '?'} ${result.browser.version ?? ''} (${result.os.name ?? '?'})`;
 	};
 
+	// The form posts on its own without JavaScript. With it, this also copes with an API
+	// from before 2026-10-03, which only logged out on GET and answers this POST with a
+	// 404: the deploy preview runs against the production API, and production's API is
+	// only replaced when someone pulls the new images on the VM. Falling back to the GET
+	// opens nothing new: on such an API that GET already logs out by itself.
+	const logOut = async (e: SubmitEvent) => {
+		e.preventDefault();
+		const form = e.currentTarget as HTMLFormElement; // gone after the await
+		const res = await fetch('/api/v1/users/logout', { method: 'POST' }).catch(() => null);
+		if (res === null) {
+			// The request never got an answer, so nothing says you are logged out. Let the
+			// browser post the form itself: it either works or shows its own error, rather
+			// than this sending you home still signed in.
+			form.submit();
+			return;
+		}
+		if (res.status === 404 || res.status === 405) {
+			window.location.href = '/api/v1/users/logout';
+			return;
+		}
+		window.location.href = '/';
+	};
+
 	const deleteSession = async (session_id: string) => {
 		const res = await fetch(`/api/v1/users/sessions/${session_id}`, {
 			method: 'DELETE'
@@ -182,7 +208,7 @@ SPDX-License-Identifier: MPL-2.0
      nested grid-rows-2 / grid-cols-2. On a phone that collapsed into a broken image
      with its alt text wrapping round the heading, a clipped "change avatar", and three
      password fields squeezed into a row. Settings pages are a single column of
-     labelled sections -- one concern per card, its own description, its own action --
+     labeled sections -- one concern per card, its own description, its own action --
      which is what every tool that does this well looks like and what survives a narrow
      screen without any reflow guesswork. -->
 <div class="mx-auto w-full max-w-3xl px-4 py-8">
@@ -200,110 +226,120 @@ SPDX-License-Identifier: MPL-2.0
 					<Card.Title>{$t('settings_page.profile')}</Card.Title>
 				</Card.Header>
 				<Card.Content class="flex flex-wrap items-center gap-5">
-					<!-- The avatar endpoint can 404, and an <img> that fails paints its alt
-					     text across the layout. Fall back to the initial instead. -->
-					{#if avatar_ok}
-						<img
-							class="border-border size-20 shrink-0 rounded-full border object-cover"
-							src="/api/v1/users/avatar"
-							alt=""
-							onerror={() => (avatar_ok = false)}
-						/>
-					{:else}
-						<span
-							class="bg-muted text-muted-foreground border-border flex size-20 shrink-0 items-center justify-center rounded-full border text-2xl font-semibold"
-							aria-hidden="true"
-						>
-							{user.username?.[0]?.toUpperCase() ?? '?'}
-						</span>
-					{/if}
+					<!-- The same initial circle as the navbar. It showed the random cartoon
+					     upstream generates at sign-up (/api/v1/users/avatar, still served for
+					     the hidden avatar editor); the navbar's circle and this one now agree. -->
+					<UserAvatar name={user.username} class="size-20 text-2xl" />
 
-					<div class="min-w-0 flex-1">
+					<!-- basis-48 lets Log out wrap under the name on a phone: beside it, a
+					     13-character username was cut to "walkmut...". -->
+					<div class="min-w-0 flex-1 basis-48">
 						<p class="truncate text-lg font-semibold">{user.username}</p>
-						<p class="text-muted-foreground truncate text-sm">{user.email}</p>
+						<p class="text-muted-foreground text-sm wrap-anywhere">{user.email}</p>
 					</div>
+
+					<!-- Log out lives here now, not in the navbar: the avatar brings you to this
+					     page, and this is where you leave from (François, 2026-10-03). A form
+					     post, not a link: the API only logs out on POST, so another site cannot
+					     sign you out by sending you to a URL. -->
+					<form method="POST" action="/api/v1/users/logout" onsubmit={logOut}>
+						<Button type="submit" variant="outline">
+							<LogOut />
+							{$t('words.logout')}
+						</Button>
+					</form>
 
 					<!-- Change avatar (/account/settings/avatar) and Public profile (/user/[id])
 					     are hidden for the MVP (MVP.md D15); both routes 404. -->
 				</Card.Content>
 			</Card.Root>
 
-			<Card.Root>
-				<Card.Header>
-					<Card.Title>{$t('settings_page.password_section')}</Card.Title>
-					<Card.Description>{$t('settings_page.password_requirements')}</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					{#if user.auth_type !== 'LOCAL'}
-						<!-- OAuth accounts are created with no password at all (frogquiz/oauth/*),
+			<!-- Passwords are off since 5 Oct (sign-in by emailed link); this card comes back
+			     with ENABLE_PASSWORD_LOGIN. -->
+			{#if PASSWORDS}
+				<Card.Root>
+					<Card.Header>
+						<Card.Title>{$t('settings_page.password_section')}</Card.Title>
+						<Card.Description
+							>{$t('settings_page.password_requirements')}</Card.Description
+						>
+					</Card.Header>
+					<Card.Content>
+						{#if user.auth_type !== 'LOCAL'}
+							<!-- OAuth accounts are created with no password at all (frogquiz/oauth/*),
 						     so PUT /password/update 400s for them. Same reasoning as
 						     delete-account.svelte: say so up front rather than after a submit
 						     that can never succeed. -->
-						<p class="text-muted-foreground text-sm">
-							{$t('settings_page.password_change_oauth')}
-						</p>
-					{:else}
-						<!-- Stacked, not md:flex-row: three password fields side by side is
+							<p class="text-muted-foreground text-sm">
+								{$t('settings_page.password_change_oauth')}
+							</p>
+						{:else}
+							<!-- Stacked, not md:flex-row: three password fields side by side is
 						     cramped at every width and gives each one about a word of room. -->
-						<form class="grid max-w-sm gap-4" onsubmit={changePassword}>
-							<div class="grid gap-2">
-								<Label for="old-password">{$t('settings_page.old_password')}</Label>
-								<Input
-									id="old-password"
-									type="password"
-									autocomplete="current-password"
-									bind:value={changePasswordData.oldPassword}
-								/>
-							</div>
-							<div class="grid gap-2">
-								<Label for="new-password">{$t('settings_page.new_password')}</Label>
-								<Input
-									id="new-password"
-									type="password"
-									autocomplete="new-password"
-									bind:value={changePasswordData.newPassword}
-								/>
-							</div>
-							<div class="grid gap-2">
-								<Label for="repeat-password"
-									>{$t('settings_page.repeat_password')}</Label
-								>
-								<Input
-									id="repeat-password"
-									type="password"
-									autocomplete="new-password"
-									aria-invalid={mismatch}
-									bind:value={changePasswordData.newPasswordConfirm}
-								/>
-								{#if mismatch}
-									<p class="text-destructive text-sm">
-										{$t('settings_page.passwords_do_not_match')}
+							<form class="grid max-w-sm gap-4" onsubmit={changePassword}>
+								<div class="grid gap-2">
+									<Label for="old-password"
+										>{$t('settings_page.old_password')}</Label
+									>
+									<Input
+										id="old-password"
+										type="password"
+										autocomplete="current-password"
+										bind:value={changePasswordData.oldPassword}
+									/>
+								</div>
+								<div class="grid gap-2">
+									<Label for="new-password"
+										>{$t('settings_page.new_password')}</Label
+									>
+									<Input
+										id="new-password"
+										type="password"
+										autocomplete="new-password"
+										bind:value={changePasswordData.newPassword}
+									/>
+								</div>
+								<div class="grid gap-2">
+									<Label for="repeat-password"
+										>{$t('settings_page.repeat_password')}</Label
+									>
+									<Input
+										id="repeat-password"
+										type="password"
+										autocomplete="new-password"
+										aria-invalid={mismatch}
+										bind:value={changePasswordData.newPasswordConfirm}
+									/>
+									{#if mismatch}
+										<p class="text-destructive text-sm">
+											{$t('settings_page.passwords_do_not_match')}
+										</p>
+									{/if}
+								</div>
+								{#if passwordError !== ''}
+									<p class="text-destructive text-sm" aria-live="polite">
+										{passwordError}
 									</p>
 								{/if}
-							</div>
-							{#if passwordError !== ''}
-								<p class="text-destructive text-sm" aria-live="polite">
-									{passwordError}
-								</p>
-							{/if}
-							<div>
-								<Button
-									disabled={!passwordChangeDataValid || isSubmittingPassword}
-									type="submit"
-								>
-									{#if isSubmittingPassword}
-										<LoaderCircle
-											class="size-4 animate-spin"
-											aria-hidden="true"
-										/>
-									{/if}
-									{$t('settings_page.change_password_submit')}
-								</Button>
-							</div>
-						</form>
-					{/if}
-				</Card.Content>
-			</Card.Root>
+								<div>
+									<Button
+										disabled={!passwordChangeDataValid || isSubmittingPassword}
+										type="submit"
+									>
+										{#if isSubmittingPassword}
+											<LoaderCircle
+												class="size-4 animate-spin"
+												aria-hidden="true"
+											/>
+										{/if}
+										{$t('settings_page.change_password_submit')}
+									</Button>
+								</div>
+							</form>
+						{/if}
+					</Card.Content>
+				</Card.Root>
+			{/if}
 
 			<Card.Root>
 				<Card.Header>
@@ -318,7 +354,52 @@ SPDX-License-Identifier: MPL-2.0
 						     container, and contain:paint stops its content contributing to the
 						     document's scroll width. Delete was a bare <button> with no box, so
 						     its target was the 42x20 of its own text. -->
-						<div class="border-border fq-scroll-x rounded-lg border">
+						<!-- On a phone the table scrolled sideways inside its card, so the
+						     Delete button for each session started off screen. Below sm the
+						     same rows are a list: what the device is, when it was last seen,
+						     and the action, all visible at once. -->
+						<ul
+							class="divide-border border-border divide-y rounded-lg border sm:hidden"
+						>
+							{#each sessions as session (session.id)}
+								<li class="flex items-center gap-3 px-4 py-3 text-sm">
+									<div class="min-w-0 flex-1">
+										<p class="flex flex-wrap items-center gap-2 font-medium">
+											{getFormattedUserAgent(session.user_agent)}
+											{#if session.id === this_session?.id}
+												<span
+													class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+													>{$t('settings_page.this_session?')}</span
+												>
+											{/if}
+										</p>
+										<p class="text-muted-foreground mt-0.5 text-xs">
+											{$t('settings_page.last_seen')}
+											{formatDate(session.last_seen)}
+										</p>
+									</div>
+									<!-- Not on this session: deleting it left the page signed in until
+									     the token ran out, then dropped you. Log out, above, is the way
+									     to leave from here. -->
+									{#if session.id !== this_session?.id}
+										<Button
+											type="button"
+											variant="destructive"
+											size="sm"
+											aria-label={$t('settings_page.delete_session_named', {
+												device: getFormattedUserAgent(session.user_agent)
+											})}
+											onclick={() => {
+												deleteSession(session.id);
+											}}
+										>
+											{$t('words.delete')}
+										</Button>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+						<div class="border-border fq-scroll-x hidden rounded-lg border sm:block">
 							<table class="w-full text-left text-sm">
 								<thead
 									class="bg-muted/50 text-muted-foreground text-xs font-medium tracking-wider uppercase"
@@ -370,16 +451,26 @@ SPDX-License-Identifier: MPL-2.0
 												{/if}
 											</td>
 											<td class="px-4 py-3 text-right whitespace-nowrap">
-												<Button
-													type="button"
-													variant="destructive"
-													size="sm"
-													onclick={() => {
-														deleteSession(session.id);
-													}}
-												>
-													{$t('words.delete')}
-												</Button>
+												{#if session.id !== this_session?.id}
+													<Button
+														type="button"
+														variant="destructive"
+														size="sm"
+														aria-label={$t(
+															'settings_page.delete_session_named',
+															{
+																device: getFormattedUserAgent(
+																	session.user_agent
+																)
+															}
+														)}
+														onclick={() => {
+															deleteSession(session.id);
+														}}
+													>
+														{$t('words.delete')}
+													</Button>
+												{/if}
 											</td>
 										</tr>
 									{/each}
@@ -390,7 +481,7 @@ SPDX-License-Identifier: MPL-2.0
 				</Card.Content>
 			</Card.Root>
 
-			<DeleteAccount authType={user.auth_type} />
+			<DeleteAccount email={user.email} />
 		</div>
 	{/await}
 </div>

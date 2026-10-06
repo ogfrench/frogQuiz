@@ -71,9 +71,7 @@ oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/v1/users/token/coo
 # all -- get_current_user_optional needs to actually reach its body and
 # return None for a fully anonymous caller, not have the dependency itself
 # raise first.
-oauth2_scheme_optional = OAuth2PasswordBearerWithCookie(
-    tokenUrl="/api/v1/users/token/cookie", auto_error=False
-)
+oauth2_scheme_optional = OAuth2PasswordBearerWithCookie(tokenUrl="/api/v1/users/token/cookie", auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -111,7 +109,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+    # jti makes every token unique. Without it a token was {sub, exp} with exp in whole
+    # seconds, so two logins by one user in the same second got the identical string,
+    # and the denylist is keyed on that string: logging out on one device revoked a
+    # session another device had just been given, and logging straight back in after
+    # logging out handed you a token that was already revoked.
+    to_encode.update({"exp": expire, "jti": uuid.uuid4().hex})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -175,6 +178,31 @@ async def token_is_revoked(token: str) -> bool:
     return await redis.get(_revocation_key(token)) is not None
 
 
+def _revoked_session_key(session_id) -> str:
+    return f"revoked_session:{session_id}"
+
+
+async def revoke_sessions(session_ids) -> None:
+    """Deny every access token minted from these sessions.
+
+    Deleting a session only removed its refresh record. The access token a device
+    already held is a JWT, so after "delete this session", "sign out everywhere" or a
+    password change it went on working until it expired, up to 30 minutes later. Tokens
+    carry their session id (`sid`) now, and a session marked here is refused for as long
+    as any token minted from it can live.
+    """
+    ttl = ACCESS_TOKEN_EXPIRE_MINUTES * 60 + 60
+    for session_id in session_ids:
+        await redis.set(_revoked_session_key(session_id), "1", ex=ttl)
+
+
+async def _is_revoked(token: str, payload: dict) -> bool:
+    if await token_is_revoked(token):
+        return True
+    session_id = payload.get("sid")
+    return session_id is not None and await redis.get(_revoked_session_key(session_id)) is not None
+
+
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",
@@ -191,7 +219,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    if await token_is_revoked(token):
+    if await _is_revoked(token, payload):
         raise credentials_exception
     user = await get_user_from_mail(email=token_data.email)
     if user is None:
@@ -208,7 +236,7 @@ async def get_current_moderator(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    if await token_is_revoked(token):
+    if await _is_revoked(token, payload):
         raise credentials_exception
     user = await get_user_from_mail(email=token_data.email)
     if user is None:
@@ -241,7 +269,7 @@ async def get_current_user_optional(token: str | None = Depends(oauth2_scheme_op
         token_data = TokenData(email=email)
     except JWTError:
         return None
-    if await token_is_revoked(token):
+    if await _is_revoked(token, payload):
         return None
     user = await get_user_from_mail(email=token_data.email)
     if user is None:
@@ -258,7 +286,7 @@ async def check_token(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-    if await token_is_revoked(token):
+    if await _is_revoked(token, payload):
         raise credentials_exception
     return token_data.email
 

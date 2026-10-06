@@ -21,30 +21,35 @@ overflow at any width.** Anything less is in one of the other tables.
 
 | Surface                | Route            | What changed                                                                                                                       |
 | ---------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Host lobby             | `/admin`         | One centred composition: giant join code, QR beside it, animated player chips, kick as a labelled button                           |
+| Host lobby             | `/admin`         | One centered composition: giant join code, QR beside it, animated player chips, kick as a labeled button. 2026-10-03: the full-screen QR is the shadcn `Dialog` with a white quiet zone; it was a `role="button"` div that Enter could not close (its handler returned a function instead of calling it) and Escape did nothing to. `game-exits` covers it |
 | Host question          | `/admin`         | Rebuilt; was the only game surface missing `fq-stage`, so it sat flush against the top of the projector with the bottom half empty |
 | Per-question results   | `/admin`         | Horizontal bars replacing vertical ones whose 45°-rotated labels collided; correct row marked with a tick and a ring               |
 | Podium                 | `/admin`         | Three-place podium building 3rd→2nd→1st, winner highlighted, confetti timed to their arrival; viewport-scaled blocks               |
-| Player join and answer | `/play`          | Answer tiles with shape, colour and pressable body; "you're in" confirmation; locked-in and time's-up states                       |
-| Editor                 | `/edit`          | Canvas shows the real game tiles; question navigation in the shell at every width; measure-capped canvas                           |
+| Player join and answer | `/play`          | Answer tiles with shape, color and pressable body; "you're in" confirmation; locked-in and time's-up states                       |
+| Editor                 | `/edit`          | Canvas shows the real game tiles; question navigation in the shell at every width; measure-capped canvas. 2026-10-03: Advanced settings is the shadcn `Dialog` with a `Switch` ("Skip the results", with what it does underneath), driven at 390/834/1440 in both themes; it was a fixed div with no Escape around a bare checkbox labeled "Hide question resuluts?" |
 | My Quizzes             | `/my-quizzes`    | The old dashboard list, merged with the signed-out browser list 2026-09-29 (D1): one page for both states, "On this browser" with Claim when signed in, the 30-day notice and account CTA when signed out, Delete in a dialog. `/dashboard` redirects here. Verified 2026-09-29 at 390/834/1440 in both themes, signed in and out |
 | Login                  | `/account/login` | Both steps on shadcn Label/Input/Button                                                                                            |
-| Quiz view page         | `/view/[quiz_id]` | Header card with Start as the one primary action, owner-only Edit/Delete and answer key, expandable anonymous-quiz banner, questions drawn as read-only editor canvases. Verified 2026-09-29 at 390/834/1440 in both themes as anonymous owner, account owner and visitor. The Download dialog it opens is still pre-redesign |
+| Quiz view page         | `/view/[quiz_id]` | Header card with Start as the one primary action, owner-only Edit/Delete and answer key, expandable anonymous-quiz banner, questions drawn as read-only editor canvases. Verified 2026-09-29 at 390/834/1440 in both themes as anonymous owner, account owner and visitor. Its Download dialog has been the shadcn `Dialog` since 2026-09-29 (Excel only, MVP.md D5); driven at all six on 2026-10-03 and it fits |
 
 | Landing | `/` | Verified clean at both widths and themes |
 | Register | `/account/register` | Rebuilt on the same Card/Label/Input/Button primitives as login |
-| Results history | `/results`, `/results/[result_id]` | Table rebuilt on theme tokens in an `fq-scroll-x` container; real empty state with a way out of it |
+| Results history | `/results`, `/results/[result_id]` | Table rebuilt on theme tokens in an `fq-scroll-x` container; real empty state with a way out of it. Hidden since 2026-10-01 (`DISABLED_ROUTES`); the redesign predates that |
 | Create | `/create` | Verified clean |
-| Kahoot import | `/import` | Rebuilt as two stacking cards; styled file picker; no invalid ring on an untouched field |
-| Media library | `/dashboard/files` | Verified clean |
+| Kahoot import | `/import` | Rebuilt as two stacking cards; styled file picker; no invalid ring on an untouched field. Hidden since 2026-10-01 (`DISABLED_ROUTES`); the redesign predates that |
+| Media library | `/dashboard/files` | Verified clean. Hidden since 2026-10-01 (`DISABLED_ROUTES`); the redesign predates that |
 | Password reset | `/account/password-reset`, `/account/reset-password` | Swept with import |
-| Account settings | `/account/settings` | Rebuilt from `grid-cols-6` to a single column of section cards; sessions table in a scroll container; initial-letter avatar fallback |
+| Account settings | `/account/settings` | Rebuilt from `grid-cols-6` to a single column of section cards; sessions table in a scroll container, and a list below `sm` so each Delete is on screen (2026-10-03); the picture is the first letter of the username, in place of the generated cartoon face (2026-10-03) |
+| Discover | `/explore` (and `/search`, a 302 into it) | Shadcn `Card` on theme tokens since Explore and Search merged. 2026-10-03: driven in a browser at 390/834/1440 in both themes across all four modes (browse, results with highlights, too short, no results), no overflow in any of the 24. Dropped upstream's verified-seal icon that every original quiz wore with a hover-only explanation; an import now says "Imported from Kahoot" in words. Search highlights are a butter tint held to AA in both themes instead of the browser's #ffff00 |
+| Navbar and layout | every page with the navbar | 2026-10-03: one Log in (registration on the login page), an initial-letter avatar that opens My Account (Log out lives there), Join beside the menu button on phones, a Sheet drawer below `md`, the full bar from 768 px. Layout owns `<main>`, a skip link and the footer, which four pages used to paste in. axe reports nothing on any visible route at 390 and 1440, signed in and out. Screenshots walked: every route in light at 390 and 1440, the changed routes in dark at 390, the navbar and drawer in both themes |
+| Add-question picker | `/create`, `/edit` | The type picker is the shadcn `Dialog`, opened from the button after the last card and from the empty state. 2026-10-03: driven at 390/834/1440 in both themes; it fits at all six. Type names in sentence case ("Multiple choice", "Check choice") |
+| Start-game dialog | Play on `/view/[quiz_id]` and `/my-quizzes` (one component, `lib/dashboard/start_game.svelte`) | Rebuilt on shadcn `Dialog`/`Button`/`Card`/`Input`/`Label`/`Switch`; the Old-School mode picker and the (already-inert) captcha toggle were dropped, see [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16). 2026-10-03: driven from `/view` at 390/834/1440 in both themes; it fits at all six. `/my-quizzes` opens the same component. Title and button read "Start game" |
+| Image uploader | the image button on a question card and on quiz setup | 2026-10-03: the hand-rolled overlay (a `role="button"` around the whole uploader, focus left on the page behind, the size rule floating on the scrim over page content) is the shadcn `Dialog`, titled "Add an image" with the size rule as its description. Uppy gets its dark theme when the app is dark, its green upload button and blue links are `--primary` and foreground, "browse" is underlined so it reads as the action, a phone is offered "Choose an image" rather than a drop zone it cannot use, and "Powered by Uppy" is off through Uppy's own option (the CSS that was meant to hide it lost on specificity). Driven at 390/834/1440 in both themes, empty and with a file added, then closed and reopened: no overflow, focus inside, no page errors |
 
 Two cross-cutting systems came out of this and now apply to every surface above:
 
 - **Answer palette** — four pastel hues in `src/lib/play/answer_colors.ts`, derived
   in OKLCH. Was the same hex array copy-pasted into six files. This page previously
-  said the palette was "validated for colour-vision separation". It is not, and an
+  said the palette was "validated for color-vision separation". It is not, and an
   earlier commit in this branch corrected the same claim in the source: under
   deuteranopia coral and green differ by 4 of 255. Four hues at one lightness cannot
   be separated by a dichromat. Accessibility here rests on the shape channel, which
@@ -58,20 +63,7 @@ Two cross-cutting systems came out of this and now apply to every surface above:
 
 ## In scope, not done
 
-- **Explore** (`/explore`) — rebuilt on shadcn `Card` and theme tokens when Explore and
-  Search were merged into it, and its four render modes (browse, too-short, results with
-  highlights, empty) were verified server-side against a stub carrying the deployed
-  backend's real payload. It is here rather than in Done because it has **not** been
-  driven in a browser at 390/834/1440, which is what this page means by verified.
-  `/search` is now a 302 into it and renders nothing of its own.
-- **Editor add-question control** — the rail's button moved out of the scroll container
-  and a second one added at the end of the canvas; the type picker is the shadcn
-  `Dialog` now. Same gap: compiles and lints, not yet driven at the three widths.
-- **Host start-game modal** (`lib/dashboard/start_game.svelte`, opened from `/dashboard`)
-  — rebuilt on shadcn `Dialog`/`Button`/`Card`/`Input`/`Label`/`Switch`; the Old-School
-  mode picker and the (already-inert) captcha toggle were dropped in the same pass, see
-  [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16). Not yet driven
-  at the three widths.
+Nothing is open here today.
 
 `/edit/files` was reviewed and needed no change. `/view/[quiz_id]` was once listed here
 as reviewed and needing no change; that was wrong. It has since been redesigned and
@@ -88,6 +80,9 @@ for how to turn any of them back on.
 | Box controller        | `/controller`, `/account/controllers/*` (4 routes)                                                      |
 | TOTP and backup codes | `/account/settings/security`                                                                            |
 | Moderation            | `/moderation` — 404s in its loader; its API is separately gated on the `mods` allowlist, which is empty |
+| Public user page      | `/user/[user_id]` — hidden through `DISABLED_ROUTES` since 2026-10-01; nothing linked to it               |
+| Video upload          | `/edit/videos` — hidden the same day; the uploader is always given `video_upload={false}`              |
+| Custom avatars        | `/account/settings/avatar` — hidden; My Account shows the first letter of the username instead          |
 
 `/remote` is hidden (MVP.md D15) and 404s through `DISABLED_ROUTES`. `/practice` was
 kept (D3) and rebuilt on 2026-09-29: the game's answer tiles, no timer, a score at the
@@ -100,10 +95,8 @@ covers it.
 
 | Surface          | Route                        | Why                                                                                                                                                                                                                                                                                                                                                       |
 | ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Docs             | `/docs` and 7 pages under it | Layout untouched, but the copy was not left alone: all eight carried upstream's "the open-source quiz-application" description and two described a different page entirely, two told you to `git clone mawoka-myblock/ClassQuiz`, and the attribution page credited nine named people for work on frogQuiz they never did. See the identity section below |
-| Public user page | `/user/[user_id]`            | Nobody links to it internally                                                                                                                                                                                                                                                                                                                             |
+| Docs             | `/docs/attribution`, `/docs/privacy-policy`, `/docs/tos` (the index and the other pages are hidden) | Layout untouched, but the copy was not left alone: all eight carried upstream's "the open-source quiz-application" description and two described a different page entirely, two told you to `git clone mawoka-myblock/ClassQuiz`, and the attribution page credited nine named people for work on frogQuiz they never did. See the identity section below |
 | OAuth error      | `/account/oauth-error`       | Layout untouched — OAuth renders nothing today, by config. Its "open an issue" link pointed at upstream's tracker and now points at ours                                                                                                                                                                                                                  |
-| Video editor     | `/edit/videos`               | Reachable only from the uploader's video path                                                                                                                                                                                                                                                                                                             |
 
 ---
 
@@ -176,18 +169,52 @@ Worth being exact, because the phrase gets stretched:
 - **Not verified:** anything on the deployed site. The sandbox this work was done
   in cannot reach `frogquiz.xyz` — the egress policy blocks it — so nothing here
   describes production. Somebody has to open the real site.
-- **Verified:** eight routes x two themes x two widths report no horizontal overflow,
-  no touch target below the minimum (44px on coarse pointers, 24px otherwise) and no
-  text below WCAG AA. Chasing the last of those to its cause was worth it: the
+- **Verified:** eight routes x two themes x two widths report no horizontal overflow
+  and no text below WCAG AA. This bullet also claimed no touch target below 44px on
+  coarse pointers; that probe missed fields and the editor's answer row, and issue #24
+  measured them on 4 Oct (next bullet). Chasing the last of those to its cause was worth it: the
   remaining overflow was never layout, it was paint -- filters expanding an element's
   painted region past its box, and a wide table contributing paint through a scroll
   container that was itself working correctly.
 - **Verified in dark mode:** the editor, at 390 and 1440. Doing this found a real
-  bug rather than confirming a guess: `ckeditor5.css` sets its own text colour as a
+  bug rather than confirming a guess: `ckeditor5.css` sets its own text color as a
   near-black constant, so the question title in the editor rendered black on a dark
   ground and was all but invisible. It is mapped onto the theme tokens now.
-- **Not verified in dark mode:** the projector surfaces and the player screens since
-  the type-scale change. They were checked in both themes when first built.
+- **Verified with the keyboard, from 3 Oct only.** Before then Tab did nothing on any
+  page (the command palette swallowed it), so no keyboard check before that date meant
+  anything. Since: Tab order on `/`, Discover, My Quizzes, `/play`, login, register, the
+  quiz page and the editor; the skip link landing in `<main>`; the phone drawer trapping
+  focus and returning it on Escape; joining and answering a live game with the keyboard
+  alone; every rebuilt dialog closing on Escape with focus inside. The probe that flags
+  "no focus ring" reads outline and box-shadow, so a tile with a decorative shadow passes
+  it falsely -- the player tiles did. Check a screenshot, not just the probe.
+- **Verified with axe, 4 Oct: every state of a live game.** Host lobby, question,
+  results (single and multiple answer), scoreboard and podium; phone PIN step, name
+  step, lobby, both question types, locked in, feedback right and wrong, and the end
+  screen at first, second and third. Light and dark, no violations. The phone question
+  screen was also measured at 390x664 (a phone with its toolbars) and 390x844, with and
+  without questions shown on devices, with and without an image: no overflow.
+- **Verified in dark mode, 4 Oct:** every host projector screen (lobby, both question
+  types, both results screens, scoreboard, podium) walked by eye at 1440x900 and
+  1920x1080, no overflow; the phone question screens too. axe passes every game state in
+  dark as well.
+- **Walked as a user, 4 Oct: everything outside a live game.** Register, log in, forgot
+  password, change password and log back in, create a quiz with each question type,
+  image upload, save a draft, reopen and edit, Discover browse and search, a teammate's
+  quiz, Practice, My Quizzes (Play, Download, Delete), My Account and sessions, the
+  signed-out create-then-claim journey, the legal pages and the 404. Driven through the
+  UI only, at 390 (touch emulated) and 1440, light and dark, with axe, console errors and
+  overflow checked at each step. It found a Save-breaking timer bug, a phone-only tap bug
+  in the editor and a dead end after changing a password; TODO.md lists all of them.
+  Touch emulation matters: the editor tap bug does not reproduce with a mouse, and no spec
+  had run with a touch screen until then.
+- **Verified under touch emulation, 4 Oct: press areas (issue #24).** At 390x844 with
+  `hasTouch` and `isMobile`, every control on home, Discover, My Quizzes, the quiz page,
+  My Account, Join, the editor, the menu drawer and the player's join, lobby, question and
+  results screens has a 44x44 press area. The centre and four edges of each land on the
+  control itself, every text field renders at 16px or more, and no control is visible
+  only on hover. `frontend/e2e/touch-targets.e2e.ts` runs that audit. Not verified: a
+  real thumb on a real phone, and the host's screens (a projector, not a phone).
 - **Covered by tests now.** This line used to read "there are no frontend tests,
   and the frontend CI job runs eslint only". There are 57 under vitest and the CI
   job runs them, alongside eslint. They cover the answer palette, question

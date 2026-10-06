@@ -17,6 +17,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
+	import { onDestroy } from 'svelte';
+	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -28,8 +30,14 @@ SPDX-License-Identifier: MPL-2.0
 	let isSubmitting = $state(false);
 	let result: 'sent' | 'too_many' | 'no_mail' | 'failed' | null = $state(null);
 
+	// Held for a minute after each send: the server refuses sooner anyway, and a third
+	// quick click spends the address's hourly three and earns "try again in an hour".
+	const cooldown = createCooldown();
+	onDestroy(cooldown.stop);
+
 	const submit = async (e: Event) => {
 		e.preventDefault();
+		if (cooldown.active) return;
 		isSubmitting = true;
 		result = null;
 		try {
@@ -40,8 +48,16 @@ SPDX-License-Identifier: MPL-2.0
 			});
 			if (res.ok) {
 				result = 'sent';
+				cooldown.start();
 			} else if (res.status === 429) {
-				result = 'too_many';
+				const wait = cooldownFromRefusal(res);
+				if (wait > 0) {
+					// the cooldown, not the hourly limit: say how long, not "an hour"
+					cooldown.start(wait);
+					result = null;
+				} else {
+					result = 'too_many';
+				}
 			} else if (res.status === 503) {
 				result = 'no_mail';
 			} else {
@@ -62,7 +78,9 @@ SPDX-License-Identifier: MPL-2.0
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="gap-1 text-center">
-			<Card.Title class="text-2xl">{$t('resend_page.title')}</Card.Title>
+			<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+				{$t('resend_page.title')}
+			</h1>
 			<Card.Description>{$t('resend_page.subtitle')}</Card.Description>
 		</Card.Header>
 
@@ -79,11 +97,19 @@ SPDX-License-Identifier: MPL-2.0
 						bind:value={email}
 					/>
 				</div>
-				<Button type="submit" class="w-full" disabled={isSubmitting || email.length === 0}>
+				<Button
+					type="submit"
+					class="w-full"
+					disabled={isSubmitting || email.length === 0 || cooldown.active}
+				>
 					{#if isSubmitting}
 						<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
 					{/if}
-					{$t('resend_page.action')}
+					{#if cooldown.active}
+						{$t('resend_page.wait', { time: formatWait(cooldown.left) })}
+					{:else}
+						{$t('resend_page.action')}
+					{/if}
 				</Button>
 			</form>
 		</Card.Content>
@@ -122,6 +148,17 @@ SPDX-License-Identifier: MPL-2.0
 					</p>
 				</div>
 			</div>
+		{/if}
+
+		{#if result === 'sent'}
+			<p class="text-muted-foreground px-6 pb-2 text-sm">
+				{$t('resend_page.junk_before')}<a
+					href="https://spam-quarantine.capgemini.com"
+					target="_blank"
+					rel="noopener"
+					class="underline underline-offset-4">{$t('resend_page.junk_link')}</a
+				>{$t('resend_page.junk_after')}
+			</p>
 		{/if}
 
 		<Card.Footer class="justify-center gap-1.5 text-sm">

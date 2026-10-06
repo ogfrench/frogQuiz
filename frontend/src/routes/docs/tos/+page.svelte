@@ -58,6 +58,6 @@ SPDX-License-Identifier: MPL-2.0
 		frogQuiz is a fork of <a href="https://github.com/mawoka-myblock/ClassQuiz">ClassQuiz</a>
 		under the
 		<a href="https://www.mozilla.org/en-US/MPL/2.0/" target="_blank" rel="noreferrer">MPL-2.0</a
-		>. These terms cover the instance we run, not the source, which has its own licence.
+		>. These terms cover the instance we run, not the source, which has its own license.
 	</p>
 </article>

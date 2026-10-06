@@ -162,13 +162,13 @@ has a single Sign in anyway.
   `lib/editor/uploader.svelte` → `POST /api/v1/storage/`, which works for anonymous
   users too. The uploader's Library, Video and Pixabay tabs are already hidden.
 - **What hiding it costs:** nobody can rename or bulk-delete uploads. The per-user quota
-  is about 1 GB (`free_storage_limit`), so nobody will hit it through normal use.
-  Deleting a quiz removes its **question** images, but not its cover or background
-  image. Deleting an account removes all of that user's files.
+  is 1 GiB (`free_storage_limit`), so nobody will hit it through normal use. Deleting a
+  quiz now frees every image it owned, cover and background included, and gives the
+  bytes back (2026-10-02); deleting an account removes all of that user's files.
 - **Conclusion:** safe to hide. Media stays managed inside the quiz, as proposed.
 
 - [x] Hide `/edit/files`, `/dashboard/files` and `/edit/videos`, and remove the dashboard's Files button (2026-09-29, D15)
-- [ ] (optional) Make quiz delete also remove `cover_image` / `background_image`, so hiding Files leaks nothing
+- [x] (optional) Make quiz delete also remove `cover_image` / `background_image`, so hiding Files leaks nothing. Done 2026-10-01: one reference-counted helper in `frogquiz/helpers/__init__.py` serves every delete path
 
 ### Results and analytics
 
@@ -187,25 +187,36 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 
 | # | Decision | Recommendation | G | F |
 | - | --- | --- | - | - |
-| D1 | `/my-quizzes` is the surviving URL, and `/dashboard` redirects to it (reverses #18's direction) | Yes — the name matches the label | ☑ | ☐ |
-| D2 | Question types in MVP: ABCD only, or ABCD + CHECK | ABCD + CHECK. CHECK works and scores all-or-nothing. **G (2026-09-29): ABCD + CHECK**; the other five are hidden from the type picker | ☑ | ☐ |
-| D3 | Practice mode: hide or redesign | Hide the link on the view page. **G (2026-09-28): keep and redesign** | ☑ keep | ☐ |
-| D4 | Results history and Analytics: hide, together with the Save results button | Hide all three. **G (2026-09-29): hide all three** | ☑ hide | ☐ |
-| D5 | Download: keep (it is the only backup/export) and restyle, or hide | Keep `.cqa` only if D6 keeps Import; otherwise hide. **G (2026-09-28): keep and restyle; (2026-09-29, after D6): Excel only**, `.cqa` hidden until Import returns | ☑ keep, Excel | ☐ |
-| D6 | Import: expose in MVP or hide | Decide after the three test imports in §3. **G (2026-09-29): hide**, with its doc page | ☑ hide | ☐ |
-| D7 | Editor redesign: continuous Google Forms-style list replaces the rail | Yes, but after everything in 4.1–4.3 ships | ☑ | ☐ |
-| D8 | Shared contact address to replace `francois.prevot@frog.co` in the ToS, `CONTACT.md` and `CONTRIBUTING.md` | Needs a real team channel. **G (2026-09-29): leave the placeholder for now**; does not block internal sharing | ☐ | ☐ |
-| D9 | User database / login architecture for V1 = the "account is what makes a quiz permanent" model in mvp-scope.md; Azure SSO after V1 | Confirm | ☑ | ☐ |
-| D10 | English-only (33 locale files removed) | Confirm. **G (2026-09-29): English-only for the MVP, but keep the i18n machinery** (i18next, `getLocalization`, the backend's language handling); more languages are an MVP2 item (§4.8) | ☑ | ☐ |
-| D11 | WebAuthn and ratings endpoints: flag-gate, or accept as live | Flag-gate like QuizTivity. Done 2026-09-29: `ENABLE_WEBAUTHN` gates adding a key (listing, deleting and signing in with an existing key still work, as with TOTP); `ENABLE_RATINGS` gates rating | ☑ | ☐ |
-| D12 | View page shows the answer key (correct answers, ORDER sequence, TEXT answers, RANGE bounds) to the quiz's owner only | Yes — a visitor may play it later. Presentation only: the public API still returns the answers | ☑ | ☐ |
-| D13 | What "private" means: today anyone with the link can open a private quiz's view page (only the owner can start it) | **G (2026-09-29): relabel it "Unlisted"** — public = in Discover, unlisted = link only. No backend change | ☑ | ☐ |
-| D14 | Editor drafts | **G (2026-09-29): autosave to the server.** A half-built quiz saves as a draft, shows a Draft badge on My Quizzes, and can't be started until complete (enforced in `quiz/start`). Red rings and alerts only after the first Save or Start attempt. **Done 2026-09-29**, see §4.5; the draft state is derived from the questions rather than stored | ☑ | ☐ |
-| D15 | Hide `/remote`, public profiles (`/user/[id]`), the avatar editor, and the Files library (`/edit/files`, `/dashboard/files`, `/edit/videos`) | **G (2026-09-29): hide all** | ☑ | ☐ |
+| D1 | `/my-quizzes` is the surviving URL, and `/dashboard` redirects to it (reverses #18's direction) | Yes — the name matches the label | ☑ | ☑ |
+| D2 | Question types in MVP: ABCD only, or ABCD + CHECK | ABCD + CHECK. CHECK works and scores all-or-nothing (reconfirmed by F on 2026-10-04 after comparing Kahoot; see `docs/mvp-scope.md`). **G (2026-09-29): ABCD + CHECK**; the other five are hidden from the type picker. **F (2026-10-02): "override: like Kahoot"** — checked against Kahoot's live docs, this is already where we are. Kahoot's free plan is Quiz (single-answer) + True/False; multi-select is paid and scores all-or-nothing, exactly as our CHECK does. So ABCD + CHECK + the True/False preset matches Kahoot's whole relevant set and **nothing changed**. CHECK was *not* removed: Kahoot has it, the paywall is meaningless to us, and dropping a live feature is a joint call. Two knowing divergences: Kahoot makes True/False its own type rather than a preset, and caps free Quiz at 4 answers | ☑ | ☑ |
+| D3 | Practice mode: hide or redesign | Hide the link on the view page. **G (2026-09-28): keep and redesign** | ☑ keep | ☑ |
+| D4 | Results history and Analytics: hide, together with the Save results button | Hide all three. **G (2026-09-29): hide all three** | ☑ hide | ☑ |
+| D5 | Download: keep (it is the only backup/export) and restyle, or hide | Keep `.cqa` only if D6 keeps Import; otherwise hide. **G (2026-09-28): keep and restyle; (2026-09-29, after D6): Excel only**, `.cqa` hidden until Import returns | ☑ keep, Excel | ☑ |
+| D6 | Import: expose in MVP or hide | Decide after the three test imports in §3. **G (2026-09-29): hide**, with its doc page | ☑ hide | ☑ |
+| D7 | Editor redesign: continuous Google Forms-style list replaces the rail | Yes, but after everything in 4.1–4.3 ships. **Done 2026-10-01** (§4.5), with one deviation: no drawer below `lg`. The column of cards is the navigation on a phone, as in Forms and Kahoot; an outline sits beside it from `lg` up | ☑ | ☑ |
+| D8 | Shared contact address to replace `francois.prevot@frog.co` in the ToS, `CONTACT.md` and `CONTRIBUTING.md` | Needs a real team channel. **G (2026-09-29): leave the placeholder for now**; does not block internal sharing. **F (2026-10-02): the placeholder is fine** — closed, revisit only if frogQuiz goes outside the team | ☑ | ☑ |
+| D9 | User database / login architecture for V1 = the "account is what makes a quiz permanent" model in mvp-scope.md; Azure SSO after V1 | Confirm. **F (2026-10-02): confirmed** — an account is what makes a quiz permanent, and no SSO yet. `frogquiz/oauth/` stays config-gated and unwired | ☑ | ☑ |
+| D10 | English-only (33 locale files removed) | Confirm. **G (2026-09-29): English-only for the MVP, but keep the i18n machinery** (i18next, `getLocalization`, the backend's language handling); more languages are an MVP2 item (§4.8) | ☑ | ☑ |
+| D11 | WebAuthn and ratings endpoints: flag-gate, or accept as live | Flag-gate like QuizTivity. Done 2026-09-29: `ENABLE_WEBAUTHN` gates adding a key (listing, deleting and signing in with an existing key still work, as with TOTP); `ENABLE_RATINGS` gates rating | ☑ | ☑ |
+| D12 | View page shows the answer key (correct answers, ORDER sequence, TEXT answers, RANGE bounds) to the quiz's owner only | Yes — a visitor may play it later. Presentation only: the public API still returns the answers | ☑ | ☑ |
+| D13 | What "private" means: today anyone with the link can open a private quiz's view page (only the owner can start it) | **G (2026-09-29): relabel it "Unlisted"** — public = in Discover, unlisted = link only. No backend change | ☑ | ☑ |
+| D14 | Editor drafts | **G (2026-09-29): autosave to the server.** A half-built quiz saves as a draft, shows a Draft badge on My Quizzes, and can't be started until complete (enforced in `quiz/start`). Red rings and alerts only after the first Save or Start attempt. **Done 2026-09-29**, see §4.5; the draft state is derived from the questions rather than stored | ☑ | ☑ |
+| D15 | Hide `/remote`, public profiles (`/user/[id]`), the avatar editor, and the Files library (`/edit/files`, `/dashboard/files`, `/edit/videos`) | **G (2026-09-29): hide all** | ☑ | ☑ |
+| D16 | Do players need the question and answer text on their own phone? Today they see shapes only, as Kahoot does — right in a room with a projector, wrong on a call | **F (2026-10-02): "make it like Kahoot"** — and Kahoot does not force the choice: it ships a free host-side setting, *Show questions & answers on participants' devices*, off by default. So does the start modal now. Both render paths already existed (upstream's "Normal" / "Old-School" modes); the modal was hardcoding one. Per game, not remembered | ☐ | ☑ |
+| D17 | `--primary` is shadcn's zinc default, so every primary control is black. `CLAUDE.md` said theme `green` made it the frog green; it does not | **F (2026-10-01): stay zinc.** `CLAUDE.md` corrected instead | ☐ | ☑ |
+| D18 | Does a non-owner get the answer key? The view page hid the correct answers from a non-owner (`show_answers = is_owner`) while the Download button beside it, gated only on `disabled={!logged_in}`, handed over a spreadsheet containing them | **F (2026-10-02): lock results to the owner.** `GET /eximport/excel/{id}` is scoped to `user_id`, 404 for anybody else; the button is behind `{#if is_owner}`. Sharing a quiz is still Discover, Play and the view page | ☐ | ☑ |
+| D19 | Can somebody join a game that has started? It refused everyone once the host pressed Start | **F (2026-10-05): yes, as in Kahoot, with a lock.** A late joiner starts at 0 with the question that is up. The host locks and unlocks from the lobby and from the bar during the game. A finished game still refuses | ☐ | ☑ |
+| D20 | Score curve. A right answer at the buzzer scored about 0 | **F (2026-10-05): Kahoot's.** 1000 inside half a second, falling to 500 at the buzzer. Multiple-answer questions stay all or nothing | ☐ | ☑ |
+| D21 | Who can sign in, and how. "Public" meant the internet (open decision 6 in `docs/mvp-scope.md`) | **F (2026-10-05): an emailed link or six-digit code, frog.co and capgemini.com addresses only, no passwords, as frogViz does. Discover, search and the sitemap need a signed-in account.** A first sign-in picks a username, which makes the account. Password login, registration, reset and change are hidden behind `ENABLE_PASSWORD_LOGIN`, not removed. Anonymous create, host and play are unchanged | ☐ | ☑ |
 
-G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29. D12 is already
-implemented on the view page, since it is a display choice and reversible in one line; say
-so if you disagree, François.
+G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
+**François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
+asking for each to be explained; D2 and D16 he answered with "like Kahoot" the same day,
+and D18 is his. D1 to D15 are agreed by both. D17 is his alone and needs no second
+signature. **D16 and D18 still need Gonçalo's tick**: both are François's calls from
+2 Oct, and D18 narrows who can download a quiz's results. **D19 to D21 are François's
+calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
+the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on
 François's sign-off, including hiding Docs and GitHub. Everything hidden since is
@@ -219,11 +230,17 @@ because they may reorder everything else.
 
 - [ ] Host a real game: laptop on a projector, 3+ phones (iOS and Android), signed-in host
 - [ ] Same with an anonymous host (`/create` signed out → edit → start → play → podium)
-- [ ] Register with a real inbox: confirmation mail arrives, link works, a second click still works
-- [ ] Forgot password with a real inbox: mail arrives, reset works, old password rejected
+- [ ] Sign in with a frog.co address and a real inbox (D21): the link signs you in, a second
+      click inside 15 minutes still works, and the code works on another device
+- [ ] ~~Register and forgot password with a real inbox~~: hidden since D21 (5 Oct), nothing to test
 - [ ] Delete a test account that owns a quiz and an uploaded image; confirm both are gone
 - [ ] Check `MAIL_*` is set on the production API (`DEPLOY.md` → Email)
-- [ ] Run `bash e2e/run.sh` locally and record the result here: ______
+- [x] Run `bash e2e/run.sh` locally and record the result here: 146/146 on `077f695`, clean stack, 2026-10-04
+- [ ] Confirm the `worker` container is running in production. The 30-day deletion the
+      anonymous copy promises is an arq cron (`frogquiz/worker/storage.py`, 03:00 daily);
+      nothing else enforces it, so without that container the promise is not kept
+- [x] Run the backend suite on clean infrastructure — 2026-10-01: 134 passed, 1 skipped
+- [x] Close #16: the start-game modal was rebuilt and driven in a browser on 2026-10-01. Closed 2026-10-02
 
 > **Running the e2e suite from a VS Code terminal:** with the project venv active,
 > `python` is the venv's own interpreter, which has no pipenv, and `run.sh` dies with
@@ -241,11 +258,24 @@ because they may reorder everything else.
 - [x] `/dashboard` and `/overview` redirect to `/my-quizzes`; `/` signed-in redirect too. So do the login default `returnTo` and the register / resend-verification / reset-password redirects
 - [x] `/create` works signed out without `?anon=true`
 - [x] Navbar: Discover · My Quizzes · Join · (My Account | Sign in); current-page indicator; drop the always-highlighted Play pill. My Account is a link, not a menu, with Log out beside it
+  Revised 2026-10-03 (François: "not double login register, just one login"): signed out
+  shows **Log in** only, with registration linked from the login page, plus "Create a
+  quiz". Signed in, a circle with the user's initial links to My Account, and Log out
+  moved onto that page (François, same day; a dropdown was tried and dropped). Below
+  768 px Join stays visible next to the menu button and the rest is a drawer.
 - [x] Remove Docs and GitHub from the navbar and footer; keep ToS / Privacy / Attribution in the footer (2026-09-29; also the command palette, and `/docs` plus upstream's doc pages 404)
 - [x] Remove Import / Results / Files / Settings from the My Quizzes toolbar (per D4–D6). The toolbar is gone; Analytics went from each row with Results (D4)
 - [x] `/account/settings` becomes "My Account" (heading, tab title, navbar, command palette); remove the avatar and public-profile buttons
 
 ### 4.3 Close the gaps in the core flow
+
+**Landed 2026-10-01**, from the full visual audit (`docs/audit-2026-10-01.md`):
+
+- [x] After each question a player is told **Correct!** or **Not this time**, with an icon as well as the color, then the points, their total and their place. It was a bare "+760", so scoring 0 read as a broken game. Nothing new crosses the socket
+- [x] The **podium builds up** — third, second, first, 1.4s apart — in gold, silver and bronze with a crown and confetti, and does none of that under `prefers-reduced-motion`
+- [x] The **join screen** is the landing page's PIN card rather than a floating label, an unlabeled box and a gray Submit
+- [x] The host's per-question **results scale for a projector**; they were set at laptop size behind a question screen set at 90px
+- [x] **Play** is no longer offered to a signed-in visitor on somebody else's unlisted quiz, which `quiz/start` answers with a 404
 
 - [x] **Exit the lobby** — host can cancel a game that hasn't started (end the game server-side, return to My Quizzes). New `end_game` socket event; players see "The host ended the game" and the PIN stops resolving
 - [x] **Exit mid-game** — host "End game" with a confirm; goes to the podium or back
@@ -284,7 +314,7 @@ Drafts first — they are small and help whichever editor we end up with.
 - [x] Only block **Start**, not **Save**. The editor **autosaves** to the server 2.5s after typing pauses, once the quiz has a title and a question (`POST /editor/save`, which keeps the edit session open; a new quiz's first save creates it and the URL becomes `/edit?quiz_id=`). Save on an unfinished quiz keeps it as a draft and says what is left; on a finished one it goes to the view page. Back saves first. **No draft column:** a quiz is a draft when a question is unfinished, worked out from its questions by one rule on both sides (`lib/editor/question_complete.ts` and `frogquiz/helpers/completeness.py`), so a flag can never disagree with the quiz. `quiz/start` refuses drafts with a 400 naming the questions; the view page and My Quizzes show a **Draft** badge and disable Play. The server already accepted incomplete quizzes, so `QuizInput` did not need relaxing. Pinned by `e2e/editor.e2e.ts` and `e2e/drafts.e2e.ts`
 - [x] Label/placeholder on the description field. It is now optional too: it was required, at least three characters, with nothing saying so
 - [x] Fix the question-cap message: the schema caps at 50 but said 32
-- [ ] **Redesign:** one scrolling column of question cards, each editing its question and answers in place, "+" between and after cards (Google Forms / Kahoot style), drag-to-reorder kept; the rail becomes an optional outline on wide screens and a drawer below `lg`
+- [x] **Redesign (2026-10-01):** one scrolling column — quiz setup, a card per question, then Add. The open card edits in place; the others stay as question text plus answer chips, which also keeps CKEditor to one instance instead of one per question. "+" between cards, duplicate, drag or arrow to reorder, delete behind a confirm. An outline sits beside the column from `lg` up; below that the column is the navigation, so there is no drawer (the deviation from D7, which assumed the rail had to survive). A new quiz shows title, description and "Add your first question", with the other four setup fields folded behind More settings. True / False was added as a preset: an ABCD question with its two answers already written, neither marked correct (2026-10-04; True used to be pre-marked, which let a false statement ship with the wrong answer). Pinned by `e2e/editor-column.e2e.ts`
 
 ### 4.6 Quality and security
 
@@ -295,6 +325,10 @@ Drafts first — they are small and help whichever editor we end up with.
 - [x] Decide whether "private" should mean private: `GET /quiz/get/public/{id}` serves any quiz by link today, so private currently means unlisted — relabelled **Unlisted** with a link icon and a one-line explanation in the editor (D13)
 - [x] Close issue #13 (deletion fixed by #14; email change deferred by agreement) — closed 2026-09-29, with #18
 - [ ] Add `svelte-check` to CI once the ~300 errors in our own code are down (the other ~820 are inside `bits-ui`'s types)
+- [x] Hidden routes 404 through the app's own error page (2026-10-01). They were guarded in `handle`, which runs before the router, so SvelteKit answered with its built-in fallback: bare "404 | Not found", no navbar, no way home, on exactly the sixteen URLs we hide. `lib/hidden_routes.ts` holds the list and `hooks.ts` reroutes them
+- [x] The editor no longer drops an edit typed in the first half-second after it opens (2026-10-01). The "nothing has changed yet" baseline was taken 500ms late and swallowed the change, so Save sent nothing and still went to the quiz page saying "Saved"
+- [x] Run the backend suite on clean infrastructure — 2026-10-01: **134 passed, 1 skipped**
+- [x] Make `e2e/run.sh` run on Linux and macOS (done 2026-10-01, `TODO.md` row 11). It looks for `pg_ctl.exe`, `meilisearch-windows-amd64.exe`, `%APPDATA%\npm\pnpm` and pipenv, so the stack can only be stood up on the machine it was written for
 
 ### 4.7 Sign-off play test (the gate before sharing)
 
@@ -310,7 +344,7 @@ Both of us, on the deployed site, after 4.2–4.4 land.
 | Discover: browse, search, open a public quiz, start it | ☐ | ☐ | ☐ | ☐ |
 
 - [ ] No horizontal scroll at any of the three widths (`document.documentElement.scrollWidth > clientWidth`)
-- [ ] Closes #19 (visual pass), #16 (modal live check), #3 (MVP1 umbrella)
+- [ ] Closes #3 (MVP1 umbrella). #19 (visual pass) and #16 (modal live check) were closed on 2026-10-02
 - [ ] G ☐ F ☐ — agreed it's ready to share
 
 ### 4.8 After V1 (not blockers)

@@ -20,7 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <!-- The table used gray-300/gray-500 borders and had no scroll container, and the
-     empty state was one centred sentence stating a fact with nothing to do about it.
+     empty state was one centered sentence stating a fact with nothing to do about it.
      An empty state should say what would fill it and offer the way there. -->
 <div class="mx-auto w-full max-w-5xl px-4 py-8">
 	<h1 class="mb-6 text-2xl font-bold tracking-tight">{$t('results_page.title')}</h1>

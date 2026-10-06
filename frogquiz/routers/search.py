@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
 
 import pydantic
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from frogquiz.auth import get_current_user
 from frogquiz.config import settings, meilisearch
 from uuid import UUID
 from typing import Optional, List, Any
@@ -14,7 +16,9 @@ from frogquiz.helpers import meilisearch_init
 
 settings = settings()
 
-router = APIRouter()
+# Signed in only (François, 5 Oct): with sign-in limited to the team's domains, that makes a
+# public quiz visible to the team rather than to the internet. It was open decision 6.
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 class Hit(pydantic.BaseModel):

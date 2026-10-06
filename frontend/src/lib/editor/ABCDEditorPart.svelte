@@ -7,6 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { ANSWER_COLORS } from '$lib/play/answer_colors';
+	import { ANSWER_MAX_LENGTH } from '$lib/yupSchemas';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 
 	import type { Answer, EditorData } from '../quiz_types';
@@ -27,6 +28,7 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { selected_question, check_choice = false, data = $bindable() }: Props = $props();
+	const answers = $derived(data.questions[selected_question].answers as Answer[]);
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
@@ -41,20 +43,21 @@ SPDX-License-Identifier: MPL-2.0
 	data.questions[selected_question].type =
 		check_choice === true ? QuizQuestionType.CHECK : QuizQuestionType.ABCD;
 
-	// Slot colour comes from the palette, which was derived for colour-vision separation
+	// Slot color comes from the palette, which was derived for color-vision separation
 	// against both surfaces. It belongs to the slot, not to the answer: there is no
-	// per-answer colour picker any more, because an author picking two near-identical hues
+	// per-answer color picker any more, because an author picking two near-identical hues
 	// is exactly what the palette work was meant to prevent. Deriving it from the index
-	// rather than storing it also keeps the order correct after an answer is deleted, and
-	// it matches what every play surface already does (`answer.color ?? default_colors[i]`).
-	// Quizzes authored before this still carry a hand-picked colour, which is honoured,
-	// and is why the ink is measured rather than assumed.
-	const slot_color = (answer: Answer, index: number): string =>
-		answer.color ?? ANSWER_COLORS[index % ANSWER_COLORS.length];
+	// rather than storing it also keeps the order correct after an answer is deleted.
+	// A color stored on the answer is ignored here and on every play surface (2026-10-03,
+	// François: "the pastel colors I want back"). Quizzes from upstream ClassQuiz carry
+	// its brown and green defaults, and API clients can store anything, so honoring the
+	// field meant the pastel palette held only for quizzes nobody had touched.
+	const slot_color = (_answer: Answer, index: number): string =>
+		ANSWER_COLORS[index % ANSWER_COLORS.length];
 
 	const remove_answer = (index: number) => {
-		data.questions[selected_question].answers.splice(index, 1);
-		data.questions[selected_question].answers = data.questions[selected_question].answers;
+		answers.splice(index, 1);
+		data.questions[selected_question].answers = answers;
 	};
 	// An auto-growing textarea: height follows content, so the tile shows the whole
 	// answer instead of clipping it.
@@ -72,7 +75,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="grid w-full gap-3 sm:grid-cols-2">
 	{#if Array.isArray(data.questions[selected_question].answers)}
-		{#each data.questions[selected_question].answers as answer, index}
+		{#each answers as answer, index}
 			{@const color = slot_color(answer, index)}
 			{@const ink = get_foreground_color(color)}
 			<!-- min-w-0 is what stops the tile bursting out of its grid cell. A grid item
@@ -81,9 +84,12 @@ SPDX-License-Identifier: MPL-2.0
 			     phone that pushed each tile 59px past the card and clipped the
 			     mark-correct button off the right edge. min-w-0 on the input alone could
 			     not help: the tile is the grid item, not the input. -->
+			<!-- Focus is an outline, set off past the ring: the ring already means "this
+			     answer is correct", and the text field had no focus style of its own, so
+			     tabbing into an answer showed nothing at all. -->
 			<div
 				out:fade={{ duration: 150 }}
-				class="group relative flex min-w-0 items-center gap-3 rounded-xl p-4 transition"
+				class="group has-[textarea:focus]:outline-foreground relative flex min-w-0 items-center gap-3 rounded-xl p-4 transition has-[textarea:focus]:outline-2 has-[textarea:focus]:outline-offset-4"
 				class:ring-3={answer.right}
 				class:ring-foreground={answer.right}
 				style="background-color: {color}; color: {ink}"
@@ -100,7 +106,8 @@ SPDX-License-Identifier: MPL-2.0
 				<textarea
 					bind:value={answer.answer}
 					rows="1"
-					class="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-lg font-medium wrap-anywhere outline-none placeholder:opacity-60"
+					maxlength={ANSWER_MAX_LENGTH}
+					class="any-pointer-coarse:py-2 min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-lg font-medium wrap-anywhere outline-none placeholder:opacity-60"
 					style="color: {ink}"
 					placeholder={$t('editor.enter_answer')}
 					oninput={(e) => grow(e.currentTarget)}
@@ -109,7 +116,7 @@ SPDX-License-Identifier: MPL-2.0
 
 				<button
 					type="button"
-					class="shrink-0 rounded-full border-2 p-1 transition focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
+					class="any-pointer-coarse:p-3 shrink-0 rounded-full border-2 p-1 transition focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
 					style="border-color: {ink}; {answer.right
 						? `background-color: ${ink}; color: ${color}`
 						: 'background-color: transparent'}"
@@ -122,7 +129,7 @@ SPDX-License-Identifier: MPL-2.0
 						// previously-marked one correct too. CHECK (multi-select) keeps its
 						// independent toggle.
 						if (!check_choice && !answer.right) {
-							for (const other of data.questions[selected_question].answers) {
+							for (const other of answers) {
 								other.right = false;
 							}
 						}
@@ -133,7 +140,7 @@ SPDX-License-Identifier: MPL-2.0
 				</button>
 
 				<button
-					class="absolute -top-2 -right-2 rounded-full border p-1 opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+					class="fq-touch-target any-pointer-coarse:opacity-100 absolute -top-2 -right-2 rounded-full border p-1 opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
 					style="background-color: {color}; color: {ink}; border-color: {ink}"
 					type="button"
 					title={$t('editor.delete_answer')}
@@ -145,16 +152,13 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{/each}
 	{/if}
-	{#if data.questions[selected_question].answers.length < 4}
+	{#if answers.length < 4}
 		<button
 			class="border-border text-muted-foreground hover:border-primary/50 hover:bg-muted focus-visible:ring-ring flex items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 transition focus-visible:ring-2 focus-visible:outline-none"
 			type="button"
 			in:fade={{ duration: 150 }}
 			onclick={() => {
-				data.questions[selected_question].answers = [
-					...data.questions[selected_question].answers,
-					{ ...get_empty_answer() }
-				];
+				data.questions[selected_question].answers = [...answers, { ...get_empty_answer() }];
 			}}
 		>
 			<Plus class="size-4" />

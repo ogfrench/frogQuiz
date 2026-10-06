@@ -5,11 +5,22 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { Question } from '$lib/quiz_types';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 
+	// The loader is a 404 stub while moderation is hidden, so PageData is `never`. This is
+	// what the original loader returned from /api/v1/moderation/quizzes.
 	interface Props {
-		data: PageData;
+		data: {
+			page: string;
+			quizzes: {
+				id: string;
+				title: string;
+				description: string;
+				cover_image?: string;
+				questions: Question[];
+			}[];
+		};
 	}
 
 	let { data }: Props = $props();

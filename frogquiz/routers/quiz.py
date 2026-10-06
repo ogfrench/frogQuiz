@@ -12,13 +12,21 @@ from random import randint
 
 import ormar.exceptions
 
-from frogquiz.helpers import collect_quiz_image_keys, generate_spreadsheet, handle_import_from_excel
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, UploadFile, File
+from frogquiz.db import database
+from frogquiz.helpers import (
+    adjust_storage_used,
+    check_image_string,
+    extract_image_ids_from_quiz,
+    generate_spreadsheet,
+    handle_import_from_excel,
+    release_quiz_images,
+)
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError, BaseModel
 
 from frogquiz.auth import get_current_user, get_current_user_optional, verify_anon_secret
-from frogquiz.config import redis, settings, storage, meilisearch
+from frogquiz.config import redis, settings, meilisearch
 from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
@@ -53,6 +61,13 @@ async def _find_own_quiz(quiz_id: uuid.UUID, user: User | None, anon_secret: str
 settings = settings()
 
 router = APIRouter()
+
+
+def _captcha_configured() -> bool:
+    """Whether a captcha provider is actually set up. See start_quiz."""
+    if settings.hcaptcha_key is None and settings.recaptcha_key is None:
+        return False
+    return True
 
 
 @router.get("/get/{quiz_id}")
@@ -112,7 +127,12 @@ async def start_quiz(
     request: Request,
     quiz_id: str,
     game_mode: str,
-    captcha_enabled: bool = True,
+    # Defaulted to True, which only looked harmless because the one caller
+    # (lib/dashboard/start_game.svelte) sends 'False' explicitly. Any other caller got a
+    # game with a captcha nobody can solve -- the join page needs a sitekey to render a
+    # widget -- and which check_captcha then passed for everyone, because with no secret
+    # configured it fell through to return True. Off unless asked for.
+    captcha_enabled: bool = False,
     custom_field: str | None = None,
     cqcs_enabled: bool = False,
     randomize_answers: bool = False,
@@ -170,7 +190,11 @@ async def start_quiz(
         game_id=uuid.uuid4(),
         title=quiz.title,
         description=quiz.description,
-        captcha_enabled=captcha_enabled,
+        # A captcha with no secret cannot verify anything, so asking for one here is a
+        # misconfiguration rather than a preference. Refusing to store it is what keeps
+        # check_captcha's fail-closed branch unreachable: there is no way to open a game
+        # that demands a captcha the server could never check.
+        captcha_enabled=captcha_enabled and _captcha_configured(),
         cover_image=quiz.cover_image,
         game_mode=game_mode,
         user_id=user.id if user is not None else None,
@@ -216,6 +240,29 @@ async def claim_quiz(
     quiz.anon_secret = None
     quiz.expire_at = None
     await quiz.update()
+    # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
+    # ownerless, they counted against nobody's quota and outlived the account. Only the
+    # ones already hashed are counted here; calculate_hash counts the rest when it runs,
+    # now that they have an owner, so nothing is counted twice.
+    #
+    # One statement per image, because calculate_hash may be writing the same row. Read,
+    # changed and saved whole, the job's stale copy put the owner back to nobody, and
+    # neither side counted the bytes (E12 in docs/edge-cases-2026-10.md). Postgres runs the
+    # two updates one after the other, so whichever comes second sees the other's write:
+    # exactly one of them counts the image.
+    counted = 0
+    for image in extract_image_ids_from_quiz(quiz):
+        item_id = check_image_string(str(image))[1]
+        if item_id is None:
+            continue
+        row = await database.fetch_one(
+            'UPDATE storage_items SET "user" = :user WHERE id = :id AND "user" IS NULL'
+            " AND deleted_at IS NULL RETURNING hash, size",
+            {"user": user.id.hex, "id": item_id.hex},
+        )
+        if row is not None and row["hash"] is not None:
+            counted += row["size"]
+    await adjust_storage_used(user.id, counted)
     return quiz
 
 
@@ -248,7 +295,12 @@ async def get_game_id(game_pin: str):
 
 
 @router.get("/list")
-async def get_quiz_list(user: User = Depends(get_current_user), page_size: int | None = 10, page: int | None = 1):
+async def get_quiz_list(
+    user: User = Depends(get_current_user),
+    # 100 is what My Quizzes and the delete-account dialog ask for; it had no ceiling (C12).
+    page_size: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+):
     try:
         return (
             await Quiz.objects.order_by(Quiz.updated_at.desc())
@@ -300,11 +352,13 @@ async def delete_quiz(
 
     if quiz is None:
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
-    pics_to_delete = collect_quiz_image_keys(quiz)
-    if len(pics_to_delete) != 0:
-        await storage.delete(pics_to_delete)
+    # Captured before the delete, released after: while the quiz row exists every one of
+    # its images still counts as referenced, and the reference count is the whole point.
+    image_ids = extract_image_ids_from_quiz(quiz)
     meilisearch.index(settings.meilisearch_index).delete_document(str(quiz.id))
-    return await quiz.delete()
+    deleted = await quiz.delete()
+    await release_quiz_images(image_ids)
+    return deleted
 
 
 @router.get("/export_data/{export_token}", response_class=StreamingResponse)
@@ -313,7 +367,13 @@ async def export_quiz_answers(export_token: str, game_pin: str):
     if data is None:
         raise HTTPException(status_code=404, detail="export token not found")
     data = json.loads(data)
+    # The token is minted for one game (socket_server get_export_token). The PIN used to
+    # come only from the query string, so a host could read another game's players,
+    # scores and custom fields, and an unknown PIN was a 500 (C4).
     data2 = await redis.get(f"game:{game_pin}")
+    if data.get("game_pin") != game_pin or data2 is None:
+        raise HTTPException(status_code=404, detail="export token not found")
+    data = data["results"]
     game_data = PlayGame.model_validate_json(data2)
     quiz = await Quiz.objects.get_or_none(id=game_data.quiz_id)
     if quiz is None:

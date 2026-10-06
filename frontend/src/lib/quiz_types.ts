@@ -18,6 +18,7 @@ export interface QuizData {
 	game_id: string;
 	game_pin: string;
 	started: boolean;
+	locked?: boolean;
 	cover_image?: string;
 	background_color?: string;
 	background_image?: string;

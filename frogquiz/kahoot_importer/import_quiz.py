@@ -50,7 +50,7 @@ def map_question(q: _Question, image: str | None) -> dict | None:
         ABCDQuizAnswer(
             right=a.correct,
             answer=bleach.clean(a.answer, tags=[], strip=True),
-            # No colour. This used to stamp a fixed four-colour palette onto every
+            # No color. This used to stamp a fixed four-color palette onto every
             # imported answer, which both overrode the app's own answer palette and
             # raised IndexError on any question with more than four choices. Leaving it
             # None lets the play screen apply the shared palette by position, the same

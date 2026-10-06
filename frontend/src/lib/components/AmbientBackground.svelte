@@ -67,7 +67,7 @@ SPDX-License-Identifier: MPL-2.0
 				rgba(79, 195, 247, 0.09) 46%,
 				transparent 72%
 			);
-		/* Heavy blur is what turns them from circles into out-of-focus colour. */
+		/* Heavy blur is what turns them from circles into out-of-focus color. */
 		filter: blur(56px);
 		/* A filter expands the element's painted area well beyond its box -- about three
 		   blur radii each side -- and that phantom paint counts toward the document's

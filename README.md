@@ -26,18 +26,16 @@ SPDX-License-Identifier: MPL-2.0
 
 ## About frogQuiz
 
-**The free Kahoot alternative. Host interactive quizzes right from your browser.**
-
 One person hosts a quiz on a shared screen, everyone else joins on their phone
 with a PIN and a nickname, and the room answers under a timer. It is built for
-internal team use and ships in English only — see
+internal team use and ships in English only (see
 [docs/mvp-scope.md](docs/mvp-scope.md#languages) for why, and for how to add a
-language back.
+language back).
 
 It is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz) by
 Marlon W (Mawoka), which was built as a public multi-tenant product for schools.
 A good deal of that surface is switched off here, because an internal tool does
-not need it — what was cut and how to turn any of it back on is in
+not need it. What was cut, and how to turn any of it back on, is in
 [docs/mvp-scope.md](docs/mvp-scope.md). See [Credits](#credits) below.
 
 ## Try it
@@ -51,8 +49,8 @@ container host, because socket.io cannot go through Netlify's proxy.
 Everything you need is in **[DEPLOY.md](DEPLOY.md)**, which covers the two
 supported shapes:
 
-- **Option A** — the whole stack on one host, behind the bundled Caddy.
-- **Option B** — frontend on Netlify, backend on a container host.
+- **Option A**: the whole stack on one host, behind the bundled Caddy.
+- **Option B**: frontend on Netlify, backend on a container host.
 
 It also documents the free hosting path (Oracle Cloud Always Free), using
 [Neon](https://neon.tech) instead of the local Postgres container, and the
@@ -122,17 +120,17 @@ This is a monorepo:
 | `Pipfile`                                            | The backend project, at the repository root                                     |
 | [`docs/mvp-scope.md`](docs/mvp-scope.md)             | What the MVP includes, what was cut, and how to restore it                      |
 | [`docs/redesign-status.md`](docs/redesign-status.md) | Which surfaces have been redesigned, which have not, and why                    |
-| [`CLAUDE.md`](CLAUDE.md)                             | Conventions: changelog discipline, licence headers, feature triage, UI baseline |
+| [`CLAUDE.md`](CLAUDE.md)                             | Conventions: changelog discipline, license headers, feature triage, UI baseline |
 
 ### Tech stack
 
-**Backend** — [FastAPI](https://fastapi.tiangolo.com/) (web framework),
+**Backend**: [FastAPI](https://fastapi.tiangolo.com/) (web framework),
 [ormar](https://github.com/collerek/ormar/) (ORM),
 [python-socketio](https://python-socketio.readthedocs.io/en/latest/) (realtime
 communication between server and client), [arq](https://arq-docs.helpmanual.io/)
 (background jobs).
 
-**Frontend** — [SvelteKit](https://kit.svelte.dev/) (web framework),
+**Frontend**: [SvelteKit](https://kit.svelte.dev/) (web framework),
 [TailwindCSS](https://tailwindcss.com/) (CSS framework) and
 [shadcn-svelte](https://shadcn-svelte.com/) (component layer).
 
@@ -154,13 +152,11 @@ frogQuiz is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz),
 written by Marlon W (Mawoka), who deserves the credit for essentially all of
 the software here. The upstream project has its own hosted instance at
 [classquiz.de](https://classquiz.de) and its own
-[docs](https://classquiz.de/docs). If his work has been useful to you,
-support him at [Ko-fi](https://ko-fi.com/K3K3CK3ES) or
-[Liberapay](https://liberapay.com/Mawoka/donate).
+[docs](https://classquiz.de/docs).
 
 ## License
 
 This repository is licensed under the
 [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/). Please
-review the license to understand your rights and obligations — in particular,
+review the license to understand your rights and obligations. In particular,
 the MPL requires that modifications to covered files stay open source.

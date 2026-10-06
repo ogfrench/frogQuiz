@@ -2,6 +2,9 @@
 # SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
+import logging
+from typing import Callable
+
 import aiohttp
 from redis.exceptions import WatchError
 
@@ -19,26 +22,47 @@ from frogquiz.db.models import (
 from frogquiz.socket_server.models import SubmitAnswerData
 from .models import SubmitAnswerDataOrderType
 
+logger = logging.getLogger(__name__)
+
 
 async def check_captcha(captcha_data: str) -> bool:
+    """Verify a captcha response. False means "do not let this join through".
+
+    With neither provider key set this fell through to `return True`, so a game with
+    `captcha_enabled` and no configured secret admitted everyone while looking protected
+    -- which is worse than no captcha, because the operator believes it is working.
+    A control that cannot verify must not pass.
+
+    `routers/quiz.py` refuses to store `captcha_enabled` without a configured key, so in
+    practice this branch is unreachable; it is here so that removing a key later fails
+    closed and says why, rather than silently reopening the door.
+    """
+    # `settings` is config.py's lru_cached *function*, imported uncalled. Every read in
+    # here was `settings.hcaptcha_key` on the wrapper, which raises AttributeError -- and
+    # AttributeError is not in the except clause below, so this did not "pass everyone":
+    # it propagated out of join_game. Either way a captcha-enabled game was broken.
+    config = settings()
+    if config.hcaptcha_key is None and config.recaptcha_key is None:
+        logger.warning("captcha check requested but no HCAPTCHA_KEY or RECAPTCHA_KEY is set; refusing the join")
+        return False
     async with aiohttp.ClientSession() as session:
         try:
-            if settings.hcaptcha_key is not None:
+            if config.hcaptcha_key is not None:
                 async with session.post(
                     "https://hcaptcha.com/siteverify",
                     data={
                         "response": captcha_data,
-                        "secret": settings.hcaptcha_key,
+                        "secret": config.hcaptcha_key,
                     },
                 ) as resp:
                     resp_data = await resp.json()
                     if not resp_data["success"]:
                         return False
-            elif settings.recaptcha_key is not None:
+            else:
                 async with session.post(
                     "https://www.google.com/recaptcha/api/siteverify",
                     data={
-                        "secret": settings.recaptcha_key,
+                        "secret": config.recaptcha_key,
                         "response": captcha_data,
                     },
                 ) as resp:
@@ -170,6 +194,38 @@ async def record_answer_once(game_pin: str, q_index: int, data: AnswerData) -> A
             except WatchError:
                 # Somebody else's answer landed between our read and our write. Read
                 # again; nothing of ours was written.
+                continue
+
+
+async def update_game(game_pin: str, change: Callable[[PlayGame], bool | None]) -> PlayGame | None:
+    """Change the stored game in a WATCH/MULTI transaction, as record_answer_once does.
+
+    Every handler used to read `game:{pin}`, change one field and write the whole game back,
+    so two arriving together lost one change: start_game and set_question_number back to
+    back could leave `started` false, and the last answer's "everyone answered" could close
+    the question the host had just moved on to (E23 in docs/edge-cases-2026-10.md).
+
+    `change` edits the game in place; returning False means "nothing to do", and nothing is
+    written. Returns the game as written, or None if it is gone or nothing was written.
+    """
+    key = f"game:{game_pin}"
+    async with redis.pipeline(transaction=True) as pipe:
+        while True:
+            try:
+                await pipe.watch(key)
+                raw = await pipe.get(key)
+                if raw is None:
+                    await pipe.unwatch()
+                    return None
+                game = PlayGame.model_validate_json(raw)
+                if change(game) is False:
+                    await pipe.unwatch()
+                    return None
+                pipe.multi()
+                pipe.set(key, game.model_dump_json(), ex=7200)
+                await pipe.execute()
+                return game
+            except WatchError:
                 continue
 
 

@@ -17,3 +17,15 @@ interface ImportMetaEnv {
 interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }
+
+// The captcha scripts /play loads when a game asks for one (lib/play/join.svelte).
+interface Window {
+	hcaptcha?: {
+		render(container: string, params: Record<string, unknown>): string;
+		execute(widgetId: string, params: { async: boolean }): Promise<{ response: string }>;
+	};
+}
+declare const grecaptcha: {
+	ready(callback: () => void): void;
+	execute(siteKey: string, options: { action: string }): Promise<string>;
+};

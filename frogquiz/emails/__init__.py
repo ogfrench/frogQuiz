@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
@@ -34,6 +35,8 @@ SMTP_TIMEOUT_SECONDS = 15
 
 # Matches the wording in forgotten_password.jinja2 -- change both together.
 RESET_TOKEN_TTL_SECONDS = 3600
+# Matches the wording in sign_in.jinja2 -- change both together.
+SIGN_IN_TTL_SECONDS = 15 * 60
 
 
 class MailNotConfigured(RuntimeError):
@@ -46,7 +49,7 @@ def _sendMail_blocking(html_body: str, text_body: str, to: str, subject: str) ->
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     # A bare address in From reads as "noreply@..." in every client. The display
-    # name costs nothing and makes the message recognisable in a crowded inbox.
+    # name costs nothing and makes the message recognizable in a crowded inbox.
     local, _, domain = settings.mail_address.partition("@")
     msg["From"] = str(Address(settings.mail_from_name, local, domain)) if domain else settings.mail_address
     msg["To"] = to
@@ -161,7 +164,7 @@ async def send_forgotten_password_email(user: User):
         await redis.delete(f"reset_passwd:{previous}")
     await redis.expire(f"reset_passwd_current:{user.id}", RESET_TOKEN_TTL_SECONDS)
     # Written before the send, not after: the alternative leaves a window in which
-    # the recipient holds a link the server does not yet honour. On a failed send
+    # the recipient holds a link the server does not yet honor. On a failed send
     # the token is dropped again, so nothing usable is left behind.
     await redis.set(f"reset_passwd:{token}", str(user.id), ex=RESET_TOKEN_TTL_SECONDS)
     try:
@@ -174,3 +177,14 @@ async def send_forgotten_password_email(user: User):
     except Exception:
         await redis.delete(f"reset_passwd:{token}", f"reset_passwd_current:{user.id}")
         raise
+
+
+async def send_sign_in_email(email: str, link: str, code: str):
+    # The code is in the subject so a phone's notification is enough to sign in on a laptop.
+    html_body, text_body = await _render("sign_in", base_url=settings.root_address, link=link, code=code)
+    await _sendMail(
+        html_body=html_body,
+        text_body=text_body,
+        to=email,
+        subject=f"Your frogQuiz sign-in code: {code}",
+    )

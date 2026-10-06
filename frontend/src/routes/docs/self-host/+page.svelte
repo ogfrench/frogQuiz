@@ -124,9 +124,9 @@ SPDX-License-Identifier: MPL-2.0
 			>console.cloud.google.com/apis/dashboard</a
 		> and create a new project and select it. Then, go to the "OAuth consent screen" and set it up.
 		Next, go to the "Credentials"-tab and click on "Create Credentials" and create a new "OAuth Client
-		ID". This ID should be from the application-type "Web application". Afterwards, add a new "Authorised
+		ID". This ID should be from the application-type "Web application". Afterwards, add a new "Authorized
 		JavaScript origin", which is just the base-domain (with https) of your frogQuiz-installation.
-		Then, add a new "Authorised redirect URI". This URI will have the following scheme:
+		Then, add a new "Authorized redirect URI". This URI will have the following scheme:
 	</p>
 	<pre><code>https://[BASE_URL]/api/v1/users/oauth/google/auth</code></pre>
 	<p>You're done! Not the client-secret and the client-id down, you'll need it later.</p>

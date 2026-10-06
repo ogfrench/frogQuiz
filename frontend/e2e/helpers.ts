@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-import { expect, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import {
+	expect,
+	type APIRequestContext,
+	type Browser,
+	type Locator,
+	type Page
+} from '@playwright/test';
 
 export const ANON_KEY = 'frogquiz_anon_secrets';
 export const PHONE = { width: 390, height: 844 };
@@ -46,6 +52,21 @@ export async function saveQuiz(request: APIRequestContext, quiz: QuizInput, bear
 	};
 }
 
+/** A real 1x1 PNG. Uppy's Compressor runs on the bytes, so zeros named .png do not do. */
+export const PNG = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
+	'base64'
+);
+
+/** Uploads PNG through the API, anonymously unless `request` carries a session. Returns its id. */
+export async function uploadPng(request: APIRequestContext) {
+	const res = await request.post('/api/v1/storage/', {
+		multipart: { file: { name: 'dot.png', mimeType: 'image/png', buffer: PNG } }
+	});
+	expect(res.status(), await res.text()).toBe(200);
+	return (await res.json()).id as string;
+}
+
 export async function rememberAnonQuiz(page: Page, id: string, secret: string) {
 	await page.goto('/');
 	await page.evaluate(
@@ -59,12 +80,26 @@ export async function rememberAnonQuiz(page: Page, id: string, secret: string) {
 }
 
 /** From the quiz view page, through the start modal, into the host lobby. Returns the PIN. */
-export async function hostFromViewPage(page: Page, quizId: string): Promise<string> {
+export async function hostFromViewPage(
+	page: Page,
+	quizId: string,
+	opts: { showOnDevices?: boolean } = {}
+): Promise<string> {
 	await page.goto(`/view/${quizId}`);
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
-	const dialog = page.getByRole('dialog', { name: 'Start Game' });
+	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	await expect(dialog).toBeVisible();
-	await dialog.getByRole('button', { name: 'Start Game' }).click();
+	if (opts.showOnDevices) {
+		// Kahoot's "Show questions & answers on participants' devices" (MVP.md D16). Off
+		// by default, so a test that wants it has to say so.
+		const toggle = dialog.getByRole('switch', {
+			name: "Show questions and answers on players' devices"
+		});
+		await expect(toggle).toHaveAttribute('aria-checked', 'false');
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-checked', 'true');
+	}
+	await dialog.getByRole('button', { name: 'Start game' }).click();
 	await page.waitForURL(/\/admin\?/);
 	const pin = new URL(page.url()).searchParams.get('pin');
 	expect(pin).toMatch(/^\d{6}$/);
@@ -92,7 +127,7 @@ export async function joinAsPlayer(browser: Browser, pin: string, username: stri
 	// The PIN form has no submit handler: the sixth digit advances it on its own.
 	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
 	await page.getByRole('textbox', { name: 'Username' }).fill(username);
-	await page.getByRole('button', { name: 'Submit' }).click();
+	await page.getByRole('button', { name: 'Join game' }).click();
 	return { context, page };
 }
 
@@ -102,4 +137,85 @@ export async function expectNoHorizontalOverflow(page: Page) {
 		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
 	);
 	expect(overflow, 'page scrolls horizontally').toBeLessThanOrEqual(0);
+}
+
+/**
+ * Clears the host's standings step, if it is showing.
+ *
+ * A round is three host steps, not two: the answers, then the standings, then move on
+ * (`show_scoreboard_step` in `lib/play/admin/controls.svelte`, added to match how Kahoot
+ * sequences a round). It sits before "Next question" *and* before "Get final results",
+ * so every spec that drives a host through a results screen has to pass it. Specs
+ * written before that step hung on a screen offering "Scoreboard".
+ *
+ * Conditional rather than assumed: a slide and a hide-results question have no standings
+ * moment, so it waits for whichever of the two buttons arrives. Pass `next` for that;
+ * without it the step is asserted to exist.
+ *
+ * It used to read `isVisible()` once, which does not wait. Between "Show results" and
+ * the results arriving the bar shows neither button, so under load that read said "no
+ * standings step", skipped it, and the caller then waited 60 s for a button that only
+ * comes after it. journey-remote-call failed exactly so on 2 Oct with "Scoreboard" on
+ * screen. Specs that slept after "Show results" never hit it; the journeys do not sleep.
+ */
+export async function clearScoreboardStep(page: Page, next?: Locator) {
+	const scoreboard = page.getByRole('button', { name: 'Scoreboard' });
+	await expect(next ? scoreboard.or(next).first() : scoreboard).toBeVisible({
+		timeout: 15_000
+	});
+	if (await scoreboard.isVisible()) await scoreboard.click();
+}
+
+/** Standings, then the next question. */
+export async function advancePastResults(page: Page) {
+	const next = page.getByRole('button', { name: /Next question/ });
+	await clearScoreboardStep(page, next);
+	await next.click();
+}
+
+/** Standings, then the podium. */
+export async function advanceToFinalResults(page: Page) {
+	const finalResults = page.getByRole('button', { name: /final results/i });
+	await clearScoreboardStep(page, finalResults);
+	await finalResults.click();
+}
+
+// ---- Driving the editor ----------------------------------------------------
+// Lifted out of editor.e2e.ts on 2026-10-02 so the journey specs build a quiz the way a
+// person does, through the editor, rather than posting one to the API.
+
+export const titleBox = (page: Page) => page.getByRole('textbox', { name: 'Quiz title' });
+export const questionBox = (page: Page) => page.getByRole('textbox', { name: 'Question text' });
+export const saveQuizButton = (page: Page) => page.getByRole('button', { name: 'Save' });
+export const cards = (page: Page) => page.locator('[data-question-card]');
+
+export async function addQuestion(
+	page: Page,
+	kind: RegExp,
+	title: string,
+	answers: [string, boolean][]
+) {
+	await page
+		.getByRole('button', { name: /Add new question|Add your first question/ })
+		.first()
+		.click();
+	await page.getByRole('button', { name: kind }).click();
+	// Only the open card holds a rich-text field; the others are collapsed to plain text.
+	await questionBox(page).fill(title);
+	for (let i = 0; i < answers.length; i++)
+		await page.getByRole('button', { name: 'Add an answer' }).click();
+	const inputs = page.getByRole('textbox', { name: 'Enter an answer' });
+	for (const [i, [text, right]] of answers.entries()) {
+		await inputs.nth(i).fill(text);
+		if (right)
+			await page
+				.getByRole('button', { name: `Mark as correct: ${text}`, exact: true })
+				.click();
+	}
+}
+
+export async function startNewQuiz(page: Page, title: string) {
+	await page.goto('/create');
+	await titleBox(page).fill(title);
+	await page.getByRole('textbox', { name: 'Description' }).fill('Made in the editor');
 }

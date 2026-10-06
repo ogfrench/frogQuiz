@@ -6,36 +6,24 @@
 // then checking what actually reached the server and that it plays.
 
 import { expect, test, type Page } from '@playwright/test';
-import { ANON_KEY, PHONE, expectNoHorizontalOverflow } from './helpers';
-import { closeAll, connect, finalResults, joinAll, next, showQuestion } from './sockets';
+import {
+	addQuestion,
+	ANON_KEY,
+	cards,
+	expectNoHorizontalOverflow,
+	PHONE,
+	questionBox,
+	saveQuizButton,
+	startNewQuiz,
+	titleBox
+} from './helpers';
+import { closeAll, connect, finalResults, joinAll, next, showQuestion, startGame } from './sockets';
 
 test.afterEach(closeAll);
 
-const titleBox = (page: Page) => page.getByRole('textbox', { name: /Rich Text Editor/ });
-const saveButton = (page: Page) => page.getByRole('button', { name: 'Save' });
-
-async function addQuestion(page: Page, kind: RegExp, title: string, answers: [string, boolean][]) {
-	await page.getByRole('button', { name: 'Add new question' }).first().click();
-	await page.getByRole('button', { name: kind }).click();
-	await titleBox(page).fill(title);
-	for (let i = 0; i < answers.length; i++)
-		await page.getByRole('button', { name: 'Add an answer' }).click();
-	const inputs = page.getByRole('textbox', { name: 'Enter an answer' });
-	for (const [i, [text, right]] of answers.entries()) {
-		await inputs.nth(i).fill(text);
-		if (right)
-			await page
-				.getByRole('button', { name: `Mark as correct: ${text}`, exact: true })
-				.click();
-	}
-}
-
-async function startNewQuiz(page: Page, title: string) {
-	await page.goto('/create');
-	await titleBox(page).fill(title);
-	await page.getByRole('textbox', { name: 'Description' }).fill('Made in the editor');
-}
-
+// The editor is one column, so the quiz's title and every question's text are on the
+// page at once. They used to share CKEditor's stock "Rich Text Editor" label, which told
+// a screen reader -- and a test -- nothing about which field it had hold of.
 async function anonSecret(page: Page, id: string) {
 	return page.evaluate(
 		([k, i]) => JSON.parse(localStorage.getItem(k) ?? '{}')[i],
@@ -46,18 +34,18 @@ async function anonSecret(page: Page, id: string) {
 test('build a quiz by hand, save it, and play it', async ({ page, request }) => {
 	const title = `Handmade ${Date.now()}`;
 	await startNewQuiz(page, title);
-	await addQuestion(page, /^Multiple-Choice/, 'Which is a frog?', [
+	await addQuestion(page, /^Multiple choice/, 'Which is a frog?', [
 		['Tree frog', true],
 		['Gecko', false],
 		['Newt', false]
 	]);
-	await addQuestion(page, /^Check Choice/, 'Which are amphibians?', [
+	await addQuestion(page, /^Check choice/, 'Which are amphibians?', [
 		['Frog', true],
 		['Lizard', false],
 		['Salamander', true]
 	]);
-	await expect(page.getByText('2 questions').first()).toBeVisible();
-	await saveButton(page).click();
+	await expect(cards(page)).toHaveCount(2);
+	await saveQuizButton(page).click();
 	await page.waitForURL(/\/view\//);
 	const id = page.url().split('/view/')[1];
 	await expect(page.getByText("This quiz isn't saved to an account")).toBeVisible();
@@ -91,7 +79,7 @@ test('build a quiz by hand, save it, and play it', async ({ page, request }) => 
 	host.emit('register_as_admin', { game_pin, game_id });
 	expect(await registered).not.toBeNull();
 	const [right, partial] = await joinAll(String(game_pin), ['exactset', 'halfset']);
-	host.emit('start_game', {});
+	await startGame(host);
 	await showQuestion(host, 0);
 	// Spaced out on purpose: simultaneous answers hit the lost-update race that
 	// live-socket.e2e.ts records, and this test is about scoring, not that.
@@ -105,6 +93,16 @@ test('build a quiz by hand, save it, and play it', async ({ page, request }) => 
 	partial.emit('submit_answer', { question_index: 1, answer: '0' });
 	await new Promise((r) => setTimeout(r, 300));
 	const results = await finalResults(host);
+	// Asserted before indexing, because `next()` resolves a falsy payload to `{}` rather
+	// than null -- so `finalResults`' own not.toBeNull() guard passes on an empty result
+	// and the failure lands one line below as "Cannot read properties of undefined
+	// (reading 'find')". That is what this test reported in a full-suite run on 2026-10-02,
+	// and the opaque message is why the cause is still unknown. Next time it should say
+	// which questions came back.
+	expect(
+		Object.keys(results).sort(),
+		`final_results payload: ${JSON.stringify(results)}`
+	).toEqual(['0', '1']);
 	const row = (q: string, u: string) => results[q].find((r) => r.username === u)!;
 	expect(row('0', 'exactset').right).toBe(true);
 	expect(row('0', 'halfset').right).toBe(false);
@@ -118,7 +116,7 @@ test('nothing is marked red before Save, and Save with no questions says what is
 	page
 }) => {
 	await startNewQuiz(page, `Guard ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, '', [
+	await addQuestion(page, /^Multiple choice/, '', [
 		['', false],
 		['', false]
 	]);
@@ -127,10 +125,8 @@ test('nothing is marked red before Save, and Save with no questions says what is
 
 	await page.goto('/create');
 	await titleBox(page).fill(`Empty ${Date.now()}`);
-	await saveButton(page).click();
-	await expect(
-		page.getByText('Give the quiz a title and at least one question to save it')
-	).toBeVisible();
+	await saveQuizButton(page).click();
+	await expect(page.getByText('Add a question to save the quiz')).toBeVisible();
 	await expect(page).toHaveURL(/\/create$/);
 });
 
@@ -139,11 +135,11 @@ test('an unfinished quiz saves as a draft, and Save shows what is left', async (
 	request
 }) => {
 	await startNewQuiz(page, `Draft ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, 'No right answer yet', [
+	await addQuestion(page, /^Multiple choice/, 'No right answer yet', [
 		['One', false],
 		['Two', false]
 	]);
-	await saveButton(page).click();
+	await saveQuizButton(page).click();
 	await expect(
 		page.getByText('Saved as a draft. 1 question needs finishing before it can be played')
 	).toBeVisible();
@@ -160,7 +156,7 @@ test('an unfinished quiz saves as a draft, and Save shows what is left', async (
 	// Finishing it clears the message, and Save then goes to the quiz.
 	await page.getByRole('button', { name: 'Mark as correct: Two', exact: true }).click();
 	await expect(page.getByText(/Saved as a draft/)).toHaveCount(0);
-	await saveButton(page).click();
+	await saveQuizButton(page).click();
 	await page.waitForURL(new RegExp(`/view/${id}$`));
 });
 
@@ -170,7 +166,7 @@ test('the editor saves on its own, and a reload reopens the saved quiz', async (
 }) => {
 	const title = `Autosaved ${Date.now()}`;
 	await startNewQuiz(page, title);
-	await addQuestion(page, /^Multiple-Choice/, 'Kept without Save', [
+	await addQuestion(page, /^Multiple choice/, 'Kept without Save', [
 		['A', true],
 		['B', false]
 	]);
@@ -185,10 +181,10 @@ test('the editor saves on its own, and a reload reopens the saved quiz', async (
 	]);
 
 	await page.reload();
-	await expect(titleBox(page).first()).toContainText('Autosaved', { timeout: 20_000 });
+	await expect(titleBox(page)).toContainText('Autosaved', { timeout: 20_000 });
 
 	// A later edit is saved too: an update, not a second quiz.
-	await page.getByRole('textbox', { name: 'Description' }).first().fill('Changed later');
+	await page.getByRole('textbox', { name: 'Description' }).fill('Changed later');
 	await expect
 		.poll(
 			async () =>
@@ -202,14 +198,14 @@ test('the editor saves on its own, and a reload reopens the saved quiz', async (
 
 test('the timer field cannot produce a timer the game cannot run', async ({ page, request }) => {
 	await startNewQuiz(page, `Timer ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, 'Timed', [
+	await addQuestion(page, /^Multiple choice/, 'Timed', [
 		['A', true],
 		['B', false]
 	]);
 	const timer = page.getByRole('spinbutton', { name: /Time in seconds/ });
 	for (const bad of ['0', '-5']) {
 		await timer.fill(bad);
-		await saveButton(page).click();
+		await saveQuizButton(page).click();
 		// Save is always pressable now (D14); an unusable timer keeps the quiz a draft, and
 		// the server refuses to store one.
 		await page.waitForTimeout(1000);
@@ -226,20 +222,36 @@ test('the timer field cannot produce a timer the game cannot run', async ({ page
 	}
 });
 
-test('an existing anonymous quiz can be reopened, edited and saved', async ({ page, request }) => {
-	await startNewQuiz(page, `Before ${Date.now()}`);
-	await addQuestion(page, /^Multiple-Choice/, 'Q', [
+test('a changed timer saves, and is stored as the seconds typed', async ({ page, request }) => {
+	await startNewQuiz(page, `Timer change ${Date.now()}`);
+	await addQuestion(page, /^Multiple choice/, 'Timed', [
 		['A', true],
 		['B', false]
 	]);
-	await saveButton(page).click();
+	// A number input bound with bind:value hands back a number, and the API takes the
+	// timer as a string: every edited timer made Save answer 422.
+	await page.getByRole('spinbutton', { name: /Time in seconds/ }).fill('30');
+	await saveQuizButton(page).click();
+	await page.waitForURL(/\/view\//);
+	const id = page.url().split('/view/')[1];
+	const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+	expect(stored.questions[0].time).toBe('30');
+});
+
+test('an existing anonymous quiz can be reopened, edited and saved', async ({ page, request }) => {
+	await startNewQuiz(page, `Before ${Date.now()}`);
+	await addQuestion(page, /^Multiple choice/, 'Q', [
+		['A', true],
+		['B', false]
+	]);
+	await saveQuizButton(page).click();
 	await page.waitForURL(/\/view\//);
 	const id = page.url().split('/view/')[1];
 
 	await page.goto(`/edit?quiz_id=${id}`);
-	await expect(titleBox(page).first()).toContainText('Before', { timeout: 20_000 });
-	await page.getByRole('textbox', { name: 'Description' }).first().fill('Edited description');
-	await saveButton(page).click();
+	await expect(titleBox(page)).toContainText('Before', { timeout: 20_000 });
+	await page.getByRole('textbox', { name: 'Description' }).fill('Edited description');
+	await saveQuizButton(page).click();
 	await page.waitForURL(/\/view\//);
 	const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
 	expect(stored.description).toBe('Edited description');
@@ -253,17 +265,96 @@ test('the editor fits a phone', async ({ browser }) => {
 	await ctx.close();
 });
 
+test('on a phone, the header says what is missing, in full', async ({ browser }) => {
+	const ctx = await browser.newContext({ viewport: PHONE });
+	const page = await ctx.newPage();
+	await startNewQuiz(page, `October team trivia ${Date.now()}`);
+	await page
+		.getByRole('button', { name: /Add your first question/ })
+		.first()
+		.click();
+	await page.getByRole('button', { name: /^Multiple choice/ }).click();
+	await questionBox(page).fill('No answers yet');
+	await saveQuizButton(page).click();
+	// The status shared one row with the title, the theme switch and Save, and got 33px:
+	// this sentence read as a single letter. It also asked for a title and a question,
+	// which the quiz had; the missing piece was an answer.
+	const status = page.locator('header [role=status]');
+	await expect(status).toHaveText('Give every question at least one answer to save the quiz');
+	const clipped = await status
+		.locator('span')
+		.first()
+		.evaluate((el) => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight + 1);
+	expect(clipped, 'the status is cut off').toBe(false);
+	await expectNoHorizontalOverflow(page);
+	await ctx.close();
+});
+
 test.describe('regressions', () => {
 	test('a question with no correct answer cannot reach the view page', async ({ page }) => {
 		await startNewQuiz(page, `No right ${Date.now()}`);
-		await addQuestion(page, /^Multiple-Choice/, 'No right answer', [
+		await addQuestion(page, /^Multiple choice/, 'No right answer', [
 			['One', false],
 			['Two', false]
 		]);
-		await saveButton(page).click();
+		await saveQuizButton(page).click();
 		// It is kept as a draft and says why, rather than saving an unplayable quiz silently.
 		await expect(page.getByText(/1 question needs finishing/)).toBeVisible();
 		expect(page.url()).not.toMatch(/\/view\//);
+	});
+
+	// The baseline for "has anything changed" used to be taken 500ms after the editor
+	// opened, so an edit typed inside that window was swallowed: Save sent nothing and
+	// still went to the quiz page saying "Saved".
+	test('an edit made the moment the editor opens is not swallowed', async ({ page, request }) => {
+		await startNewQuiz(page, `Fast ${Date.now()}`);
+		await addQuestion(page, /^Multiple choice/, 'Q', [
+			['A', true],
+			['B', false]
+		]);
+		await saveQuizButton(page).click();
+		await page.waitForURL(/\/view\//);
+		const id = page.url().split('/view/')[1];
+
+		await page.goto(`/edit?quiz_id=${id}`);
+		// No settling wait on purpose: type as soon as the field exists.
+		await page.getByRole('textbox', { name: 'Description' }).fill('Typed immediately');
+		await saveQuizButton(page).click();
+		await page.waitForURL(new RegExp(`/view/${id}$`));
+		const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+		expect(stored.description).toBe('Typed immediately');
+	});
+
+	// Advanced settings was a bare checkbox in a hand-rolled overlay. It is a Switch now,
+	// and a Switch bound straight to `hide_results` throws on every question saved
+	// before that field existed, where it is undefined -- which is all of them here.
+	test('"Skip the results" is saved, on a question that never had the flag', async ({
+		page,
+		request
+	}) => {
+		await startNewQuiz(page, `Skip ${Date.now()}`);
+		await addQuestion(page, /^Multiple choice/, 'Q', [
+			['A', true],
+			['B', false]
+		]);
+		await saveQuizButton(page).click();
+		await page.waitForURL(/\/view\//);
+		const id = page.url().split('/view/')[1];
+
+		await page.goto(`/edit?quiz_id=${id}`);
+		await expect(titleBox(page)).toContainText('Skip', { timeout: 20_000 });
+		await page.getByRole('button', { name: 'Advanced settings' }).first().click();
+		const dialog = page.getByRole('dialog', { name: 'Advanced settings' });
+		const skip = dialog.getByRole('switch', { name: 'Skip the results' });
+		await expect(skip).toHaveAttribute('aria-checked', 'false');
+		await skip.click();
+		await expect(skip).toHaveAttribute('aria-checked', 'true');
+		await page.keyboard.press('Escape');
+		await expect(dialog).toBeHidden();
+		await saveQuizButton(page).click();
+		await page.waitForURL(/\/view\//);
+		const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();
+		expect(stored.questions[0].hide_results).toBe(true);
 	});
 
 	test("the editor's Back link does not send an anonymous user to a login wall", async ({

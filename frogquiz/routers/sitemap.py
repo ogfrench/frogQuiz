@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -6,14 +7,17 @@
 import datetime
 import uuid
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 from jinja2 import Template
 from pydantic import BaseModel
+from frogquiz.auth import get_current_user
 from frogquiz.config import redis, settings
 from frogquiz.db import database
 
 settings = settings()
-router = APIRouter()
+# Signed in only, like search: it lists every public quiz's title and description, and
+# public means the team since 5 Oct. No crawler gets past it, which an internal tool wants.
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 sitemap_template = """<?xml version="1.0" encoding="UTF-8"?>

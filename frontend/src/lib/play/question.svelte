@@ -6,8 +6,8 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Question } from '$lib/quiz_types';
-	import { ANSWER_COLORS } from '$lib/play/answer_colors';
+	import type { OrderQuizAnswer, Question, RangeQuizAnswer } from '$lib/quiz_types';
+	import { answerColor } from '$lib/play/answer_colors';
 	import Check from '@lucide/svelte/icons/check';
 	import Clock from '@lucide/svelte/icons/clock';
 	import { QuizQuestionType } from '$lib/quiz_types';
@@ -18,9 +18,12 @@ SPDX-License-Identifier: MPL-2.0
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { flip } from 'svelte/animate';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import { Button } from '$lib/components/ui/button';
 	import { get_foreground_color } from '../helpers';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
+	import { onDestroy } from 'svelte';
+	import X from '@lucide/svelte/icons/x';
 
 	const { t } = getLocalization();
 
@@ -37,6 +40,8 @@ SPDX-License-Identifier: MPL-2.0
 		question_index,
 		solution
 	}: Props = $props();
+	const answers = $derived(question.answers as OrderQuizAnswer[]);
+	const range = $derived(question.answers as RangeQuizAnswer);
 
 	if (question.type === undefined) {
 		question.type = QuizQuestionType.ABCD;
@@ -61,8 +66,38 @@ SPDX-License-Identifier: MPL-2.0
 			timer_res = seconds.toString();
 		}, 1000);
 	};
-	socket.on('everyone_answered', (_) => {
+	// The server can refuse an answer, and used to do it in silence: `question_not_active`
+	// and `already_replied` had no listener anywhere in the frontend. The screen sets
+	// `selected_answer` the moment a tile is tapped, so a refused answer still read
+	// "Answer locked in" and the player only found out from a +0 on the results screen.
+	//
+	// `refused` is the honest version of that: the answer did not count and the question
+	// is over. It is deliberately not a retry prompt -- by the time this arrives the
+	// timer has run out or the host has revealed the answers, so there is nothing to
+	// tap. `already_replied` is not an error for the player: it means an earlier answer
+	// of theirs was recorded, so "locked in" is already true and nothing should change.
+	let refused = $state(false);
+
+	const on_everyone_answered = () => {
 		timer_res = '0';
+	};
+	const on_question_not_active = () => {
+		// Only if this screen was claiming otherwise. A refusal for a question the player
+		// never answered needs no correction -- they are already seeing "time is up".
+		if (selected_answer !== undefined) {
+			refused = true;
+		}
+		timer_res = '0';
+	};
+
+	socket.on('everyone_answered', on_everyone_answered);
+	socket.on('question_not_active', on_question_not_active);
+	// The play page recreates this component per question (`{#key unique}`), so a
+	// listener added here and never removed accumulated one copy per question, each
+	// holding a destroyed component's state alive and writing to it.
+	onDestroy(() => {
+		socket.off('everyone_answered', on_everyone_answered);
+		socket.off('question_not_active', on_question_not_active);
 	});
 
 	timer(question.time);
@@ -98,7 +133,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	let slider_value = $state([0]);
 	if (question.type === QuizQuestionType.RANGE) {
-		slider_value[0] = (question.answers.max - question.answers.min) / 2 + question.answers.min;
+		const initial = question.answers as RangeQuizAnswer;
+		slider_value[0] = (initial.max - initial.min) / 2 + initial.min;
 	}
 	const set_answer_if_not_set_range = (time) => {
 		if (question.type !== QuizQuestionType.RANGE) {
@@ -111,8 +147,9 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	if (question.type === QuizQuestionType.ORDER) {
-		for (let i = 0; i < question.answers.length; i++) {
-			question.answers[i] = { ...question.answers[i], id: i };
+		const initial = question.answers as OrderQuizAnswer[];
+		for (let i = 0; i < initial.length; i++) {
+			initial[i] = { ...initial[i], id: i };
 		}
 	}
 
@@ -128,43 +165,62 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	let circular_progress = $derived.by(() => {
 		try {
-			return 1 - ((100 / question.time) * parseInt(timer_res)) / 100;
+			return 1 - ((100 / Number(question.time)) * parseInt(timer_res)) / 100;
 		} catch {
 			return 0;
 		}
 	});
-
-	const get_div_height = (): string => {
-		if (game_mode === 'normal') {
-			if (question.image) {
-				return '66.666667';
-			} else {
-				return '83.333333';
-			}
-		} else {
-			return '100';
-		}
-	};
-	const default_colors = ANSWER_COLORS;
 </script>
 
-<div class="h-screen w-screen">
+<!-- h-dvh w-full, not h-screen w-screen: on a real phone 100vh counts the browser's own
+     toolbars, so the bottom row of answer tiles could sit underneath them, and 100vw
+     includes a desktop scrollbar. Phone emulation has no toolbar, which is why no test
+     ever saw it. -->
+<!-- A flex column: the question header (when the phone shows it) takes its share, and
+     the tiles take whatever is left. The tiles' height used to be a percentage that
+     assumed a fixed header, so with questions shown on devices the multiple-answer
+     screen ran ~150px past a phone viewport and Submit sat below the fold. -->
+<div class="flex h-dvh w-full flex-col">
+	{#if game_mode !== 'normal'}
+		<!-- Shapes only on the phone (the question is on the shared screen), so the page had
+		     no heading at all. -->
+		<h1 class="sr-only">
+			{$t('play_page.question_number', { n: Number(question_index) + 1 })}
+		</h1>
+	{/if}
 	{#if game_mode === 'normal'}
+		<!-- class:mt-10 was handed the array itself, which is always truthy, so every
+		     question got a margin meant for three question types. -->
 		<div
-			class="flex flex-col justify-start"
-			class:mt-10={[QuizQuestionType.RANGE, QuizQuestionType.ORDER, QuizQuestionType.TEXT]}
-			style="height: {question.image ? '33.333333' : '16.666667'}%"
+			class="flex shrink-0 flex-col justify-start"
+			class:mt-10={[
+				QuizQuestionType.RANGE,
+				QuizQuestionType.ORDER,
+				QuizQuestionType.TEXT
+			].includes(question.type)}
+			style={question.image ? 'height: 33.333333%' : undefined}
 		>
+			<!-- Its own height when there is no image: a fixed sixth of the screen left a
+			     one-line question floating over a gap, and px-4 keeps a long one off the
+			     screen edges. -->
 			<h1
-				class="lg:text-2xl text-lg text-center text-black dark:text-white mt-2 break-normal mb-2"
+				class="text-foreground lg:text-2xl text-lg text-center wrap-anywhere px-4 py-3 text-balance"
 			>
 				{@html sanitizeTitleHtml(question.question)}
 			</h1>
+			{#if question.type === QuizQuestionType.CHECK}
+				<p class="text-muted-foreground -mt-2 pb-2 text-center text-sm">
+					{$t('play_page.pick_every_correct')}
+				</p>
+			{/if}
+			<!-- The image takes what the header has left under the question and scales to
+			     fit. Its max-h-[90%] used to resolve against a wrapper with no height, so it
+			     drew at full size, ran out of the header and slid under the answer tiles. -->
 			{#if question.image !== null && game_mode !== 'kahoot'}
-				<div class="max-h-full">
+				<div class="flex min-h-0 flex-1 justify-center px-4 pb-2">
 					<MediaComponent
 						src={question.image}
-						css_classes="object-cover mx-auto mb-8 max-h-[90%]"
+						css_classes="h-full w-auto max-w-full rounded-lg object-contain"
 					/>
 				</div>
 			{/if}
@@ -172,29 +228,35 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 	{#if timer_res !== '0'}
 		{#if question.type === QuizQuestionType.ABCD || question.type === QuizQuestionType.VOTING}
-			<div class="w-full relative h-full" style="height: {get_div_height()}%">
+			<div class="relative min-h-0 w-full flex-1">
 				<div
 					class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-black shadow-2xl z-40"
 				>
 					<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 				</div>
 
-				<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-3 w-full p-4 h-full">
-					{#each question.answers as answer, i}
+				<!-- Equal columns: auto-cols-auto sized each column by its answer text, so
+				     with answers shown on the phone one tile could be half the width of
+				     its neighbor. -->
+				<div
+					class="grid grid-rows-2 grid-flow-col auto-cols-[minmax(0,1fr)] gap-3 w-full p-4 h-full"
+				>
+					{#each answers as answer, i}
 						{@const picked = selected_answer === answer.answer}
 						{@const waiting = selected_answer !== undefined && !picked}
+						<!-- Focus is a foreground outline. It was ring-white/80, a white ring on a near-white
+						     page, so tabbing between answers showed nothing in light mode. -->
 						<button
 							class="answer-tile group relative overflow-hidden rounded-2xl h-full
 								flex items-center justify-center
 								transition-[transform,opacity,filter] duration-200 ease-out
 								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95
-								focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80
+								focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-foreground
 								not-disabled:active:scale-[0.96] not-disabled:hover:scale-[1.02]"
 							class:is-picked={picked}
 							class:is-waiting={waiting}
-							style="background-color: {answer.color ??
-								default_colors[i]}; color: {get_foreground_color(
-								answer.color ?? default_colors[i]
+							style="background-color: {answerColor(i)}; color: {get_foreground_color(
+								answerColor(i)
 							)}; animation-delay: {i * 70}ms"
 							disabled={selected_answer !== undefined}
 							aria-label={answer.answer}
@@ -240,8 +302,8 @@ SPDX-License-Identifier: MPL-2.0
 				<div class:pointer-events-none={selected_answer !== undefined} class="mt-24">
 					<c.default
 						bind:values={slider_value}
-						bind:min={question.answers.min}
-						bind:max={question.answers.max}
+						bind:min={range.min}
+						bind:max={range.max}
 						id="pips-slider"
 						pips
 						float
@@ -250,7 +312,7 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 				<div class="flex justify-center">
 					<div class="w-1/2">
-						<BrownButton onclick={() => selectAnswer(slider_value[0])}
+						<BrownButton onclick={() => selectAnswer(`${slider_value[0]}`)}
 							>{$t('words.submit')}
 						</BrownButton>
 					</div>
@@ -296,8 +358,8 @@ SPDX-License-Identifier: MPL-2.0
 				class="fixed top-0 bg-red-500 h-8 transition-all"
 				style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
 			></span>
-			<div class="flex flex-col w-full h-full gap-4 px-4 py-6 mt-10">
-				{#each question.answers as answer, i (answer.id)}
+			<div class="flex min-h-0 w-full flex-1 flex-col gap-4 px-4 py-6 mt-10">
+				{#each answers as answer, i (answer.id)}
 					<div
 						class="w-full h-fit flex-row rounded-lg p-2 align-middle"
 						animate:flip={{ duration: 100 }}
@@ -305,7 +367,7 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<button
 							onclick={() => {
-								question.answers = swapArrayElements(question.answers, i, i - 1);
+								question.answers = swapArrayElements(answers, i, i - 1);
 							}}
 							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
 							type="button"
@@ -333,12 +395,12 @@ SPDX-License-Identifier: MPL-2.0
 
 						<button
 							onclick={() => {
-								question.answers = swapArrayElements(question.answers, i, i + 1);
+								question.answers = swapArrayElements(answers, i, i + 1);
 							}}
 							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
 							type="button"
 							aria-label="Move item down"
-							disabled={i === question.answers.length - 1 || Boolean(selected_answer)}
+							disabled={i === answers.length - 1 || Boolean(selected_answer)}
 						>
 							<svg
 								class="w-8 h-8"
@@ -364,7 +426,7 @@ SPDX-License-Identifier: MPL-2.0
 						type="button"
 						disabled={Boolean(selected_answer)}
 						onclick={() => {
-							select_complex_answer(question.answers);
+							select_complex_answer(answers);
 						}}>{$t('words.submit')}</BrownButton
 					>
 				</div>
@@ -381,15 +443,17 @@ SPDX-License-Identifier: MPL-2.0
 					{timer_res}
 					{circular_progress}
 				/>
-				<div class="flex justify-center h-[5%]">
-					<div class="w-1/2">
-						<BrownButton
-							type="button"
-							disabled={selected_answer === undefined}
-							onclick={() => selectAnswer(selected_answer)}
-							>{$t('words.submit')}
-						</BrownButton>
-					</div>
+				<!-- The one action on this screen, so it is sized for a thumb: it was a
+				     half-width default button in a strip 5% of the screen tall. -->
+				<div class="flex h-18 shrink-0 items-start justify-center px-4">
+					<Button
+						type="button"
+						size="lg"
+						class="h-12 w-full max-w-md text-base"
+						disabled={selected_answer === undefined}
+						onclick={() => selectAnswer(selected_answer)}
+						>{$t('words.submit')}
+					</Button>
 				</div>
 			{/await}
 		{/if}
@@ -400,14 +464,16 @@ SPDX-License-Identifier: MPL-2.0
 		     that their answer was registered. The `answered` split matters: gating the whole
 		     block on a submitted answer left anyone who ran out of time staring at nothing,
 		     which is the worse case, because they cannot tell the app from a dead connection. -->
-		<div class="flex h-full w-full items-center justify-center p-6">
+		<div class="flex min-h-0 w-full flex-1 items-center justify-center p-6">
 			<div
 				class="motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 flex flex-col items-center gap-4 text-center"
 			>
 				<span
 					class="bg-foreground/5 ring-border flex h-16 w-16 items-center justify-center rounded-full ring-1"
 				>
-					{#if answered}
+					{#if refused}
+						<X class="text-foreground/70 h-8 w-8" />
+					{:else if answered}
 						<Check class="text-foreground/70 h-8 w-8" />
 					{:else}
 						<Clock class="text-foreground/70 h-8 w-8" />
@@ -415,7 +481,13 @@ SPDX-License-Identifier: MPL-2.0
 				</span>
 				<div class="space-y-1">
 					<p class="text-xl font-semibold tracking-tight">
-						{answered ? $t('words.answer_locked_in') : $t('words.time_is_up')}
+						{#if refused}
+							{$t('words.answer_too_late')}
+						{:else if answered}
+							{$t('words.answer_locked_in')}
+						{:else}
+							{$t('words.time_is_up')}
+						{/if}
 					</p>
 					<p class="text-muted-foreground text-sm">{$t('words.waiting_for_results')}</p>
 				</div>

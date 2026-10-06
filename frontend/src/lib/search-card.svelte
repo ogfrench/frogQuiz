@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
-	import ImportedOrNot from '$lib/view_quiz/imported_or_not.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { highlightToHtml, highlightTitleToHtml } from '$lib/search/highlight';
 	import * as Card from '$lib/components/ui/card/index.js';
 
@@ -38,9 +38,15 @@ SPDX-License-Identifier: MPL-2.0
 					     Meilisearch's <em> pair as <mark>. See lib/search/highlight.ts. -->
 					{@html highlightTitleToHtml(quiz.title)}
 				</Card.Title>
-				<span class="shrink-0">
-					<ImportedOrNot imported={quiz.imported_from_kahoot} />
-				</span>
+				<!-- Upstream's ImportedOrNot put a verified-seal icon on every quiz that was not
+				     imported -- which, with Kahoot import hidden for the MVP, is every quiz --
+				     explained only by a hover tooltip a phone never shows. It read as
+				     "verified" when nothing was. Originals carry nothing now; an import says so
+				     in words, as on the quiz page. -->
+				{#if quiz.imported_from_kahoot === true}
+					<Badge variant="outline" class="shrink-0">{$t('view_quiz_page.imported')}</Badge
+					>
+				{/if}
 			</div>
 			<Card.Description class="line-clamp-3 break-words">
 				{@html highlightToHtml(quiz.description)}

@@ -4,6 +4,1193 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Sign-in and confirmation email: a minute between asks, and a countdown
+
+- The "nothing yet?" line under the sign-in code step and the resend page no longer says to check junk. It points to the Capgemini Spam Quarantine (https://spam-quarantine.capgemini.com) to release the mail and add the sender to the Safelist, which is where this mail lands first.
+- Marked the new async backend tests with `pytest.mark.asyncio`. CI runs pytest in strict asyncio mode, where unmarked async tests fail without running, so all 16 had failed there while passing locally in auto mode.
+- The countdown's logic now comes from `frontend/src/lib/vendor/resend-cooldown.ts`, a file shared with frogViz and copied whole from its `vendor/`; `resend_cooldown.svelte.ts` only makes it reactive. A test fails if the copy is edited here instead of in frogViz, and `test_vendored_cooldown.py` fails if the server's minute and the shared file's part. The pages look as before.
+- The sign-in email (`POST /api/v1/login/email`) is held for 60 seconds per address, and the code step of `/account/login` gains a "Send a new code" button that counts the minute down, the same button frogViz's gate has. Before, the only way to ask again was "Use a different address" and retyping the same one, and five quick asks spent the address's hour.
+- A sign-in email that fails to send releases its cooldown, so the "try again in a minute" it asks for is not refused.
+- "Send a new code" adds to the sign-in the page already holds instead of starting another, so the code in a slow first email, arriving after the resend, still works. Every code sent for one sign-in works (up to four), and they share one set of tries. A failed resend leaves the codes already sent working.
+- The confirmation resend checks the per-IP limit first again and bounds the address at 254 characters, so one client cannot mint cooldown keys of any size without meeting a limit.
+- The sign-in email and the confirmation email keep separate clocks.
+- The confirmation-email resend below only runs with `ENABLE_PASSWORD_LOGIN` on, since passwords are off on this branch; it is held the same way so the flag does not bring the old trap back.
+- Asking for another confirmation email is held for 60 seconds per address, on the server first: `POST /api/v1/users/resend-verification` answers 429 with the seconds left in `Retry-After`, before it touches either hourly budget.
+- The register page, `/account/resend-verification` and the settings banner count the minute down on the button ("Send again in 0:42") instead of letting it be pressed. A refusal that names a wait of a minute or less is shown as that countdown; the hourly limit keeps its own "try again in an hour" message.
+- The register page's "Send it again" no longer disappears after one resend. It stays and waits out the minute.
+- Added a line under a sent confirmation on the resend page about checking junk, since mail from a new sender can take a minute.
+- Added `frontend/src/lib/resend_cooldown.svelte.ts` (the countdown, counted against the clock so a throttled background tab is right when it wakes) and tests for it and for the server-side cooldown.
+- Why: a person who clicked three times quickly spent the address's hourly three sends and was told to come back in an hour, while the first email was still on its way.
+- Not done: registration's own send does not start the server's cooldown, only the page's, so for the first minute after signing up the server is looser than the page. Starting it from `create_user` means touching the register route and `test_server.py`'s resend-straight-after-registering case, and the database-backed backend suite could not be run when this was written.
+
+### From the Kahoot report, 5 Oct
+
+- Anyone with the PIN can join a game that has started, as in Kahoot, and gets the question
+  that is up with the time left. It used to refuse everyone once the host pressed Start. A
+  finished game still refuses ("That game has finished").
+- The host can lock a game, in the lobby and from the bar during the game, and a phone that
+  tries to join a locked game is told so. The PIN stays on the host's bar while the game is
+  unlocked, for whoever arrives late.
+- Kahoot's score curve: a right answer inside half a second scores 1000, and the score falls
+  to 500 at the buzzer instead of to zero. Answers taken in the grace period after the buzzer
+  score 500.
+
+### Sign-in by emailed link, 5 Oct
+
+- Sign-in is by an emailed link or six-digit code, for frog.co and capgemini.com addresses
+  only (`ALLOWED_EMAIL_DOMAINS`), as frogViz does. A first sign-in asks for a username and
+  that makes the account. The link lasts its 15 minutes rather than working once, because
+  Outlook's Safe Links opens it first; a code gets five tries, and an address ten a day.
+- Passwords are off: login, registration, reset, resend-confirmation and change answer 404
+  unless `ENABLE_PASSWORD_LOGIN` is on, and their pages redirect to sign-in. Nothing was
+  removed. Deleting an account asks for its address to be typed instead of its password.
+- The navbar and My Account say Sign in and Sign out, as the sign-in page does.
+- Discover, search, the sitemap and the community listings need a signed-in account, so a
+  public quiz is visible to the team rather than to the internet (open decision 6).
+- An account that set up an authenticator before TOTP was cut is still asked for its code
+  after the link.
+- The Google, GitHub and custom OpenID sign-ins, off unless configured, refuse addresses
+  outside the allowed domains too, instead of making an account for any address.
+- The e2e suite makes and signs in every account through a real email read back from the
+  mail sink. `sign-in.e2e.ts` replaced the password-recovery journey; the password tests in
+  `account.e2e.ts` and `crud-account.e2e.ts` went with the feature, and the backend suite
+  still covers the password routes with the flag on.
+
+### Kahoot gap analysis
+
+- Added `docs/kahoot-gap-analysis-2026-10.md`: frogQuiz against Kahoot, step by step from
+  creating a quiz to the podium, with a ranked gap table and the open questions for François
+  and Gonçalo. Written by a separate agent from the code, the e2e specs and Kahoot's own help
+  pages.
+
+### Edge-case pass
+
+Findings E1 to E27 are in `docs/edge-cases-2026-10.md`. Each has a test that failed
+before its fix: in `frontend/e2e/edge-cases.e2e.ts`, for E9, E12, E16 and E17 in
+`frogquiz/tests/` (`test_ratelimit.py`, `test_storage_cleanup.py`, `test_edge_cases.py`), for
+E13 in `lib/practice/score.test.ts`. E16 to E27 were fixed on 5 Oct at François's request.
+
+- Per-address rate limits are sized for an office behind one address: registration 50 an
+  hour (was 10), login 100 and 50 per five minutes (was 20 and 10), password reset and
+  resend-verification 20 an hour (was 5), editor start and finish 120 a minute (was 30). The
+  per-account and per-recipient limits are unchanged (E16).
+- Usernames are trimmed, 3 to 20 characters, and unique whatever the case, as the register
+  form already said; the API took anything (E17).
+- A phone that comes back after the game ended gets the podium, and the phone's podium
+  totals come from the server's final results, so a phone that reloaded mid-game no longer
+  shows only the points scored after the reload (E18).
+- A disconnect that arrives after the same player has rejoined no longer tells the host
+  they left (E19). A player's rejoin key is refreshed with each answer instead of expiring
+  two hours after joining (E20).
+- Latency compensation uses the whole round trip, capped at the 1.5 s answer grace, and the
+  time taken is never negative. It read only the sub-second part (E21).
+- Phones say so when the host has been gone 15 seconds, and clear it when the host comes
+  back (E22).
+- Every change to a live game's stored state goes through a Redis WATCH transaction, so
+  host events and the last answer no longer overwrite each other (E23, open since 29 Sep).
+- Two players in one browser keep their own places: the joined game is remembered per tab,
+  and a new tab only falls back to the shared cookie when no other tab is in a game (E24).
+  `/play` removes its socket listeners when it goes (E25).
+- On a phone the editor's question settings button sits on the first line beside the
+  question number instead of wrapping onto a line of its own (E26).
+- `globals` and `@eslint/js` are declared as dev dependencies, so `pnpm lint` runs on a fresh
+  install (E27). The testing route compares its key in constant time.
+
+- Signing in lasts again. The access cookie had been cut to 30 minutes along with the token
+  inside it (12 Sep), so it vanished before the remember-me path could renew it: everyone was
+  signed out half an hour after logging in, and an open editor failed every save with a 403.
+  The cookie lives a year again; the token still expires in 30 minutes (E1).
+- Page loads treat an expired token the API refuses to renew (its session was revoked on
+  another device) as signed out. They used to fall through and trust the token's email,
+  which the 30-minute cookie had hidden.
+- "Everyone answered" now checks that every player still in the game has answered, by name.
+  It compared counts, so a player who answered and then dropped could end the question for
+  somebody still choosing (E4).
+- Leaving `/play` inside the app (a back swipe mid-game) disconnects the socket, and coming
+  back reconnects and rejoins. It used to leave a ghost player that held every later
+  question to its full timer, while the real player saw an empty join form with their
+  nickname taken (E6).
+- The editor starts a new edit session and saves again when its session has lapsed after an
+  hour without a save, instead of failing every save until a reload (E2).
+- Login finds an address regardless of case, as password reset already did. An address
+  registered with capitals could not log in typed the same way (E3).
+- A player who reconnects mid-question is sent the seconds left, not the full time, so the
+  phone no longer offers seconds the server refuses (E5). A player who had already answered
+  is not sent the question again (E7).
+- Editor saves carry the version they were based on, and a save from a tab left behind a
+  newer one is refused with a 409 and a message to reload, instead of overwriting it (E8).
+- Editor saves are limited per edit session (60 a minute) rather than per address, plus 600
+  a minute per address. An office shares one address, so a few people editing at once hit
+  the old limit (E9). The registration and login limits have the same problem and are left
+  for a decision.
+- The PIN boxes on `/play` and the home page take "123 456" pasted with a space; `maxlength`
+  used to cut it to five digits before the space was stripped (E10).
+- A host whose connection drops mid-question gets the answer count and whether the question
+  is over when it reconnects, so the projector no longer waits out the timer (E11).
+- Storage accounting is done in single SQL statements. A claim that landed while the worker
+  was hashing the image lost the image's owner and never counted it, and two uploads hashed
+  at once could lose one of the two counts (E12).
+- The editor sends its pending save when it unmounts. Going back inside the app straight
+  after typing used to drop the last couple of seconds of edits, with no prompt (E14).
+- A save that failed because the network dropped is sent again when the browser comes back
+  online, rather than waiting for the next keystroke (E15).
+- Practice no longer scores a draft's question that has no answer marked right. Every pick
+  read "Not quite" and counted against the total (E13).
+
+### Quality
+
+- Tightened UI copy: removed curly quotes, double hyphens and em-dashes from en.json, sentence-cased leftover Title Case labels (results table, downloader formats, controllers, shares) and shortened the import, storage, analytics, login and sign-in error wording. Reworded the import, join, TOTP and rating alerts and the OAuth error page the same way. The delete-quiz e2e assertion now expects straight quotes.
+- Trimmed the README: dropped the repeated tagline and the em-dashes in prose.
+- `/play` no longer asks for the signed-in user when nobody is signed in, so a signed-out
+  player's console no longer shows a 401 on every visit.
+- Deleted upstream's "quiz created" modal from `/create` and its two `create_page` strings.
+  Nothing could open it: the flag behind it was a plain object never set to true.
+- The button's `xs` and `sm` sizes now use the radius ladder (`rounded-sm`, and the base
+  `rounded-md`) instead of upstream's `min(var(--radius-md), 8px / 10px)`. A unit test now
+  rejects any arbitrary `rounded-[...]` value.
+- Tailwind no longer scans `*.test.ts`, which turned the class names a test lists as banned
+  into four dead rules. The TODO entry blamed Markdown; excluding Markdown changed nothing.
+- Touch-sized press areas on phones (issue #24). On a coarse pointer every text field grows
+  to 44px, the editor's "Mark as correct" grows to 44px, the timer's pill gets a 44px press
+  area (its input renders at 16px; growing the input itself made the pill taller than the
+  button beside it), and "Delete answer" shows without a hover. Quiz title links and the drawer's home
+  link get a 44px press area, and the crowded icon rows on quiz cards and the editor's card
+  footer get 8px gaps so neighbouring press areas no longer overlap. `fq-touch-target` now
+  keys on `any-pointer: coarse`, which also catches touch laptops. Desktop with a mouse is
+  unchanged.
+- `svelte-check` passes with 0 errors (it reported 1052) and CI now runs it. `skipLibCheck`
+  removed the 825 that were in bits-ui's type files. The 227 in our code were fixed
+  rather than excluded: mostly the quiz answer union read without narrowing, untyped
+  `$state()`, and `bind:` on props the child never writes back. Real bugs it surfaced:
+  the ORDER editor stored each answer's id as an array, `/edit/videos` read ffmpeg.wasm
+  0.11's `ratio` so its compression progress never moved, the login page showed its
+  "confirmed" badge for any `?verified=` value, the quiztivity page type was missing
+  `Abcd`, and a leftover `<!--{/if}-->` made svelte-check treat `/import` as JavaScript.
+- `editor-column.e2e.ts › a question can be moved and deleted` no longer fails at random.
+  The moved card's rich-text field takes up to a second to show its text again after
+  re-mounting, and the test read it once, at once. It now waits for the text.
+- New e2e spec `touch-targets.e2e.ts` audits every control on home, Discover, My Quizzes,
+  the quiz page, My Account, Join, the editor, the menu drawer and the player's game
+  screens under touch emulation: 44x44 press area, no press area landing on a neighbour,
+  text fields at 16px or more, nothing visible only on hover.
+
+### CRUD audit
+
+- Audited who can create, read, change and delete every entity, what each change leaves
+  behind, what the UI lets a person do, and what each write accepts. Findings are in
+  `docs/crud-audit-2026-10.md` as C1 to C18: one High (anonymous uploads have no rate
+  limit and are never cleaned up), four Medium (a new quiz with an image answers 500 once
+  the worker has hashed it; taking an image off a question never frees it; deleting an
+  image through the API keeps the file; an export token opens any game's player data),
+  the rest Low. Each was written as an expected-failure test first, then fixed:
+- Anonymous uploads are limited to 30 per ten minutes per address, and a new six-hourly
+  `clean_orphaned_uploads` job deletes uploads no quiz has named for a day. It replaces an
+  editor sweep that read a Redis list nothing wrote (C5).
+- Saving a new quiz with an image no longer answers 500 (C14). Taking an image off a
+  question now deletes the file and gives the bytes back; the worker's unlink had never
+  worked (C16). Deleting an image through the API deletes the file, and a deleted image is
+  no longer served (C18), nor one that a quiz still shows (409, C10).
+- An export token opens only its own game (C4); the `.cqa` export is the owner's only (C1);
+  a quiz can no longer use an image another account uploaded (C3).
+- Claiming a quiz brings its images into the account and its quota (C7); deleting an
+  account marks its uploads deleted (C8); the admin delete routes run the same clean-up as
+  an account deleting itself (C9); the hash job no longer raises on anonymous uploads (C6).
+- `/storage/list/last` hides deleted images (C11); alt text, file names, result notes and
+  the quiz list's page size are bounded (C12).
+- Four frontend unit tests built file paths with `new URL(...).pathname`, which gives
+  `/C:/...` on Windows; they now use `fileURLToPath` and pass there too.
+- The socket `disconnect` handler logged a full traceback for every socket that left
+  without a session (21 in one e2e run); it now returns quietly. `e2e/run.sh` stops its
+  services last-started-first, so the worker and API no longer log Redis errors on the way
+  down. A full e2e run now leaves both logs free of tracebacks.
+- Added `crud-authz`, `crud-lifecycle` and `crud-account` e2e specs (owner-only routes,
+  signed-out 401s, admin and flag-off routers, quiz and account deletion on disk, password
+  change and account deletion through My Account) and the C5 rate-limit test in
+  `test_ratelimit.py`, plus `test_storage_cleanup.py` for the orphan sweep and admin
+  delete. Moved the 1x1 PNG and an `uploadPng` helper into `e2e/helpers.ts`.
+- `e2e/run.sh` now starts the arq worker, as production does, logging to
+  `e2e/.data/worker.log`; `e2e/stop.sh` stops it through a pid file. On fakeredis it runs
+  through `e2e/worker.py`, which skips the `INFO` call fakeredis cannot answer. Without the
+  worker no upload was hashed or counted and no edited quiz was linked to its images, which
+  is how three of the findings went unseen. `stop.sh` stops the worker before Redis.
+- Fixed the e2e mail sink on Windows: it wrote each message in text mode, which turned
+  every CRLF into CR CR LF, so `journey-recovery` could not find the reset link and failed
+  every run on Windows (Linux and CI were unaffected).
+- Added the audit's open items and two one-off e2e failures to `TODO.md`.
+- Updated `HANDOVER.md` with the audit and the suite counts after it (e2e 167, backend 171).
+- Recorded the decision that usernames do not change (C13) in `docs/mvp-scope.md`, the audit doc, `TODO.md` and `HANDOVER.md`.
+
+### Navigation, one way to log in, and a UI best-practice pass
+
+- Corrected the plan docs: `MVP.md`, `TODO.md` and `HANDOVER.md` said every decision was signed by both, but Gonçalo has not ticked D16 or D18; ticked four `MVP.md` boxes that were done (e2e result, #16, `run.sh` on Linux and macOS, image cleanup on quiz delete); recorded why the e2e `next()` helper cannot tell an empty result from a payload-less event.
+- Signing a device out takes effect at once. Deleting a session in My Account, "sign out
+  everywhere", a password change and a password reset deleted the sessions' refresh
+  records but left the access tokens those devices already held working for up to 30
+  minutes (checked on the local stack for a deleted session and a password change: the
+  other device's `/users/me` still answered 200). Access tokens now carry their session id
+  (`sid`); revoking a session marks it in Redis for one token lifetime, and every token
+  check refuses a revoked session. Logout, which already denylisted the token it was
+  handed, revokes the whole session too. Tokens minted before this deploy carry no `sid` and expire as before.
+  Three backend tests assert the old cookies get 401; the suite itself had been leaning
+  on the gap, reusing a "signed out everywhere" session for 107 later requests.
+- Added HANDOVER §0 for continuing on a laptop: state at handoff, plain git or `claude --teleport`, what does not carry over (the PR watch), Windows setup, and the local route for each open item, including a real phone against the local stack.
+- Filed touch-sized press areas on phones as issue #24 (a measured list of controls under 44px, frogConvert's approach, acceptance criteria) and listed it in `TODO.md`; HANDOVER now covers the sign-out change and the 4 Oct walk, with suite counts on `077f695`.
+- Recorded François's 4 Oct decision that multiple-answer questions stay all-or-nothing, with the Kahoot comparison behind it, in `docs/mvp-scope.md`, `MVP.md` (D2) and `TODO.md`.
+- The navbar is exactly 64px, the height of the space reserved under it. Its touch-sized
+  row plus `py-3` made it 69px, so the first 5px of every page sat under the bar. It is
+  named "Main" now, since the footer has a nav of its own, and the phone drawer's header
+  is 64px to keep its hairline level with the bar's. (The tall blank band above the
+  navbar in some of this session's screenshots was a capture artifact: a full-page shot
+  taken while scrolled draws a fixed bar at the scroll offset. The live preview has none.)
+- `command-palette.e2e.ts` retries Ctrl+K until the palette has focus instead of waiting
+  a fixed 800ms, which lost the keypress on a cold Vite compile.
+- HANDOVER and TODO carry the current suite numbers: e2e 144/144 on a clean stack (146 with the footer and navbar tests), unit 153, backend 168.
+- The footer lost its grey band. It is one line on the page ground with a hairline above
+  that mirrors the navbar's, at the navbar's side padding: the credit on the left and
+  Terms, Privacy and Attribution on the right from `sm` up, stacked and centered on a
+  phone. The heart is the ♥ text glyph in the text color, as on frogConvert, instead of
+  the red ❤️ emoji (white in dark mode). The links underline on hover instead of always.
+- `frontend_lint` passes again: an unused `svelte-ignore` on the register page's Log in
+  button (a component, so the a11y warning it silenced never fires) is an error under
+  `svelte/no-unused-svelte-ignore`.
+- TODO and `docs/redesign-status.md` record the 4 Oct walk of every flow outside a live
+  game, what it covered, and what it found.
+- A signed-in visitor sees the "isn't saved to an account" banner open, with Claim in
+  view. Someone who made an account through "Create an account to keep this quiz" was
+  sent back to the quiz, which still said it wasn't saved, with Claim folded away.
+- The Start game dialog's "Custom field" switch is "Ask players for one more detail",
+  with a line saying players fill it in when they join and that it lands in the
+  Download results spreadsheet. Its placeholder was a hard-coded "Phone Number or
+  Email"; it is "Team, or email" from the locale file. No spec covered the feature;
+  `join.e2e.ts` now runs it from the host's switch to a player answering it.
+- Deleting from My Quizzes names the quiz ("“Pond trivia” will be deleted for good").
+  The dialog asked "Delete this quiz?" and then "Delete this quiz permanently?", with
+  nothing to say which row it came from.
+- The signed-out quiz page's "Deleted in 30 days" banner text passes contrast in light
+  mode (4.05:1 before: muted text on the banner's tint).
+- Practice has a page heading on every screen: the quiz title (for screen readers)
+  while answering, and "Practice finished" at the end. The intro's `h1` went with the
+  intro, so the rest of the run had none. The multiple-answer hint reads "Pick every
+  correct answer", as in the live game, instead of "right answer".
+- My Quizzes' empty state no longer offers to "import a quiz": import is hidden.
+- Question counts read "3 questions", not "3 Questions", on My Quizzes and the quiz
+  page, and the quiz page credits "Made by name" as Discover does, not "Made by @name".
+- After changing your password, logging in again takes you into the app. It reloaded
+  `/account/login?password_changed=true`, and that flag is what tells the page not to
+  redirect a signed-in visitor, so you were signed in on an empty login form. Success
+  now drops the stale flag before reloading; the three login steps stopped calling
+  `reload()` themselves so there is one redirect path.
+- Leaving the login page no longer shows two pages at once. Its step slides were
+  `|global`, so the card animated out on navigation while the next page rendered under
+  it, briefly with two `h1`s and two `#email` fields.
+- Registering replaces the form with the result and a Log in button, which takes focus.
+  The filled form stayed with Register still live, and a second press said the name was
+  taken. Validation messages lost their exclamation marks.
+- My Account on a phone: Log out wraps under the name instead of squeezing it (a
+  13-character username read "walkmut..."), and the email wraps rather than truncating.
+- My Account no longer offers Delete on the session you are using. Deleting it left the
+  page signed in, then dropped you when the access token ran out; Log out is the way to
+  leave from there. Each Delete is named for its device ("Delete session: Firefox 131.0
+  (Linux)") instead of every one being "Delete this session", which read like the
+  "This session" badge beside it.
+- TODO records that deleting a session, or changing the password, leaves the other
+  device signed in for up to 30 minutes (checked on the local stack), with a proposed
+  fix. Auth logic, so not changed unasked.
+- The editor header's status is readable on a phone. It shared one row with the title,
+  the theme switch and Save and got 33px, so "Saved" showed as "S" and every draft
+  warning as one letter. Below `sm`, "Saving" and "Saved" shrink to their icon (the
+  words stay for screen readers) and a red message wraps onto its own line under the
+  header.
+- "Can't save yet" names what is missing: a title, a question, or an answer on every
+  question. One message covered all three and told an author who had a title and a
+  question to add a title and a question.
+- On a phone, tapping inside an open question card works again. The drag grip's
+  touch-sized hit area (`fq-touch-target`, on for coarse pointers only) had no
+  positioned parent of its own, so it stretched to the whole card and sat on top of it:
+  "Add an answer" and the other unpositioned controls received nothing. No spec had
+  ever run with a touch screen; `editor-column.e2e.ts` now does, and checks every touch
+  target on the page is positioned.
+- Changing a question's timer no longer breaks Save. The field is a number input bound
+  straight to the question, so it stored a number; the API takes the timer as a string
+  and answered 422 ("Input should be a valid string") to every quiz whose timer had
+  been edited. Introduced by the editor rebuild on this branch: master's old field
+  converted it by accident. Found by creating a quiz through the UI as a user would.
+- True / False arrives with neither answer marked correct. True used to be, so a false
+  statement left alone was saved as playable with the wrong answer and nothing flagged
+  it, and an author who clicked True to mark it un-marked it instead. The question now
+  stays unfinished until one is picked.
+- The quiz background color picker has an accessible name ("Background color"); axe
+  reported it as an unlabeled form control.
+- HANDOVER and TODO carry the current suite numbers: e2e 137, unit 153, backend 168.
+- The podium reads "1885 points", not "1885 Points".
+- HANDOVER, TODO and `docs/redesign-status.md` record the live-game pass: what axe
+  covered, at which sizes, and the multiple-answer results gap.
+- A question's image on the phone fits between the question and the tiles. Its
+  `max-h-[90%]` resolved against a wrapper with no height, so it drew at full size and
+  slid under the answer tiles; it also used `object-cover`, which cropped it.
+- A multiple-answer question now says so: "Pick every correct answer" under the question
+  on the shared screen, and on the phone when it shows the question. Before, nothing
+  told the room that more than one answer could be right.
+- The player's question screen is a flex column, so it fits the phone with questions shown
+  on devices too. Tile heights were percentages that assumed a fixed header: the
+  multiple-answer screen ran ~150px past the viewport and Submit sat below the fold.
+  Also: a margin meant for three hidden question types applied to every question
+  (`class:mt-10` was given an array, always truthy); the question header is its own
+  height with side padding instead of a fixed sixth of the screen; answer columns are
+  equal width instead of sized by their text.
+- A multiple-answer question no longer opens on the phone with every tile faded: the
+  "unticked tiles recede" style applied before anything was ticked, so the question
+  looked disabled. Ticked tiles get a tick badge, since the white ring alone was faint
+  on a pastel tile in light mode, and Submit is a full-width button instead of a
+  half-width one in a strip 5% of the screen tall.
+- Fixed the host's results screen after a multiple-answer question, which showed an
+  empty card: no question, no correct answers, no split. The screen listed the question
+  types it drew and left that one out. `scoreboard.e2e` plays one through the UI.
+- The live game passes axe in every state, host and phone, in both themes. Fixed on the
+  way: no `<h1>` on most game screens; the scoreboard's up/down/no-change labels sat on
+  plain spans that screen readers skip, and its "+0" was 2.6:1; the medal on a player's
+  score pill was 3.25:1 in light (gold) and under 3.8:1 in dark (silver, bronze), now
+  per-theme inks held to AA by `medal-contrast.test.ts`; result bars told screen readers
+  "2 players are waiting" instead of "2 players chose this".
+- The player's question screen is `h-dvh w-full`, not `h-screen w-screen`: on a real
+  phone 100vh counts the browser's toolbars, so the bottom answer tiles could sit under
+  them.
+- The command palette's entries read like the rest of the app: "Create a quiz",
+  "Discover" (was "Explore Quizzes", "Opens the Explore-page"), "Close" (was "Close
+  CommandPalette"), and its argument hint is muted instead of indigo, an accent the app
+  does not otherwise have.
+- HANDOVER, TODO and `docs/redesign-status.md` record the overnight keyboard work, what a
+  keyboard check did and did not cover, and `/create`'s dead success modal as a removal
+  candidate.
+- Joining a game no longer drops focus between the PIN and the name. The sixth digit
+  swaps the forms and the name field had no autofocus, so a phone's keyboard closed
+  between the two fields and a name typed from a keyboard went nowhere. `join.e2e`
+  joins with the keyboard alone.
+- Player answer tiles show focus in light mode. Their ring was white at 80%, on a
+  near-white page; it is a foreground outline now, in both the single- and the
+  multiple-answer tiles.
+- In the editor, the answer fields and the timer now show focus. Both dropped the
+  browser outline with nothing in its place, so tabbing into an answer showed nothing;
+  answers get an outline set off past the "correct" ring, the timer the shadcn Input's
+  ring. Found by the first keyboard walk of the main pages, which Tab now allows.
+- The host screen's cover image no longer reads "Not provided" to a screen reader; it
+  is decorative, like the cover everywhere else.
+- Fixed Tab doing nothing on every page. The command palette binds its keys to the
+  window for the life of the app and never checked whether it was open, so Tab and the
+  arrow keys were swallowed everywhere: focus could not leave the page body and the
+  arrows could not scroll. Enter, meanwhile, ran the palette's last selected action
+  even after it was closed (search "create", press Escape, then Enter in a form, and
+  you were sent to /create). The bindings now stand down while it is closed.
+  `command-palette.e2e` covers both and fails on the old code.
+- Fixed the alt text of every uploaded image, which screen readers announced as "��e".
+  Uploads carry no alt text, the server then leaves the header out, and `atob(null)`
+  decodes the string "null" instead of failing. Images without a description now have
+  an empty alt. The same guard covers a missing thumbhash. `uploads.e2e` checks it.
+- The full-screen view of a quiz image is the shadcn Dialog: Escape closes it, and the
+  image is centered. It was a `w-screen h-screen` div with a `fle` typo for `flex`.
+- Fixed the host lobby's full-screen QR code, which could not be closed from the
+  keyboard: its Enter handler returned a function instead of calling it, and Escape did
+  nothing. It is the shadcn Dialog now (Escape, Enter or a click closes it, focus
+  returns to the code), with a white quiet zone so it scans on a dark screen, and its
+  button is labeled for what it does rather than "Join by entering the following code".
+- Rebuilt the editor's Advanced settings on the shadcn Dialog with a Switch. The option
+  reads "Skip the results" with a line on what it does, instead of a bare checkbox
+  labeled "Hide question resuluts?".
+- Added e2e tests for both: the QR closing from the keyboard, and "Skip the results"
+  saving on a question that never had the flag.
+- Rebuilt the image uploader's overlay on the shadcn Dialog. It now has a title, keeps
+  focus inside, and shows the size rule inside the card instead of on the dimmed page.
+  Uppy follows the dark theme, its green Upload button and blue links use the app's
+  colors, "browse" is underlined, phones get "Choose an image" instead of a drop zone,
+  and "Powered by Uppy" is actually hidden now.
+- Sentence case for the remaining title-case labels on live screens: "Email or
+  username", "Advanced settings", "Next question", "1st place" (and 2nd, 3rd), and the
+  uploader's "Add an image" (was "Add Media"; images are the only thing it takes).
+- `docs/redesign-status.md` listed `/user/[user_id]` and `/edit/videos` as live and
+  `/docs` as eight live pages; all but three legal pages were hidden on 2026-10-01.
+  The hidden ones now sit with the cut features, the live docs are named, and the Done
+  rows for results, Kahoot import and the media library say those routes are hidden.
+- Sentence case for the question-type picker ("Multiple choice", "Check choice") and the
+  start-game dialog ("Start game"), matching the rest of the app. Both dialogs were
+  driven at 390/834/1440 in both themes and moved to Done in `docs/redesign-status.md`.
+- Removed the verified-seal icon Discover put on every quiz that was not imported (with
+  Kahoot import hidden, every quiz), explained only by a hover tooltip phones never show.
+  Imported quizzes now say "Imported from Kahoot" in words, as on the quiz page.
+- Search highlights on Discover are a pastel butter tint in light mode and a muted gold
+  in dark, instead of the browser's pure #ffff00; a unit test holds both to WCAG AA.
+- Log out falls back to the old GET when the API answers the POST with 404, so it keeps
+  working against an API from before this change: the deploy preview's (it uses the
+  production API) and production's, until the VM pulls the new images. HANDOVER now
+  lists that pull as a step after merging.
+- Fixed the production build, which the new navbar had broken: it read the query string
+  for the Log in link, and SvelteKit forbids that while prerendering the legal pages, so
+  every Netlify deploy preview since the navbar commit failed. Prerendered pages build
+  the link from the path alone.
+- Logging out is a POST now, from the button on My Account. As a GET, any page could sign
+  a user out by sending them to the URL (a link or redirect carries SameSite=Lax
+  cookies). The old GET URL now redirects to My Account instead of logging out.
+- Fixed logging out revoking more than your own session: tokens were `{sub, exp}` with exp
+  in whole seconds, so one user's logins in the same second got identical tokens, and the
+  logout denylist is keyed on the token. Logging out on one device could end a session
+  another device had just started, and logging straight back in could hand you a token
+  already revoked. Every token now carries a unique `jti`.
+- Fixed the server-side session hook storing the API's whole JSON reply (`{"email": …}`)
+  as the user's email after every token refresh. Only "is anyone signed in" read it, so
+  nothing visibly broke; a unit test now pins the email and fails on the old code.
+- Removed the upstream Ko-fi and Liberapay donation links from the README (François's
+  call). The credit to ClassQuiz and Marlon W stays: that is attribution.
+- Switched the app to US English. User-facing: "color", "canceled", "practice"/"practicing",
+  "colored", "license" (Terms of Service) and "Authorized" (self-host docs). The same
+  whole-word pass ran over code comments, test names and the team docs. Left alone on
+  purpose: identifiers (`normaliseHit`), Kahoot's `total_favourites` field, the PNG spec's
+  "truecolour", vendored `tinykeys.ts`, and migrations.
+- Answer tiles are always the pastel palette now. Every screen drew a color stored on
+  the answer in its place, so quizzes from upstream ClassQuiz showed its brown and green
+  defaults (the one public quiz on frogquiz.xyz does) and an API client could store pure
+  red. The two question types the editor offers have no color picker, so nothing a
+  frogQuiz author chose is lost (voting had one, and was cut from the MVP). A unit test
+  pins every tile renderer to the palette.
+- Fixed answers five to ten having no color on the host and player screens: they
+  indexed the four-color palette directly instead of wrapping.
+- Fixed the password-recovery journey test racing its own reset: it logged in before the
+  reset request returned, and the reset's sign-out-everywhere then ended that new session.
+- Reworked the navbar. Desktop: the three surfaces on the left; theme, Log in (or your
+  avatar) and "Create a quiz" on the right. Tablets (768 px and up) now get that full bar instead of
+  a hamburger.
+- Removed "Register" from the navbar; "Log in" is the one entry, and the login page links
+  to registration. That link now carries `returnTo` through and is hidden when
+  registration is disabled, which the navbar used to do for it.
+- Signed in, the navbar shows a circle with your initial that opens My Account, instead
+  of "My Account" and "Log out" side by side. Log out moved onto the My Account page.
+- My Account shows the same initial circle instead of the random cartoon face generated
+  at sign-up, which gave people a look they never chose and could not change.
+- Native controls follow the theme (`color-scheme`), so checkboxes and scrollbars are no
+  longer bright white in dark mode.
+- Both Create buttons on My Quizzes read "Create a quiz"; the page's said "Create a new quiz".
+- On phones, Join sits with the menu button instead of stranded mid-bar, and the menu is
+  a proper drawer (shadcn Sheet: focus trap, Esc, scrim, opaque), with "Create a quiz" at
+  its foot instead of wedged between a divider and Log in. The theme toggle moved into it.
+- Fixed "Log in" returning you to whichever page the app was first opened on: it read a
+  `pathname` store set once at load and never updated. It follows the router now.
+- Fixed My Quizzes rows reading "Questions" with no number.
+- Added a `<main>` landmark and a skip link to every page, and moved the footer into the
+  layout: it was pasted into four pages and missing from Discover, quiz pages, My Account,
+  reset password and the 404.
+- Gave every page an `<h1>`. Login and Register are headed "Log in" and "Create account"
+  rather than "frogQuiz", which the navbar already says.
+- The 404 page says "Page not found" (or "Quiz not found"), drops the monospace numeral, and
+  only offers "Try again" for server errors, where reloading can help.
+- Signed out, a teammate's quiz offers "Log in to host" (and returns there) instead of a
+  disabled Play button.
+- The join screen's buttons say "Join" and "Join game" instead of "Submit" twice.
+- On a phone, My Account's sessions are a list, so each Delete is on screen rather than
+  scrolled off the side of a table.
+- Fixed the editor's question list: it held the quiz settings, insert buttons and Add as
+  well as the questions, which axe flags as a critical ARIA error. Cards are now labeled
+  "Question n of total".
+- Unified "sign in" to "log in" and "E-mail" to "Email" across the copy, and removed
+  placeholders that only repeated their field's label.
+- Fixed the keyboard-shortcut hint's "Ctr+k" typo, and gave Mac users ⌘K.
+- Fixed an e2e helper race: `clearScoreboardStep` checked for the Scoreboard button once,
+  without waiting, so under load it skipped the step and stalled. It explains two of the
+  four "unexplained" stalls in `TODO.md`; reproduced by delaying the results frame.
+
+### More hostile input: quiz shape, and editor/server drift
+
+Kept attacking the shapes a vanilla test never tries, and found that the editor and the
+server disagreed about what a quiz may contain — every disagreement in the direction that
+bites: the editor let a user build something the server then refused with a 422 on save.
+
+- **No cap on questions per quiz.** With no bound a quiz JSON could be arbitrarily large
+  — a million questions is ~140 MB parsed on save and held as game state in Redis. Capped
+  at **1000** (`MAX_QUESTIONS_PER_QUIZ`), a DoS ceiling of ~140 KB, not a product limit:
+  `api-edge.e2e.ts` deliberately proves a 500-question quiz saves and starts, and the
+  editor caps its own at 50 for UX, so the two are meant to differ and are not pinned
+  together. 5000 → 200 before, 422 after; 500 and 1000 still save. (First set to 100,
+  which broke those 200/500 scale tests — the same over-reach as restricting a tested
+  feature; corrected before the suite confirmed.)
+- **Answers: editor 16, server 10.** The server's 10 is a hard ceiling, not a style
+  choice — scoring concatenates one-digit option indices (`"02"`), which is ambiguous past
+  nine. The editor's `.max(16)` let a user add 11–16 answers and then fail to save. Aligned
+  to 10.
+- **Question title: editor 299, server 250.** Same drift; aligned to 250.
+- **Timer: editor unbounded, server 1–999.** The editor's number input was already 1–999,
+  but its schema let a scripted or pasted value through to a 422. Bounded in the schema too.
+
+The six shared limits (four text, two shape — answers and timer) are now pinned
+editor == server by `text_limits.test.ts`, which reads both files, because this drift *is*
+the bug class and a one-sided test cannot catch it. The question count is intentionally
+not pinned (editor 50, server 1000). A backend test covers the question ceiling (1001
+refused), and the existing `api-edge.e2e.ts` scale tests cover the accept side (200, 500).
+
+What held up under attack, worth recording: the server's timer bounds (1000, 0, negative,
+0.5 all refused), the 10-answer grid (no overflow at 390 or 1440), and the 999-second
+timer in its 120 px circle. The nickname and text bounds from the previous pass also held.
+
+### A decompression bomb, caught at the header
+
+Carrying on breaking the app: a byte cap is not a pixel cap. A 20000×20000 PNG of one
+color is **under 400 KiB** on disk — inside the 5 MB limit — and about **1.6 GB** as a
+bitmap in every browser that draws it. Proven end to end: with the check removed the
+server accepts and stores it (200); with it in place the same file is 413. The attack is
+one person's upload breaking the screen for the whole room — every player's phone and the
+projector.
+
+- **`frogquiz/image_dimensions.py`**: dimensions read from the header bytes, no decode and
+  no dependency — the point is never to allocate the attacker's raster. Verified
+  field-by-field against Pillow for PNG, GIF, baseline and progressive JPEG, and all three
+  WebP layouts (VP8, VP8L, VP8X).
+- Both upload routes (`POST /` and `/raw`) reject over `max_image_dimension` (8000 per
+  side) with a 413, reading from the already-spooled bytes so nothing is re-read. 8000
+  clears a 48-megapixel phone photo and sits at the 8192 texture limit many mobile GPUs
+  have; Kahoot caps at 5000×5000, so this could be tighter — it is one env var.
+- The server **never** decodes an image (no Pillow; the worker only hashes), so this is
+  the clients' defense, which is the right place for it: they are the ones that fall over.
+
+While wiring the editor's error message, found that the 413 branch of the uploader's
+`upload-error` handler has been **dead code**: `@uppy/xhr-upload` wraps a non-2xx as a
+`NetworkError` carrying the XHR, so the body is on `response.responseText`, not
+`response.body` — which the handler read. Both 413 reasons (bytes, pixels) now parse the
+real detail and show advice that fits: shrinking a file does nothing for a 50-megapixel
+image already under the byte cap. The byte branch was never exercised before because that
+case is caught client-side and never reaches the server.
+
+Known gap, written down in `docs/uploads.md` rather than hidden: the uploader's own
+browser still decodes a true square bomb in Uppy's Compressor before the server sees it,
+so the person who uploads one can hang their own tab. That harms only them, not the room;
+a client-side header check before Compressor runs would close it, as a follow-up.
+
+Tests: `tests/test_image_dimensions.py` (12) cross-checks the parser against a real
+encoder and a built bomb; three integration tests in `test_server.py` cover both routes
+and the inclusive boundary; `e2e/uploads.e2e.ts` gains a browser test that an over-cap
+image is refused with the dimension message, using a 9000×8 strip so the test browser
+decodes it without allocating a real bomb.
+
+### Hostile text: four ways to wreck a screen, closed
+
+Every spec in the suite used "Lisbon" and "ana", so none of them proved anything about a
+real room. Attacking the running app found this, measured against the code as it was:
+
+| Attack | Before |
+| --- | --- |
+| 272-character title with no spaces | Player lobby overflowed **6611px** at 390 |
+| Same text as a question and an answer | Host screen overflowed **7736px** at 1440 |
+| 5000-character title | **Accepted and stored intact** |
+| 50-character nickname with no spaces | Player lobby overflowed 6px at 390 |
+
+**The root cause is worse than the symptoms.** `ormar.Text()` is unbounded, so the server
+enforced no text limit of any kind — while `yupSchemas.ts` had carried
+`TITLE_MAX_LENGTH = 100` and `DESCRIPTION_MAX_LENGTH = 500` all along. The editor has been
+claiming limits the server never checked, so anything that skipped the editor (the API
+directly, a Kahoot import, a scripted client) could store anything at all. One person
+typing a long word breaks the screen for everyone in the room.
+
+Two independent defences, because they protect against different things:
+
+- **Bounds on `QuizInput`**: title 100, description 500, question 250, answer 100, matching
+  what the editor already claimed. Title and question are measured on **visible** text via
+  `bleach`, because they arrive as editor HTML — counting the raw string would spend the
+  budget on tags nobody typed and make the same sentence pass or fail depending on whether
+  a word in it is bold. They sit on `QuizInput` rather than `QuizQuestion`, following that
+  model's existing reasoning: a quiz already in the database stays *loadable*, merely
+  unsaveable until fixed.
+- **`wrap-anywhere` at six render sites**, because a quiz saved before today is never
+  revalidated, so the CSS is what actually protects a room from existing content. The
+  player's question heading carried `break-normal`, which forbids breaking inside a word —
+  exactly backwards. The podium and scoreboard needed nothing: they already truncate with
+  `min-w-0`, which is why only the lobby broke.
+
+The nickname bound was already correct at 50 server-side with control characters stripped.
+What was missing was the CSS on the two places a player-supplied name is rendered: the
+player's own "You're in, …" and the host's lobby chips.
+
+New tests. `src/lib/editor/text_limits.test.ts` (7) reads both files and pins the four
+client numbers against the four server numbers, since that drift *is* the bug.
+`e2e/hostile-text.e2e.ts` (4) reproduces each break: 5000 characters refused in all four
+fields, a realistic quiz still saves, already-stored unbreakable text cannot push a layout
+sideways, and four hostile nicknames at once (combining marks, CJK, emoji, long token)
+cannot wreck the host's player list.
+
+### `e2e/stop.sh` did not know about the mail sink
+
+Half a change, found the way they always are: the next full suite died on "port 2526 is
+already in use" before a single test ran. `run.sh` gained the mail sink on 2 Oct and
+`stop.sh`'s port list did not, so a `KEEP_UP=1` stack left it listening and nothing could
+start afterwards. Both lists now carry it, with a comment saying to keep them in step.
+
+### The last two join-screen items, and a handover
+
+Both were flagged as taste rather than defect and left for a decision; François called for
+them on 2 Oct.
+
+- **The join card no longer floats in the middle of a laptop viewport.** `fq-stage` centers
+  on both axes, which is right for the game surfaces a room reads and wrong for a form: at
+  1440x900 the card sat with about 40% of the viewport empty above it and read as a page
+  that had failed to load. It is biased upward from `sm` and **unchanged on a phone**,
+  where it was already right and where every player actually is. Measured: the card's top
+  moved from 41% down the viewport to 22% at 1440, and stayed at 41% at 390.
+  `fq-stage` itself is untouched, so no game surface moved.
+- **A long quiz title no longer swamps the lobby.** It was `text-4xl`/`5xl`, which made it
+  the loudest thing on the screen — louder than "You're in, ana", which is what a player
+  is actually looking for. "Q4 Security Awareness Refresher" ran to three lines on a phone.
+  Now `text-2xl`/`4xl`: measured 36px → 24px, three lines → two. Still the largest element,
+  no longer the first one you read.
+
+Both verified in a browser at 390 and 1440, with no horizontal overflow at either.
+
+`HANDOVER.md` is new: the branch for François and Gonçalo, leading with the three things
+that have a deadline (the Oracle VM before 31 October, proving mail on the deployed site,
+and confirming the `worker` container runs) and linking everything else.
+
+### Everything green, verified at the end
+
+| Suite | Result |
+| --- | --- |
+| e2e | **127 passed**, 10.0 min |
+| Backend | **147 passed**, 1 skipped |
+| Unit | **126 passed** |
+| `flake8 .` | 0 |
+| `eslint .` | 0 errors (108 warnings, all pre-existing) |
+
+Measured after the last change, not carried forward from an earlier run.
+
+The six journeys are the headline, and what they found is the honest part: **every
+first-run failure was my own assumption, not a product bug** — nine of them. Wrong copy,
+wrong role (link vs button), wrong moment (before a transition settles), wrong encoding
+(base64, CRLF, oklch), wrong element type (contenteditable vs input), wrong state (podium
+vs lobby). The app was right every time, which is the useful result: a journey encodes
+what a *user* expects, and where that disagreed with the app, the app won. The table is in
+[`docs/session-2026-10-02.md`](docs/session-2026-10-02.md), and each spec carries a
+comment naming the assumption and the truth.
+
+Two e2e failures remain unexplained and are recorded **without** a shared cause being
+claimed: `editor.e2e.ts › build a quiz by hand` and `game-reload.e2e.ts › a player can
+reload twice`, one occurrence each in five full runs, both passing in isolation (3/3 and
+10/10). They share a symptom — the player does not get the question — and that is exactly
+the reasoning that produced a retracted attribution earlier in the session.
+
+### User journeys, and a mail relay for the e2e stack
+
+The suite was organized by mechanism — sockets, editor, uploads, exits — and thorough at
+it. A journey test fails for a different reason: not "this control is wrong" but "you
+cannot get from here to there". Three now exist, each narrated with `test.step` so a
+failure names the step:
+
+- **`journey-recovery`** — sign up, forget the password, request a reset, **read the real
+  email**, follow the link, set a new one; the old password is refused and the link is
+  dead the second time.
+- **`journey-first-game`** — land on `/`, Create with no account, write two questions
+  (one of them CHECK), save, host, two phones join, play both, podium, Back to My
+  Quizzes with the quiz still listed.
+- **`journey-teammate`** — owner publishes, a teammate finds it in Discover, cannot read
+  which answer is right (D12) or download the sheet (D18), but can run it. D12 and D18
+  contradicted each other for a day and were tested in separate files; here they are
+  asserted on the same page, as one person meets them.
+
+The unlock is **`e2e/mailsink.py`**: a ~90-line asyncio SMTP server, no new dependency,
+writing every message to `e2e/.data/mail/*.eml`. Until now `/forgot-password` answered
+503 in e2e because `mail_configured` was false with no relay, so password recovery — a
+must-do in `MVP.md` before sharing — could not be tested at all. Hand-rolled rather than
+aiosmtpd because the backend sends through plain `smtplib` with no STARTTLS and no AUTH
+when the credentials are blank, so EHLO/MAIL/RCPT/DATA/QUIT is the whole surface needed.
+
+That buys the parts that actually break in production: the Jinja templates render, and
+the reset link is built from `ROOT_ADDRESS` rather than the API's own host. On a split
+Netlify/Oracle deploy those are different hostnames, and getting it wrong sends every
+user to a host serving no page. It does **not** prove a real provider accepts the mail;
+that stays on the manual checklist in `DEPLOY.md`.
+
+`editor.e2e.ts`'s private UI helpers moved to `helpers.ts`, so a journey builds a quiz
+through the editor like a person instead of posting one to the API. `saveButton` became
+`saveQuizButton`.
+
+**Every first-run failure was mine, not the product's** — worth recording, because each
+looked like a finding:
+
+- **A visitor is meant to see the answers.** D12 hides *which* one is right, not the
+  options: a visitor needs to see what a quiz asks to decide whether to play it. The test
+  now asserts the `sr-only` "Correct" label is absent for a visitor **and present for the
+  owner on the same page**, so it cannot pass by the marker being deleted for everybody.
+- **The podium's exit is a link, not a button**; log out is a navbar link to
+  `/api/v1/users/logout`, rendered twice (desktop and mobile sheet).
+- **The reset email is base64.** `MIMEText(..., 'utf-8')` encodes that way, so a regex
+  over the raw `.eml` finds nothing in a message that does contain the link.
+- **SMTP is CRLF**, so splitting MIME parts on `\n\n` returned empty bodies.
+
+Two assertions exist because that decoding forced the question: the link must appear in
+**both** the plain and HTML parts, and the two must agree. A `multipart/alternative`
+whose plain half has no link is broken for anyone reading mail as text, and nothing else
+in the suite would notice.
+
+### Every decision in MVP.md §4.0 is now signed
+
+François signed D1 and D3–D15 on 2026-10-02 after asking for each to be explained, having
+already answered D2 and D16 with "like Kahoot" and taken D8, D9, D17 and D18. Nothing in
+that table is waiting on anybody. D2 and D16 now record what "like Kahoot" turned out to
+mean, with the research behind each, rather than just a tick.
+
+### Two fixes on the join screen
+
+Found by shooting `/play` against a live stack rather than reading the markup.
+
+- **The PIN box no longer pre-fills something that looks like a PIN.** `placeholder="000000"`
+  in a mono face at `0.35em` tracking is indistinguishable from a typed value — most
+  visibly on the error state, which said "No game with that PIN" directly above what
+  looked like a PIN. The placeholder is gone and the hint carries the count instead:
+  "Enter the 6-digit PIN from the host's screen." Same change on the landing page's PIN
+  card, which had the same placeholder.
+- **A Submit that is not ready reads as inert rather than broken.** shadcn's
+  `disabled:opacity-50` over a near-black primary lands on a flat mid-gray with pale text,
+  and that is what a player looks at for the whole time they are typing. It is
+  `bg-muted` / `text-muted-foreground` at full opacity now — a pairing `theme-tokens.test.ts`
+  already holds to AA in both themes. Scoped to the two join forms and the landing card
+  rather than changed on the shared Button, which every surface uses.
+
+`frontend/e2e/join.e2e.ts` covers both, and both were confirmed to fail against the old
+markup (`rgb(24,24,27)` for the disabled button, and a placeholder matching `/\d/`).
+
+Two things that test got wrong first, worth knowing before writing another like it:
+
+- **A rejected PIN clears the field**, so a bad PIN is not a route to the enabled button —
+  the first version asserted the button stays enabled after an error and failed against
+  correct code. It reaches the enabled state through a real game's nickname step instead.
+- **`getComputedStyle` returns `oklch(...)` verbatim** for a token defined in oklch, so
+  parsing numbers out of that string yields lightness and chroma, not channels. Colors
+  are painted to a 1×1 canvas and read back as sRGB. And because the button carries
+  `transition-all`, the background has to be polled until it settles: read once, it
+  returns a color partway between the two tokens — the test first failed on
+  `rgb(236,236,237)`, which is neither, and looked like an app bug.
+
+### Green, with one failure on record
+
+Two full e2e runs on 2 Oct: **118/119 then 119/119** (8.9 min). Backend 146 passed /
+1 skipped, unit 126 passed, `flake8 .` 0, `eslint .` 0 errors. The suite is 119 tests now,
+up from 115.
+
+The second run passing does **not** close the first run's failure: that is 1 occurrence in
+2 runs of an intermittent fault, not a fix. It stays open in `TODO.md`.
+
+### One e2e failure, cause still unproven
+
+The full suite came back 118 passed / 1 failed:
+*editor.e2e.ts > build a quiz by hand, save it, and play it*. I attributed it to the
+fire-and-forget `start_game` race fixed earlier this session, then measured it: **the
+unfixed spec passed 10 out of 10 runs in isolation**, so that attribution is not
+supported and the cause is still unknown. The failure has been seen once, under
+full-suite load.
+
+The two `startGame` conversions below are kept anyway — awaiting the server's
+acknowledgement is strictly better than not, and it is what every other spec does — but
+they are a correctness tidy-up, not a proven fix. `docs/e2e-findings.md` was also still
+claiming every spec waits for `start_game`, which was not true.
+
+What the measurement did establish is a harness defect that cost the diagnosis:
+`next()` resolves a falsy payload to `{}` instead of `null`, so `finalResults`' own
+`expect(r).not.toBeNull()` passes on an empty result and the failure surfaces one line
+later as `TypeError: Cannot read properties of undefined (reading 'find')`. The spec now
+asserts which question keys came back before indexing them, so a recurrence names the
+payload instead of hiding it.
+
+- `host.emit('start_game', {})` returns immediately. When `set_question_number` reaches
+  the server first, the question never goes active, both answers are refused, and
+  `finalResults` comes back with no rows for question `0` — hence
+  `TypeError: Cannot read properties of undefined (reading 'find')` rather than a
+  readable assertion failure.
+- `editor.e2e.ts:103` (the one that failed) and `account.e2e.ts:169` (same pattern, had
+  not lost the race yet) both `await startGame(host)` now.
+- `live-socket.e2e.ts:217` keeps its raw emit on purpose: there an **attacker** emits
+  `start_game` and the test asserts nothing happens. Converting it would have deleted a
+  real security assertion.
+
+Not a flake and not caused by that day's changes: the spec starts its game over the API
+and never touches the start modal.
+
+### The host decides what the phone shows (D16)
+
+- The start-game modal has a switch, **"Show questions and answers on players' devices"**,
+  off by default. Off, a player sees four colored shapes and reads the question off the
+  host's screen; on, their phone carries the question text, its image and the answer text.
+  It is per game and not remembered, so turning it on for a call does not follow you into
+  the next room with a projector.
+- This is Kahoot's own behavior: shapes by default, plus a setting of the same name that
+  is free on every Kahoot plan. François chose "make it like Kahoot" on 2026-10-02.
+- Almost nothing had to be built. Both render paths in `lib/play/question.svelte` already
+  existed and worked, and `ReturnQuestion` already put the question text and image on the
+  wire — upstream exposed the choice as two game modes picked before the game started and
+  labeled "Normal" and "Old-School", which told a host nothing about what they did. The
+  modal was simply hardcoding `game_mode: 'kahoot'`. Same wire value, named after its
+  effect and moved to where the host is already making decisions.
+- `frontend/e2e/player-screen.e2e.ts` (3 tests) drives a real game at phone width and
+  asserts on **visible** text, not the accessible name: the answer is the tile's
+  `aria-label` in both modes, which is right for a screen reader and is how the other
+  specs click answers, so a role-based locator finds the tile in shapes mode too and would
+  prove nothing. The third test pins that the switch does not persist between games.
+
+### An upload directory that does not exist is created
+
+- `LocalStorage` never created its `base_path`, and `upload` is a bare `open(..., "wb")` —
+  so a `STORAGE_PATH` pointing at a directory that is not there yet meant **every image
+  upload answered 500** with a `FileNotFoundError` in the log and nothing in the response
+  saying why. Docker masked it, because the bind mount in `docker-compose.yml` creates the
+  path; a bare-VM install (the "Deploying to any Linux VM" path in `DEPLOY.md`), a typo, or
+  a fresh test box all hit it. I lost a backend-suite run to exactly this.
+- Created eagerly in `__init__` and fatal if it cannot be: the class is only built when the
+  backend is `local`, the wrapper already raises on bad config at construction, and an app
+  that cannot write uploads should say so at startup rather than once per person who adds a
+  picture.
+
+### Oracle's Always Free ARM allowance was halved
+
+- `DEPLOY.md` told anyone deploying to create a 4 OCPU / 24 GB `VM.Standard.A1.Flex` and
+  called it "the whole Always Free ARM allowance". Oracle now states that allowance as
+  **1,500 OCPU hours and 9,000 GB hours a month, or 2 OCPUs and 12 GB** — half what the
+  file said, with no announcement. An over-allowance tenancy does not get trimmed to fit:
+  every A1 instance in it is disabled and then deleted after 30 days.
+- Corrected to 2/12, with a pointer to Oracle's own page rather than asking anyone to
+  trust the file, a note that Always Free is home-region-only, and a warning that Oracle
+  reclaims idle instances (all three of CPU p95, network and memory under 20% over seven
+  days — which a quiz tool used once a week meets). Hetzner's price corrected too: the
+  CX22 at "about EUR 4" is now a CX23 at EUR 5.49 plus EUR 0.50 for the IPv4.
+- Full analysis, with a dated checklist, is **issue #22**.
+
+### Repo hygiene
+
+- `e2e/.venv/` and `.venv/` are gitignored. `e2e/run.sh` documents `E2E_VENV` for an
+  in-tree virtualenv, and nothing stopped `git add -A` from committing a few hundred MB of
+  wheels.
+- The same two paths are excluded in `.flake8`, so a local `flake8 .` reports what CI's
+  does. CI installs outside the tree and never saw them; an in-tree venv added about 64,000
+  errors from other people's packages.
+
+### Results are the owner's (D18)
+
+- `GET /api/v1/eximport/excel/{quiz_id}` is scoped to the signed-in user's own quizzes and
+  404s (not 403) for anybody else's, so it says nothing about whether the id exists. The
+  Download button on the view page is behind `{#if is_owner}`.
+- The spreadsheet contains the answer key, and the same page already hid the correct
+  answers from a non-owner (`show_answers = is_owner`), so any signed-in teammate could
+  read the answers to a quiz they were about to play. François closed it on 2026-10-02.
+- Pinned from both sides: `test_excel_export_is_owner_only` on the route, and a new
+  `practice.e2e.ts` case asserting the button is absent for a non-owner **and** that the
+  endpoint refuses them. The existing download test now saves its quiz through the
+  signed-in context, so it owns what it downloads.
+
+### Four lint failures I had shipped
+
+Backend and frontend lint were both red on `main`, from my own earlier commits this
+session. CI runs `flake8` (not black) and `eslint`, and both were failing:
+
+- `frogquiz/config.py` — `upload_limits()` had one blank line before it, not two (E302).
+- `frogquiz/helpers/__init__.py` — `import re`, left behind when `_QUIZ_IMAGE_KEY_REGEX`
+  was deleted.
+- `frogquiz/routers/quiz.py` — `storage`, unused since image deletion moved into the
+  reference-counting helper.
+- `frogquiz/routers/storage.py` — `MAX_UPLOAD_SIZE`, which belongs to the middleware; the
+  route checks `UPLOAD_LIMITS` per type.
+- `src/routes/admin/+page.svelte` — `export_token` was assigned from the socket and never
+  read; the download href uses the payload directly.
+- `src/lib/play/admin/results.svelte` — `getLocalization` and its `t`, unused since the
+  strings there were replaced.
+
+`flake8 .` is now 0 across the repo and `eslint .` is 0 errors (108 pre-existing warnings
+remain, all `{@html}` and unkeyed `{#each}` in untouched files).
+
+### Mail testing has a recipient
+
+- `francois.prevot@hotmail.com`, François's call on 2026-10-02. External and strict about
+  SPF/DKIM, which is the point: a relay misconfiguration an internal address would wave
+  through gets caught. Steps in `DEPLOY.md` under "Testing it for real".
+
+### Decisions recorded
+
+- **D8** contact address: the `francois.prevot@frog.co` placeholder stands (F, 2 Oct).
+- **D9** login architecture: an account is what makes a quiz permanent, no SSO yet (F, 2
+  Oct). `frogquiz/oauth/` stays config-gated and unwired.
+- **#16, #17 and #19 closed** on François's say-so, each with a comment recording the
+  evidence rather than a bare close.
+
+### Upload limits retuned
+
+- Per-file image ceiling is **5 MB**, down from 8 MB (`max_image_upload_size`). All three
+  enforcement layers follow it: Caddy's `request_body` cap on `/api/v1/storage/*` is 6 MB
+  (framing headroom), and the `Content-Length` guard and the counted-bytes check read the
+  setting, so there is still one place the number is written.
+- Per-account quota is **1 GiB**, up from 256 MiB (`free_storage_limit`). The old number
+  was sized against a free Postgres plan rather than the disk the files sit on.
+- The browser's fallback (`FALLBACK_MAX_FILE_SIZE`, used only until
+  `GET /api/v1/storage/limits` answers) moved to 5 MB with it. The hint under the picker
+  and every test read the server's number, so no copy or assertion was hardcoded.
+- `MVP.md` no longer says deleting a quiz leaves its cover and background image behind —
+  that was fixed on 1 Oct and the line was stale.
+
+### Everything green
+
+- Full suite verified end to end on 2 Oct: **e2e 115/115 in 8.5 minutes**, backend 146
+  passed (1 skipped), unit 126 passed, production build OK. The previous full run was 10
+  failed / 105 passed in 29 minutes — the time difference is almost entirely failing tests
+  burning their five-minute timeouts.
+- All ten of those failures were self-inflicted and are now fixed: six specs broken by the
+  Kahoot round sequencing and the podium redesign, one by an Excel permission change that
+  was itself reverted, and the socket "flake" that turned out to have a real cause.
+
+### The flaky socket test had a root cause
+
+- *an answer after the host showed the results is refused* was written off as a flake —
+  by me, as "passes 3/3 in isolation". Measured properly it fails **2 in 10 in
+  isolation**, so that was wrong, and it was failing on its *first* assertion, not the
+  one the test is named for.
+- Cause: every `start_game` emit in `live-socket.e2e.ts` was fire-and-forget, so
+  `set_question_number` could read `game:{pin}` before `start_game` had saved and write
+  the whole object back over it. When `current_question` is the field lost,
+  `submit_answer` sees the wrong index, answers `question_not_active` and never emits
+  `player_answer`. `docs/e2e-findings.md` described this race and claimed the specs
+  waited for `start_game` "for this reason" — they did not; that claim is corrected.
+- `startGame()` in `e2e/sockets.ts` waits for the echo, and all nine legitimate call
+  sites use it. The tenth is left raw on purpose: it is an attacker who should *not* be
+  able to start the game, so waiting for an echo would be wrong. **12/12 now**, and the
+  whole spec is 21/21.
+- The underlying server-side race is untouched and still wants an `HSET` or a `WATCH`
+  transaction; the specs just no longer provoke it.
+- Also checked whether the new `disconnect` handler contributed: 8/10 with it, 9/10
+  without. A one-run difference at n=10 is noise, and it fails with the handler disabled,
+  so the flake predates it — but n=10 cannot clear the handler either, which is why the
+  numbers are recorded rather than a verdict.
+
+### Deleting an image actually frees the space
+
+- **Deleting a quiz never freed its images, and nor did the 30-day anonymous sweep.** Both
+  went through `collect_quiz_image_keys`, whose regex `^.*/(.{36}--.{36})$` only ever
+  described upstream's old double-key form. A modern upload stores the bare `StorageItem`
+  UUID — no slash, no `--` — so it matched nothing and every image of every deleted quiz
+  stayed in storage for good, still charged to its owner's quota. For expired anonymous
+  quizzes that is unbounded growth from people who never come back. One shared,
+  reference-counted `release_quiz_images` now serves all three paths (quiz delete, the
+  sweep, and an image taken off a question), and it covers cover and background images
+  too. The old helper is deleted rather than left as a function that silently matches
+  nothing.
+
+- **`anon-game.e2e.ts` carried four stale assertions, all from my own changes today**, and
+  it is the one spec that drives a whole game, so it was failing for a different reason
+  each time I looked. It clicked "Next Question" after "Show results" (the standings step);
+  it matched `getByText('1st Place')` unscoped on both the host *and* the player, the
+  player side having become ambiguous because `max-sm:sr-only` keeps the podium label in
+  the DOM at phone width where `hidden` had removed it; it asserted the winner sees
+  "You're on place 1!", which `player-medal.e2e.ts` explicitly asserts they do **not**
+  since the medal replaces it — two specs contradicting each other; and it expected the
+  export button's old label, "Request result download", which became "Download results"
+  when that export became one press. Swept every place-label and button-label assertion in
+  every spec this time rather than waiting for them to turn red one at a time.
+- **Four more specs were broken by the Kahoot round sequencing, not just `anon-game`.**
+  `game-export`, `podium` and `player-medal` all clicked "Get final results" or "Next
+  Question" straight after "Show results" and hung on the Scoreboard screen. All three use
+  the shared helpers now. `game-reload`'s "whatever screen the host came back on" regex
+  also gained `Scoreboard`: it passes today only because the reload lands mid-question, so
+  it was one timing change from a confusing failure. Audited every spec that mentions
+  "Show results" rather than fixing them as they turned red.
+- The host podium says "1st Place" twice by design — once on the gold block, once in the
+  standings row for the winner — so `anon-game.e2e.ts`'s bare `getByText('1st Place')` was
+  a strict-mode violation rather than a check. Scoped to `.podium-block.is-gold`, with a
+  note saying why. This was the last of the breakage from today's podium and
+  round-sequencing changes.
+
+- **`storage_used` was only ever incremented.** The `calculate_hash` worker job added each
+  upload's size and nothing anywhere subtracted it — not the delete endpoint, not the
+  quiz-update job that unlinks a replaced image, not account deletion. The figure was a
+  lifetime upload counter rather than usage, so the quota built on it was a lifetime cap:
+  swap a cover image enough times and you are locked out for good with nothing to reclaim.
+  Harmless while the quota went unenforced — which, as of earlier today, it no longer is,
+  so this was a lockout the enforcement created.
+- `DELETE /api/v1/storage/meta/{file_id}` now releases the file's bytes, clamped at zero
+  because the column declares `minimum=0` and every row predating the size fix stores 0.
+- Taking an image off a question used to only unlink the relation, leaving the file in
+  storage for good. It now deletes the orphan once nothing points at it and gives back its
+  bytes — reference-counted first, because images are many-to-many with quizzes and a
+  duplicated quiz shares them. The editor's own X is the whole affordance; still no media
+  library.
+- Verified end to end on a live stack (4096 bytes billed, deleted, back to 0). It silently
+  reported no decrement at all until the API was restarted — `run.sh` starts uvicorn
+  without `--reload`, exactly the trap `docs/e2e-findings.md` warns about. Written up in
+  `docs/uploads.md` with the commands.
+
+### A game survives someone closing their laptop
+
+- **There was no socket `disconnect` handler at all.** A closed tab stayed in the set
+  that "everyone answered" is counted against, so once one person left, the question
+  could never end early again and the host sat through every full timer for the rest of
+  the game. That is the worst thing that can happen to a game running in a room.
+  Disconnecting now drops the player from the count and re-checks whether the question
+  can close — deliberately *not* the same as leaving: the rejoin key stays, so a
+  backgrounded phone can still come back, which is the whole reason this could not just
+  call `leave_game`.
+- **A player who reloaded vanished from the host's lobby for good.** The host filters its
+  list on `player_left` and only ever adds on `player_joined`, and `rejoin_game` told
+  nobody. It does now.
+- **A refused answer was silent.** The server emits `question_not_active` when an answer
+  arrives after the reveal or past the timer; nothing in the frontend listened. The
+  screen locks in the moment a tile is tapped, so a refused answer still read "Answer
+  locked in" and the player found out only from a +0 on the results — which looks like a
+  bug rather than a wrong answer. It now says "That one did not count".
+- Fixed a listener leak next to it: the player's question component is recreated per
+  question (`{#key unique}`) and its `everyone_answered` subscription was never released,
+  so one copy accumulated per question, each holding a destroyed component's state alive.
+
+### Two things that handed out more than they should
+
+- **The Excel owner filter was reverted.** I had narrowed `GET /eximport/excel/{id}` to
+  the quiz's owner, reporting it as a hole in a boundary the UI already drew. That was a
+  misreading: the `{#if is_owner}` on the view page guards **Edit**, while Download is
+  gated only on `disabled={!logged_in}`. So any signed-in visitor downloading any quiz is
+  the advertised behavior — and CLAUDE.md keeps the search bar precisely for "sharing
+  quizzes made by other people on the team". Narrowing it broke `practice.e2e.ts`'s
+  download test, which was right to fail. The endpoint is back to requiring a login and
+  nothing more, the behavior is pinned by a test so it is not "fixed" again, and the
+  genuine inconsistency it sits on — the page hides answers from a non-owner while the
+  spreadsheet hands them over — is written up in `TODO.md` as a François/Gonçalo
+  decision rather than settled by me.
+- **`captcha_enabled` defaulted to `True` on `/quiz/start`**, which only looked harmless
+  because the single caller sends `'False'`. Any other caller opened a game demanding a
+  captcha the join page cannot render and the server cannot verify. It defaults off, and
+  it is refused outright when no provider key is configured — so a game that demands an
+  uncheckable captcha cannot be created.
+- `check_captcha` was worse than the "returns True with no secret" it was filed as: every
+  `settings.hcaptcha_key` read was on config.py's *uncalled* `lru_cache` wrapper, so it
+  raised `AttributeError` out of `join_game`. Fixed, and it now fails closed with a
+  logged reason instead of falling through.
+
+### Tidying
+
+- Fixed a `tike_taken` typo in the results page's prop type, which was one of the
+  `svelte-check` errors. The field is never read there, so it only misdeclared the shape
+  the server sends (`time_taken`).
+- Corrected the `svelte-check` note in `TODO.md` — and then had to correct the
+  correction. The real figures, from a **single** run: 1054 errors, **229 ours, 825 under
+  `node_modules`**. My first pass read 339/331 from two *separate* `svelte-check`
+  invocations, so the two counts never described the same run, and I reported that our
+  share was half the problem rather than a fifth. The note I "fixed" (~300 ours, ~820 in
+  `bits-ui`) had been right all along. Ours also cluster: the top five files are 81 of the
+  229, and three of those are editor parts for question types the MVP does not offer.
+- Verified the production build still succeeds after the day's changes (37s), which is
+  one of the "Done when" gates on issue #3.
+
+- Removed upstream's results-export route, which sat in the module body as a bare string
+  literal that read like a docstring. Uncommenting it could never have worked: it
+  referenced three names that do not exist in the module. Kept as a comment recording the
+  intended shape, with a pointer to the export that does work.
+- The podium printed each place label twice — a visible span plus an `sr-only` copy — so
+  a screen reader read it twice at desktop width. One element with `max-sm:sr-only`.
+- `anon-game.e2e.ts` had been red since the Kahoot round sequencing landed earlier today:
+  it clicked "Next Question" straight after "Show results" and hung on the Scoreboard
+  step. The sequence is now a shared helper (`clearScoreboardStep`,
+  `advancePastResults`, `advanceToFinalResults`) rather than repeated per spec.
+
+### Uploads: real limits, and no file manager
+
+- **Uploads had no server-side size limit.** The route passed `size = 0` into storage and
+  saved `0` on the row, so nothing in the request path ever knew how big a file was; the
+  only cap in the product was Uppy's, in the browser, and `POST /api/v1/storage/` takes
+  anonymous uploads. One `curl -F` with a 2 GB file filled the volume. Images are capped
+  at 8 MB (`max_image_upload_size`), enforced in three places: Caddy's `request_body` on
+  `/api/v1/storage/*`, a `Content-Length` check before the body is read, and the route's
+  own check on the counted bytes.
+- **The browser cap was not applied either.** `restrictions` is an Uppy *Core* option and
+  was being passed through the Dashboard plugin, where it appears nowhere in the types —
+  so the picker had neither a size cap nor a type filter and would accept an SVG. It is
+  on the Uppy instance now, and the numbers come from a new `GET /api/v1/storage/limits`
+  so `config.py` is the only place they are written.
+- **The per-account quota could not bite**: it was `used > limit`, so an account at zero
+  bytes could upload a file of any size, and `used` is maintained by the `calculate_hash`
+  worker job, so with the worker down it stayed at zero forever. It is now
+  `used + this_file > limit`, and the row records its real size at insert. The quota
+  itself drops from ~1.07 GB to 256 MiB — upstream's number was sized for a public SaaS.
+- `POST /storage/raw` accepted any `Content-Type`, SVG included, while the route beside it
+  enforced an allow-list. Both use one table now, and `/raw` aborts mid-stream rather than
+  measuring after the fact.
+- `video/mp4` was accepted by the server while `/edit/videos` was hidden and the editor
+  passed `video_upload={false}` — an upload path with no UI in front of it. Behind
+  `enable_video_upload`, off, with its own ceiling for when it is turned on.
+- Two refusals now say something a person can act on: too large, and storage full.
+- No file manager, on purpose: a picture belongs to the question it is on. `/edit/files`,
+  `/dashboard/files`, the Library tab and Pixabay stay hidden. Written up with every
+  number and how to change it in [`docs/uploads.md`](docs/uploads.md).
+- `e2e/run.sh` takes `E2E_VENV` to point at a virtualenv directly, for a machine that has
+  the dependencies but not pipenv.
+
+### One motion scale, measured rather than asserted
+
+- Motion comes off one scale now. The tree had fifteen different durations and almost no easing: five durations (120 / 200 / 320 / 500 / 750ms, shortest for a control, longest for the podium build) and four curves, declared once in `app.css`. Svelte's JS transitions never see a CSS variable, so the same numbers exist in `src/lib/motion.ts`; `motion.test.ts` asserts the two copies are equal, because two copies of one scale drift the moment nobody is looking.
+- Three progress bars animated `width`, which makes the browser lay the page out again for every frame — including the question timer, which redraws every second at the full width of a projector. They animate `transform: scaleX()` off `origin-left` instead, which the compositor handles. `motion.test.ts` now fails the build on any `transition-[width]` or the other layout properties.
+- Anyone who asks for less motion gets none: a global `prefers-reduced-motion` block clamps every duration in the scale to 1ms, and `dur()` does the same for the JS transitions, which the media query cannot reach.
+- Measured in a browser as well: `e2e/motion.e2e.ts` checks the podium really is held back and then released, that reduced motion really does make it instant, and that the timer is composited rather than laid out.
+- Fixed `e2e/global-setup.ts` reading `PW_CHROME`, which nothing sets — on a machine whose only browser is an out-of-tree Chromium, the warm-up pass tried to launch Playwright's own bundled shell and the run died before the first test. It reads `E2E_CHROME`, the same variable the tests use.
+
+### Lobby music, and a medal for the players who placed
+
+- A player who finished in the top three now sees a medal on their own screen at the end — gold, silver or bronze, beside their score. It is the only thing a player carries out of the room, and Kahoot does the same. Below third they get their place in words instead; the two never appear together, because the medal already says the place.
+
+- The lobby plays music again. The track and its uncompressed original have been sitting in `assets/music/` since the fork, REUSE-declared MPL-2.0, with the player commented out in the lobby — a 17-second loop, on at 40% by default, with a mute and a volume slider bottom-left where a room can find it.
+- It plays on the host's screen only, in the lobby only. It stops when the first question appears, because that is when the component goes, and it fades rather than cutting — a loop that stops dead sounds like a fault.
+- The choice is remembered: a host who turns it off does not fight it again. If the browser refuses to start audio without a gesture — after a reload, say — the control shows a play icon rather than claiming to be on.
+- Replaced `audio_player.svelte`, which was a fixed-position pair of hand-inlined Heroicons with a vertical range input, no persistence, no handling of a refused autoplay, and no caller.
+
+### One radius scale, and a stack that starts on Linux and macOS
+
+- The winner is now the point of the podium, not a label on it: their name is the largest thing on the screen and their score sits in a gold pill, while second and third keep the quieter treatment. The podium shape stays, because that shape is what makes an end-of-game screen recognizable — Kahoot shows a leaderboard and then a three-block podium with the winner centered, a crown and confetti, which is what this now is.
+
+- **The host's result download is one press.** "Request result download" minted a token over the socket and renamed itself to "Download results", so one action took two presses — and the hidden anchor that exists to make it one press was bound to a variable and never clicked. The button now says what it does, shows "Preparing the file…" while the token is minted, and starts the download when it arrives. Pinned by `e2e/game-export.e2e.ts`, which asserts a real spreadsheet arrives.
+- Fixed the podium's new bottom action row squeezing its second button to nothing: both buttons were `w-full` inside a flex row, which is the trap `CLAUDE.md` lists under "things that keep coming back". `flex-1 min-w-0`.
+
+- The podium and the host's screens now fit a phone. A host can run a game from one, and the actions panel was a 176px block pinned top-right — 44% of a 390px screen, sitting on top of the podium. It is a row along the bottom below `sm`, clear of the safe area, and the podium's blocks keep a usable width instead of stretching into thermometers.
+- Pinned it: `podium.e2e.ts` walks the lobby, the question, the per-question results and the podium at 390px and asserts no horizontal overflow at each step, on the host and on the player.
+
+- Corners come off one scale now. Four places rendered a **4px** corner while everything around them was 8–25px: a bare `rounded`, `rounded-t` or `rounded-b` resolves to Tailwind's own `--radius` (0.25rem), which our `:root` override does not reach because Tailwind keeps it in a `reference` layer. The modal in `lib/modals/alert.svelte` was the worst of them — a 14px shell with 4px header and footer rows.
+- The landing and join cards were 5.6px rounder than the Card primitive and every other surface; they match now. On the quiz page the question card and the answer tiles inside it were both 19.6px, which reads as two mismatched arcs sharing a corner — the card went up a step. The QR code in the lobby was under-rounded by 17px inside its tile.
+- The host's answer row was drawn two ways: 25.2px and palette-colored for ABCD, 14px on a hardcoded upstream brown with black ink for TEXT. They match, and the brown is gone — it was invisible on a dark quiz background.
+- `admin-button` said "same shape as the shadcn primary button" and was 2.8px rounder than it. The description textarea and the rich-text fields were 2.8px rounder than the `<Input>` beside them.
+- Added `radius-scale.test.ts`: no bare `rounded` classes, every step derived from `--radius`, and no hand-written `border-radius` outside the token block. Verified it fails by putting one back.
+- **`e2e/run.sh` now runs on Linux and macOS as well as Windows.** It finds Postgres wherever the platform keeps it, drops to the `postgres` user when run as root (initdb refuses to run as root, which is how it runs in a container), uses the real `redis-server` when one is installed and falls back to fakeredis, fetches the Meilisearch build for the platform and architecture, and picks Edge on Windows or Chromium elsewhere. `stop.sh` ported with it. Verified end to end on Linux: the whole stack up, 99 specs collected.
+- Added `TODO.md`: the live state of the work, next to `MVP.md`, which stays the plan.
+
+### A podium worth waiting for, a join screen worth looking at, and the copy findings
+
+- The podium builds up: third place rises, then second, then first, about 1.4s apart, with a crown on the winner and confetti from both lower corners. It used to put all three up in two seconds. Light goes out of the way of anyone who asks for reduced motion: the whole podium is simply there, and no confetti is fired.
+- The blocks are gold, silver and bronze instead of the theme's near-black primary, which made the winner's block a dark slab. Medal colors are what a podium means; they are not a third brand accent.
+- Rebuilt the `/play` join screen on the landing page's PIN card: the wordmark, a labeled field with the "enter the PIN from the host's screen" line, and one full-width primary button. It was a floating label, an unlabeled box and a gray Submit on an empty page — and it is the first screen every player sees.
+- The host's per-question results and standings are set for a projector at last: at 1920 the question, the answer labels, the counts and the standings scale up instead of staying at laptop size.
+- Play is no longer offered to a signed-in visitor on somebody else's unlisted quiz, which the server answers with "quiz not found". The page says why, and points at Practice.
+- The navbar's Register link was shown only when registration was *disabled* — inherited inverted from upstream, so the only sign-up link appeared exactly when signing up was off.
+- `/explore` is headed Discover, which is what the navbar has called it since the merge.
+- Removed "Forgot password?" from the registration form, which is for people who have no password yet.
+- The browser-data warning on My Quizzes now appears when there are quizzes to warn about; with none, the empty state carries the sentence instead of stacking two panels.
+- Sessions in My Account: the column and badge read "This session" rather than "This session?".
+- Deleted upstream's landing-page copy from `en.json` — donations, a German server hosted by netcup, self-hosting, "Multilingual", a community that funds development — along with `landing/landing-promo.svelte`, the dead component that was its only consumer. None of it was reachable, and all of it was false about this product.
+- The podium's side buttons are outlined, so "Request result download" reads as a control rather than a line of text on the white podium, and the hidden export anchor is out of the accessibility tree.
+
+### Players are told whether they were right, and hidden pages have a way home
+
+- After each question a player now sees Correct! or Not this time, with a tick or a cross as well as the color, then the points gained, their total and their place. It used to show "+760" and nothing else, so scoring 0 read as a broken game rather than a wrong answer. Nothing new crosses the socket: the right/wrong flag and the standings were already in what the server sends.
+- A player who did not answer in time is told that, instead of being shown "+0".
+- The sixteen hidden routes now 404 through the app's own error page, with the navbar, the theme and a Home button. They were guarded in `handle`, which runs before the router, so SvelteKit answered with its built-in fallback: a bare "404 | Not found" with no way out, on exactly the pages we hide. The list moved to `lib/hidden_routes.ts` and `hooks.ts` reroutes them.
+- Fixed the editor dropping an edit typed in the first half-second after it opened: the "nothing has changed yet" baseline was taken 500ms late and swallowed the change, so Save sent nothing and still went to the quiz page saying "Saved".
+
+### The editor is one column of question cards (MVP.md D7)
+
+- The editor is now a single scrolling column: quiz setup, then a card per question, then Add. Every question in the quiz is on the page at once, the one you are working on opens in place, and the rest stay as a line of question text with its answers. This is how Google Forms and Kahoot both do it, and it replaces the left rail plus one-question canvas.
+- A new quiz shows its title, description and "Add your first question". Cover image, visibility, background color and background image fold away behind More settings: a new quiz used to open on six fields, four of them decoration, with no question in sight.
+- Questions can be added between two others with the + that appears in the gap, duplicated, deleted, dragged by the grip, and moved with the arrows in the card footer. Deleting asks first, because the editor autosaves and there is no undo.
+- Added True / False to the question types: an ABCD question that arrives with True and False already written and True marked correct. No new backend type, no new play, scoring or export path.
+- The quiz title and each question's text now have real accessible names ("Quiz title", "Question text"). CKEditor labels every instance "Rich Text Editor", which told a screen reader nothing once more than one was on the page.
+- Removed `editor/card.svelte`, `editor/sidebar.svelte` and `editor/question-strip.svelte`, which the column replaces.
+- Fixed an `<input type="color">` that was handed an empty value, which logged a format warning on every editor load.
+- Added `e2e/editor-column.e2e.ts`: one card open at a time, insert in the middle, True/False, duplicate, move, delete, and the phone layout.
+
+### Hosting is a first-class choice on the landing page, and three plural strings printed their key
+
+- Added `docs/audit-2026-10-01.md`: the full assessment — every route probed against the running app and classified, all three suites run, every page screenshotted at 390/834/1440 in both themes plus the live game end to end, the findings, and where each item on the shared to-do list actually stands.
+
+- The landing page's three muted text links under the PIN box became two secondary buttons, Create a quiz and Go to your quizzes, under a "Running the quiz?" divider, with a line saying no account is needed and that browser quizzes are deleted after 30 days. Making a quiz now reads at the same level as logging in, which is what it is: it needs no account.
+- The navbar shows a Create a quiz button beside Log in for signed-out visitors, on desktop and in the mobile menu.
+- Fixed three places that asked i18next for a `*_plural` key, which has not existed since i18next v20: the host lobby's player count and the host's per-question results both printed `play_page.players_waiting_plural` on the projector, and every quiz card on My Quizzes printed `words.question_plural` instead of "Questions". The `_one` / `_other` keys they should have used were already in `en.json`.
+
 ### Transactional emails redesigned
 
 - The sign-up and password-reset emails now open on the frogQuiz wordmark inside the card, larger than before, so the rainbow appears once, in the mark, as it does in the app.
@@ -96,7 +1283,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Made Start the one primary action. Edit (new on this page) and Delete appear only for the quiz's owner, whether that's an account or the browser that created it anonymously. Practice and Download stay where they were, pending decisions D3 and D5.
 - Replaced the "you need to be logged in" tooltips on the disabled Play and Download buttons with a visible line of text, since a tooltip on a disabled button can't be reached by tap or keyboard.
 - Moved the anonymous-quiz notice to the top of the page as an expandable banner. Collapsed, it still says the quiz isn't saved and how many days are left; expanded, it gives the full explanation and the sign-up or claim button. A failed claim now shows an inline error instead of a browser `alert()`, and delete confirms in a dialog instead of `confirm()`, staying open with the error if it fails.
-- Replaced the full-width collapsed question bars with the editor's own question layout, read-only and always open: "Question n of total" with time and single/multiple-answer above a card holding the centred title, the image and the real answer tiles with their shapes. The correct answer carries the editor's ring and tick. The range-question sentence moved into `en.json`, and the unused `?autoExpand` parameter was dropped.
+- Replaced the full-width collapsed question bars with the editor's own question layout, read-only and always open: "Question n of total" with time and single/multiple-answer above a card holding the centered title, the image and the real answer tiles with their shapes. The correct answer carries the editor's ring and tick. The range-question sentence moved into `en.json`, and the unused `?autoExpand` parameter was dropped.
 - Only the quiz's owner sees the answer key on the view page: the correct-answer ring and tick, a range question's correct bounds, an order question's sequence (visitors get the items alphabetised) and a text question's accepted answers. The public API still returns them, so this is about not spoiling the quiz, not about secrecy.
 - Recorded Gonçalo's positions in `MVP.md`: D1 (one `/my-quizzes` page), D7 (continuous editor list), keep and redesign Practice (D3) and Download (D5), and a new D12 for owner-only answers. François's sign-off is still open on all of them.
 - The author's name no longer links to `/user/[id]` (public profiles are hidden for the MVP), and the quiz description, question count and public/private state sit in one metadata row.
@@ -134,7 +1321,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Rebuilt the post-save page's bento grid. The anonymous-quiz notice was a grid tile, so its ~350px of prose dictated the row heights, spreading Practice and Download ~360px apart, and its "Create an account" button clipped inside a too-narrow track. The grid now holds actions only, with fixed row heights, and the notice sits below it.
 - Stopped the host's start-game "custom field" inheriting a stale value from `localStorage`. A value typed once re-applied to every later game, so players were shown the host's email address as the heading over a second, unexplained input box. The field is now an explicit opt-in that starts empty.
 - Gave the join screen real `<label>`s, a length cap on the custom field matching the server's, and `autocomplete="nickname"` on the nickname input — with no autocomplete token browsers offered a saved email address for it.
-- Fixed the player's per-question results screen sitting flush against the top of the phone. The score card was centring itself inside its own `h-screen` block while the heading sat above it; the card now only draws itself and the route's `fq-stage` places it.
+- Fixed the player's per-question results screen sitting flush against the top of the phone. The score card was centering itself inside its own `h-screen` block while the heading sat above it; the card now only draws itself and the route's `fq-stage` places it.
 - Replaced the remaining `min-h-screen` on the play route and the join screen with the `dvh` equivalent, so the submit button and score card are above the fold with mobile browser chrome present.
 
 ### Fixed a batch of bugs found by manual testing (anonymous create/edit/play flow)
@@ -144,7 +1331,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Fixed image uploads doing nothing for an anonymous host: `POST /api/v1/storage/` required a logged-in user, with no allowance for the anonymous-quiz flow that already works everywhere else in the editor.
 - Redesigned the post-save quiz page's action area as a bento-style grid, with Play as the large primary tile (now labeled "Play" instead of icon-only) and Practice/Download/account-status as smaller tiles.
 - Removed the drop-shadow/glow under answer-option tiles on both the host and player live-question screens.
-- Fixed the host's live per-question results card: it used the dark-mode-following `bg-card` token on a card meant to sit on the quiz's own background colour, making it unreadable in dark mode. It's now a fixed light "paper" surface. Also fixed the card's oversized empty space, caused by a redundant `fq-stage` nested a second time inside the results card.
+- Fixed the host's live per-question results card: it used the dark-mode-following `bg-card` token on a card meant to sit on the quiz's own background color, making it unreadable in dark mode. It's now a fixed light "paper" surface. Also fixed the card's oversized empty space, caused by a redundant `fq-stage` nested a second time inside the results card.
 - Added a "Back" button to the podium/final-results screen, routing to the dashboard (signed in) or home (anonymous) — previously "Download results" was the only action, leaving the host stuck.
 - Tightened the quiz title limit from 300 to 100 characters (measured on visible text, not markup) and added a live character counter with an inline warning for both title and description, instead of only failing at Save.
 - Fixed the editor header's error indicator being squeezed unreadable next to a long title by giving the title a width cap and the error message its own share of the row.
@@ -243,7 +1430,7 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - The modal is no longer wrapped in `{#if quiz_id !== null}` at its call site. It is a `Dialog` and owns its own visibility, so the wrapper meant it appeared already-open with no enter animation and unmounted before the exit one could run. A stale error from a previous quiz no longer survives into the next open either.
 - **The lobby's fullscreen QR overlay was `w-screen h-screen`** — 100vw includes the vertical scrollbar, so it overflowed by that width on any page that scrolls, and 100vh is the wrong number on a phone. Now `inset-0`. The two `bg-white` uses around the QR code are deliberate and now say so in the file: a QR code needs a light quiet zone to scan in either theme.
 - The host shell used `min-h-screen`, which is `100vh` and has the same phone problem as `h-screen`. Now `min-h-dvh`.
-- `slide.svelte` and `voting_results.svelte` were the last two host surfaces outside `fq-stage`, so they sat flush against the top of the projector with the bottom half empty. Both are in it now. The slide image was sized `h-full` against a parent that no longer has a fixed height, so it is capped at `70dvh` and centred by the stage instead.
+- `slide.svelte` and `voting_results.svelte` were the last two host surfaces outside `fq-stage`, so they sat flush against the top of the projector with the bottom half empty. Both are in it now. The slide image was sized `h-full` against a parent that no longer has a fixed height, so it is capped at `70dvh` and centered by the stage instead.
 - Recorded the anonymous-versus-signed-in host differences in `docs/redesign-status.md`, each checked against the endpoint rather than assumed. One assumed difference turned out not to exist: there is no "resume lobby" card for anyone, so anonymous hosts are not missing one.
 
 
@@ -293,13 +1480,13 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 ### UI foundations
 
 - The `brown.svelte` and `gray.svelte` button wrappers now forward `class`, `variant` and `size`, and `gray` gained the `label` prop `brown` already had. They hardcoded `w-full` and forwarded nothing, so a destructive button, or an accessible name on an icon-only button, was unreachable without abandoning the wrappers. `w-full` is still the default and is merged with `cn()`, so all ~30 existing call sites are untouched.
-- Added the shadcn `dialog` and `collapsible` components. Four surfaces hand-roll an overlay with their own Escape, backdrop and focus behaviour; these land first so each can be converted on its own.
+- Added the shadcn `dialog` and `collapsible` components. Four surfaces hand-roll an overlay with their own Escape, backdrop and focus behavior; these land first so each can be converted on its own.
 - The shadcn CLI's `-o` flag also rewrote `ui/button` and bumped the pinned `@lucide/svelte` from 1.42.0 to 1.46.0. Both were reverted -- the rewrite had dropped the `fq-touch-target relative` minimum-touch-target utility from the button base, which matters on the player's phone.
 
 ### Auth hardening
 
 - Rate-limited every endpoint that checks a credential, keyed on something the caller cannot forge. `/login/step` now buckets on the account being guessed at, `/login/start` and registration on the address, and `PUT /users/password/update` on the account -- all of them previously had a per-IP bucket or none. The per-IP bucket became advisory the moment `TRUSTED_PROXY_HOPS` went above 1: the address it keys on comes from a header anyone can forge by reaching the backend directly, which is publicly reachable. Per-account and per-address buckets are not forgeable.
-- Added a limit to `GET /users/verify/{key}`, which was unauthenticated and unthrottled. The key is 128 bits of `os.urandom` so this is defence in depth, not a hole being closed.
+- Added a limit to `GET /users/verify/{key}`, which was unauthenticated and unthrottled. The key is 128 bits of `os.urandom` so this is defense in depth, not a hole being closed.
 - `PUT /users/password/update` returns 400 rather than 500 for an account with no password, matching the delete endpoint.
 - Mail sends now retry transient failures twice before giving up, and never retry permanent ones. There is no queue behind the sender, so a relay that blipped for a second cost somebody their confirmation link outright -- while the endpoint reported success, because it swallows send failures by design to avoid leaking which addresses exist. A 4xx from a relay is "not now" and a 5xx is "not ever": retrying a 550 for an unverified sending domain just delays the same failure three times over.
 - Replaced "the account with the oldest `created_at`" as the definition of the instance admin with an explicit `users.is_admin` flag (migration `b5e91c7a2d38`). The old rule silently promoted the next-oldest account whenever the admin deleted theirs, which account deletion in the UI makes a thing a person can do by accident. The migration sets the flag on exactly the account the old rule was already pointing at, so the role did not change hands.
@@ -333,7 +1520,7 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Replaced the question-reorder mode with drag and drop. Reordering was a toolbar toggle that laid two invisible half-card hit areas over every question, each containing an `<svg>` with no size class -- so it stretched to fill its grid cell and turning reorder mode on painted a pair of chevrons the size of the card over the content you were trying to reorder. Each question now has a grip: drag it with a pointer, or focus it and use the arrow keys. The hit areas were `role="button"` divs with no `tabindex`, so the old control could not be reached by keyboard at all; the grip is a real button, which is the single-pointer alternative WCAG 2.5.7 asks for.
 - Reordering now moves rather than swaps. Dragging question 1 to the end used to trade it with the last one, scrambling everything in between.
 - The selection follows the question that moved. Both reorder paths now share `moveItem` and `selectionAfterMove` in `lib/editor/reorder.ts`, with a property test asserting the selected index still points at the same question after every possible move.
-- Added the theme switch to the editor header. It lived inside `navbar.svelte` as four near-identical copies, and the editor hides the navbar -- so the one screen people sit in longest had no way to change theme. It is now one `theme-toggle.svelte` used in both places, and switching toggles the class the boot script in `app.html` already looks for instead of calling `window.location.reload()`, which in the editor meant a round trip through the unsaved-changes prompt to change a colour.
+- Added the theme switch to the editor header. It lived inside `navbar.svelte` as four near-identical copies, and the editor hides the navbar -- so the one screen people sit in longest had no way to change theme. It is now one `theme-toggle.svelte` used in both places, and switching toggles the class the boot script in `app.html` already looks for instead of calling `window.location.reload()`, which in the editor meant a round trip through the unsaved-changes prompt to change a color.
 
 ### Emails
 
@@ -355,7 +1542,7 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Only one password-reset link is live per account at a time. Each request used to leave every earlier token valid for its full hour.
 - A registration that loses the race to the unique constraint gets the same 409 as any other duplicate, not a 500. The existence check and the insert are not atomic, so a double-click could hit it.
 - Rate limits on `/forgot-password` and `/resend-verification` are now applied per recipient address as well as per source IP. Per-IP alone is the wrong control for inbox flooding, and it collapses entirely behind a proxy that presents one address for every visitor.
-- Added `TRUSTED_PROXY_HOPS` (default 1, unchanged behaviour). `client_ip` reads the last entry of `X-Forwarded-For`, which is correct behind the bundled Caddy alone and wrong behind Netlify-in-front-of-Caddy, where it is Netlify's egress address and identical for everyone -- making `/forgot-password`'s five an hour five for the entire user base. Documented in `DEPLOY.md`, including what raising it gives up.
+- Added `TRUSTED_PROXY_HOPS` (default 1, unchanged behavior). `client_ip` reads the last entry of `X-Forwarded-For`, which is correct behind the bundled Caddy alone and wrong behind Netlify-in-front-of-Caddy, where it is Netlify's egress address and identical for everyone -- making `/forgot-password`'s five an hour five for the entire user base. Documented in `DEPLOY.md`, including what raising it gives up.
 - Rebuilt the login password step on the same Card primitives as the first step. It rendered a bare `<form>` with no header and no `Card.Content`, so the card opened straight onto a `Password` label flush to the edge -- no wordmark, no indication of which account was signing in, and no way back to correct a mistyped address. It now shows the address with a **Change** action, and the recovery hint sits as one quiet muted line under the button instead of inside the error, which had turned one fact into four lines of red.
 - Replaced the login form's `alert('Wrong credentials')` and `alert("This shouldn't happen")` with inline errors, and gave every other status a message: a rate-limited or failed login previously produced no feedback at all, the spinner just stopped.
 - Added `/account/resend-verification`, and pointed the login error and registration's "already taken" case at it. An account that has not confirmed its address is refused at login with exactly the same response as a wrong password -- deliberately, so the endpoint cannot be used to test which addresses are registered -- which left the one person it locks out with no way to find out why. The way out is now offered on every failure, which keeps the response uniform.
@@ -410,12 +1597,12 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Fixed `og:image` never resolving. The image had been regenerated and verified; the tag pointing at it had not. It resolved to the Vite asset path `/_app/immutable/assets/opengraph-home.HASH.jpg`, which is root-relative, and Open Graph requires an absolute URL - Slack, LinkedIn and Discord will not follow a relative one. So the card rendered without its image no matter how correct the image was. Both image tags are built from the request origin now, which also means a deploy preview advertises its own card rather than production's, so it can be checked before it ships. `og:image:width`, `height` and `alt` added.
 - Deleted `opengraph-home.webp`, which was a PNG carrying a `.webp` extension and would have been served with a Content-Type contradicting its own bytes. `twitter:image` pointed at it. No encoder here produces real WebP and the 1200x630 JPEG is the same image, so both tags use the JPEG. `favicon.ico` had the identical defect and is now a real two-header ICO wrapping the PNG, which the format has permitted since Vista.
 - Fixed the font never loading. Tailwind v4 inlines an `@import`'s text but leaves its relative `url(files/...)` references alone, so Vite never saw the `.woff2` files as dependencies and emitted none of them: seven `@font-face` rules, seven 404s, `document.fonts` reporting `error`. Every screen redesigned in this branch had been built, screenshotted and contrast-measured against whatever `sans-serif` aliases to - a different face on every operating system. Importing the stylesheet from the module graph routes it through Vite's own CSS pipeline, which rewrites the urls and emits the files; all seven subsets ship now and `document.fonts.check` passes. The stack behind Inter is a named system stack for the same reason: a swap period or a failed load should land somewhere known rather than on whatever the OS aliases.
-- Rebuilt the results list. The table carried hardcoded `gray-300`/`gray-500` borders that ignore the theme tokens and had no scroll container, so a long quiz title pushed the whole page sideways on a phone; it sits in `fq-scroll-x` now. The empty state was a single centred sentence stating a fact the user could do nothing about - it names what would fill the page and links to the quizzes that would do it.
+- Rebuilt the results list. The table carried hardcoded `gray-300`/`gray-500` borders that ignore the theme tokens and had no scroll container, so a long quiz title pushed the whole page sideways on a phone; it sits in `fq-scroll-x` now. The empty state was a single centered sentence stating a fact the user could do nothing about - it names what would fill the page and links to the quizzes that would do it.
 
 - Replaced the Open Graph card, which was still upstream's: it said "ClassQuiz", carried "By Mawoka" and his avatar, and showed screenshots of the old green app. That image is what renders whenever anyone shares a frogQuiz link in Slack, Teams or a browser preview, so every shared link was advertising a different product. The new card is generated from the same mark the app uses.
 - Replaced the favicon and app icons, which were "CQ" set in upstream's green-and-brown chevrons - every browser tab, bookmark and phone home screen showed ClassQuiz's initials. Generated from `Wordmark.svelte`'s own geometry so the icon and the in-app lockup cannot drift apart.
 - Filled in the empty meta. `site.webmanifest` had `"name": ""` and `"short_name": ""`, and `app.html` shipped `content=""` as its description, so any page without a head of its own had nothing for search or a link preview to quote. `theme-color` was a single `#ffffff` that stayed white behind a dark page, and `msapplication-TileColor` was upstream's `#00a300`; both follow the theme now.
-- Fixed every avatar in the app rendering as a broken image. The three avatar endpoints set their Content-Type by appending to a `PlainTextResponse`, which leaves `text/plain` in place as a _second_ Content-Type header; browsers honour the first, so a perfectly valid SVG body arrived labelled as plain text. They return a `Response` with the media type now. This is why the settings page showed "Profile image of reviewer" as wrapped alt text and the avatar builder was a grid of broken-image icons.
+- Fixed every avatar in the app rendering as a broken image. The three avatar endpoints set their Content-Type by appending to a `PlainTextResponse`, which leaves `text/plain` in place as a _second_ Content-Type header; browsers honor the first, so a perfectly valid SVG body arrived labeled as plain text. They return a `Response` with the media type now. This is why the settings page showed "Profile image of reviewer" as wrapped alt text and the avatar builder was a grid of broken-image icons.
 - Rebuilt the account settings page. It was a `grid-cols-6` with the avatar pinned to a one-sixth column, which on a phone collapsed into a broken image with its alt text wrapping round the heading, a clipped "change avatar", and three password fields squeezed into a row. It is a single column of section cards now, with an initial-letter fallback for when the avatar cannot load.
 - Rebuilt the import page, which forced two columns with a border divider onto a 390px screen so each method's prose wrapped every two or three words. Two cards that stack, a styled file picker instead of a raw "Choose File | No file chosen", and no red invalid ring on a field nobody has typed in yet.
 - Rebuilt the avatar builder's layout: the preview was crushed into a one-sixth column behind a `border-r-4 border-black`, the Back and Finish buttons were jammed into the heading row, and the choices were a fixed four-column grid at every width. It also now shows which step of twelve you are on.
@@ -430,16 +1617,16 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 
 - Split the reorder control into two plain buttons, "Move left" and "Move right". A bordered group with a shared "Move" label glued to two icon buttons was neither one control nor two, and read as strange rather than as either. Each button now says what it does on its own.
 
-- Made reordering on mobile actually work. Moving the arrows into the question toolbar and labelling them fixed the ambiguity but not the question: the control still sat below the strip, pointing at a list it was nowhere near. Holding a question in the strip now picks it up and dragging repositions it, which is the idiom a filmstrip already has on a phone and the only one where the control _is_ the thing being reordered. A press delay separates picking up from scrolling, so a swipe still scrolls the strip. The Move buttons stay as the single-pointer and keyboard alternative, which WCAG 2.5.7 requires and which is also the discoverable path for anyone who never tries the gesture. Verified by driving the gesture: a long press reports `aria-grabbed`, a drag reorders, a quick swipe does not.
+- Made reordering on mobile actually work. Moving the arrows into the question toolbar and labeling them fixed the ambiguity but not the question: the control still sat below the strip, pointing at a list it was nowhere near. Holding a question in the strip now picks it up and dragging repositions it, which is the idiom a filmstrip already has on a phone and the only one where the control _is_ the thing being reordered. A press delay separates picking up from scrolling, so a swipe still scrolls the strip. The Move buttons stay as the single-pointer and keyboard alternative, which WCAG 2.5.7 requires and which is also the discoverable path for anyone who never tries the gesture. Verified by driving the gesture: a long press reports `aria-grabbed`, a drag reorders, a quick swipe does not.
 - No instructional line under the strip. The lift, the shadow and the other chips fading back are the feedback; telling someone to "drag to move, release to place" is the app explaining itself to a person already doing it.
 
 - Added a frontend test suite. There were none: the frontend CI job ran eslint and nothing else, so "CI passes" meant very little on that side of the repo. 49 tests under vitest, run in CI, covering the things with real invariants rather than the things that are easy to assert - the answer palette, question completeness, the theme tokens, and the multiple-answer wire format.
 - Fixed a question titled with nothing but spaces counting as complete. Found by one of those tests. `yup.string().required()` counts `'   '` as three characters, so such a question showed no "needs attention" dot, saved without complaint, and went up on the projector blank. The same hole was in all three answer-text fields. The docstring on `isQuestionComplete` claimed this exact case had been fixed; it had standardised on the wrong answer.
-- Corrected the answer palette's documentation, which claimed it "passes CVD separation". It does not, and now there is a test that says so. Simulated, the distances collapse: under deuteranopia coral and green differ by 4 of 255 and sky and violet by 9. Four hues at one lightness cannot be separated by a dichromat. The design is still accessible because colour is never the only channel - every tile carries a distinct shape, and the host screen carries the answer text - which is what WCAG 1.4.1 asks. The test asserts the limitation deliberately, so that removing the shapes shows up as a failure rather than as nothing.
+- Corrected the answer palette's documentation, which claimed it "passes CVD separation". It does not, and now there is a test that says so. Simulated, the distances collapse: under deuteranopia coral and green differ by 4 of 255 and sky and violet by 9. Four hues at one lightness cannot be separated by a dichromat. The design is still accessible because color is never the only channel - every tile carries a distinct shape, and the host screen carries the answer text - which is what WCAG 1.4.1 asks. The test asserts the limitation deliberately, so that removing the shapes shows up as a failure rather than as nothing.
 - Fixed long answers being clipped in the editor with no wrap and no ellipsis, so an author could only ever see the first twenty-odd characters of what they had typed. A text input cannot wrap; it is an auto-growing textarea now, which also matches the play tile the canvas is supposed to be previewing. An answer with no spaces in it now breaks rather than running out of its tile, on the editor, the player and the host.
-- Made the reorder control say what it does. Bare chevrons beside "Question 1 of 3" read as previous and next, which is navigation - the opposite of reordering. The group is bordered and labelled Move, with the long-tailed arrows that mean displacement rather than the chevrons used for stepping through.
+- Made the reorder control say what it does. Bare chevrons beside "Question 1 of 3" read as previous and next, which is navigation - the opposite of reordering. The group is bordered and labeled Move, with the long-tailed arrows that mean displacement rather than the chevrons used for stepping through.
 
-- Fixed the question title in the editor being black on a dark background, all but invisible in dark mode. `ckeditor5.css` sets its own text colour as a near-black constant and knows nothing about the theme; it is handed the tokens now, along with the balloon toolbar, which was otherwise a white slab.
+- Fixed the question title in the editor being black on a dark background, all but invisible in dark mode. `ckeditor5.css` sets its own text color as a near-black constant and knows nothing about the theme; it is handed the tokens now, along with the balloon toolbar, which was otherwise a white slab.
 
 - Put the editor's question list back in the layout at every width, and removed the drawer that had briefly hidden it on small screens. The list is the editor's navigation and the only place the quiz's shape and order are visible, so putting it behind a tap takes away the thing you need while editing. At `lg` and up it is an aside that collapses to a slim strip rather than sliding out of the flex row; below `lg` it is a horizontal strip of chips under the header, scrolling on its own axis so it costs no canvas width. The selected chip carries its own reorder arrows, because a drag handle inside a horizontal scroller fights the scroll gesture on a touch screen, and because reordering behind a mode toggle was already the least discoverable thing in the editor.
 - Sized the projector screens for a room rather than a laptop. The host's type was a breakpoint ladder - `text-5xl md:text-6xl` for the question, `text-2xl` for the answers - which stops growing at 768px, roughly where a projector starts. Four clamped-vw utilities in `app.css` now carry it: `fq-display`, `fq-answer`, `fq-meta` and `fq-pin`. The minimum keeps every screen readable in a small window while the host sets up; the maximum stops a 4K display turning one question into wallpaper. Having the sizes in one place is also what stops the host question screen and the podium drifting to different scales again, which is how they got there.
@@ -452,44 +1639,44 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Strengthened the podium's floor, which at `border-b-2 border-border` did not register as a floor at projector distance - the blocks read as clipped off rather than stood on something.
 
 - Documented the MVP scope cut in `docs/mvp-scope.md`: every question type that was taken out of the picker and why, the flags behind TOTP, QuizTivity and the box controller, what happens to content created before each cut, how to turn any of it back on, and the decisions still open. `CLAUDE.md` and `README.md` now point at it, because until now the reasoning existed only in commit messages and a pull-request description.
-- Gave the editor canvas a measure. Content stretched to whatever the panel was, so the settings form ran to 900px of label and field with a lake of dead space between them. Capped and centred at `max-w-2xl`, modelled on the editor in the Noordhoff RFP work.
+- Gave the editor canvas a measure. Content stretched to whatever the panel was, so the settings form ran to 900px of label and field with a lake of dead space between them. Capped and centered at `max-w-2xl`, modeled on the editor in the Noordhoff RFP work.
 - Made the editor usable on a phone. The question rail was a fixed `w-72` column at every width, which leaves about 118px of canvas on a 390px screen; it is an off-canvas drawer below `lg` now, opened from the header and dismissed by picking a question, tapping the scrim, or its own close button. It also had to become opaque - `bg-muted/30` let the canvas show straight through it - and the reorder button's `w-full` was overflowing the rail header and pushing the close button outside the rail entirely.
 - Fixed the editor's answer tiles bursting out of their grid cell on a phone: 367px of tile in a 308px column, which clipped the mark-correct button off the right edge. A grid item defaults to `min-width: auto` and refuses to shrink below its content's intrinsic width, and a bare `<input>` reports about twenty characters. The `min-w-0` belonged on the tile, which is the grid item, not on the input inside it.
 - Replaced `h-screen` with `h-dvh` in the editor. `100vh` counts browser chrome that is not there on a phone, which put the toolbar below the fold.
 - Rebuilt the "Add Media" control, the last un-migrated upstream button: its label was set in italic, there was no gap between it and its icon so the two collided, it carried `pt-10` of hardcoded dead space, an arbitrary `w-1/2`, a raw inlined Heroicon path, and `gray-500`/`gray-300` borders that ignore the theme. Its modal was `w-screen` - 100vw, which includes the scrollbar - with three `w-1/3` panels unusable at phone width.
-- Fixed the host's question screen sitting flush against the top of the projector with the bottom half of the screen empty. It was the only game surface not wrapped in `fq-stage`, so it had no vertical centring and no padding, and the fixed controls bar and timer rule were drawn straight across the question title.
+- Fixed the host's question screen sitting flush against the top of the projector with the bottom half of the screen empty. It was the only game surface not wrapped in `fq-stage`, so it had no vertical centering and no padding, and the fixed controls bar and timer rule were drawn straight across the question title.
 - Fixed the host's control bar, a two-column grid whose button cell asked for `col-start-3` - a column that does not exist - so the one control the host uses during a game ended up wherever the browser decided to put it. Its `admin-button` was also a hardcoded `gray-700` rectangle inherited from upstream, which read as a debug button beside the redesigned screens and ignored the theme; it is the shadcn primary treatment built from tokens now. The timer rule's offset was `mt-10` against what is now an `h-12` bar, so it cut across the bar's bottom edge.
 - Fixed the per-question results reading zero for every option on a multiple-answer question. A CHECK player submits the indices of everything they ticked, concatenated, so a submission looks like `"02"`; the results component matched submissions against answer text, which never matches. It counts a submission once per option it names now, and the total underneath counts people rather than ticks, because on CHECK the per-option counts overlap.
 - Fixed the CHECK submit button accepting an empty answer: ticking an option and then unticking it left an empty string behind, and an empty string is a value, so the button went live with nothing selected.
 - Brought the CHECK answer tiles up to the redesign. They were still the pre-redesign ones: hardcoded black borders, the old bitmap icons, opacity as the only feedback. They use the shared palette, `AnswerShape` and the same pressable treatment as the single-answer tiles now, with a persistent ring on ticked options since a choice here is something you can undo and has to stay legible for the whole round.
 - Wrote down the CHECK scoring rule, which was implemented and documented nowhere: it is all or nothing, with a test pinning the partial, over-selected and empty cases.
-- Stopped the Kahoot importer overriding the answer palette. It stamped a hardcoded four-colour list - the old green and brown one - onto every imported answer, so an imported quiz kept looking like the pre-redesign app however the design changed, and indexing that list by choice position raised `IndexError` on any question with more than four choices. It also now states `type=ABCD` rather than relying on the model default, with a test, because it was worth proving the importer is not a back door to the question types the MVP cut. And it skips Kahoot surveys and polls, which have choices but mark none correct and so imported as rounds nobody can score.
-- Gated only the TOTP _setup_ endpoints behind `ENABLE_TOTP`, not the whole 2FA router. The login flow still honours a secret that is already set, so switching the router off entirely would have left anyone who enabled TOTP before the cut stuck behind a factor they could no longer remove - a lockout of our own making. Reading the status and switching it off now work whatever the flag says; both already require the account password. A test covers the split.
+- Stopped the Kahoot importer overriding the answer palette. It stamped a hardcoded four-color list - the old green and brown one - onto every imported answer, so an imported quiz kept looking like the pre-redesign app however the design changed, and indexing that list by choice position raised `IndexError` on any question with more than four choices. It also now states `type=ABCD` rather than relying on the model default, with a test, because it was worth proving the importer is not a back door to the question types the MVP cut. And it skips Kahoot surveys and polls, which have choices but mark none correct and so imported as rounds nobody can score.
+- Gated only the TOTP _setup_ endpoints behind `ENABLE_TOTP`, not the whole 2FA router. The login flow still honors a secret that is already set, so switching the router off entirely would have left anyone who enabled TOTP before the cut stuck behind a factor they could no longer remove - a lockout of our own making. Reading the status and switching it off now work whatever the flag says; both already require the account password. A test covers the split.
 - Made the two lint jobs actually run. `backend_lint` only triggered on `pull_request`, and work here has been merged straight to master, so it never ran on the commits that mattered. `frontend_lint` filtered on `"frontend/**/*.{ts,js,svelte}"`, and GitHub's path filters do not do brace expansion, so that pattern was matched literally and hit nothing: the workflow's entire run history is one manual dispatch and one push that happened to edit the workflow file itself.
 - Cleared the six eslint errors that had accumulated on master while that job was dead - all dead code: an unused import in the navbar, a tippy factory whose tooltip was removed from the markup, two `performance.now()` readings nothing reads, and a deliberate no-op prop on the brown and gray buttons which is suppressed with its reason instead.
 - Fixed `pnpm lint` and `pnpm format`, which passed `--plugin-search-dir`, removed in Prettier 3. The flag is ignored with a warning, `prettier-plugin-svelte` never loads, and the run dies on the first `.svelte` file with "No parser could be inferred". The plugin is declared in `.prettierrc` now, and the negative globs in both scripts were duplicating `.prettierignore`, which already lists all of them - and disagreeing with each other, so `format` would have rewritten `pnpm-lock.yaml` that `lint` never checked.
-- Formatted the 37 frontend files that had drifted while that plugin was silently not loading. Mechanical, no behaviour change.
+- Formatted the 37 frontend files that had drifted while that plugin was silently not loading. Mechanical, no behavior change.
 - Corrected stale claims in `CLAUDE.md` and `README.md`: the redesign status, the locale count (34, not 30), MinIO still listed as a development service after it was removed, and upstream's product copy describing frogQuiz as a tool for schoolteachers. Added a section recording the layout mistakes this codebase makes repeatedly and the responsive baseline to check a screen against.
 
-- Added an auth dependency to `DELETE /api/v1/quiztivity/{uuid}`, which had none at all. Anyone who knew or guessed a QuizTivity's UUID could delete it, including someone else's; the endpoint now requires a logged-in user and only matches rows that user owns, exactly as the neighbouring `PUT` already did. A regression test covers the unauthenticated call and asserts the object survives it.
+- Added an auth dependency to `DELETE /api/v1/quiztivity/{uuid}`, which had none at all. Anyone who knew or guessed a QuizTivity's UUID could delete it, including someone else's; the endpoint now requires a logged-in user and only matches rows that user owns, exactly as the neighboring `PUT` already did. A regression test covers the unauthenticated call and asserts the object survives it.
 - Scoped `DELETE /api/v1/users/api_keys` to the calling user. It looked the key up by value alone, so any authenticated user could revoke any other user's API key if they ever saw it.
 - Put QuizTivity and the box-controller hardware endpoints behind `ENABLE_QUIZTIVITY` and `ENABLE_BOX_CONTROLLER`, both off by default. PR #5 removed their entry points from the UI but left the routers registered, so every endpoint stayed live and callable by anyone who typed the URL - obscurity rather than access control. They now return 404 and no longer appear in the OpenAPI schema. Moderation was left as it was: it is already gated on the `mods` allowlist, which is real authorisation.
 - Added the matching frontend half in `hooks.server.ts`: `/quiztivity`, `/controller`, `/account/controllers` and `/account/settings/security` now 404 rather than rendering a page for a feature whose API is switched off.
 - Cut TOTP and its backup codes behind `ENABLE_TOTP`, off by default. The 2FA router is no longer mounted, the security-settings page (which contained nothing else) is unreachable, and the "Use backup-code" button is gone from the login password step. The code is all still in the tree for the day company SSO makes a second factor worth having.
 - Rebuilt the quiz editor around one idea: the canvas should be the room. The answer editor now renders the real game tiles - the same palette, the same triangle/diamond/circle/square shapes, the same order - so the author sees exactly what will go on the projector instead of a list of red and green pills that looked nothing like the result.
-- Removed the per-answer colour picker. Slot colour is derived from the answer's position instead of stored, which keeps the four hues in order after an answer is deleted and matches what every play surface already did (`answer.color ?? default_colors[i]`). The palette was derived and validated for colour-vision separation; letting an author pick two near-identical hues by hand is the thing that work existed to prevent. Colours saved by older quizzes are still honoured.
-- Moved the correct-answer marker off the tile background and onto an explicit control on the tile. Right and wrong were carried by a red or green fill, which fought with the tile's own identity colour and left the editor unable to show both at once.
+- Removed the per-answer color picker. Slot color is derived from the answer's position instead of stored, which keeps the four hues in order after an answer is deleted and matches what every play surface already did (`answer.color ?? default_colors[i]`). The palette was derived and validated for color-vision separation; letting an author pick two near-identical hues by hand is the thing that work existed to prevent. Colors saved by older quizzes are still honored.
+- Moved the correct-answer marker off the tile background and onto an explicit control on the tile. Right and wrong were carried by a red or green fill, which fought with the tile's own identity color and left the editor unable to show both at once.
 - Gave the editor a real chrome: a header with a back link, the quiz title and Save; a per-question toolbar carrying time and single-versus-multiple-answer; and a question rail that numbers each question and flags the unfinished ones with a dot. The header now says how many questions still need attention instead of printing a raw yup validation path.
-- Replaced the fake macOS window chrome - three coloured dots drawn at the top of both editor panels - with a row that says which question is open and holds its settings.
-- Rebuilt the quiz-settings panel as a labelled form (title, description, cover image, visibility, background colour, background image) instead of an unlabelled stack with a three-swatch colour control in the middle of it.
+- Replaced the fake macOS window chrome - three colored dots drawn at the top of both editor panels - with a row that says which question is open and holds its settings.
+- Rebuilt the quiz-settings panel as a labeled form (title, description, cover image, visibility, background color, background image) instead of an unlabeled stack with a three-swatch color control in the middle of it.
 - Cut the question types down to multiple-choice and check-choice. RANGE, TEXT, VOTING, ORDER and SLIDE can no longer be created: each one multiplies the editor, the play screen, the results screen and the scoring path, and none of them is what people run a live quiz for. True/false needs no type of its own - it is a multiple-choice question with two answers. Existing quizzes that already use a cut type still open and still play; only the "add question" list changed.
 - Removed the "add slide" button, which was SLIDE's only entry point, and the dead modal at the bottom of the edit route whose open flag was never set.
 - Fixed the player's screen going completely blank when the question timer ran out and they had not answered. The "Answer locked in" state added previously was gated on having submitted an answer, so anyone who ran out of time saw nothing at all - the worse case, because they cannot tell the app from a dead connection. There is now a "Time's up" state alongside it.
-- Removed the `text-black dark:text-black` wrapper around the player's question screen, which forced black text on a dark background and made both the post-answer and time-up states nearly unreadable. The answer tiles set their own ink inline from the tile colour and never needed it.
+- Removed the `text-black dark:text-black` wrapper around the player's question screen, which forced black text on a dark background and made both the post-answer and time-up states nearly unreadable. The answer tiles set their own ink inline from the tile color and never needed it.
 - Fixed the host's per-question results running off the bottom of the screen. `admin.svelte` wrapped every host screen in an `fq-stage` - full viewport height plus padding - and each screen inside it is an `fq-stage` too, so the page was always taller than the viewport and the scoreboard only appeared if someone scrolled. Measured 245px of overflow before, 1px after. Two `<br>` tags used as spacers went with it.
 - Fixed the dashboard overflowing horizontally by 338px. The five toolbar buttons sat in a four-column grid whose last cell held two buttons that could not shrink, so Settings hung off the right edge of every session.
 - Stopped the editor arming the browser's "changes you may not have saved" prompt on mount, so opening a quiz and going straight back no longer asks whether you want to discard changes you never made. It now arms on the first real edit.
-- Rebuilt the dashboard. It had no container, so the toolbar ran edge to edge and the copy sat flush against the viewport; quizzes were 20vh cards outlined in the old `#B07156` brown with six unlabelled icon buttons. It is now a contained list with Play as the one prominent action, a public/private badge and a question count, a search box that appears only once there are enough quizzes to need one, and an empty state that invites you to create or import rather than stating a fact.
+- Rebuilt the dashboard. It had no container, so the toolbar ran edge to edge and the copy sat flush against the viewport; quizzes were 20vh cards outlined in the old `#B07156` brown with six unlabeled icon buttons. It is now a contained list with Play as the one prominent action, a public/private badge and a question count, a search box that appears only once there are enough quizzes to need one, and an empty state that invites you to create or import rather than stating a fact.
 - Replaced the last hand-inlined Heroicons in the dashboard, editor and login password step with Lucide icons, including two spinners drawn with a hardcoded `fill-black` that were invisible in dark mode.
 - Flattened the inline rich-text editor, which rendered as two nested bordered boxes wherever it was used and carried its own dark-mode greys.
 - Rebuilt the login password step on the shadcn Label, Input and Button, matching the first step. It also never set its `isSubmitting` flag, so the button showed no pending state and nothing stopped a second submit while the first was in flight.
@@ -501,13 +1688,13 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Removed the `minio` service from `docker-compose.dev.yml`. MinIO stopped publishing container images to Docker Hub and Quay.io and archived the community repository, so pulling `docker.io/minio/minio` fails — and because that pull aborts the whole `compose up`, the database never started either. That is what actually caused the PyTest workflow's 56 `ConnectionRefusedError` failures. Nothing in the test path used it: the CI environment runs `STORAGE_BACKEND=local`, and `test_minio` talks to `play.min.io` rather than a local container.
 - Fixed the PyTest workflow racing Postgres. `run_tests.sh` waited a flat `sleep 2` after `docker compose up -d` before running migrations and the suite, but the container is up well before the server accepts connections. When the race was lost, every database-backed test failed with `ConnectionRefusedError` and nothing in the output said why. Postgres now has a `pg_isready` healthcheck like redis already had, the script polls for readiness instead of guessing, and a failed environment aborts with the compose status and database logs rather than 56 misleading test errors.
 - Rebuilt the per-question results as one card instead of two unrelated stacked objects. It now leads with the question, then the answer distribution, then the standings - the order the room actually cares about.
-- Replaced the answer-distribution chart. It drew vertical bars with labels rotated 45 degrees that collided and overprinted each other, bars that were not proportional, and no marking of the correct answer. It is now horizontal bars - which removes the need to rotate long answer text at all - in the answer's own colour, with the shape repeated beside the label so identity never rests on colour alone, and the correct row marked with a tick and a ring.
-- Replaced the answer colours with a pastel palette derived from the frogConvert brand rainbow, so the two products read as one. The four hues (coral, sky, green, violet) were re-stepped in OKLCH to L=0.76 C=0.13 and checked with a palette validator rather than by eye: the first attempt paired amber with green at ΔE 8.6 for normal vision, which is genuinely hard to tell apart, so the hues were re-spaced to 80-110° and now measure ΔE 17.1 at worst, passing colour-vision separation and contrast on both surfaces.
-- The palette now lives in one module. The same four hex values had been copy-pasted into six separate files, which is why there was no colour system to speak of.
+- Replaced the answer-distribution chart. It drew vertical bars with labels rotated 45 degrees that collided and overprinted each other, bars that were not proportional, and no marking of the correct answer. It is now horizontal bars - which removes the need to rotate long answer text at all - in the answer's own color, with the shape repeated beside the label so identity never rests on color alone, and the correct row marked with a tick and a ring.
+- Replaced the answer colors with a pastel palette derived from the frogConvert brand rainbow, so the two products read as one. The four hues (coral, sky, green, violet) were re-stepped in OKLCH to L=0.76 C=0.13 and checked with a palette validator rather than by eye: the first attempt paired amber with green at ΔE 8.6 for normal vision, which is genuinely hard to tell apart, so the hues were re-spaced to 80-110° and now measure ΔE 17.1 at worst, passing color-vision separation and contrast on both surfaces.
+- The palette now lives in one module. The same four hex values had been copy-pasted into six separate files, which is why there was no color system to speak of.
 - Built a real podium for the final results. The leaderboard was one `<p>` per player with a computed font size — literally "1: Froggo with 377 points" as body text, at the emotional peak of the product. It is now a three-place podium that builds from third to first, with the winner's block highlighted, confetti timed to their arrival, and ranks four and below as a clean list.
 - Moved the host's result-export controls out of the podium composition; they were floating over it.
-- Replaced the answer icons with the four classic simple shapes (triangle, diamond, circle, square), drawn inline so they take `currentColor` and keep contrast on any tile colour. The previous SVGs were heavy abstract blobs baked black.
-- Rebuilt the host lobby. It was three unaligned columns with the player chips stranded bottom-left and a default-sized Start button; it is now one centred composition with the PIN as the largest element, the QR beside it, a real primary action and animated player chips. Kicking a player is now a labelled button rather than a click handler on a span.
+- Replaced the answer icons with the four classic simple shapes (triangle, diamond, circle, square), drawn inline so they take `currentColor` and keep contrast on any tile color. The previous SVGs were heavy abstract blobs baked black.
+- Rebuilt the host lobby. It was three unaligned columns with the player chips stranded bottom-left and a default-sized Start button; it is now one centered composition with the PIN as the largest element, the QR beside it, a real primary action and animated player chips. Kicking a player is now a labeled button rather than a click handler on a span.
 - Rebuilt the host question screen: balanced question type, a thin timer rail instead of the full-width red block that duplicated the countdown ring, and answer tiles matching the player treatment. Answers now read row-major, in the same order players see them on their phones.
 - Gave the question counter a legible pill. It was 14px of body text in the corner of a projector screen.
 - Rebuilt the player answer tiles: rounded, with gloss and floor shading so they read as pressable, a staggered entrance, hover and press response, and a clear picked state where the chosen tile lifts and the others recede. The hard black borders are gone.
@@ -519,7 +1706,7 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Added the ambient background layer (`lib/components/AmbientBackground.svelte`): the brand rainbow as small, heavily blurred smudges scattered towards the page edges, which is how frogConvert actually spends that palette. Mounted once in the root layout.
 - Made `body` transparent so that layer is visible. `html` keeps the `--background` token, so the page ground is unchanged; a `body` background would have painted over any negative-z-index element.
 - Fixed `backend_lint`, which has been failing on master since b478a50: making email sending synchronous left `BackgroundTasks` imported but unused in `frogquiz/routers/users/__init__.py`, and flake8 treats F401 as a build stopper.
-- Removed Sentry entirely. The backend still imported `sentry_sdk`, initialised it whenever a DSN was configured, and ran an HTTP middleware that attached the full request (URL and headers) to every captured exception before shipping it. It was dormant only because no DSN happened to be set. Gone from `frogquiz/__init__.py`, the `sentry_dsn` setting, the `sentry-sdk` dependency, `VITE_SENTRY`, and the self-host docs.
+- Removed Sentry entirely. The backend still imported `sentry_sdk`, initialized it whenever a DSN was configured, and ran an HTTP middleware that attached the full request (URL and headers) to every captured exception before shipping it. It was dormant only because no DSN happened to be set. Gone from `frogquiz/__init__.py`, the `sentry_dsn` setting, the `sentry-sdk` dependency, `VITE_SENTRY`, and the self-host docs.
 - Corrected the privacy policy, which claimed frogQuiz used a GlitchTip instance for error logging and Plausible for usage data. Neither is true: there is now no analytics and nothing is reported to a third party.
 - Replaced the Marck Script cursive wordmark with a proper lockup: a rainbow-gradient mark plus "frogQuiz" set in Inter (`lib/components/Wordmark.svelte`). The `.marck-script` class is kept for its 14 call sites but no longer loads a script face.
 - Replaced every hand-inlined Heroicons SVG in the navbar and landing page with Lucide icons. Several had `stroke="#000000"` hardcoded and were invisible in dark mode.
@@ -538,13 +1725,13 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Fixed three wrong flags in the language picker: English showed 🇺🇲 (US Minor Outlying Islands), Hebrew showed 🇯🇵 (Japan) and Traditional Chinese showed 🇨🇳. Language names now use endonyms throughout.
 - Pointed the shared brown/gray buttons at the shadcn Button, which moves 30 call sites off the hardcoded `#B07156` brown in one step without touching them.
 - Moved the page ground onto the `--background` token, removing the hardcoded `#d6edc9` / `#4e6e58` greens from the root layout.
-- Tokenised the footer, the language select and the game-PIN inputs, which were hardcoded to colours that were invisible in dark mode.
+- Tokenised the footer, the language select and the game-PIN inputs, which were hardcoded to colors that were invisible in dark mode.
 - Swapped the shadcn theme from green back to neutral zinc, so `--primary` is near-black rather than the brand green.
-- Set up shadcn-svelte 1.6.1 as the redesign component system: added `frontend/components.json` (style `vega`, base colour `zinc`, theme `green`, Lucide icons, Inter), the `cn` helper at `$lib/utils.ts`, and the first components (button, input, label, card, badge, separator) under `$lib/components/ui/`.
+- Set up shadcn-svelte 1.6.1 as the redesign component system: added `frontend/components.json` (style `vega`, base color `zinc`, theme `green`, Lucide icons, Inter), the `cn` helper at `$lib/utils.ts`, and the first components (button, input, label, card, badge, separator) under `$lib/components/ui/`.
 - Applied the shadcn design tokens and canonical base layer to `app.css`, replacing the pale-green `#d6edc9` page ground with `--background`; the existing SPDX header, tippy imports, `@config` link and legacy `@utility` blocks were preserved.
 - Rebuilt the login page on shadcn-svelte Card/Input/Label/Button as the reference page for the redesign, replacing the hand-rolled floating-label input with a real `Label` + `Input` pair.
 - Fixed the horizontal scrollbar present on every page: the navbar and footer used `w-screen` (`100vw`), which includes the vertical scrollbar's width and so overflowed by ~15px.
-- Migrated the navbar chrome off hardcoded colours (`bg-white/70`, `text-black`, `btn-nav`'s `text-gray-600`) onto theme tokens, so it no longer renders as a white bar with an invisible wordmark in dark mode.
+- Migrated the navbar chrome off hardcoded colors (`bg-white/70`, `text-black`, `btn-nav`'s `text-gray-600`) onto theme tokens, so it no longer renders as a white bar with an invisible wordmark in dark mode.
 - Pinned pnpm 10 for the frontend (the repo's lockfile is v9; pnpm 12 wanted to rewrite it).
 - Fixed the light/dark theme toggle, which had silently done nothing since the Tailwind v4 upgrade: `tailwind.config.cjs` (holding `darkMode: 'class'`) was no longer being loaded, so all 319 `dark:` utilities compiled against the OS `prefers-color-scheme` setting instead of the `.dark` class the app actually toggles. Re-linked the config from `app.css` with `@config`.
 - Fixed the brand green, lost in the same regression: `green-600` had reverted to stock Tailwind green instead of `#009444` across the 15 places it is used.
@@ -561,8 +1748,8 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Added `validate_email_deliverability` so deployments on internal-only mail domains can skip registration's live DNS/MX lookup. Default unchanged.
 - Declared `databases` in the `Pipfile`; it is imported directly but only resolved via the lockfile.
 - Wrapped raw SQL strings in two migrations in `sa.text()`, which SQLAlchemy 2.x requires — they would break on the next dependency refresh.
-- Gave the dashboard's icon-only buttons accessible names, using existing translation keys. Five of eight buttons, including delete, were announced as unlabelled.
-- Labelled the join screen's inputs and gave the PIN field autofocus and `autocomplete="one-time-code"`.
+- Gave the dashboard's icon-only buttons accessible names, using existing translation keys. Five of eight buttons, including delete, were announced as unlabeled.
+- Labeled the join screen's inputs and gave the PIN field autofocus and `autocomplete="one-time-code"`.
 - Finished removing passkeys: setup was already gone, but the login path remained, so a passkey could be used to sign in while none could be registered.
 - Removed a stray `console.log` shipping in the OAuth login block.
 - Created `CLAUDE.md` with project scope, feature triage policy, licensing rules, and collaboration workflow.

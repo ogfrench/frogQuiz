@@ -14,9 +14,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 
-	let user_data: object | undefined = $state();
+	let user_data: { require_password?: boolean } | undefined = $state();
 	let totp_activated: boolean | undefined = $state();
-	let totp_data = $state();
+	let totp_data = $state<{ url: string; secret: string }>();
 	let backup_code = $state();
 
 	const get_data = async () => {

@@ -17,7 +17,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte';
 	import { anonDaysLeft, anonQuizIds, clearAnonSecret, getAnonSecret } from '$lib/anon_quiz';
-	import Footer from '$lib/footer.svelte';
 	import CommandpaletteNotice from '$lib/components/popover/commandpalettenotice.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
@@ -194,7 +193,7 @@ SPDX-License-Identifier: MPL-2.0
 			<!-- The view page is where a quiz's full set of actions lives; the title goes there. -->
 			<a
 				href="/view/{quiz.id}"
-				class="block truncate font-medium underline-offset-4 hover:underline"
+				class="any-pointer-coarse:py-2.5 block truncate font-medium underline-offset-4 hover:underline"
 				>{quiz.title}</a
 			>
 			{#if quiz.description}
@@ -209,10 +208,10 @@ SPDX-License-Identifier: MPL-2.0
 				{#if draft}
 					<Badge variant="outline">{$t('draft.badge')}</Badge>
 				{/if}
-				<span>
-					{count}
-					{count === 1 ? $t('words.question') : $t('words.question_plural')}
-				</span>
+				<!-- The label carries no number of its own ("Questions"), so this printed
+				     "Questions" on every row. The count is part of the string now, which
+				     also keeps "questions" lowercase mid-sentence ("3 Questions" was not). -->
+				<span>{$t('words.question_count', { count })}</span>
 				{#if days !== null}
 					<span class="inline-flex items-center gap-1">
 						<Clock class="size-3.5" aria-hidden="true" />
@@ -230,7 +229,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 		</div>
 
-		<div class="flex shrink-0 flex-wrap items-center gap-1.5">
+		<div class="any-pointer-coarse:gap-2 flex shrink-0 flex-wrap items-center gap-1.5">
 			<Button
 				disabled={draft}
 				title={draft ? $t('draft.hint_owner') : undefined}
@@ -277,7 +276,7 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 			<ConfirmAction
 				title={$t('view_quiz_page.delete_confirm_title')}
-				body={$t('view_quiz_page.delete_confirm')}
+				body={$t('view_quiz_page.delete_confirm_named', { title: quiz.title })}
 				confirmLabel={$t('words.delete')}
 				cancelLabel={$t('words.cancel')}
 				onconfirm={() => delete_quiz(quiz.id)}
@@ -290,7 +289,7 @@ SPDX-License-Identifier: MPL-2.0
 	</li>
 {/snippet}
 
-<div class="flex min-h-dvh flex-col">
+<div class="flex flex-col">
 	<div class="mx-auto w-full max-w-5xl grow px-5 pt-8 pb-20">
 		<header class="flex flex-wrap items-end justify-between gap-4">
 			<div class="min-w-0">
@@ -372,16 +371,22 @@ SPDX-License-Identifier: MPL-2.0
 				</section>
 			{/if}
 		{:else}
-			<div
-				class="border-primary/40 bg-primary/10 mt-6 flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center"
-			>
-				<TriangleAlert class="text-primary size-5 shrink-0" aria-hidden="true" />
-				<p class="min-w-0 flex-1 text-sm">{$t('my_quizzes.signed_out_notice')}</p>
-				<Button href="/account/register" variant="outline" size="sm" class="shrink-0">
-					<UserPlus />
-					{$t('my_quizzes.create_account')}
-				</Button>
-			</div>
+			<!-- With quizzes in the browser this is a caution about them. With none it was
+			     a caution about nothing, stacked on an empty state saying much the same, so
+			     the empty state carries the sentence instead (MVP.md section 4.2 wants the
+			     copy on this page either way). -->
+			{#if browser_quizzes !== null && browser_quizzes.length > 0}
+				<div
+					class="border-primary/40 bg-primary/10 mt-6 flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center"
+				>
+					<TriangleAlert class="text-primary size-5 shrink-0" aria-hidden="true" />
+					<p class="min-w-0 flex-1 text-sm">{$t('my_quizzes.signed_out_notice')}</p>
+					<Button href="/account/register" variant="outline" size="sm" class="shrink-0">
+						<UserPlus />
+						{$t('my_quizzes.create_account')}
+					</Button>
+				</div>
+			{/if}
 
 			{#if browser_quizzes === null}
 				<div class="text-muted-foreground mt-16 flex justify-center">
@@ -393,6 +398,9 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					<p class="text-muted-foreground max-w-sm text-balance">
 						{$t('my_quizzes.empty_signed_out')}
+					</p>
+					<p class="text-muted-foreground max-w-md text-sm text-balance">
+						{$t('my_quizzes.signed_out_notice')}
 					</p>
 					<Button href="/create">
 						<Plus />
@@ -408,7 +416,6 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 		{/if}
 	</div>
-	<Footer />
 </div>
 
 <!-- No {#if} wrapper: the popup is a Dialog and owns its own visibility from `quiz_id`. -->

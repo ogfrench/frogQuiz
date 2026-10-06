@@ -43,7 +43,8 @@ SPDX-License-Identifier: MPL-2.0
 			}
 		);
 		if (res.status === 200) {
-			window.location.reload();
+			// The page sends you on (redirect_back): not a reload, which kept stale notice
+			// params and left you on the login form after changing your password.
 			done = true;
 		} else if (res.status === 202) {
 			step += 1;
@@ -58,7 +59,7 @@ SPDX-License-Identifier: MPL-2.0
 					body: "This shouldn't happen. Please try again.",
 					title: 'Unknown error'
 				});*/
-				alert('Unknown error');
+				alert('Something went wrong. Reloading the page.');
 				window.location.reload();
 			}
 			if (data.detail === 'totp wrong') {

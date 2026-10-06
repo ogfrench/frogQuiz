@@ -49,7 +49,8 @@ SPDX-License-Identifier: MPL-2.0
 				body: JSON.stringify({ auth_type: 'PASSWORD', data: password })
 			});
 			if (res.status === 200) {
-				window.location.reload();
+				// The page sends you on (redirect_back): not a reload, which kept stale notice
+				// params and left you on the login form after changing your password.
 				done = true;
 			} else if (res.status === 202) {
 				step += 1;
@@ -73,15 +74,17 @@ SPDX-License-Identifier: MPL-2.0
      place: without it the card opened straight onto a Password label, flush to
      the edge, with no wordmark, no account and nothing to go back to. -->
 <Card.Header class="gap-1 text-center">
-	<Card.Title class="text-3xl font-bold tracking-tight">frogQuiz</Card.Title>
+	<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+		{$t('words.login')}
+	</h1>
 	<Card.Description class="grid gap-1">
-		<span class="text-foreground text-lg font-medium">{$t('login_page.welcome_back')}</span>
+		<span>{$t('login_page.welcome_back')}</span>
 		{#if identifier}
 			<span class="flex min-w-0 items-center justify-center gap-1.5">
 				<span class="truncate">{identifier}</span>
 				<button
 					type="button"
-					onclick={restart}
+					onclick={() => restart()}
 					class="text-muted-foreground hover:text-foreground shrink-0 underline underline-offset-4"
 				>
 					{$t('login_page.change_account')}

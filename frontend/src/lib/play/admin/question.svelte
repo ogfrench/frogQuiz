@@ -19,7 +19,7 @@ SPDX-License-Identifier: MPL-2.0
 		selected_question: number;
 		timer_res: string;
 		answer_count: number;
-		default_colors: string[];
+		default_colors: readonly string[];
 	}
 
 	let {
@@ -29,6 +29,14 @@ SPDX-License-Identifier: MPL-2.0
 		answer_count,
 		default_colors
 	}: Props = $props();
+	const answers = $derived(
+		quiz_data.questions[selected_question].answers as { answer: string; right?: boolean }[]
+	);
+
+	// The palette by slot, wrapping: a question can have ten answers and the palette has
+	// four, so indexing the array directly left answers five to ten with no color. A color
+	// stored on the answer is not consulted -- see answer_colors.ts.
+	const tile_color = (i: number) => default_colors[i % default_colors.length];
 
 	const { t } = getLocalization();
 
@@ -53,9 +61,17 @@ SPDX-License-Identifier: MPL-2.0
      empty. -->
 <div class="fq-stage">
 	<div class="fq-section">
-		<h1 class="fq-display max-w-[22ch] text-center font-bold text-balance">
+		<!-- wrap-anywhere so one long word cannot push the layout sideways: a 272-character title with no spaces in it overflowed by thousands of pixels on 2026-10-02. QuizInput caps the length now, but quizzes saved before that are not revalidated. -->
+		<h1 class="fq-display max-w-[22ch] text-center font-bold text-balance wrap-anywhere">
 			{@html sanitizeTitleHtml(quiz_data.questions[selected_question].question)}
 		</h1>
+		<!-- With shapes only on the phones, this screen is the one place that can say a
+		     question takes more than one answer. Nothing did. -->
+		{#if quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
+			<p class="fq-meta text-muted-foreground -mt-2 text-center font-medium">
+				{$t('play_page.pick_every_correct')}
+			</p>
+		{/if}
 		<div class="flex items-center gap-10">
 			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 			<p class="fq-meta text-muted-foreground font-medium tabular-nums" aria-live="polite">
@@ -76,12 +92,11 @@ SPDX-License-Identifier: MPL-2.0
 		<div
 			class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-[var(--fq-space-item)] sm:grid-cols-2"
 		>
-			{#each quiz_data.questions[selected_question].answers as answer, i}
+			{#each answers as answer, i}
 				<div
 					class="answer-row relative flex min-h-20 items-center overflow-hidden rounded-2xl transition-all duration-300
 					motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
-					style="background-color: {answer.color ??
-						default_colors[i]}; animation-delay: {i * 70}ms"
+					style="background-color: {tile_color(i)}; animation-delay: {i * 70}ms"
 					class:opacity-50={!answer.right &&
 						timer_res === '0' &&
 						quiz_data.questions[selected_question].type === QuizQuestionType.ABCD}
@@ -89,12 +104,11 @@ SPDX-License-Identifier: MPL-2.0
 					<AnswerShape
 						index={i}
 						class="w-7 h-7 ml-4 shrink-0 self-center"
-						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
+						style="color: {get_foreground_color(tile_color(i))}"
 					/>
 					<span
 						class="fq-answer w-full px-3 py-5 text-center font-semibold wrap-anywhere"
-						style="color: {get_foreground_color(answer.color ?? default_colors[i])}"
-						>{answer.answer}</span
+						style="color: {get_foreground_color(tile_color(i))}">{answer.answer}</span
 					>
 					<span class="pl-4 w-10"></span>
 				</div>
@@ -103,9 +117,10 @@ SPDX-License-Identifier: MPL-2.0
 	{:else if quiz_data.questions[selected_question].type === QuizQuestionType.TEXT}
 		{#if timer_res === '0'}
 			<div class="grid grid-cols-2 gap-2 w-full p-4">
-				{#each quiz_data.questions[selected_question].answers as answer}
-					<div class="rounded-lg h-fit flex bg-[#B07156]">
-						<span class="fq-answer text-center px-2 py-4 w-full text-black"
+				{#each answers as answer}
+					<div class="rounded-2xl h-fit flex border border-neutral-200 bg-white">
+						<span
+							class="fq-answer text-center px-2 py-4 w-full text-black wrap-anywhere"
 							>{answer.answer}</span
 						>
 						<span class="pl-4 w-10"></span>
@@ -119,4 +134,3 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	{/if}
 </div>
-

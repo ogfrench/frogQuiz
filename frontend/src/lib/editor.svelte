@@ -10,10 +10,9 @@ SPDX-License-Identifier: MPL-2.0
 	import { goto, replaceState } from '$app/navigation';
 	import { dataSchema } from '$lib/yupSchemas';
 	import type { EditorData } from './quiz_types';
-	import Sidebar from '$lib/editor/sidebar.svelte';
-	import QuestionStrip from '$lib/editor/question-strip.svelte';
 	import SettingsCard from '$lib/editor/settings-card.svelte';
-	import QuizCard from '$lib/editor/card.svelte';
+	import QuestionCard from '$lib/editor/question-card.svelte';
+	import { moveItem, selectionAfterMove } from '$lib/editor/reorder';
 	import AddNewQuestionPopup from '$lib/editor/AddNewQuestionPopup.svelte';
 	import Spinner from './Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
@@ -41,14 +40,17 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { data = $bindable(), quiz_id }: Props = $props();
-	let selected_question = $state(-1);
-	// The rail collapses to a slim strip at lg and up; below that the horizontal
-	// QuestionStrip carries the same navigation. Neither ever leaves the layout.
-	let rail_collapsed = $state(false);
-	// The canvas gets its own add control, so adding a question does not mean going
-	// back to the rail first. Own state and own dialog instance, matching how the rail
-	// and the mobile strip each hold theirs.
+	// The editor is one scrolling column of cards (MVP.md D7): quiz setup, then a card
+	// per question, then the add control. `selected_question` is now which card is open
+	// for editing rather than which one the canvas is showing -- the others stay on
+	// screen, collapsed. -1 means no question is open, not "show the settings instead".
+	let selected_question = $state(0);
 	let add_open = $state(false);
+	// Where a new question goes. The "+" rows between cards insert in place; the button
+	// at the end appends.
+	let add_at = $state<number | null>(null);
+	let dragging_from = $state<number | null>(null);
+	let drag_over = $state<number | null>(null);
 
 	// Nothing is marked missing until the first Save (see validation.svelte.ts). The flag
 	// lives in a module, so it would otherwise carry over from the last quiz edited.
@@ -77,13 +79,80 @@ SPDX-License-Identifier: MPL-2.0
 	const playable = $derived(!schemaInvalid && incomplete_count === 0);
 	// Savable is what the server needs to store a draft: something to call it, and at
 	// least one question with at least one answer.
-	const savable = $derived(
-		htmlToPlainText(data.title ?? '').trim().length > 0 &&
-			(data.questions ?? []).length > 0 &&
-			data.questions.every((q) => !Array.isArray(q.answers) || q.answers.length > 0)
+	// Which of the three is missing, so the header can say so: one message for all three
+	// told an author with a title and a question to add a title and a question, when what
+	// was missing was an answer.
+	const unsavable_reason = $derived(
+		htmlToPlainText(data.title ?? '').trim().length === 0
+			? 'cannot_save_no_title'
+			: (data.questions ?? []).length === 0
+				? 'cannot_save_no_questions'
+				: !data.questions.every((q) => !Array.isArray(q.answers) || q.answers.length > 0)
+					? 'cannot_save_no_answers'
+					: null
 	);
+	const savable = $derived(unsavable_reason === null);
 	// One list for everyone now: the account's quizzes signed in, this browser's signed out.
 	const back_href = '/my-quizzes';
+
+	// --- the column's own operations ---------------------------------------------
+	// Cards are keyed on the question object, not on its position. Keyed by index, Svelte
+	// reuses the component that sat at that index when the list changes -- and the card
+	// holds a CKEditor instance, which keeps its own copy of the text. Deleting question 2
+	// then left the card showing question 2's text over question 3's answers. Questions
+	// carry no id of their own (the server never sent one), so identity is minted here and
+	// lives only as long as the object does.
+	let next_card_key = 0;
+	const card_keys = new WeakMap<object, number>();
+	const keyOf = (question: object): number => {
+		let key = card_keys.get(question);
+		if (key === undefined) {
+			key = next_card_key++;
+			card_keys.set(question, key);
+		}
+		return key;
+	};
+
+	const focusCard = (index: number) => {
+		selected_question = index;
+	};
+	// 'nearest' after a move, so the card you just nudged stays where your eye is instead
+	// of the whole column jumping; 'start' when the outline jumps you somewhere new.
+	const scrollToCard = (index: number, block: ScrollLogicalPosition = 'nearest') => {
+		requestAnimationFrame(() =>
+			document
+				.querySelector(`[data-question-index="${index}"]`)
+				?.scrollIntoView({ behavior: 'smooth', block })
+		);
+	};
+	const moveQuestion = (from: number, to: number) => {
+		if (to < 0 || to >= data.questions.length || from === to) return;
+		data.questions = moveItem(data.questions, from, to);
+		selected_question = selectionAfterMove(selected_question, from, to);
+		scrollToCard(selected_question);
+	};
+	const deleteQuestion = (index: number) => {
+		data.questions = data.questions.filter((_, i) => i !== index);
+		// Stay on the question that took its place, or on the new last one.
+		selected_question = Math.min(index, data.questions.length - 1);
+	};
+	// Duplicating is the single biggest time-saver when a quiz is twelve variations of
+	// the same shape, and both Kahoot and Forms have it. structuredClone so the copy does
+	// not share the original's answers array.
+	const duplicateQuestion = (index: number) => {
+		const copy = structuredClone($state.snapshot(data.questions[index]));
+		data.questions = [
+			...data.questions.slice(0, index + 1),
+			copy,
+			...data.questions.slice(index + 1)
+		];
+		selected_question = index + 1;
+		scrollToCard(index + 1);
+	};
+	const openAdd = (at: number | null) => {
+		add_at = at;
+		add_open = true;
+	};
 	let edit_id: string = $state();
 
 	// --- Autosave (MVP.md D14) ---------------------------------------------------------
@@ -104,28 +173,33 @@ SPDX-License-Identifier: MPL-2.0
 	let inflight: Promise<void> | null = null;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const AUTOSAVE_DELAY_MS = 2500;
+	// The version of the quiz this editor last saw. Sent with every save, so a tab left
+	// open behind a newer save is refused instead of writing its older copy over it (E8 in
+	// docs/edge-cases-2026-10.md). Kept out of `data`, or every save would change the
+	// snapshot and trigger another.
+	let base: string | null = (data as { updated_at?: string }).updated_at ?? null;
+
+	const startSession = (id: string | null) => {
+		const anon_secret = id === null ? null : getAnonSecret(id);
+		return fetch(
+			id === null
+				? `/api/v1/editor/start?edit=false`
+				: `/api/v1/editor/start?edit=true&quiz_id=${id}`,
+			{ method: 'POST', headers: anon_secret ? { 'X-Anon-Secret': anon_secret } : {} }
+		);
+	};
 
 	const getEditID = async () => {
-		const anon_secret = quiz_id === null ? null : getAnonSecret(quiz_id);
-		const headers: Record<string, string> = anon_secret ? { 'X-Anon-Secret': anon_secret } : {};
-		let res: Response;
-		if (quiz_id === null) {
-			res = await fetch(`/api/v1/editor/start?edit=false`, {
-				method: 'POST',
-				headers
-			});
-		} else {
-			res = await fetch(`/api/v1/editor/start?edit=true&quiz_id=${quiz_id}`, {
-				method: 'POST',
-				headers
-			});
-		}
+		const res = await startSession(quiz_id);
 		if (res.status === 200) {
 			const json = await res.json();
 			edit_id = json.token;
-			// The baseline is taken once the editor has rendered: the rich-text fields
-			// normalise what they are given on load, and that is not an edit.
-			setTimeout(() => (saved_snapshot = JSON.stringify(data)), 500);
+			// The baseline is what the editor was given, taken now. It used to be taken
+			// 500ms later, to let the rich-text fields normalize what they loaded -- but an
+			// edit typed inside that window was swallowed by the baseline, so `unsaved` read
+			// false, Save sent nothing, and the editor went to the quiz page saying "Saved".
+			// Normalisation now costs one no-op save instead of somebody's work.
+			saved_snapshot = JSON.stringify(data);
 			return;
 		}
 		// Was `alert('Error!')` -- a native dialog with no status, no reason, and
@@ -144,18 +218,32 @@ SPDX-License-Identifier: MPL-2.0
 		const body = snapshot;
 		const anon_secret = current_id === null ? null : getAnonSecret(current_id);
 		saving = true;
+		const post = () =>
+			fetch(
+				`/api/v1/editor/save?edit_id=${edit_id}${base ? `&base=${encodeURIComponent(base)}` : ''}`,
+				{
+					method: 'POST',
+					// Browsers refuse a keepalive request over 64 KB outright. A big quiz is sent
+					// normally; the leave prompt holds the page open while it goes.
+					keepalive: keepalive && body.length < 60_000,
+					headers: {
+						'Content-Type': 'application/json',
+						...(anon_secret ? { 'X-Anon-Secret': anon_secret } : {})
+					},
+					body
+				}
+			);
 		try {
-			const res = await fetch(`/api/v1/editor/save?edit_id=${edit_id}`, {
-				method: 'POST',
-				// Browsers refuse a keepalive request over 64 KB outright. A big quiz is sent
-				// normally; the leave prompt holds the page open while it goes.
-				keepalive: keepalive && body.length < 60_000,
-				headers: {
-					'Content-Type': 'application/json',
-					...(anon_secret ? { 'X-Anon-Secret': anon_secret } : {})
-				},
-				body
-			});
+			let res = await post();
+			// An edit session lapses an hour after its last save. Start another and send
+			// again, rather than failing every save until a reload throws the typing away (E2).
+			if (res.status === 401) {
+				const fresh = await startSession(current_id);
+				if (fresh.ok) {
+					edit_id = (await fresh.json()).token;
+					res = await post();
+				}
+			}
 			if (!res.ok) {
 				let detail = '';
 				try {
@@ -171,6 +259,7 @@ SPDX-License-Identifier: MPL-2.0
 				return;
 			}
 			const saved = await res.json();
+			base = saved.updated_at ?? null;
 			// The server only ever hands back a secret for a quiz created without an
 			// account, once, on the save that creates it.
 			const new_anon_secret = res.headers.get('X-Anon-Secret');
@@ -179,8 +268,9 @@ SPDX-License-Identifier: MPL-2.0
 			}
 			if (current_id === null) {
 				current_id = saved.id;
-				// A reload now reopens the saved quiz instead of an empty /create.
-				replaceState(`/edit?quiz_id=${saved.id}`, {});
+				// A reload now reopens the saved quiz instead of an empty /create. Not once the
+				// editor is gone: this save may be the one sent on the way out (below).
+				if (mounted) replaceState(`/edit?quiz_id=${saved.id}`, {});
 			}
 			saved_snapshot = body;
 			save_error = null;
@@ -212,7 +302,14 @@ SPDX-License-Identifier: MPL-2.0
 		clearTimeout(timer);
 		timer = setTimeout(() => flush(), AUTOSAVE_DELAY_MS);
 	});
-	onDestroy(() => clearTimeout(timer));
+	// Leaving inside the app (a back swipe, a link) unmounts the editor without the leave
+	// prompt, and only clearing the timer here dropped whatever was typed in the last couple
+	// of seconds (E14 in docs/edge-cases-2026-10.md). Send it on the way out instead.
+	let mounted = true;
+	onDestroy(() => {
+		mounted = false;
+		flush(true);
+	});
 
 	const confirmUnload = (event: BeforeUnloadEvent) => {
 		if (!unsaved) {
@@ -248,7 +345,28 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<svelte:window onbeforeunload={confirmUnload} />
+{#snippet insert_here(index: number)}
+	<!-- A hairline that becomes a button on hover or focus. Forms and Kahoot both let you
+	     add in the middle rather than adding at the end and then moving it up nine times. -->
+	<div class="group/insert relative -my-1 flex h-6 items-center justify-center">
+		<span
+			class="bg-border absolute inset-x-8 h-px opacity-0 transition group-hover/insert:opacity-100"
+		></span>
+		<button
+			type="button"
+			class="border-border bg-background text-muted-foreground hover:text-foreground focus-visible:ring-ring relative inline-flex size-6 items-center justify-center rounded-full border opacity-0 transition group-hover/insert:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+			aria-label={$t('editor.add_question_here')}
+			title={$t('editor.add_question_here')}
+			onclick={() => openAdd(index)}
+		>
+			<Plus class="size-3.5" />
+		</button>
+	</div>
+{/snippet}
+
+<!-- ononline: a save that failed for want of a network stayed failed until the next
+     keystroke, with the header red after the connection was back (E15). -->
+<svelte:window onbeforeunload={confirmUnload} ononline={() => flush()} />
 {#await getEditID()}
 	<Spinner />
 {:then _}
@@ -257,11 +375,10 @@ SPDX-License-Identifier: MPL-2.0
 		     scrollbar on every editor session. w-full is the width we actually want.
 		     h-dvh rather than h-screen: 100vh is the wrong number on a phone, where
 		     the browser chrome is counted in and the toolbar ends up off-screen. -->
-		<div class="flex h-dvh w-full overflow-hidden">
-			<Sidebar bind:data bind:selected_question bind:collapsed={rail_collapsed} />
+		<div class="flex h-dvh w-full flex-col overflow-hidden">
 			<div class="flex min-w-0 flex-1 flex-col">
 				<header
-					class="border-border bg-background flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-4"
+					class="border-border bg-background flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 sm:h-14 sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-0"
 				>
 					<Button
 						href={back_href}
@@ -283,19 +400,31 @@ SPDX-License-Identifier: MPL-2.0
 					     that room but aligns its contents right, so it still reads as sitting at
 					     the end of the header next to the theme switch rather than trailing the
 					     title. -->
-					<p class="min-w-0 max-w-[45%] shrink truncate font-medium">
-						{@html sanitizeTitleHtml(data.title)}
-					</p>
+					<!-- The page's heading (it had none). A new quiz has no title yet, so the
+					     heading falls back to a name for the screen, for screen readers only. -->
+					<!-- On a phone the row is too short for title and status together: the status
+					     got 33px and read "Saved" as "S" and the draft warning as one letter. There
+					     the title takes the row, a quiet status shrinks to its icon, and a red one
+					     wraps onto a line of its own under the header. -->
+					<h1
+						class="min-w-0 max-w-[45%] shrink truncate text-base font-medium max-sm:max-w-none max-sm:flex-1"
+					>
+						{#if htmlToPlainText(data.title ?? '').trim()}
+							{@html sanitizeTitleHtml(data.title)}
+						{:else}
+							<span class="sr-only">{$t('editor.new_quiz')}</span>
+						{/if}
+					</h1>
 					<!-- One line of status, most urgent first. A failed save always shows. What is
 					     missing shows only after the first Save (D14): a new quiz is empty, and saying so
 					     in red before anyone had typed was the complaint. -->
 					{#if save_error}
 						<p
-							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium"
+							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
 							role="alert"
 						>
 							<TriangleAlert class="size-4 shrink-0" />
-							<span class="truncate">
+							<span class="truncate max-sm:whitespace-normal">
 								{$t('editor.save_failed', { detail: save_error })}
 							</span>
 						</p>
@@ -304,13 +433,13 @@ SPDX-License-Identifier: MPL-2.0
 						     telling the author what to go and fix. The count points at the rail, where each
 						     unfinished question is already flagged. -->
 						<p
-							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium"
+							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
 							role="status"
 						>
 							<TriangleAlert class="size-4 shrink-0" />
-							<span class="truncate">
+							<span class="truncate max-sm:whitespace-normal">
 								{#if !savable}
-									{$t('editor.cannot_save_yet')}
+									{$t(`editor.${unsavable_reason}`)}
 								{:else if incomplete_count > 0}
 									<!-- The full sentence truncates to "Saved a..." on a phone. -->
 									<span class="sm:hidden">
@@ -330,15 +459,15 @@ SPDX-License-Identifier: MPL-2.0
 						</p>
 					{:else if saving || current_id}
 						<p
-							class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm"
+							class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm max-sm:flex-none"
 							role="status"
 						>
 							{#if saving}
 								<LoaderCircle class="size-4 shrink-0 animate-spin" />
-								<span class="truncate">{$t('editor.saving')}</span>
+								<span class="truncate max-sm:sr-only">{$t('editor.saving')}</span>
 							{:else if !unsaved}
 								<CloudCheck class="size-4 shrink-0" />
-								<span class="truncate">
+								<span class="truncate max-sm:sr-only">
 									{playable ? $t('editor.saved') : $t('editor.saved_draft')}
 								</span>
 							{/if}
@@ -361,28 +490,146 @@ SPDX-License-Identifier: MPL-2.0
 				</header>
 				<!-- The canvas had no measure. Content stretched to whatever the panel
 				     was, so on a wide screen the settings form ran to 900px of label and
-				     field with a lake ofdead space between them. Cap it and centre it, the
+				     field with a lake ofdead space between them. Cap it and center it, the
 				     way any document editor does. -->
-				<QuestionStrip bind:data bind:selected_question />
-				<div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
-					<div class="mx-auto w-full max-w-2xl">
-						{#if selected_question === -1}
-							<SettingsCard bind:data bind:edit_id />
-						{:else}
-							<QuizCard bind:data bind:selected_question bind:edit_id />
-						{/if}
-						<!-- Sits at the end of the canvas column, in the measure, the way
-						     a document editor puts "add" where the content ends. It is the
-						     scroll container's last child so it is always reachable. -->
-						<Button
-							type="button"
-							variant="outline"
-							class="border-border/70 text-muted-foreground hover:text-foreground mt-6 h-14 w-full border-dashed"
-							onclick={() => (add_open = true)}
+				<div class="flex min-h-0 flex-1">
+					<!-- The outline is a convenience on a wide screen, not the navigation:
+					     the column itself is the navigation, which is why there is no drawer
+					     to open on a phone and nothing is hidden behind a tap. -->
+					<nav
+						class="border-border hidden w-60 shrink-0 overflow-y-auto border-r px-3 py-6 lg:block"
+						aria-label={$t('editor.outline')}
+					>
+						<p
+							class="text-muted-foreground px-2 pb-2 text-xs font-medium tracking-wide uppercase"
 						>
-							<Plus />
-							{$t('editor.add_new_question')}
-						</Button>
+							{$t('editor.outline')}
+						</p>
+						<button
+							type="button"
+							class="hover:bg-muted w-full truncate rounded-md px-2 py-1.5 text-left text-sm"
+							onclick={() => {
+								focusCard(-1);
+								document
+									.querySelector('[data-setup-card]')
+									?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+							}}
+						>
+							{$t('editor.quiz_setup')}
+						</button>
+						<ol class="mt-1 flex flex-col">
+							{#each data.questions as question, i (i)}
+								<li>
+									<button
+										type="button"
+										class="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm {selected_question ===
+										i
+											? 'bg-muted font-medium'
+											: ''}"
+										onclick={() => {
+											focusCard(i);
+											scrollToCard(i, 'start');
+										}}
+									>
+										<span class="text-muted-foreground shrink-0 tabular-nums"
+											>{i + 1}</span
+										>
+										<span class="min-w-0 flex-1 truncate">
+											{htmlToPlainText(question.question ?? '').trim() ||
+												$t('editor.no_title')}
+										</span>
+										{#if editorValidation.shown && !isQuestionComplete(question)}
+											<span
+												class="bg-destructive size-1.5 shrink-0 rounded-full"
+											></span>
+										{/if}
+									</button>
+								</li>
+							{/each}
+						</ol>
+					</nav>
+
+					<div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
+						<!-- One column, capped to a measure. Everything in the quiz is on this
+						     page in order: setup, then a card per question, then add. -->
+						<!-- Only the questions are the list. Setup, the insert buttons and Add sat
+						     inside role="list" as well, so a screen reader was handed a list whose
+						     children were text boxes and buttons rather than items (axe:
+						     aria-required-children). Each item is the insert point plus its card. -->
+						<div class="mx-auto flex w-full max-w-2xl flex-col gap-3">
+							<div data-setup-card>
+								<SettingsCard bind:data bind:edit_id />
+							</div>
+
+							{#if data.questions.length > 0}
+								<div
+									class="flex flex-col gap-3"
+									role="list"
+									aria-label={$t('editor.outline')}
+								>
+									{#each data.questions as question, i (keyOf(question))}
+										<div class="flex flex-col gap-3" role="listitem">
+											{#if i > 0}
+												{@render insert_here(i)}
+											{/if}
+											<QuestionCard
+												bind:data
+												bind:edit_id
+												index={i}
+												total={data.questions.length}
+												focused={selected_question === i}
+												dragging={dragging_from === i}
+												onselect={focusCard}
+												onmove={moveQuestion}
+												ondelete={deleteQuestion}
+												onduplicate={duplicateQuestion}
+												ondragstart={(from) => (dragging_from = from)}
+												ondragenter={(over) => (drag_over = over)}
+												ondragend={() => {
+													if (
+														dragging_from !== null &&
+														drag_over !== null
+													) {
+														moveQuestion(dragging_from, drag_over);
+													}
+													dragging_from = null;
+													drag_over = null;
+												}}
+											/>
+										</div>
+									{/each}
+								</div>
+							{/if}
+
+							{#if data.questions.length === 0}
+								<!-- A new quiz: the first question is the next thing to do, so it is
+								     the one thing on offer, not a toolbar button above six optional
+								     fields. -->
+								<button
+									type="button"
+									class="border-border/70 hover:border-primary/50 hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-1 rounded-xl border border-dashed px-6 py-10 text-center transition focus-visible:ring-2 focus-visible:outline-none"
+									onclick={() => openAdd(null)}
+								>
+									<span class="flex items-center gap-2 font-medium">
+										<Plus class="size-4" />
+										{$t('editor.first_question')}
+									</span>
+									<span class="text-muted-foreground text-sm">
+										{$t('editor.first_question_hint')}
+									</span>
+								</button>
+							{:else}
+								<Button
+									type="button"
+									variant="outline"
+									class="border-border/70 text-muted-foreground hover:text-foreground mt-1 h-14 w-full border-dashed"
+									onclick={() => openAdd(null)}
+								>
+									<Plus />
+									{$t('editor.add_new_question')}
+								</Button>
+							{/if}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -392,6 +639,7 @@ SPDX-License-Identifier: MPL-2.0
 		bind:questions={data.questions}
 		bind:open={add_open}
 		bind:selected_question
+		at={add_at}
 	/>
 {:catch error}
 	<div class="flex min-h-dvh items-center justify-center px-6">

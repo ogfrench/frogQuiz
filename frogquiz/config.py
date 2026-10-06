@@ -82,15 +82,59 @@ class Settings(BaseSettings):
     github_client_secret: str | None = None
     custom_openid_provider: CustomOpenIDProvider | None = None
     telemetry_enabled: bool = True
-    free_storage_limit: int = 1074000000
+    # Per-file upload ceilings, in bytes, and the per-account total.
+    #
+    # Upstream had none of this: the upload route passed size=0 into storage and the
+    # only cap in the product was Uppy's, in the browser, so POST /api/v1/storage/
+    # took a file of any size from an unauthenticated caller. See upload_limits().
+    #
+    # 5MB covers a photo straight off a phone (a 12-megapixel JPEG is usually 3-5MB)
+    # and is far more than a question image needs on a projector; the editor
+    # compresses before it uploads anyway. Kahoot's own per-file ceiling is 5MB for a
+    # cover image, so this is not a tighter rule than people are used to.
+    max_image_upload_size: int = 5_000_000
+    # The byte cap is not a pixel cap. A 20000x20000 PNG of one solid color compresses
+    # to under 400KiB -- inside the 5MB limit -- and becomes a ~1.6GB bitmap in every
+    # browser that renders it: every player's phone in the room, and the projector. The
+    # server never decodes an image (no Pillow; the worker only hashes bytes), so it is
+    # the clients that fall over. 8000 per side blocks that while clearing a 48-megapixel
+    # phone photo; it is also at the 8192 texture limit a lot of mobile GPUs still have,
+    # above which an image can render blank. Kahoot caps question images at 5000x5000, so
+    # tightening this is reasonable -- it is one number.
+    max_image_dimension: int = 8000
+    # Only reachable with enable_video_upload on. 25MB is about 30 seconds of 1080p.
+    max_video_upload_size: int = 25_000_000
+    # Video upload is off: /edit/videos is hidden for the MVP and the editor passes
+    # video_upload={false}, so leaving video/mp4 accepted only left an unbounded
+    # upload path with no UI in front of it. Flip this and unhide the route together.
+    enable_video_upload: bool = False
+    # 1GiB per account. A quiz with a cover and an image on every question is a few
+    # MB, so this is dozens of quizzes per person: the ceiling exists to stop one
+    # account filling the volume, not to ration normal use. Raising it is one number,
+    # but check the host's own disk first -- the VM's block volume is the real limit.
+    free_storage_limit: int = 1_073_741_824
     pixabay_api_key: str | None = None
     mods: list[str] = []
     registration_disabled: bool = False
+    # Sign-in is by an emailed link or six-digit code, for these domains only (the part
+    # after the @, matched exactly), as frogViz does: François, 5 Oct. Empty lets any
+    # address in, which only the backend test suite wants. A comma-separated list.
+    allowed_email_domains: Annotated[list[str], NoDecode] = ["frog.co", "capgemini.com"]
+    # Passwords are off since 5 Oct: no password login, registration, reset or change.
+    # The code is kept, and this brings it back. The backend suite turns it on to keep
+    # testing it.
+    enable_password_login: bool = False
+
+    def email_domain_allowed(self, email: str) -> bool:
+        """Whether an address may sign in: its domain is on the list, or the list is empty."""
+        domain = email.strip().lower().rpartition("@")[2]
+        return not self.allowed_email_domains or domain in self.allowed_email_domains
 
     @property
     def mail_configured(self) -> bool:
         """Whether there is enough here to reach a mail server at all."""
         return bool(self.mail_server and self.mail_address)
+
     # Physical-buzzer hardware and the QuizTivity page builder are not used by the
     # team. Their entry points were taken out of the UI in PR #5, but the API
     # routers stayed registered and callable. Off by default; flip to re-enable.
@@ -117,6 +161,13 @@ class Settings(BaseSettings):
     # NoDecode keeps pydantic-settings from JSON-parsing this first, which is what
     # made the documented comma-separated form raise before the validator below ran.
     cors_origins: Annotated[list[str], NoDecode] = []
+
+    @field_validator("allowed_email_domains", mode="before")
+    @classmethod
+    def _split_domains(cls, v):
+        if isinstance(v, str):
+            return [d.strip().lower() for d in v.split(",") if d.strip()]
+        return v
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -176,6 +227,38 @@ meilisearch = MeiliSearch.Client(settings().meilisearch_url)
 
 ALLOWED_TAGS_FOR_QUIZ = ["b", "strong", "i", "em", "small", "mark", "del", "sub", "sup"]
 
-ALLOWED_MIME_TYPES = ["image/png", "video/mp4", "image/jpeg", "image/gif", "image/webp"]
+
+def upload_limits() -> dict[str, int]:
+    """Accepted upload types, mapped to the largest file allowed for each.
+
+    One table, so "is this type allowed" and "how big may it be" cannot disagree --
+    and so the editor's file picker can be told the same numbers rather than carrying
+    its own copy (GET /api/v1/storage/limits).
+
+    SVG is deliberately absent: it is a script-injection vector, and nothing in a quiz
+    needs one.
+    """
+    s = settings()
+    limits = {
+        "image/png": s.max_image_upload_size,
+        "image/jpeg": s.max_image_upload_size,
+        "image/gif": s.max_image_upload_size,
+        "image/webp": s.max_image_upload_size,
+    }
+    if s.enable_video_upload:
+        limits["video/mp4"] = s.max_video_upload_size
+    return limits
+
+
+UPLOAD_LIMITS = upload_limits()
+
+# Kept as a name because it reads better at the call site and in the tests. It is the
+# key set of UPLOAD_LIMITS, never a second list to keep in step.
+ALLOWED_MIME_TYPES = list(UPLOAD_LIMITS)
+
+# The largest upload any type allows. Used for the cheap Content-Length rejection in
+# the request-size middleware, which runs before the body is read and so cannot know
+# the content type yet.
+MAX_UPLOAD_SIZE = max(UPLOAD_LIMITS.values())
 
 server_regex = rf"^{re.escape(settings().root_address)}/api/v1/storage/download/.{{36}}--.{{36}}$"

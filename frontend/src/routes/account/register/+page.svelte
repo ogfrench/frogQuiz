@@ -10,7 +10,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { validateSchema } from '@felte/validator-yup';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
-	import Footer from '$lib/footer.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -20,6 +19,8 @@ SPDX-License-Identifier: MPL-2.0
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import { page } from '$app/state';
 	import { safeReturnTo } from '$lib/return_to';
+	import { onDestroy } from 'svelte';
+	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
 
 	const { t } = getLocalization();
 
@@ -36,28 +37,28 @@ SPDX-License-Identifier: MPL-2.0
 	import * as yup from 'yup';
 
 	const registerSchema = yup.object({
-		email: yup.string().email('Email must be valid!').required(),
+		email: yup.string().email('Enter a valid email address').required(),
 		password1: yup
 			.string()
 			.required()
-			.min(8, 'Password must be at least 8 characters long!')
-			.max(100, 'Password must be at most 100 characters long!'),
+			.min(8, 'Password must be at least 8 characters long')
+			.max(100, 'Password must be at most 100 characters long'),
 		password2: yup
 			.string()
 			.required()
-			.test('equal', 'Passwords do not match!', function (v) {
+			.test('equal', 'Passwords do not match', function (v) {
 				const ref = yup.ref('password1');
 				return v === this.resolve(ref);
 			}),
+		// Trimmed, as the server stores it: "  ab  " passed a length check it then failed.
 		username: yup
 			.string()
+			.trim()
 			.required()
 			.min(3, 'Username must be at least 3 characters long')
 			.max(20, 'Username must be at most 20 characters long'),
-		privacy_accept: yup
-			.boolean()
-			.oneOf([true], 'You must accept the privacy policy to register!'),
-		tos_accept: yup.boolean().oneOf([true], 'You must accept the terms of service to register!')
+		privacy_accept: yup.boolean().oneOf([true], 'Accept the privacy policy to register'),
+		tos_accept: yup.boolean().oneOf([true], 'Accept the Terms of Service to register')
 	});
 
 	const { form, errors, isValid, isSubmitting } = createForm<
@@ -85,6 +86,8 @@ SPDX-License-Identifier: MPL-2.0
 						responseData.data = '200_verified';
 					} else {
 						responseData.data = '200';
+						// The mail has just gone: asking again at once cannot help it arrive.
+						cooldown.start();
 					}
 				} else if (res.status === 409) {
 					responseData.data = '409';
@@ -109,13 +112,22 @@ SPDX-License-Identifier: MPL-2.0
 		open: false,
 		data: ''
 	});
+	// Once the account exists the form has done its job. It used to stay filled in with
+	// Register still live, next to "You can log in now", and a second press answered
+	// "taken". It gives way to the result and the next step.
+	const registered = $derived(
+		responseData.open && (responseData.data === '200' || responseData.data === '200_verified')
+	);
 
 	// Registration had no way back: if the confirmation mail was lost or filtered,
 	// signing up again just returned 409 and the address stayed unverified forever.
 	let resend = $state({ busy: false, result: '' });
 	let registeredEmail = $state('');
+	const cooldown = createCooldown();
+	onDestroy(cooldown.stop);
 
 	const resendVerification = async () => {
+		if (cooldown.active) return;
 		resend.busy = true;
 		resend.result = '';
 		try {
@@ -124,7 +136,16 @@ SPDX-License-Identifier: MPL-2.0
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email: registeredEmail })
 			});
-			resend.result = res.ok ? 'sent' : res.status === 429 ? 'too_many' : 'failed';
+			if (res.ok) {
+				resend.result = 'sent';
+				cooldown.start();
+			} else {
+				// A refusal that names a short wait is the cooldown, not the hourly limit.
+				const wait = cooldownFromRefusal(res);
+				if (wait > 0) cooldown.start(wait);
+				resend.result =
+					res.status === 429 && wait === 0 ? 'too_many' : wait > 0 ? '' : 'failed';
+			}
 		} catch {
 			resend.result = 'failed';
 		} finally {
@@ -143,140 +164,132 @@ SPDX-License-Identifier: MPL-2.0
      that turned sky-600 on focus -- a fourth accent the design system does not have,
      and CLAUDE.md is explicit that adding one is what makes this look generic -- an
      inlined spinner with hardcoded fill-blue-800, and a gray-700 submit. -->
-<div class="flex min-h-dvh items-center justify-center px-4 py-10">
+<div class="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-10">
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="gap-1 text-center">
-			<Card.Title class="text-3xl font-bold tracking-tight">frogQuiz</Card.Title>
-			<Card.Description class="grid gap-1">
-				<span class="text-foreground text-lg font-medium"
-					>{$t('register_page.greeting')}</span
-				>
-				<span>{$t('register_page.create_account')}</span>
-			</Card.Description>
+			<!-- Says what the page is for; see the login card. -->
+			<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+				{$t('register_page.create_account')}
+			</h1>
+			<Card.Description>{$t('register_page.greeting')}</Card.Description>
 		</Card.Header>
 
-		<Card.Content>
-			<form use:form class="grid gap-4">
-				<div class="grid gap-2">
-					<Label for="email">{$t('words.email')}</Label>
-					<Input
-						id="email"
-						name="email"
-						type="email"
-						autocomplete="email"
-						placeholder={$t('words.email')}
-						aria-invalid={!!$errors.email}
-					/>
-					{#if $errors.email}
-						<p class="text-destructive text-sm">{$errors.email}</p>
-					{/if}
-				</div>
+		{#if !registered}
+			<Card.Content>
+				<form use:form class="grid gap-4">
+					<div class="grid gap-2">
+						<Label for="email">{$t('words.email')}</Label>
+						<Input
+							id="email"
+							name="email"
+							type="email"
+							autocomplete="email"
+							aria-invalid={!!$errors.email}
+						/>
+						{#if $errors.email}
+							<p class="text-destructive text-sm">{$errors.email}</p>
+						{/if}
+					</div>
 
-				<div class="grid gap-2">
-					<Label for="username">{$t('words.username')}</Label>
-					<Input
-						id="username"
-						name="username"
-						type="text"
-						autocomplete="username"
-						placeholder={$t('words.username')}
-						aria-invalid={!!$errors.username}
-					/>
-					{#if $errors.username}
-						<p class="text-destructive text-sm">{$errors.username}</p>
-					{/if}
-				</div>
+					<div class="grid gap-2">
+						<Label for="username">{$t('words.username')}</Label>
+						<Input
+							id="username"
+							name="username"
+							type="text"
+							autocomplete="username"
+							aria-invalid={!!$errors.username}
+						/>
+						{#if $errors.username}
+							<p class="text-destructive text-sm">{$errors.username}</p>
+						{/if}
+					</div>
 
-				<div class="grid gap-2">
-					<Label for="password1">{$t('words.password')}</Label>
-					<Input
-						id="password1"
-						name="password1"
-						type="password"
-						autocomplete="new-password"
-						placeholder={$t('words.password')}
-						aria-invalid={!!$errors.password1}
-					/>
-					{#if $errors.password1}
-						<p class="text-destructive text-sm">{$errors.password1}</p>
-					{/if}
-				</div>
+					<div class="grid gap-2">
+						<Label for="password1">{$t('words.password')}</Label>
+						<Input
+							id="password1"
+							name="password1"
+							type="password"
+							autocomplete="new-password"
+							aria-invalid={!!$errors.password1}
+						/>
+						{#if $errors.password1}
+							<p class="text-destructive text-sm">{$errors.password1}</p>
+						{/if}
+					</div>
 
-				<div class="grid gap-2">
-					<Label for="password2">{$t('register_page.repeat_password')}</Label>
-					<Input
-						id="password2"
-						name="password2"
-						type="password"
-						autocomplete="new-password"
-						placeholder={$t('register_page.repeat_password')}
-						aria-invalid={!!$errors.password2}
-					/>
-					{#if $errors.password2}
-						<p class="text-destructive text-sm">{$errors.password2}</p>
-					{/if}
-				</div>
+					<div class="grid gap-2">
+						<Label for="password2">{$t('register_page.repeat_password')}</Label>
+						<Input
+							id="password2"
+							name="password2"
+							type="password"
+							autocomplete="new-password"
+							aria-invalid={!!$errors.password2}
+						/>
+						{#if $errors.password2}
+							<p class="text-destructive text-sm">{$errors.password2}</p>
+						{/if}
+					</div>
 
-				<!-- The consent boxes had their label as a sibling of the input, so tapping
+					<!-- The consent boxes had their label as a sibling of the input, so tapping
 				     the words did nothing and the target was the 16px box. Wrapping makes the
 				     whole row one target, and the links inside it still work. -->
-				<div class="grid gap-2">
-					<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
-						<input
-							type="checkbox"
-							name="privacy_accept"
-							class="accent-primary mt-0.5 size-5 shrink-0"
-							aria-invalid={!!$errors.privacy_accept}
-						/>
-						<span>
-							{$t('register_page.read_privacy_policy_prefix')}
-							<a href="/docs/privacy-policy" class="underline underline-offset-4"
-								>{$t('register_page.privacy_policy')}</a
-							>.
-						</span>
-					</label>
-					{#if $errors.privacy_accept}
-						<p class="text-destructive text-sm">{$errors.privacy_accept}</p>
-					{/if}
-
-					<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
-						<input
-							type="checkbox"
-							name="tos_accept"
-							class="accent-primary mt-0.5 size-5 shrink-0"
-							aria-invalid={!!$errors.tos_accept}
-						/>
-						<span>
-							{$t('register_page.agree_tos_prefix')}
-							<a href="/docs/tos" class="underline underline-offset-4"
-								>{$t('register_page.terms_of_service')}</a
-							>.
-						</span>
-					</label>
-					{#if $errors.tos_accept}
-						<p class="text-destructive text-sm">{$errors.tos_accept}</p>
-					{/if}
-				</div>
-
-				<div class="flex items-center justify-between gap-4">
-					<a
-						href="/account/reset-password"
-						class="text-muted-foreground hover:text-foreground text-sm underline-offset-4 transition-colors hover:underline"
-					>
-						{$t('register_page.forgot_password?')}
-					</a>
-
-					<Button type="submit" disabled={!$isValid || $isSubmitting}>
-						{#if $isSubmitting}
-							<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
-							<span class="sr-only">{$t('words.register')}</span>
-						{:else}
-							{$t('words.register')}
+					<div class="grid gap-2">
+						<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
+							<input
+								type="checkbox"
+								name="privacy_accept"
+								class="accent-primary mt-0.5 size-5 shrink-0"
+								aria-invalid={!!$errors.privacy_accept}
+							/>
+							<span>
+								{$t('register_page.read_privacy_policy_prefix')}
+								<a href="/docs/privacy-policy" class="underline underline-offset-4"
+									>{$t('register_page.privacy_policy')}</a
+								>.
+							</span>
+						</label>
+						{#if $errors.privacy_accept}
+							<p class="text-destructive text-sm">{$errors.privacy_accept}</p>
 						{/if}
-					</Button>
-				</div>
-			</form>
-		</Card.Content>
+
+						<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm">
+							<input
+								type="checkbox"
+								name="tos_accept"
+								class="accent-primary mt-0.5 size-5 shrink-0"
+								aria-invalid={!!$errors.tos_accept}
+							/>
+							<span>
+								{$t('register_page.agree_tos_prefix')}
+								<a href="/docs/tos" class="underline underline-offset-4"
+									>{$t('register_page.terms_of_service')}</a
+								>.
+							</span>
+						</label>
+						{#if $errors.tos_accept}
+							<p class="text-destructive text-sm">{$errors.tos_accept}</p>
+						{/if}
+					</div>
+
+					<!-- "Forgot password?" was offered on the registration form, which is for
+				     people who have no password yet. It lives on the login page, where it is
+				     the thing you reach for. -->
+					<div class="flex items-center justify-end gap-4">
+						<Button type="submit" disabled={!$isValid || $isSubmitting}>
+							{#if $isSubmitting}
+								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								<span class="sr-only">{$t('words.register')}</span>
+							{:else}
+								{$t('words.register')}
+							{/if}
+						</Button>
+					</div>
+				</form>
+			</Card.Content>
+		{/if}
 
 		{#if responseData.open}
 			{@const ok = responseData.data === '200' || responseData.data === '200_verified'}
@@ -334,37 +347,49 @@ SPDX-License-Identifier: MPL-2.0
 
 			{#if responseData.data === '200'}
 				<div class="text-muted-foreground px-6 pb-2 text-sm">
-					{#if resend.result === ''}
-						<span>{$t('register_page.resend.prompt')}</span>
-						<button
-							type="button"
-							class="text-primary font-medium underline-offset-4 hover:underline disabled:opacity-50"
-							disabled={resend.busy}
-							onclick={resendVerification}
-						>
-							{$t('register_page.resend.action')}
-						</button>
-					{:else}
-						<p role="status" aria-live="polite">
-							{#if resend.result === 'sent'}
-								{$t('register_page.resend.sent')}
-							{:else if resend.result === 'too_many'}
-								{$t('register_page.resend.too_many')}
-							{:else}
-								{$t('register_page.resend.failed')}
-							{/if}
+					<span>{$t('register_page.resend.prompt')}</span>
+					<button
+						type="button"
+						class="text-primary font-medium underline-offset-4 hover:underline disabled:no-underline disabled:opacity-50"
+						disabled={resend.busy || cooldown.active}
+						onclick={resendVerification}
+					>
+						{$t('register_page.resend.action')}
+					</button>
+					<p class="mt-1" role="status" aria-live="polite">
+						{#if resend.result === 'sent'}
+							{$t('register_page.resend.sent')}
+						{:else if resend.result === 'too_many'}
+							{$t('register_page.resend.too_many')}
+						{:else if resend.result === 'failed'}
+							{$t('register_page.resend.failed')}
+						{/if}
+					</p>
+					<!-- Not a live region: a screen reader would read out every second of it. -->
+					{#if cooldown.active}
+						<p class="mt-1">
+							{$t('register_page.resend.wait', { time: formatWait(cooldown.left) })}
 						</p>
 					{/if}
 				</div>
 			{/if}
 		{/if}
 
-		<Card.Footer class="justify-center gap-1.5 text-sm">
-			<span class="text-muted-foreground">{$t('register_page.already_have_account?')}</span>
-			<a href={login_href} class="text-primary font-medium underline-offset-4 hover:underline"
-				>{$t('words.login')}</a
-			>
-		</Card.Footer>
+		{#if responseData.data === '200_verified'}
+			<div class="px-6 pt-2">
+				<Button href={login_href} class="w-full" autofocus>{$t('words.login')}</Button>
+			</div>
+		{:else}
+			<Card.Footer class="justify-center gap-1.5 text-sm">
+				<span class="text-muted-foreground"
+					>{$t('register_page.already_have_account?')}</span
+				>
+				<a
+					href={login_href}
+					class="text-primary font-medium underline-offset-4 hover:underline"
+					>{$t('words.login')}</a
+				>
+			</Card.Footer>
+		{/if}
 	</Card.Root>
 </div>
-<Footer />

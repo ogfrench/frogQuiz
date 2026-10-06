@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -11,6 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ImageEditor from '@uppy/image-editor';
 	import Compressor from '@uppy/compressor';
 	import { fade } from 'svelte/transition';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ImagePlus from '@lucide/svelte/icons/image-plus';
@@ -49,6 +51,19 @@ SPDX-License-Identifier: MPL-2.0
 	let video_popup: undefined | WindowProxy = $state(undefined);
 
 	let selected_type: AvailableUploadTypes | null = $state(null);
+	// Uppy draws its own bars and buttons and only knows its own two themes. Read ours
+	// when the dialog opens, which is when the Dashboard mounts.
+	let uppy_theme: 'light' | 'dark' = $state('light');
+
+	// Used only until GET /api/v1/storage/limits answers, and if it never does. Keep them
+	// no larger than config.py's max_image_upload_size, so a failed fetch errs tight
+	// rather than letting through a file the server will reject after the upload.
+	const FALLBACK_MAX_FILE_SIZE = 5_000_000;
+	const FALLBACK_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+	// Shown under the picker, so the rule is visible before a file is chosen rather than
+	// only in an error after one is.
+	let max_file_size = $state(FALLBACK_MAX_FILE_SIZE);
+	const max_file_size_mb = $derived(Math.round(max_file_size / 1_000_000));
 
 	// eslint-disable-next-line no-unused-vars
 	enum AvailableUploadTypes {
@@ -68,7 +83,35 @@ SPDX-License-Identifier: MPL-2.0
 	// never-mounted Dashboard in the instance and -- because ImageEditor was targeted at
 	// the Dashboard *class* -- attached the image editor to that dead one instead of the
 	// visible one. Install ImageEditor untargeted and let the visible Dashboard list it.
-	const uppy = new Uppy()
+	// `restrictions` is a Core option. It was being passed through the Dashboard's props
+	// instead -- and `restrictions` appears nowhere in @uppy/dashboard's types, so the
+	// picker has in fact never had a size cap or a type filter: it accepted an SVG and a
+	// 2GB file alike and left the server to answer. The earlier fix in this file (`props`
+	// rather than `properties`) was real but in the wrong place.
+	//
+	// These are starting values. `onMount` replaces them with the server's own numbers
+	// from GET /api/v1/storage/limits, so config.py is the only place they are written.
+	// On a phone there is nothing to drop a file from, so the picker says only what can
+	// be done there. Uppy fills %{browseFiles} with its own link. These go to the core
+	// instance, which every plugin reads strings from: passed as the Dashboard's own
+	// `locale` they made it throw "plugin.mount is not a function" on install and render
+	// an empty box.
+	const coarse_pointer = matchMedia('(pointer: coarse)').matches;
+	const uppy_locale = {
+		// Uppy's English rule; its Locale type requires one even when no string is plural.
+		pluralize: (n: number) => (n === 1 ? 0 : 1),
+		strings: coarse_pointer
+			? { dropPasteFiles: '%{browseFiles}', browseFiles: $t('uploader.choose_image') }
+			: { dropPasteFiles: $t('uploader.drop_or_browse'), browseFiles: $t('uploader.browse') }
+	};
+	const uppy = new Uppy({
+		restrictions: {
+			maxFileSize: FALLBACK_MAX_FILE_SIZE,
+			maxNumberOfFiles: 1,
+			allowedFileTypes: FALLBACK_TYPES
+		},
+		locale: uppy_locale
+	})
 		.use(DropTarget, {
 			target: document.body
 		})
@@ -81,22 +124,27 @@ SPDX-License-Identifier: MPL-2.0
 		.use(XHRUpload, {
 			endpoint: `/api/v1/storage/`
 		});
-	// @uppy/svelte v4's Dashboard prop for the plugin's options is `props` -- this was
-	// passed as `properties`, which the component ignores, so none of these restrictions
-	// were ever applied. `inline: true` is the component's own default.
+	// @uppy/svelte v4's Dashboard prop for the plugin's options is `props`, not
+	// `properties`. `inline: true` is the component's own default. Restrictions are not
+	// a Dashboard option and live on the Uppy instance above.
+	// Uppy's "Powered by Uppy" line was hidden with CSS here, which lost to Uppy's own
+	// `a.uppy-Dashboard-poweredBy` on specificity and so never hid it. This is its option.
+	// The height leaves room for the title and the size rule on a phone.
 	const dashboard_options = {
 		plugins: ['ImageEditor'],
-		restrictions: {
-			maxFileSize: 10_490_000,
-			maxNumberOfFiles: 1,
-			// Matches ALLOWED_MIME_TYPES in frogquiz/config.py. 'image/*' let SVGs through
-			// the picker only for the server to answer 422.
-			allowedFileTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
-		}
+		proudlyDisplayPoweredByUppy: false,
+		width: '100%',
+		height: 400
 	};
 	// Read eagerly rather than inside the `complete` callback: that fires from Uppy, not
 	// from the component, and `$t` is a store read that wants component context.
 	const upload_failed_msg = $derived($t('uploader.upload_failed'));
+	const too_large_msg = $derived($t('uploader.too_large', { size: max_file_size_mb }));
+	// A 413 has two causes now -- too many bytes, or too many pixels (a small file that
+	// is enormous when drawn). They need different advice: shrinking the file does not
+	// help a 50-megapixel image that is already under the byte cap.
+	const too_large_pixels_msg = $derived($t('uploader.too_large_pixels'));
+	const quota_msg = $derived($t('uploader.quota_reached'));
 	let image_id: string | undefined;
 	uppy.on('upload', () => {
 		// Don't let an id from an earlier attempt stand in for this one.
@@ -104,6 +152,31 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	uppy.on('upload-success', (file, response) => {
 		image_id = (response.body as { id?: string } | undefined)?.id;
+	});
+	// Uppy's own error text for a failed XHR is the status line, which tells a person
+	// nothing. The two refusals they can actually act on get their own words.
+	uppy.on('upload-error', (file, error, response) => {
+		// @uppy/xhr-upload wraps a non-2xx as a NetworkError carrying the XHR, which it
+		// passes here as `response`. So `response.status` is the HTTP status, but the body
+		// is on `response.responseText` (a string), not `response.body` -- that only exists
+		// on the success path. Reading `.body` here is why the pixel/byte branch below was
+		// silently always taking the byte branch.
+		const xhr = response as { status?: number; responseText?: string } | undefined;
+		const status = xhr?.status;
+		let detail = '';
+		try {
+			detail = (JSON.parse(xhr?.responseText ?? '{}') as { detail?: string }).detail ?? '';
+		} catch {
+			// A non-JSON body (a proxy error page, say) just leaves detail empty.
+		}
+		if (status === 413) {
+			// Two 413s: too many bytes, or too many pixels. The server says which in its
+			// detail, and they need different advice -- shrinking a 50-megapixel file that
+			// is already under the byte cap does nothing.
+			uppy.info(/pixel/i.test(detail) ? too_large_pixels_msg : too_large_msg, 'error', 8000);
+		} else if (status === 409) {
+			uppy.info(quota_msg, 'error', 8000);
+		}
 	});
 	// A failed upload used to look exactly like a successful one: `complete` wrote
 	// `undefined` into the quiz and closed the modal either way, which is why a 401 from
@@ -142,6 +215,28 @@ SPDX-License-Identifier: MPL-2.0
 		});
 	});
 
+	// The limits come from the server so there is one copy of them. A person finding out
+	// their file is too big from Uppy, before it uploads, is the whole point: the server
+	// answers 413 either way, but only after they have waited for the transfer.
+	onMount(async () => {
+		try {
+			const res = await fetch('/api/v1/storage/limits');
+			if (!res.ok) return;
+			const limits: { max_file_size: number; accepted_types: string[] } = await res.json();
+			if (!limits.max_file_size || !limits.accepted_types?.length) return;
+			uppy.setOptions({
+				restrictions: {
+					maxFileSize: limits.max_file_size,
+					maxNumberOfFiles: 1,
+					allowedFileTypes: limits.accepted_types
+				}
+			});
+			max_file_size = limits.max_file_size;
+		} catch {
+			// Keep the fallbacks. An unreachable API is about to fail the upload anyway.
+		}
+	});
+
 	const upload_video = async () => {
 		video_popup = window.open(
 			'/edit/videos',
@@ -152,113 +247,92 @@ SPDX-License-Identifier: MPL-2.0
 			video_popup = undefined;
 		});
 	};
-
-	const handle_on_click = (e: Event) => {
-		if (e.target === e.currentTarget) {
-			modalOpen = false;
-			selected_type = null;
-		}
-	};
-	onMount(() => {
-		window.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (e.key === 'Escape') {
-				modalOpen = false;
-				selected_type = null;
-			}
-		});
-	});
 </script>
 
-{#if modalOpen}
-	<div
-		class="fixed inset-0 z-20 flex overflow-y-auto bg-black/50 p-4"
-		onclick={handle_on_click}
-		tabindex="0"
-		role="button"
-		aria-label="Close modal"
-		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ' ? handle_on_click(e) : null)}
-		transition:fade={{ duration: 100 }}
+<!-- The shadcn Dialog, so it has a title, traps focus, and closes on Escape and on the
+     scrim. It was a hand-rolled overlay with role="button" wrapped around the whole
+     uploader, which left focus on the page behind it, and its size hint floated on the
+     scrim, over whatever page content happened to be there. -->
+<Dialog.Root bind:open={modalOpen} onOpenChange={(open) => !open && (selected_type = null)}>
+	<Dialog.Content
+		class="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto {selected_type === null ||
+		selected_type === AvailableUploadTypes.Video
+			? 'sm:max-w-lg'
+			: 'sm:max-w-3xl'}"
 	>
+		<Dialog.Header>
+			{#if selected_type === AvailableUploadTypes.Image}
+				<Dialog.Title>{$t('uploader.add_image')}</Dialog.Title>
+				<!-- State the rule before a file is picked, not only in the error after. -->
+				<Dialog.Description>
+					{$t('uploader.size_hint', { size: max_file_size_mb })}
+				</Dialog.Description>
+			{:else if selected_type === AvailableUploadTypes.Video}
+				<Dialog.Title>{$t('uploader.upload_a_video')}</Dialog.Title>
+			{:else if selected_type === null}
+				<Dialog.Title>{$t('uploader.select_upload_type')}</Dialog.Title>
+			{:else}
+				<!-- Library and Pixabay draw their own headings. -->
+				<Dialog.Title class="sr-only">{$t('uploader.add_image')}</Dialog.Title>
+			{/if}
+		</Dialog.Header>
 		{#if selected_type === null}
-			<div
-				class="border-border bg-card m-auto w-full max-w-lg rounded-xl border p-6 shadow-xl"
-			>
-				<h1 class="mb-5 text-center text-xl font-semibold">
-					{$t('uploader.select_upload_type')}
-				</h1>
-				<div class="flex flex-wrap gap-3 sm:flex-nowrap">
+			<div class="flex flex-wrap gap-3 sm:flex-nowrap">
+				<div class="w-full">
+					<BrownButton
+						onclick={() => {
+							selected_type = AvailableUploadTypes.Image;
+						}}
+						>{$t('words.image')}
+					</BrownButton>
+				</div>
+				<div class="w-full">
+					<BrownButton
+						disabled={!video_upload}
+						onclick={() => {
+							selected_type = AvailableUploadTypes.Video;
+						}}
+						>{$t('words.video')}
+					</BrownButton>
+				</div>
+				{#if library_enabled}
 					<div class="w-full">
 						<BrownButton
 							onclick={() => {
-								selected_type = AvailableUploadTypes.Image;
+								selected_type = AvailableUploadTypes.Library;
 							}}
-							>{$t('words.image')}
+							>{$t('words.library')}
 						</BrownButton>
 					</div>
+				{/if}
+				{#if pixabay_enabled}
 					<div class="w-full">
 						<BrownButton
-							disabled={!video_upload}
 							onclick={() => {
-								selected_type = AvailableUploadTypes.Video;
+								selected_type = AvailableUploadTypes.Pixabay;
 							}}
-							>{$t('words.video')}
+							>Pixabay
 						</BrownButton>
 					</div>
-					{#if library_enabled}
-						<div class="w-full">
-							<BrownButton
-								onclick={() => {
-									selected_type = AvailableUploadTypes.Library;
-								}}
-								>{$t('words.library')}
-							</BrownButton>
-						</div>
-					{/if}
-					{#if pixabay_enabled}
-						<div class="w-full">
-							<BrownButton
-								onclick={() => {
-									selected_type = AvailableUploadTypes.Pixabay;
-								}}
-								>Pixabay
-							</BrownButton>
-						</div>
-					{/if}
-				</div>
-			</div>
-		{:else if selected_type === AvailableUploadTypes.Image}
-			<div class="m-auto w-full max-w-3xl" transition:fade={{ duration: 100 }}>
-				<div>
-					<SvelteDashboard {uppy} props={dashboard_options} />
-				</div>
-			</div>
-		{:else if selected_type === AvailableUploadTypes.Video}
-			<div
-				class="border-border bg-card m-auto w-full max-w-lg rounded-xl border p-6 shadow-xl"
-				transition:fade={{ duration: 100 }}
-			>
-				<h1 class="text-3xl text-center mb-4">{$t('uploader.upload_a_video')}</h1>
-				{#if video_popup}
-					<p class="text-center">
-						{$t('uploader.upload_video_popup_notice')}
-					</p>
-				{:else}
-					<BrownButton onclick={upload_video} type="button"
-						>{$t('uploader.upload_video')}</BrownButton
-					>
 				{/if}
 			</div>
+		{:else if selected_type === AvailableUploadTypes.Image}
+			<SvelteDashboard {uppy} props={{ ...dashboard_options, theme: uppy_theme }} />
+		{:else if selected_type === AvailableUploadTypes.Video}
+			{#if video_popup}
+				<p>{$t('uploader.upload_video_popup_notice')}</p>
+			{:else}
+				<BrownButton onclick={upload_video} type="button"
+					>{$t('uploader.upload_video')}</BrownButton
+				>
+			{/if}
 		{:else if selected_type === AvailableUploadTypes.Library}
-			<div>
-				<Library bind:data {selected_question} bind:modalOpen />
-			</div>
+			<Library bind:data {selected_question} bind:modalOpen />
 		{:else if selected_type === AvailableUploadTypes.Pixabay}
-			<div>
-				<Pixabay bind:data {selected_question} bind:modalOpen />
-			</div>
+			<Pixabay bind:data {selected_question} bind:modalOpen />
 		{/if}
-	</div>
-{/if}
+	</Dialog.Content>
+</Dialog.Root>
 <!-- Was a hand-rolled button: label set in italic for no reason, no gap between
      that label and its icon so the two collided, pt-10 of hardcoded dead space
      above it, an arbitrary w-1/2, a raw Heroicon path, and gray-500/gray-300
@@ -270,6 +344,7 @@ SPDX-License-Identifier: MPL-2.0
 		variant="outline"
 		class="w-full gap-2"
 		onclick={() => {
+			uppy_theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 			modalOpen = true;
 			// Image is the only enabled type at every call site today (video/library/
 			// Pixabay are hidden, not deleted, per CLAUDE.md's feature-triage rule) --
@@ -288,10 +363,31 @@ SPDX-License-Identifier: MPL-2.0
 	/* Uppy ships a light-only palette and draws its own chrome, so inside our modal
 	   its close control measured 1.09:1 and its footer text 2.79:1 -- both well under
 	   AA. Point its variables at the theme instead of letting it choose. */
-	:global(.uppy-Dashboard-inner),
-	:global(.uppy-Dashboard-AddFiles) {
+	/* Prefixed with .uppy-Root to match the weight of Uppy's [data-uppy-theme=dark]
+	   rules, which would otherwise win in dark mode. */
+	:global(.uppy-Root .uppy-Dashboard-inner),
+	:global(.uppy-Root .uppy-Dashboard-AddFiles) {
 		background: var(--card);
 		border-color: var(--border);
+	}
+
+	/* Its upload button was Uppy's green and its links Uppy's blue: two accents the
+	   app does not have. Zinc plus --primary, like every other control. */
+	:global(.uppy-Root .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload) {
+		background-color: var(--primary);
+		color: var(--primary-foreground);
+		border-radius: var(--radius-md);
+		font-weight: 500;
+	}
+
+	:global(.uppy-Root .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload:hover) {
+		background-color: color-mix(in oklch, var(--primary) 85%, var(--background));
+	}
+
+	:global(.uppy-Root .uppy-DashboardContent-back),
+	:global(.uppy-Root .uppy-DashboardContent-save),
+	:global(.uppy-Root .uppy-DashboardContent-addMore) {
+		color: var(--foreground);
 	}
 
 	:global(.uppy-Dashboard-close) {
@@ -304,9 +400,25 @@ SPDX-License-Identifier: MPL-2.0
 		color: var(--foreground);
 	}
 
-	/* Uppy's own branding link, at 3.07:1 against AA's 4.5 and not ours to show.
-	   ckeditor's equivalent is hidden the same way. */
-	:global(.uppy-Dashboard-poweredBy) {
-		display: none;
+	:global(.uppy-Root) {
+		font-family: inherit;
+	}
+
+	/* Recolored to the theme, "browse files" no longer looked like a link at all -- and
+	   on a phone it is the only thing in the box that does anything. */
+	:global(.uppy-Dashboard-browse) {
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	:global(.uppy-Dashboard-browse:hover),
+	:global(.uppy-Dashboard-browse:focus) {
+		border-bottom: none;
+	}
+
+	:global(.uppy-Dashboard-browse:focus-visible) {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
 	}
 </style>

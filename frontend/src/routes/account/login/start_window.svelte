@@ -13,10 +13,24 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import { page } from '$app/state';
+	import { registration_disabled } from '$lib/config';
+	import { safeReturnTo } from '$lib/return_to';
 
 	let { session_data = $bindable({}), step = $bindable(), identifier = $bindable('') } = $props();
 
 	const { t } = getLocalization();
+
+	// This is now the only way to registration: the navbar offers Log in alone. So the
+	// link carries returnTo on (the register page hands it back to its own Log in link)
+	// and honors registration_disabled, which the navbar used to do for it.
+	const return_to = $derived(safeReturnTo(page.url.searchParams.get('returnTo'), ''));
+	const register_href = $derived(
+		return_to
+			? `/account/register?returnTo=${encodeURIComponent(return_to)}`
+			: '/account/register'
+	);
+
 	let email = $state('');
 	let emailEmpty = $derived(email === '');
 	let isSubmitting = $state(false);
@@ -41,26 +55,20 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
+<!-- The heading says what the page is for, as reset-password's always did. It read
+     "frogQuiz", which the navbar already says, and was a <div>, so the page had no h1. -->
 <Card.Header class="gap-1 text-center">
-	<Card.Title class="text-3xl font-bold tracking-tight">frogQuiz</Card.Title>
-	<Card.Description class="grid gap-1">
-		<span class="text-foreground text-lg font-medium">{$t('login_page.welcome_back')}</span>
-		<span>{$t('login_page.login_or_create_account')}</span>
-	</Card.Description>
+	<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+		{$t('words.login')}
+	</h1>
+	<Card.Description>{$t('login_page.welcome_back')}</Card.Description>
 </Card.Header>
 
 <Card.Content>
 	<form onsubmit={start_login} class="grid gap-4">
 		<div class="grid gap-2">
 			<Label for="email">{$t('login_page.email_or_username')}</Label>
-			<Input
-				id="email"
-				bind:value={email}
-				name="email"
-				type="text"
-				placeholder={$t('login_page.email_or_username')}
-				autocomplete="email"
-			/>
+			<Input id="email" bind:value={email} name="email" type="text" autocomplete="email" />
 		</div>
 
 		<div class="flex items-center justify-between gap-4">
@@ -85,12 +93,14 @@ SPDX-License-Identifier: MPL-2.0
 	</form>
 </Card.Content>
 
-<Card.Footer class="bg-muted/50 justify-center gap-1 border-t py-4 text-sm">
-	<span class="text-muted-foreground">{$t('login_page.already_have_account')}</span>
-	<a
-		href="/account/register"
-		class="text-primary font-semibold underline-offset-4 hover:underline"
-	>
-		{$t('words.register')}
-	</a>
-</Card.Footer>
+{#if !registration_disabled}
+	<Card.Footer class="bg-muted/50 justify-center gap-1 border-t py-4 text-sm">
+		<span class="text-muted-foreground">{$t('login_page.already_have_account')}</span>
+		<a
+			href={register_href}
+			class="text-primary font-semibold underline-offset-4 hover:underline"
+		>
+			{$t('words.register')}
+		</a>
+	</Card.Footer>
+{/if}

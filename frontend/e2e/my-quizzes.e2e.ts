@@ -42,7 +42,8 @@ test('signed out: the navbar marks My Quizzes, and Create needs no account', asy
 	);
 	await expect(page.getByText(/linked to this browser/)).toBeVisible();
 
-	await page.getByRole('link', { name: 'Create a new quiz' }).first().click();
+	// The page's own button, not the navbar's: both read "Create a quiz" now.
+	await page.getByRole('main').getByRole('link', { name: 'Create a quiz' }).first().click();
 	await expect(page).toHaveURL(/\/create$/);
 });
 
@@ -61,6 +62,11 @@ test('signed out: a browser quiz is listed with its expiry and can be deleted', 
 	await expectNoHorizontalOverflow(page);
 
 	await row.getByRole('button', { name: 'Delete' }).click();
+	// In a list, the confirmation has to say which quiz: it used to ask "Delete this
+	// quiz?" and then "Delete this quiz permanently?".
+	await expect(page.getByRole('alertdialog')).toContainText(
+		`"${title}" will be deleted for good.`
+	);
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
 	await expect(row).toHaveCount(0);
 	const gone = await request.get(`/api/v1/quiz/get/public/${saved.body.id}`);
@@ -86,5 +92,28 @@ test('signed in: browser quizzes sit under the account list and Claim moves them
 	await section.getByRole('button', { name: 'Claim' }).click();
 	await expect(user.page.getByRole('region', { name: 'On this browser' })).toHaveCount(0);
 	await expect(user.page.getByRole('link', { name: loose })).toBeVisible();
+	await user.context.close();
+});
+
+test('counts and credits read as sentences, and the empty list promises nothing hidden', async ({
+	browser,
+	request
+}) => {
+	const user = await signedInContext(browser, request);
+	// Import is hidden (MVP.md D6), but the empty list said "or import a quiz".
+	await user.page.goto('/my-quizzes');
+	await expect(user.page.getByText('No quizzes yet. Create one to get going.')).toBeVisible();
+
+	const title = `Counted ${Date.now()}`;
+	const saved = await saveQuiz(user.context.request, quiz(title));
+	await user.page.goto('/my-quizzes');
+	// "1 Question" / "3 Questions": a label capitalized mid-sentence.
+	await expect(user.page.getByText('1 question', { exact: true })).toBeVisible();
+	await user.page.goto(`/view/${saved.body.id}`);
+	await expect(user.page.getByText('1 question', { exact: true })).toBeVisible();
+	// Discover credits "Made by name"; this page said "Made by @name".
+	await expect(
+		user.page.getByText(`Made by ${user.user.username}`, { exact: true })
+	).toBeVisible();
 	await user.context.close();
 });

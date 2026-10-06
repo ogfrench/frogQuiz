@@ -14,7 +14,7 @@
  * ΔE 8.6. This set measures 13.2 at worst (sky against violet) and 25.2 at
  * best, and every tile clears AA for its ink.
  *
- * What this palette does NOT do is survive colour-vision deficiency on its own,
+ * What this palette does NOT do is survive color-vision deficiency on its own,
  * and an earlier version of this comment claimed otherwise. Simulated, the
  * distances collapse: under deuteranopia coral and green differ by 4 of 255,
  * and sky and violet by 9. Four hues at one lightness cannot be separated by a
@@ -22,13 +22,21 @@
  * would mean spreading them across lightness instead, which is a different
  * palette from this one.
  *
- * That is survivable only because colour is never the sole channel here. Every
+ * That is survivable only because color is never the sole channel here. Every
  * tile also carries a distinct shape (triangle, diamond, circle, square) in the
  * same position on the host screen and the player's phone, and the host screen
- * carries the answer text as well. WCAG 1.4.1 asks that colour not be the only
+ * carries the answer text as well. WCAG 1.4.1 asks that color not be the only
  * visual means of conveying information, and it is not. If the shapes are ever
  * removed, this palette stops being accessible and has to be redesigned around
  * lightness. See answer_colors.test.ts, which pins both halves of that.
+ *
+ * The palette is the only source of a choice tile's color, by slot. An answer's stored
+ * `color` field is deliberately not read for ABCD, check or voting tiles: the editor
+ * offers no picker for them, so a stored value only ever came from upstream ClassQuiz
+ * (its brown and green defaults are still on quizzes made there) or from an API client,
+ * and honoring it turned tiles saturated or muddy against everything above. Always go
+ * through answerColor(), which also wraps: a question can have ten answers and indexing
+ * the four-color array directly left answers five to ten uncolored.
  *
  * The same four values are used in both themes on purpose. A player learns
  * "I'm picking the coral one"; that identity must not shift when the host's
@@ -40,5 +48,5 @@ export const ANSWER_COLORS = ['#f98e8a', '#46bff4', '#72c882', '#b3a1fd'] as con
 /** Ink for text and shapes sitting on an answer tile. */
 export const ANSWER_FOREGROUND = '#141414';
 
-/** Colour for answer slot `i`, wrapping if a question somehow has more than four. */
+/** Color for answer slot `i`, wrapping if a question somehow has more than four. */
 export const answerColor = (i: number): string => ANSWER_COLORS[i % ANSWER_COLORS.length];

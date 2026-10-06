@@ -23,13 +23,15 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { open = $bindable(false), id }: Props = $props();
 	let popover_open = $state(false);
-	const load_shares = async (): Promise<{
-		id: string;
-		name?: string;
-		expire_in?: number;
-		quiztivity: { id: string };
-		user: { id: string };
-	}> => {
+	const load_shares = async (): Promise<
+		{
+			id: string;
+			name?: string;
+			expire_in?: number;
+			quiztivity: { id: string };
+			user: { id: string };
+		}[]
+	> => {
 		const res = await fetch(`/api/v1/quiztivity/${id}/shares`);
 		return await res.json();
 	};
@@ -95,7 +97,9 @@ SPDX-License-Identifier: MPL-2.0
 				quiztivity: id,
 				expire_in: never_expires_checked
 					? undefined
-					: Math.floor(Math.abs(new Date() - new Date(selected_date)) / 1000 / 60)
+					: Math.floor(
+							Math.abs(Date.now() - new Date(selected_date).getTime()) / 1000 / 60
+						)
 			})
 		});
 		loaded_shares = load_shares();

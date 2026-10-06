@@ -72,9 +72,12 @@ SPDX-License-Identifier: MPL-2.0
 
 	const save_avatar = async () => {
 		save_finished = false;
-		const res = await fetch(`/api/v1/avatar/save?${new URLSearchParams(data).toString()}`, {
-			method: 'POST'
-		});
+		const res = await fetch(
+			`/api/v1/avatar/save?${new URLSearchParams(Object.entries(data).map(([k, v]) => [k, String(v)])).toString()}`,
+			{
+				method: 'POST'
+			}
+		);
 		if (res.ok) {
 			save_finished = true;
 		}
@@ -114,8 +117,8 @@ SPDX-License-Identifier: MPL-2.0
 	<!-- A 12-step wizard with no progress indicator leaves you counting in your head. -->
 	<div class="bg-muted mb-6 h-1.5 overflow-hidden rounded-full">
 		<div
-			class="bg-primary h-full rounded-full transition-[width] duration-300"
-			style="width: {((index + 1) / data_keys.length) * 100}%"
+			class="bg-primary h-full w-full origin-left rounded-full transition-transform duration-300"
+			style="transform: scaleX({(index + 1) / data_keys.length})"
 		></div>
 	</div>
 

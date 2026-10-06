@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { socket } from '$lib/socket';
 	import JoinGame from '$lib/play/join.svelte';
-	import type { Answer, Question as QuestionType } from '$lib/quiz_types';
+	import type { Question as QuestionType } from '$lib/quiz_types';
 	import ShowTitle from '$lib/play/title.svelte';
 	import Question from '$lib/play/question.svelte';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
@@ -21,6 +21,8 @@ SPDX-License-Identifier: MPL-2.0
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import House from '@lucide/svelte/icons/house';
 	import LogOut from '@lucide/svelte/icons/log-out';
+	import { onMount } from 'svelte';
+	import { totalsFromResults } from '$lib/play/admin/totals';
 	const { t } = getLocalization();
 
 	interface Props {
@@ -49,8 +51,20 @@ SPDX-License-Identifier: MPL-2.0
 	let question_index = $state('');
 	let unique = $state({});
 	navbarVisible.visible = false;
-	let answer_results: Array<Answer> = $state();
-	let gameData = $state();
+	// Every player's answer to the question just closed, as the server sends it.
+	let answer_results: Array<{
+		username: string;
+		answer: string;
+		right: boolean;
+		time_taken: number;
+		score: number;
+	}> = $state();
+	let gameData = $state<{
+		title: string;
+		description: string;
+		cover_image?: string;
+		background_color?: string;
+	}>();
 	let solution: QuestionType = $state();
 	let username = $state('');
 	let scores = $state({});
@@ -58,16 +72,45 @@ SPDX-License-Identifier: MPL-2.0
 		started: false
 	});
 
-	let question: Question = $state();
+	let question: QuestionType = $state();
 
 	// Why the player is back on the join screen, if they were sent there.
 	let join_error = $state('');
-	// The host cancelled the game from its lobby.
+	// The host canceled the game from its lobby.
 	let game_ended = $state(false);
+	// The host's connection dropped and has not come back (E22 in docs/edge-cases-2026-10.md).
+	let host_gone = $state(false);
+
+	// Which game this tab is in, for a rejoin after a reload. Per tab first: two players in one
+	// browser (two tabs) shared the cookie, so a reload in one took over the other's player
+	// (E24). The cookie is the fallback that lets a new tab rejoin after the old one closed,
+	// and only then: a tab in a game says so every few seconds, and a new tab that hears it
+	// leaves that player alone instead of taking them over.
+	const JOINED = 'joined_game';
+	const ALIVE = 'joined_game_alive';
+	const ALIVE_EVERY_MS = 3000;
+	let alive_timer: ReturnType<typeof setInterval> | undefined;
+	const sayAlive = () => localStorage.setItem(ALIVE, String(Date.now()));
+	const stopAlive = () => {
+		clearInterval(alive_timer);
+		alive_timer = undefined;
+		localStorage.removeItem(ALIVE);
+	};
+	const readJoined = () => {
+		const own = sessionStorage.getItem(JOINED);
+		if (own) return own;
+		const heard = Number(localStorage.getItem(ALIVE) ?? 0);
+		return Date.now() - heard > ALIVE_EVERY_MS * 3 ? Cookies.get(JOINED) : undefined;
+	};
+	const forgetJoined = () => {
+		stopAlive();
+		sessionStorage.removeItem(JOINED);
+		Cookies.remove(JOINED);
+	};
 
 	// Back to an empty join screen without a reload, so a reason can be shown there.
 	const reset_to_join = (reason = '') => {
-		Cookies.remove('joined_game');
+		forgetJoined();
 		gameData = undefined;
 		gameMeta.started = false;
 		question_index = '';
@@ -98,17 +141,33 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 
+	// The socket is a module and outlives this page, because the app navigates without
+	// unloading. A back swipe mid-game left the player connected and counted with no screen
+	// to answer on, and coming forward showed an empty join form with their own nickname
+	// taken (E6 in docs/edge-cases-2026-10.md). Leaving now drops the connection, as
+	// closing the tab does; coming back connects again and the handler below rejoins.
+	// The listeners below are registered when the page is created and go with it: left on
+	// the socket, coming back stacked a second set on top of the first.
+	onMount(() => {
+		if (!socket.connected) socket.connect();
+		return () => {
+			if (alive_timer) stopAlive();
+			socket.off();
+			socket.disconnect();
+		};
+	});
+
 	socket.on('time_sync', (data) => {
 		socket.emit('echo_time_sync', data);
 	});
 
 	socket.on('connect', async () => {
 		console.log('Connected!');
-		const cookie_data = Cookies.get('joined_game');
-		if (!cookie_data) {
+		const joined_data = readJoined();
+		if (!joined_data) {
 			return;
 		}
-		const data = JSON.parse(cookie_data);
+		const data = JSON.parse(joined_data);
 		rejoining = data;
 		socket.emit('rejoin_game', {
 			old_sid: data.sid,
@@ -123,14 +182,20 @@ SPDX-License-Identifier: MPL-2.0
 	// js-cookie's `expires` is in days; this was 3600, about ten years. A game lives
 	// in Redis for five hours, so there is nothing to rejoin after that.
 	const JOINED_GAME_COOKIE_DAYS = 5 / 24;
-	const rememberJoinedGame = () =>
-		Cookies.set('joined_game', JSON.stringify({ sid: socket.id, username, game_pin }), {
-			expires: JOINED_GAME_COOKIE_DAYS
-		});
+	const rememberJoinedGame = () => {
+		const joined_data = JSON.stringify({ sid: socket.id, username, game_pin });
+		sessionStorage.setItem(JOINED, joined_data);
+		Cookies.set(JOINED, joined_data, { expires: JOINED_GAME_COOKIE_DAYS });
+		sayAlive();
+		alive_timer ??= setInterval(sayAlive, ALIVE_EVERY_MS);
+	};
 
 	// Socket-events
 	socket.on('joined_game', (data) => {
 		gameData = data;
+		// A late joiner arrives in a game that has started; the question that is up, if
+		// any, follows straight after.
+		if (data.started) gameMeta.started = true;
 		rememberJoinedGame();
 	});
 	socket.on('rejoined_game', (data) => {
@@ -151,9 +216,8 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	socket.on('game_not_found', () => {
-		const cookie_data = Cookies.get('joined_game');
-		if (cookie_data) {
-			Cookies.remove('joined_game');
+		if (readJoined()) {
+			forgetJoined();
 			window.location.reload();
 			return;
 		}
@@ -182,7 +246,7 @@ SPDX-License-Identifier: MPL-2.0
 		reset_to_join($t('play_page.kicked'));
 	});
 	socket.on('game_ended', () => {
-		Cookies.remove('joined_game');
+		forgetJoined();
 		game_ended = true;
 	});
 	socket.on('left_game', () => {
@@ -190,7 +254,17 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	socket.on('final_results', (data) => {
 		final_results = data;
-		Cookies.remove('joined_game');
+		// The podium reads `scores`, which this page added up question by question, so a phone
+		// that reloaded mid-game (or slept through the end) showed totals from after the
+		// reload only. The server's record has every answer (E18).
+		scores = totalsFromResults(data, Object.keys(scores));
+		forgetJoined();
+	});
+	socket.on('host_left', () => {
+		host_gone = true;
+	});
+	socket.on('host_back', () => {
+		host_gone = false;
 	});
 
 	socket.on('solutions', (data) => {
@@ -210,7 +284,7 @@ SPDX-License-Identifier: MPL-2.0
 	// The rest
 </script>
 
-<svelte:window onbeforeunload={confirmUnload} />
+<svelte:window onbeforeunload={confirmUnload} onpagehide={() => alive_timer && stopAlive()} />
 <svelte:head>
 	<title>frogQuiz - Play</title>
 </svelte:head>
@@ -241,6 +315,14 @@ SPDX-License-Identifier: MPL-2.0
 				{$t('play_page.leave_game')}
 			</ConfirmAction>
 		</div>
+	{/if}
+	{#if host_gone && joined && !show_final && !game_ended}
+		<p
+			role="status"
+			class="border-border bg-card text-foreground fixed inset-x-4 bottom-4 z-30 mx-auto max-w-sm rounded-lg border p-3 text-center text-sm shadow-sm"
+		>
+			{$t('play_page.host_left')}
+		</p>
 	{/if}
 	<div>
 		{#if game_ended}
@@ -276,7 +358,7 @@ SPDX-License-Identifier: MPL-2.0
 			{#key unique}
 				<!-- This wrapper forced black text on the whole question screen, which made the
 				     post-answer and time-up states unreadable in dark mode. The answer tiles set
-				     their own ink inline from the tile colour, so they never needed it. -->
+				     their own ink inline from the tile color, so they never needed it. -->
 				<div>
 					<Question bind:game_mode bind:question {question_index} {solution} />
 				</div>
@@ -287,7 +369,7 @@ SPDX-License-Identifier: MPL-2.0
 			     empty. fq-stage (and not a second one nested inside: the wrapper above
 			     is a plain min-h-dvh block, exactly as it is for the join and title
 			     screens which already render their own stage here) gives them the same
-			     vertical rhythm and centring as every other game surface. Its
+			     vertical rhythm and centering as every other game surface. Its
 			     section gap replaces the heading's own mb-8. -->
 			{#if answer_results === null}
 				<div class="fq-stage">
@@ -295,7 +377,7 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			{:else}
 				<div class="fq-stage">
-					<h2 class="text-center text-3xl">{$t('words.result', { count: 2 })}</h2>
+					<h1 class="text-center text-3xl">{$t('words.result', { count: 2 })}</h1>
 					{#key unique}
 						<KahootResults {username} question_results={answer_results} bind:scores />
 					{/key}

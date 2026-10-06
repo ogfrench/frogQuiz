@@ -9,12 +9,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { goto } from '$app/navigation';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { getLocalization } from '$lib/i18n';
-	import Footer from '$lib/footer.svelte';
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
-	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import { page } from '$app/state';
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
 
@@ -31,12 +29,14 @@ SPDX-License-Identifier: MPL-2.0
 	const share_url = $derived(`${origin}/`);
 
 	let pin = $state('');
-	let ready = $derived(pin.trim().length === 6);
+	// Digits only: no maxlength, which cut "123 456" pasted from a chat to "123 45" (E10).
+	const digits = $derived(pin.replace(/\D/g, '').slice(0, 6));
+	let ready = $derived(digits.length === 6);
 
 	const join = (e: Event) => {
 		e.preventDefault();
 		if (!ready) return;
-		goto(`/play?pin=${encodeURIComponent(pin.trim())}`);
+		goto(`/play?pin=${digits}`);
 	};
 </script>
 
@@ -61,8 +61,9 @@ SPDX-License-Identifier: MPL-2.0
 	<meta name="twitter:image" content={share_image} />
 </svelte:head>
 
-<div class="flex min-h-screen flex-col">
-	<main class="flex flex-1 items-center justify-center px-6 py-24">
+<!-- The layout owns <main> and the footer now; this fills the screen under the navbar. -->
+<div class="flex min-h-[calc(100dvh-4rem)] flex-col">
+	<div class="flex flex-1 items-center justify-center px-6 py-24">
 		<div class="w-full max-w-md">
 			<div class="flex flex-col items-center text-center">
 				<Wordmark size={56} showText={false} />
@@ -71,7 +72,7 @@ SPDX-License-Identifier: MPL-2.0
 
 			<form
 				onsubmit={join}
-				class="border-border/70 bg-card mt-12 rounded-2xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
+				class="border-border/70 bg-card mt-12 rounded-xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
 			>
 				<Label for="game-pin" class="text-sm font-medium">{$t('words.game_pin')}</Label>
 				<p class="text-muted-foreground mt-1.5 text-sm">
@@ -81,45 +82,45 @@ SPDX-License-Identifier: MPL-2.0
 					<Input
 						id="game-pin"
 						bind:value={pin}
-						maxlength={6}
 						inputmode="numeric"
 						autocomplete="off"
-						placeholder="000000"
 						class="h-11 text-center font-mono text-lg tracking-[0.35em]"
 					/>
-					<Button type="submit" size="lg" disabled={!ready} class="h-11 px-5">
+					<Button
+						type="submit"
+						size="lg"
+						disabled={!ready}
+						class="h-11 px-5 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
+					>
 						{$t('words.join')}
 					</Button>
 				</div>
 			</form>
 
-			<div class="text-muted-foreground mt-8 text-center text-sm">
-				<span>{$t('index_page.hosting')}</span>
-				<a
-					href="/my-quizzes"
-					class="text-foreground ml-1 inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline"
-				>
-					{$t('index_page.host_cta')}
-					<ArrowRight class="size-3.5" aria-hidden="true" />
-				</a>
+			<!-- Hosting is the other half of the product, not a footnote: these were three
+			     muted text links under the PIN box, which put making a quiz below logging in
+			     in the hierarchy even though no account is needed for it. Two secondary
+			     buttons instead, the same weight as Log in in the navbar. -->
+			<div class="mt-7 flex items-center gap-3" aria-hidden="true">
+				<span class="bg-border h-px flex-1"></span>
+				<span class="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+					{$t('index_page.hosting')}
+				</span>
+				<span class="bg-border h-px flex-1"></span>
 			</div>
 
-			<div class="mt-2 flex flex-col items-center gap-1 text-center text-sm">
-				<a
-					href="/create"
-					class="text-muted-foreground inline-flex items-center gap-1 underline-offset-4 hover:underline"
-				>
-					{$t('index_page.create_anon')}
-					<ArrowRight class="size-3.5" aria-hidden="true" />
-				</a>
-				<a
-					href="/my-quizzes"
-					class="text-muted-foreground underline-offset-4 hover:underline"
-				>
-					{$t('device_quizzes.title')}
-				</a>
+			<div class="mt-5 grid gap-2 sm:grid-cols-2">
+				<Button href="/create" variant="outline" size="lg" class="h-11">
+					{$t('index_page.create_cta')}
+				</Button>
+				<Button href="/my-quizzes" variant="outline" size="lg" class="h-11">
+					{$t('index_page.host_cta')}
+				</Button>
 			</div>
+
+			<p class="text-muted-foreground mt-4 text-center text-xs text-balance">
+				{$t('index_page.create_hint')}
+			</p>
 		</div>
-	</main>
-	<Footer />
+	</div>
 </div>

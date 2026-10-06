@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -32,15 +33,15 @@ This should be okay, right?
 	}[] = [
 		{
 			id: 0,
-			title: 'Close CommandPalette',
-			description: 'Closes CommandPalette',
+			title: 'Close',
+			description: 'Close this palette',
 			command: 'close',
 			action: () => close_cp(undefined)
 		},
 		{
 			id: 1,
-			title: 'Create Quiz',
-			description: 'Opens editor to create a new quiz',
+			title: 'Create a quiz',
+			description: 'Open the editor on a new quiz',
 			command: 'newquiz',
 			args: ['title'],
 			action: (args) => window.location.assign(`/create?title=${args.join(' ')}`)
@@ -49,15 +50,15 @@ This should be okay, right?
 		// id 4: Results (/results) is hidden for the MVP (MVP.md D4).
 		{
 			id: 5,
-			title: 'Explore Quizzes',
-			description: 'Opens the Explore-page',
+			title: 'Discover',
+			description: 'Browse and search quizzes',
 			command: 'explore',
 			action: () => window.location.assign('/explore')
 		},
 		{
 			id: 6,
 			title: 'My Quizzes',
-			description: 'Go to My Quizzes',
+			description: 'Your quizzes, and the ones made on this browser',
 			command: 'quizzes',
 			action: () => window.location.assign('/my-quizzes')
 		},
@@ -65,7 +66,7 @@ This should be okay, right?
 		{
 			id: 8,
 			title: 'My Account',
-			description: 'Opens My Account',
+			description: 'Your account, sessions and Log out',
 			command: 'settings',
 			action: () => window.location.assign('/account/settings')
 		}
@@ -77,7 +78,12 @@ This should be okay, right?
 		open = !open;
 	};
 
+	// Every binding below is on `window` for the life of the app, so each one has to
+	// stand down while the palette is closed. They did not: Tab and the arrow keys called
+	// preventDefault on every page, so focus could never leave <body> and the arrows
+	// could not scroll, and Enter ran whichever action had last been selected.
 	const close_cp = (e: KeyboardEvent | undefined) => {
+		if (!open) return;
 		if (e) {
 			e.preventDefault();
 		}
@@ -129,8 +135,13 @@ This should be okay, right?
 
 		visible_items = [];
 
+		// MiniSearch returns the `id` each action was indexed under, not its position in
+		// this array -- and the ids are 0, 1, 5, 6, 8 since four actions were removed. So
+		// `actions[id]` was undefined for every search hit: the list came back empty and
+		// rendering it threw on `.args`. Look the action up by its id.
 		for (const quiz_data of res) {
-			visible_items.push(actions[quiz_data.id]);
+			const action = actions.find((a) => a.id === quiz_data.id);
+			if (action) visible_items.push(action);
 		}
 		visible_items = visible_items;
 		if (visible_items.length === 1) {
@@ -142,11 +153,13 @@ This should be okay, right?
 	};
 
 	const autocomplete_on_tab = (e: KeyboardEvent) => {
+		if (!open) return;
 		e.preventDefault();
 		input = bg_text;
 	};
 
 	const on_arrow_down = (e: KeyboardEvent) => {
+		if (!open) return;
 		e.preventDefault();
 		if (visible_items.length < 1) {
 			return;
@@ -157,6 +170,7 @@ This should be okay, right?
 		selected += 1;
 	};
 	const on_arrow_up = (e: KeyboardEvent) => {
+		if (!open) return;
 		e.preventDefault();
 		if (visible_items.length < 1) {
 			return;
@@ -168,7 +182,7 @@ This should be okay, right?
 	};
 
 	const on_enter = (_e: KeyboardEvent) => {
-		if (selected === null) {
+		if (!open || selected === null) {
 			return;
 		}
 		execute_action();
@@ -199,7 +213,7 @@ This should be okay, right?
 
 {#if open}
 	<div
-		class="fixed top-0 left-0 w-screen h-screen flex bg-black/50 z-50"
+		class="fixed inset-0 z-50 flex h-dvh w-full bg-black/50"
 		onclick={close_on_outside}
 		onkeyup={close_on_outside}
 		role="button"
@@ -207,16 +221,18 @@ This should be okay, right?
 		tabindex="0"
 		transition:fade|global={{ duration: 60 }}
 	>
-		<div class="m-auto w-1/3 h-2/3 rounded-sm bg-black flex flex-col">
-			<div class="grid grid-cols-1 grid-rows-1 border-b border-b-white">
+		<div
+			class="border-border bg-popover text-popover-foreground m-auto flex max-h-[60vh] w-[min(36rem,calc(100%-2rem))] flex-col overflow-hidden rounded-xl border shadow-xl"
+		>
+			<div class="border-border grid grid-cols-1 grid-rows-1 border-b">
 				<p
-					class="col-start-1 row-start-1 w-full p-4 outline-hidden bg-gray-700 rounded-t text-gray-400"
+					class="text-muted-foreground col-start-1 row-start-1 w-full p-4 outline-hidden"
 				>
 					{bg_text}
 				</p>
 				<input
 					type="text"
-					class="col-start-1 row-start-1 w-full p-4 outline-hidden bg-gray-700 rounded-sm"
+					class="text-foreground col-start-1 row-start-1 w-full bg-transparent p-4 outline-hidden"
 					bind:value={input}
 					oninput={() => search(input)}
 					autofocus
@@ -226,9 +242,10 @@ This should be okay, right?
 				{#each visible_items as vi, i}
 					<div
 						transition:fade={{ duration: 60 }}
-						class="p-2 transition rounded-sm"
-						class:bg-[#B07156]={selected === i}
-						class:bg-gray-700={selected !== i}
+						class="rounded-md p-2 transition"
+						class:bg-accent={selected === i}
+						class:text-accent-foreground={selected === i}
+						class:bg-muted={selected !== i}
 						onmouseenter={() => (selected = i)}
 						onmousedown={execute_action}
 						tabindex="-2"
@@ -236,11 +253,11 @@ This should be okay, right?
 					>
 						<div class="flex">
 							<h3 class="text-lg my-auto">{vi.title}</h3>
-							<p class="font-mono my-auto ml-auto h-fit bg-black/50 rounded-sm p-0.5">
+							<p class="bg-background/60 my-auto ml-auto h-fit rounded-md p-0.5 font-mono">
 								/{vi.command}
 								{#if vi.args}
 									{#each vi.args as arg}
-										&lbrace;<span class="text-indigo-400">{arg}</span
+										&lbrace;<span class="text-muted-foreground">{arg}</span
 										>&rbrace;{/each}
 								{/if}
 							</p>

@@ -7,13 +7,50 @@
 # port it listens on, so it works from any shell, not just the one that started it.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-for port in 6380 7701 8010 3000; do
-  for pid in $(netstat -ano | awk -v p=":$port" '$2 ~ p"$" && $4 == "LISTENING" {print $5}' | sort -u); do
-    taskkill //F //T //PID "$pid" >/dev/null 2>&1 && echo "stopped :$port (pid $pid)"
-  done
-done
-PG_BIN="$(dirname "$(command -v pg_ctl 2>/dev/null || ls -d /c/Program\ Files/PostgreSQL/*/bin/pg_ctl.exe 2>/dev/null | tail -1)")"
+case "$(uname -s)" in MINGW* | MSYS* | CYGWIN*) OS=windows ;; *) OS=unix ;; esac
 DATA="${E2E_DATA:-$ROOT/e2e/.data}"
 case "$DATA" in /*|?:*) ;; *) DATA="$ROOT/$DATA" ;; esac
-"$PG_BIN/pg_ctl" -D "$DATA/pg" -m fast stop >/dev/null 2>&1 && echo "stopped Postgres"
+
+# The arq worker listens on no port; run.sh leaves its pid here. Stopped first, while
+# Redis is still up, rather than left to exit on a lost connection.
+if [ -f "$DATA/worker.pid" ]; then
+  pid="$(cat "$DATA/worker.pid")"
+  { [ "$OS" = windows ] && taskkill //F //T //PID "$pid" >/dev/null 2>&1 || kill "$pid" 2>/dev/null; } &&
+    echo "stopped the worker (pid $pid)"
+  rm -f "$DATA/worker.pid"
+fi
+
+# 2526 is the mail sink (e2e/mailsink.py, MAIL_PORT_LOCAL in run.sh). It was added to
+# run.sh on 2026-10-02 and not here, so a KEEP_UP stack left it listening and the next
+# run died on "port 2526 is already in use" before a single test ran. Keep the two lists
+# in step.
+for port in 6380 7701 8010 3000 2526; do
+  if [ "$OS" = windows ]; then
+    for pid in $(netstat -ano | awk -v p=":$port" '$2 ~ p"$" && $4 == "LISTENING" {print $5}' | sort -u); do
+      taskkill //F //T //PID "$pid" >/dev/null 2>&1 && echo "stopped :$port (pid $pid)"
+    done
+  else
+    # lsof is not everywhere; fuser comes with psmisc and ss with iproute2.
+    pids="$(lsof -ti tcp:"$port" 2>/dev/null || fuser "$port"/tcp 2>/dev/null || true)"
+    for pid in $pids; do kill "$pid" 2>/dev/null && echo "stopped :$port (pid $pid)"; done
+  fi
+done
+
+find_pg_bin() {
+  if command -v pg_ctl >/dev/null 2>&1; then dirname "$(command -v pg_ctl)"; return; fi
+  local c
+  for c in /c/Program\ Files/PostgreSQL/*/bin /usr/lib/postgresql/*/bin \
+           /usr/local/opt/postgresql*/bin /opt/homebrew/opt/postgresql*/bin /usr/pgsql-*/bin; do
+    [ -x "$c/pg_ctl" ] && { printf '%s' "$c"; return; }
+  done
+}
+PG_BIN="$(find_pg_bin || true)"
+# run.sh puts the cluster in the postgres user's home when it had to drop from root.
+PGDATA="$DATA/pg"
+[ -d "$PGDATA" ] || PGDATA="${E2E_PGDATA:-/var/lib/postgresql/frogquiz-e2e}"
+if [ "$OS" != windows ] && [ "$(id -u)" = 0 ] && id postgres >/dev/null 2>&1; then
+  su postgres -c "$PG_BIN/pg_ctl -D $PGDATA -m fast stop" >/dev/null 2>&1 && echo "stopped Postgres"
+else
+  "$PG_BIN/pg_ctl" -D "$PGDATA" -m fast stop >/dev/null 2>&1 && echo "stopped Postgres"
+fi
 exit 0

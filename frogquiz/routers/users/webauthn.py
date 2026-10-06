@@ -35,7 +35,7 @@ class RequirePasswordForAction(BaseModel):
 def webauthn_setup_enabled():
     """Adding a security key 404s unless ENABLE_WEBAUTHN is set (MVP.md D11).
 
-    Listing and deleting keys stay available, and login still honours a registered key,
+    Listing and deleting keys stay available, and login still honors a registered key,
     so nobody who added one before the cut is locked out. Same shape as TOTP in twofa.py.
     """
     if not settings.enable_webauthn:
