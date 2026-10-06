@@ -8,6 +8,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 - The sign-in email (`POST /api/v1/login/email`) is held for 60 seconds per address, and the code step of `/account/login` gains a "Send a new code" button that counts the minute down, the same button frogViz's gate has. Before, the only way to ask again was "Use a different address" and retyping the same one, and five quick asks spent the address's hour.
 - A sign-in email that fails to send releases its cooldown, so the "try again in a minute" it asks for is not refused.
+- "Send a new code" adds to the sign-in the page already holds instead of starting another, so the code in a slow first email, arriving after the resend, still works. Every code sent for one sign-in works (up to four), and they share one set of tries. A failed resend leaves the codes already sent working.
+- The confirmation resend checks the per-IP limit first again and bounds the address at 254 characters, so one client cannot mint cooldown keys of any size without meeting a limit.
 - The sign-in email and the confirmation email keep separate clocks.
 - The confirmation-email resend below only runs with `ENABLE_PASSWORD_LOGIN` on, since passwords are off on this branch; it is held the same way so the flag does not bring the old trap back.
 - Asking for another confirmation email is held for 60 seconds per address, on the server first: `POST /api/v1/users/resend-verification` answers 429 with the seconds left in `Retry-After`, before it touches either hourly budget.

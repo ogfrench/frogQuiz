@@ -351,7 +351,8 @@ async def forgotten_password(forgot_password: ForgotPassword, request: Request):
 
 
 class ResendVerification(BaseModel):
-    email: str
+    # The longest address SMTP allows. It becomes a Redis key, so it is bounded.
+    email: str = pydantic.Field(max_length=254)
 
 
 @router.post("/resend-verification")
@@ -363,11 +364,12 @@ async def resend_verification(body: ResendVerification, request: Request):
     returned 409 forever.
     """
     _passwords_on()
-    # Before the per-address bucket below, so an early ask is refused without spending it.
-    # Its Retry-After is how the page knows this was the short wait and not the hourly limit.
-    await enforce_resend_cooldown(body.email)
     # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
+    # First, so one client cannot mint cooldown keys without ever meeting a limit.
     await rate_limit(request, "resend_verification", limit=20, window_seconds=3600)
+    # Before the per-recipient bucket, so an early ask is refused without spending it. Its
+    # Retry-After is how the page knows this was the short wait and not the hourly limit.
+    await enforce_resend_cooldown(body.email)
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     await rate_limit_key(f"resend_verification_addr:{body.email.strip().lower()}", limit=3, window_seconds=3600)

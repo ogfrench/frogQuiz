@@ -269,6 +269,15 @@ def _safe_return_to(value: str | None) -> str | None:
 class EmailSignInInput(BaseModel):
     email: str
     return_to: str | None = None
+    # Set by "Send a new code": the challenge the page already holds. The new email's code
+    # is added to that sign-in instead of replacing it, so the code in a slow first email
+    # still works once it arrives.
+    challenge: str | None = None
+
+
+# How many codes one sign-in keeps: the first and a few resends. Each code's tries come out
+# of the same CODE_TRIES, so keeping more of them adds no guesses.
+CODES_PER_SIGN_IN = 4
 
 
 @router.post("/email")
@@ -290,19 +299,41 @@ async def email_sign_in(data: EmailSignInInput, request: Request):
     await rate_limit_key(f"login_email_addr:{email}", limit=5, window_seconds=3600)
 
     token = secrets.token_urlsafe(32)
-    challenge = secrets.token_urlsafe(16)
     code = f"{secrets.randbelow(1_000_000):06d}"
     # Only hashes are stored, so a read of Redis hands over no working link or code.
     link_key = f"login_link:{hash_session_key(token)}"
-    code_key = f"login_code:{challenge}"
     claim = {"email": email, "return_to": _safe_return_to(data.return_to)}
+
+    # A resend for a sign-in that is still live, for this same address, joins it: the same
+    # challenge, the new code's hash beside the earlier ones, and a fresh TTL. Anything
+    # else (no challenge, an expired one, another address's) starts a sign-in of its own.
+    challenge, codes, earlier = None, [], None
+    if data.challenge:
+        raw = await redis.get(f"login_code:{data.challenge}")
+        if raw is not None:
+            held = json.loads(raw)
+            if held.get("email") == email:
+                challenge, earlier = data.challenge, raw
+                claim = {"email": email, "return_to": held.get("return_to")}
+                codes = held.get("codes") or ([held["code"]] if "code" in held else [])
+    if challenge is None:
+        challenge = secrets.token_urlsafe(16)
+    code_key = f"login_code:{challenge}"
+    codes = [*codes, hash_session_key(code)][-CODES_PER_SIGN_IN:]
+
     await redis.set(link_key, json.dumps(claim), ex=SIGN_IN_TTL_SECONDS)
-    await redis.set(code_key, json.dumps({**claim, "code": hash_session_key(code)}), ex=SIGN_IN_TTL_SECONDS)
+    await redis.set(code_key, json.dumps({**claim, "codes": codes}), ex=SIGN_IN_TTL_SECONDS)
     try:
         await send_sign_in_email(email, f"{settings.root_address}/account/login?token={token}", code)
     except Exception:
         LOGGER.exception("Could not send a sign-in email")
-        await redis.delete(link_key, code_key)
+        await redis.delete(link_key)
+        # A failed resend puts the sign-in back as it was rather than ending it: the
+        # codes already sent still work, and only this one never went.
+        if earlier is not None:
+            await redis.set(code_key, earlier, ex=SIGN_IN_TTL_SECONDS)
+        else:
+            await redis.delete(code_key)
         # Nothing arrived, so there is nothing to wait for: the retry the message asks for
         # must not be refused by the cooldown this attempt started.
         await release_resend_cooldown(email, "sign_in")
@@ -339,7 +370,14 @@ async def email_verify(data: EmailVerifyInput, request: Request, response: Respo
         await rate_limit_key(
             f"login_code_addr:{claim['email']}", limit=CODE_TRIES_PER_ADDRESS_PER_DAY, window_seconds=86400
         )
-        if not hmac.compare_digest(hash_session_key(data.code.strip()), claim["code"]):
+        # Every code sent for this sign-in, newest last; "code" is the single-code form
+        # written before resends joined a sign-in. Compared in full, not stopping early.
+        typed = hash_session_key(data.code.strip())
+        sent = claim.get("codes") or [claim.get("code", "")]
+        matched = False
+        for hashed in sent:
+            matched |= hmac.compare_digest(typed, hashed)
+        if not matched:
             raise HTTPException(status_code=401, detail="Wrong code")
     else:
         raise HTTPException(status_code=400, detail="A token, or a challenge and a code")

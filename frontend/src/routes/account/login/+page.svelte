@@ -137,9 +137,12 @@ SPDX-License-Identifier: MPL-2.0
 		if (busy || cooldown.active) return;
 		busy = true;
 		error = '';
+		// With the challenge, the server adds the new code to this sign-in rather than
+		// starting another, so the code in the first email still works if it turns up late.
 		const res = await post('email', {
 			email: email.trim(),
-			return_to: page.url.searchParams.get('returnTo')
+			return_to: page.url.searchParams.get('returnTo'),
+			challenge
 		}).catch(() => null);
 		busy = false;
 		if (res?.ok) {
