@@ -1,7 +1,7 @@
 {
     "index_page": {
         "meta": {
-            "description": "The free Kahoot alternative. Host interactive quizzes right from your browser.",
+            "description": "Host a live quiz in your browser. Everyone joins from their phone with a game PIN.",
             "title": "Home"
         },
         "join_prompt": "Enter the 6-digit PIN from the host's screen.",

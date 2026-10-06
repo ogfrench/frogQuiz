@@ -4,6 +4,10 @@ SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
 SPDX-License-Identifier: MPL-2.0
 -->
 
+<svelte:head>
+	<title>frogQuiz - Controller</title>
+</svelte:head>
+
 <div>
 	<h1 class="text-center text-8xl marck-script mt-12">frogQuizController</h1>
 	<div>

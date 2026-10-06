@@ -19,6 +19,10 @@ SPDX-License-Identifier: MPL-2.0
 	let { data }: Props = $props();
 </script>
 
+<svelte:head>
+	<title>frogQuiz - Results</title>
+</svelte:head>
+
 <!-- The table used gray-300/gray-500 borders and had no scroll container, and the
      empty state was one centered sentence stating a fact with nothing to do about it.
      An empty state should say what would fill it and offer the way there. -->

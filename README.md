@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
     <h2 align='center'>frogQuiz</h2>
     <img src='logo.png' alt='frogQuiz Logo' height='100px' width='100px'>
     <p align='center'>
-        The free Kahoot alternative. Host interactive quizzes right from your browser.
+        Host a live quiz in your browser. Everyone joins from their phone with a game PIN.
         <br/>
         <a href='https://frogquiz.xyz/'><strong>Visit the website »</strong></a>
         <br />
