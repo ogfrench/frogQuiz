@@ -11,6 +11,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - A link to a quiz (`/view/<id>`) now previews with the quiz's own title, a line from its description and its cover image, or the site card when it has no cover. Before, only the home page had preview tags. The tags come from `src/lib/share_meta.ts`, with tests, and are rendered on the server, which is where a preview reads them.
 - Not changed: the home page's wording ("The free Kahoot alternative.") and its share image, which says the same. That is for the team to decide.
 
+### Sign-in code as copied from the email
+
+- A sign-in code now works however it is pasted: with a space, a non-breaking space, a hyphen or blanks in it, or with words around it. The server reads only the digits (`POST /api/v1/login/email/verify`), and the code box on `/account/login` cleans the paste to six digits with the same rule, now in `frontend/src/lib/sign_in_code.ts` with tests. frogQuiz's own email prints the code as six plain digits, so this is for a code copied from a mail client that groups it, and keeps both apps equally forgiving.
+
 ### Sign-in and confirmation email: a minute between asks, and a countdown
 
 - The "nothing yet?" line under the sign-in code step and the resend page no longer says to check junk. It points to the Capgemini Spam Quarantine (https://spam-quarantine.capgemini.com) to release the mail and add the sender to the Safelist, which is where this mail lands first.
