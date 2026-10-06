@@ -6,6 +6,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### After the merge
 
+- Ran the production clean slate on 6 Oct, with Gonçalo's agreement: pulled the VM's checkout (150 commits behind) and the merged backend image, took a Neon dump and an uploads tarball and copied both off the box, then emptied users, quizzes and storage items on Neon, the uploads folder, Redis and the search index. `DEPLOY.md` now carries the Neon commands and the stdin catch.
+
 - Rehearsed the production clean slate on the merged code: the compose stack with the published backend image, seeded, the `DEPLOY.md` block run as written, then checked (old session 401, old quizzes 404, non-team address 403, a new sign-in makes a fresh account). Recorded in `DEPLOY.md`.
 
 - Marked PR #23 as closed and merged through #26 in `HANDOVER.md` and `TODO.md`, so a reader no longer meets "ready to merge". What is still open there is not code: the production clean slate, the real-mail check, and Gonçalo's ticks on D16 and D18 to D21.

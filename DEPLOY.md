@@ -218,14 +218,29 @@ anyway. **It deletes Gonçalo's account and quizzes too, so agree it with him fi
 There is no way to bring a single quiz back except from the backup below: Excel and
 `.cqa` import are hidden (D6).
 
-On the VM, in the directory that holds `docker-compose.yml`. First check where Postgres
-lives, since issue #22 found the repo cannot say:
-`docker compose exec api printenv DB_URL | sed -E 's#//[^@]*@#//***@#'`. A host of
-`db:5432` means the `db` container, and the steps below work as written. A host ending
-`.neon.tech` means Neon: run steps 1 and 2 with `pg_dump "<that URI>"` and
-`psql "<that URI>" -c "..."` from any machine with the Postgres client instead of
-`docker compose exec db`, and do the same for the check at the end. Run `docker compose`
-with whatever `-f` files the VM already uses (#22: the command is not recorded either).
+On the VM, in the directory that holds `docker-compose.yml`. First `git pull --ff-only`:
+the checkout there was 150 commits behind on 6 Oct, and the compose file it ran was
+missing the sign-in settings. Then check where Postgres lives, since issue #22 found the
+repo cannot say: `docker compose exec api printenv DB_URL | sed -E 's#//[^@]*@#//***@#'`.
+A host of `db:5432` means the `db` container, and the steps below work as written.
+
+**Production is Neon** (found on 6 Oct, `COMPOSE_FILE=docker-compose.yml:docker-compose.neon.yml`
+in the VM's `.env`, so plain `docker compose` picks both files up). There is no `db`
+container and the VM has no Postgres client, so run the Postgres steps through a throwaway
+container, with a client at least as new as the server (Neon was on 18, so `postgres:18-alpine`;
+a 17 client refuses to dump it). `URL` is `DB_URL_OVERRIDE` from `.env`; never echo it.
+
+```bash
+URL=$(grep '^DB_URL_OVERRIDE=' .env | cut -d= -f2- | tr -d '"')
+docker run --rm postgres:18-alpine pg_dump "$URL" | gzip > ~/frogquiz-before-wipe-$(date +%F).sql.gz
+tar czf ~/frogquiz-uploads-before-wipe-$(date +%F).tgz uploads
+# copy both files off the VM now, before the TRUNCATE below
+docker run --rm postgres:18-alpine psql "$URL" -v ON_ERROR_STOP=1 -c "TRUNCATE users, quiz, storage_items CASCADE;"
+```
+
+Over `ssh host 'bash -s' < script`, give `docker compose exec -T` a `</dev/null`, or it
+swallows the rest of the script as its stdin. These two blocks stand in for steps 1 and 2
+below, tarball included, so do steps 3 to 5 as written after them.
 
 ```bash
 docker compose pull && docker compose up -d      # the sign-in change goes live first

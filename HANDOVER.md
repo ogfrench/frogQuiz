@@ -25,9 +25,9 @@ section names the doc that holds the detail. Three things in it need the two of 
   Discover and search for signed-in accounts only. Password login and registration are
   hidden behind `ENABLE_PASSWORD_LOGIN`, not removed. **Before deploying:** mail must
   work, since nobody can sign in without it. An account on any other domain could no
-  longer sign in, so François chose a clean slate: every account, quiz and upload goes
-  when this deploys, with a backup first. That includes Gonçalo's. The steps are in
-  `DEPLOY.md` ("Clean slate"), rehearsed on the local stack. The detail is in `docs/mvp-scope.md`
+  longer sign in, so François chose a clean slate: every account, quiz and upload went
+  on 6 Oct, with Gonçalo's agreement and a backup first (`TODO.md` has where it is). The
+  steps are in `DEPLOY.md` ("Clean slate"), Neon commands included. The detail is in `docs/mvp-scope.md`
   ("Sign-in"). D19 (late join with a lock) and D20 (Kahoot's score curve) came the same day
   and need Gonçalo's tick too.
 
