@@ -43,7 +43,7 @@ from webauthn.helpers.structs import (
 )
 
 from frogquiz.oauth.authenticate_user import log_user_in
-from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
+from frogquiz.helpers.ratelimit import enforce_resend_cooldown, rate_limit, rate_limit_key, release_resend_cooldown
 
 settings = settings()
 router = APIRouter()
@@ -283,6 +283,9 @@ async def email_sign_in(data: EmailSignInInput, request: Request):
         raise HTTPException(status_code=403, detail="That address is not on an allowed domain")
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
+    # A minute between emails to one address, before the hourly bucket below: three quick
+    # clicks while the first email is still in transit used to spend most of the hour.
+    await enforce_resend_cooldown(email, "sign_in")
     # Per recipient, so one inbox cannot be flooded from many source addresses.
     await rate_limit_key(f"login_email_addr:{email}", limit=5, window_seconds=3600)
 
@@ -300,6 +303,9 @@ async def email_sign_in(data: EmailSignInInput, request: Request):
     except Exception:
         LOGGER.exception("Could not send a sign-in email")
         await redis.delete(link_key, code_key)
+        # Nothing arrived, so there is nothing to wait for: the retry the message asks for
+        # must not be refused by the cooldown this attempt started.
+        await release_resend_cooldown(email, "sign_in")
         raise HTTPException(status_code=502, detail="Could not send the email. Try again in a minute.")
     return {"challenge": challenge}
 

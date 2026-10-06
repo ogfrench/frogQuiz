@@ -4,6 +4,19 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Sign-in and confirmation email: a minute between asks, and a countdown
+
+- The sign-in email (`POST /api/v1/login/email`) is held for 60 seconds per address, and the code step of `/account/login` gains a "Send a new code" button that counts the minute down, the same button frogViz's gate has. Before, the only way to ask again was "Use a different address" and retyping the same one, and five quick asks spent the address's hour.
+- A sign-in email that fails to send releases its cooldown, so the "try again in a minute" it asks for is not refused.
+- The sign-in email and the confirmation email keep separate clocks.
+- Asking for another confirmation email is held for 60 seconds per address, on the server first: `POST /api/v1/users/resend-verification` answers 429 with the seconds left in `Retry-After`, before it touches either hourly budget.
+- The register page, `/account/resend-verification` and the settings banner count the minute down on the button ("Send again in 0:42") instead of letting it be pressed. A refusal that names a wait of a minute or less is shown as that countdown; the hourly limit keeps its own "try again in an hour" message.
+- The register page's "Send it again" no longer disappears after one resend. It stays and waits out the minute.
+- Added a line under a sent confirmation on the resend page about checking junk, since mail from a new sender can take a minute.
+- Added `frontend/src/lib/resend_cooldown.svelte.ts` (the countdown, counted against the clock so a throttled background tab is right when it wakes) and tests for it and for the server-side cooldown.
+- Why: a person who clicked three times quickly spent the address's hourly three sends and was told to come back in an hour, while the first email was still on its way.
+- Not done: registration's own send does not start the server's cooldown, only the page's, so for the first minute after signing up the server is looser than the page. Starting it from `create_user` means touching the register route and `test_server.py`'s resend-straight-after-registering case, and the database-backed backend suite could not be run when this was written.
+
 ### From the Kahoot report, 5 Oct
 
 - Anyone with the PIN can join a game that has started, as in Kahoot, and gets the question

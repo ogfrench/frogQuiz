@@ -19,6 +19,8 @@ SPDX-License-Identifier: MPL-2.0
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import { page } from '$app/state';
 	import { safeReturnTo } from '$lib/return_to';
+	import { onDestroy } from 'svelte';
+	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
 
 	const { t } = getLocalization();
 
@@ -84,6 +86,8 @@ SPDX-License-Identifier: MPL-2.0
 						responseData.data = '200_verified';
 					} else {
 						responseData.data = '200';
+						// The mail has just gone: asking again at once cannot help it arrive.
+						cooldown.start();
 					}
 				} else if (res.status === 409) {
 					responseData.data = '409';
@@ -119,8 +123,11 @@ SPDX-License-Identifier: MPL-2.0
 	// signing up again just returned 409 and the address stayed unverified forever.
 	let resend = $state({ busy: false, result: '' });
 	let registeredEmail = $state('');
+	const cooldown = createCooldown();
+	onDestroy(cooldown.stop);
 
 	const resendVerification = async () => {
+		if (cooldown.active) return;
 		resend.busy = true;
 		resend.result = '';
 		try {
@@ -129,7 +136,16 @@ SPDX-License-Identifier: MPL-2.0
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email: registeredEmail })
 			});
-			resend.result = res.ok ? 'sent' : res.status === 429 ? 'too_many' : 'failed';
+			if (res.ok) {
+				resend.result = 'sent';
+				cooldown.start();
+			} else {
+				// A refusal that names a short wait is the cooldown, not the hourly limit.
+				const wait = cooldownFromRefusal(res);
+				if (wait > 0) cooldown.start(wait);
+				resend.result =
+					res.status === 429 && wait === 0 ? 'too_many' : wait > 0 ? '' : 'failed';
+			}
 		} catch {
 			resend.result = 'failed';
 		} finally {
@@ -331,25 +347,28 @@ SPDX-License-Identifier: MPL-2.0
 
 			{#if responseData.data === '200'}
 				<div class="text-muted-foreground px-6 pb-2 text-sm">
-					{#if resend.result === ''}
-						<span>{$t('register_page.resend.prompt')}</span>
-						<button
-							type="button"
-							class="text-primary font-medium underline-offset-4 hover:underline disabled:opacity-50"
-							disabled={resend.busy}
-							onclick={resendVerification}
-						>
-							{$t('register_page.resend.action')}
-						</button>
-					{:else}
-						<p role="status" aria-live="polite">
-							{#if resend.result === 'sent'}
-								{$t('register_page.resend.sent')}
-							{:else if resend.result === 'too_many'}
-								{$t('register_page.resend.too_many')}
-							{:else}
-								{$t('register_page.resend.failed')}
-							{/if}
+					<span>{$t('register_page.resend.prompt')}</span>
+					<button
+						type="button"
+						class="text-primary font-medium underline-offset-4 hover:underline disabled:no-underline disabled:opacity-50"
+						disabled={resend.busy || cooldown.active}
+						onclick={resendVerification}
+					>
+						{$t('register_page.resend.action')}
+					</button>
+					<p class="mt-1" role="status" aria-live="polite">
+						{#if resend.result === 'sent'}
+							{$t('register_page.resend.sent')}
+						{:else if resend.result === 'too_many'}
+							{$t('register_page.resend.too_many')}
+						{:else if resend.result === 'failed'}
+							{$t('register_page.resend.failed')}
+						{/if}
+					</p>
+					<!-- Not a live region: a screen reader would read out every second of it. -->
+					{#if cooldown.active}
+						<p class="mt-1">
+							{$t('register_page.resend.wait', { time: formatWait(cooldown.left) })}
 						</p>
 					{/if}
 				</div>

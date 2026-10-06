@@ -11,12 +11,13 @@ SPDX-License-Identifier: MPL-2.0
 	// username and that makes the account, so there is no separate registration. The
 	// password steps this page used to run (start_window, select_method, password_component,
 	// backup_component) are kept beside it, unused, for ENABLE_PASSWORD_LOGIN.
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte';
 	import { safeReturnTo } from '$lib/return_to';
+	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -45,6 +46,11 @@ SPDX-License-Identifier: MPL-2.0
 	let totp_step = $state(2);
 	let totp_method = $state('TOTP');
 	let totp_done = $state(false);
+
+	// A minute between emails to one address, counted from the last send. The server holds
+	// the same minute (login.py), so this is the countdown, not the rule.
+	const cooldown = createCooldown();
+	onDestroy(cooldown.stop);
 
 	// A full load rather than goto(): the session cookies were set by this response, and
 	// the layout reads who is signed in on the server.
@@ -108,17 +114,49 @@ SPDX-License-Identifier: MPL-2.0
 			challenge = (await res.json()).challenge;
 			code = '';
 			stage = 'code';
+			cooldown.start();
 			return;
 		}
 		const status = res?.status ?? 0;
+		const wait = res ? cooldownFromRefusal(res) : 0;
 		error =
-			status === 403
-				? $t('sign_in.errors.domain')
-				: status === 400 || status === 422
-					? $t('sign_in.errors.invalid')
-					: status === 429
-						? $t('sign_in.errors.too_many_emails')
-						: $t('sign_in.errors.send_failed');
+			wait > 0
+				? $t('sign_in.errors.wait', { seconds: wait })
+				: status === 403
+					? $t('sign_in.errors.domain')
+					: status === 400 || status === 422
+						? $t('sign_in.errors.invalid')
+						: status === 429
+							? $t('sign_in.errors.too_many_emails')
+							: $t('sign_in.errors.send_failed');
+	};
+
+	// The same address again, from the code step. Before this the only way to ask again was
+	// "Use a different address" and typing the same one back in.
+	const resendCode = async () => {
+		if (busy || cooldown.active) return;
+		busy = true;
+		error = '';
+		const res = await post('email', {
+			email: email.trim(),
+			return_to: page.url.searchParams.get('returnTo')
+		}).catch(() => null);
+		busy = false;
+		if (res?.ok) {
+			challenge = (await res.json()).challenge;
+			code = '';
+			cooldown.start();
+			return;
+		}
+		const wait = res ? cooldownFromRefusal(res) : 0;
+		if (wait > 0) {
+			cooldown.start(wait);
+		} else {
+			error =
+				res?.status === 429
+					? $t('sign_in.errors.too_many_emails')
+					: $t('sign_in.errors.send_failed');
+		}
 	};
 
 	const sendCode = async (e: Event) => {
@@ -263,6 +301,16 @@ SPDX-License-Identifier: MPL-2.0
 						</Button>
 						<Button
 							type="button"
+							variant="outline"
+							disabled={busy || cooldown.active}
+							onclick={resendCode}
+						>
+							{cooldown.active
+								? $t('sign_in.send_again_wait', { time: formatWait(cooldown.left) })
+								: $t('sign_in.send_again')}
+						</Button>
+						<Button
+							type="button"
 							variant="ghost"
 							onclick={() => {
 								stage = 'email';
@@ -271,6 +319,9 @@ SPDX-License-Identifier: MPL-2.0
 						>
 							{$t('sign_in.other_address')}
 						</Button>
+						<p class="text-muted-foreground text-center text-sm">
+							{$t('sign_in.junk')}
+						</p>
 					</form>
 				{:else if stage === 'username'}
 					<form onsubmit={createAccount} class="grid gap-4">

@@ -47,7 +47,8 @@
             "action": "Send it again",
             "sent": "If that address still needs confirming, a new link is on its way.",
             "too_many": "Too many requests. Try again in an hour.",
-            "failed": "Couldn't send another link. Try again."
+            "failed": "Couldn't send another link. Try again.",
+            "wait": "You can ask again in {{time}}."
         }
     },
     "sign_in": {
@@ -77,8 +78,12 @@
             "username_taken": "That username is taken.",
             "username_length": "Use 3 to 20 characters.",
             "closed": "New accounts are closed on this server.",
-            "unknown": "Something went wrong. Try again."
-        }
+            "unknown": "Something went wrong. Try again.",
+            "wait": "Wait {{seconds}} seconds before asking for another email to this address."
+        },
+        "send_again": "Send a new code",
+        "send_again_wait": "Send a new code in {{time}}",
+        "junk": "Nothing yet? Check your junk folder. Mail from a new sender can take a minute to arrive."
     },
     "login_page": {
         "welcome_back": "Welcome back.",
@@ -398,7 +403,9 @@
         "action": "Send confirmation email",
         "sent": "If that address still needs confirming, a new link is on its way.",
         "too_many": "Too many requests for this address. Try again in an hour.",
-        "failed": "Couldn't send the link. Try again."
+        "failed": "Couldn't send the link. Try again.",
+        "wait": "Send again in {{time}}",
+        "junk": "Nothing yet? Check your junk folder. Mail from a new sender can take a minute to arrive."
     },
     "password_reset_page": {
         "reset_password": "Reset password",
@@ -459,7 +466,8 @@
         "unverified_body": "Your address has not been confirmed yet. Until it is, you cannot recover this account if you forget the password.",
         "unverified_resend": "Send a new confirmation email",
         "unverified_sent": "Sent. Check your inbox.",
-        "unverified_failed": "Couldn't send it just now. Try again in a moment."
+        "unverified_failed": "Couldn't send it just now. Try again in a moment.",
+        "unverified_wait": "Send again in {{time}}"
     },
     "explore_page": {
         "made_by": "Made by",

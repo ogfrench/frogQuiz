@@ -33,7 +33,7 @@ from frogquiz.auth import (
 )
 from frogquiz.cache import clear_cache_for_account
 from frogquiz.config import redis, settings, meilisearch, storage
-from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
+from frogquiz.helpers.ratelimit import enforce_resend_cooldown, rate_limit, rate_limit_key
 import uuid
 import bleach
 from pydantic import BaseModel
@@ -362,9 +362,12 @@ async def resend_verification(body: ResendVerification, request: Request):
     sent while the relay was down, the address stayed unverified and re-registering
     returned 409 forever.
     """
+    _passwords_on()
+    # Before the per-address bucket below, so an early ask is refused without spending it.
+    # Its Retry-After is how the page knows this was the short wait and not the hourly limit.
+    await enforce_resend_cooldown(body.email)
     # Per address, sized for an office (E16); the per-recipient bucket below protects inboxes.
     await rate_limit(request, "resend_verification", limit=20, window_seconds=3600)
-    _passwords_on()
     if not settings.mail_configured:
         raise HTTPException(status_code=503, detail="This server has no mail server configured.")
     await rate_limit_key(f"resend_verification_addr:{body.email.strip().lower()}", limit=3, window_seconds=3600)
