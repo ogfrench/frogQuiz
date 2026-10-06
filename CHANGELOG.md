@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### The Spam Quarantine notice is a callout
+
+- The line under the sign-in code step, and under a sent confirmation on the resend page, that sends people to the Capgemini Spam Quarantine is now a boxed notice: a mail icon and "Nothing in your inbox?", a sentence, one "Open Spam Quarantine" button that opens the quarantine in a new tab, and the Safelist step in small print. It was grey text under the buttons that people read past, and then asked for a second email that was held too. It is one component, `QuarantineNotice.svelte`, used by both pages. The text moved from `sign_in.junk_*` and `resend_page.junk_*` into one `quarantine` block in the locale file. Checked at 390 and 1440 in light and dark: no horizontal overflow and no console errors.
+
 ### Search engines, and what a pasted link shows
 
 - Kept the site out of search results. It answered 200 to anyone with no sign-in and nothing telling a crawler to stay out. Every page now carries `noindex, nofollow` as a tag in `app.html`, and every static file (robots.txt, the manifest, images) gets it as an `X-Robots-Tag` header from `netlify.toml`. Checked on the deploy preview: the tag is in the served HTML, and the header is on those files. The server-rendered pages themselves do not get the header from Netlify, which is why the tag matters.
