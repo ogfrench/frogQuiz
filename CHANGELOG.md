@@ -9,6 +9,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - The sign-in email (`POST /api/v1/login/email`) is held for 60 seconds per address, and the code step of `/account/login` gains a "Send a new code" button that counts the minute down, the same button frogViz's gate has. Before, the only way to ask again was "Use a different address" and retyping the same one, and five quick asks spent the address's hour.
 - A sign-in email that fails to send releases its cooldown, so the "try again in a minute" it asks for is not refused.
 - The sign-in email and the confirmation email keep separate clocks.
+- The confirmation-email resend below only runs with `ENABLE_PASSWORD_LOGIN` on, since passwords are off on this branch; it is held the same way so the flag does not bring the old trap back.
 - Asking for another confirmation email is held for 60 seconds per address, on the server first: `POST /api/v1/users/resend-verification` answers 429 with the seconds left in `Retry-After`, before it touches either hourly budget.
 - The register page, `/account/resend-verification` and the settings banner count the minute down on the button ("Send again in 0:42") instead of letting it be pressed. A refusal that names a wait of a minute or less is shown as that countdown; the hourly limit keeps its own "try again in an hour" message.
 - The register page's "Send it again" no longer disappears after one resend. It stays and waits out the minute.
@@ -1184,6 +1185,13 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
 - The landing page's three muted text links under the PIN box became two secondary buttons, Create a quiz and Go to your quizzes, under a "Running the quiz?" divider, with a line saying no account is needed and that browser quizzes are deleted after 30 days. Making a quiz now reads at the same level as logging in, which is what it is: it needs no account.
 - The navbar shows a Create a quiz button beside Log in for signed-out visitors, on desktop and in the mobile menu.
 - Fixed three places that asked i18next for a `*_plural` key, which has not existed since i18next v20: the host lobby's player count and the host's per-question results both printed `play_page.players_waiting_plural` on the projector, and every quiz card on My Quizzes printed `words.question_plural` instead of "Questions". The `_one` / `_other` keys they should have used were already in `en.json`.
+
+### Transactional emails redesigned
+
+- The sign-up and password-reset emails now open on the frogQuiz wordmark inside the card, larger than before, so the rainbow appears once, in the mark, as it does in the app.
+- The heading uses the app's display treatment (Inter semibold, -0.03em) at 30px, with more space around the card and its contents.
+- The button sits at an 11px radius, tighter than the 14px card, matching how controls and surfaces are tiered in the app.
+- The mark's rainbow also runs as a band across the top of the card, a deliberate exception to "the rainbow is spent once" so the emails stand out in an inbox.
 
 ### Editor autosave and drafts (MVP §4.5, D14)
 
