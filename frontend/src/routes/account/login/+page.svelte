@@ -17,6 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte';
 	import { safeReturnTo } from '$lib/return_to';
+	import { normalizeCode } from '$lib/sign_in_code';
 	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -196,7 +197,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	// Digits only, six at most, so a code pasted as "123 456" still works (as the PIN box, E10).
 	$effect(() => {
-		const cleaned = code.replace(/\D/g, '').slice(0, 6);
+		const cleaned = normalizeCode(code);
 		if (cleaned !== code) code = cleaned;
 	});
 
