@@ -7,14 +7,17 @@ SPDX-License-Identifier: MPL-2.0
 # Handover — `ccr-370df3e4-c44t1l`
 
 For François and Gonçalo, 2–4 October 2026. Read this first; everything else is linked from
-here. It is PR #23.
+here. It was PR #23.
 
-**State: ready to merge. François and Gonçalo review it together on 5 Oct.** About 115 commits and
-about 270 files, roughly +17900 / -4300 against `master`, which has not moved since 29 Sep.
+**State: merged on 6 Oct as PR #26** (the same branch, plus the sign-in resend cooldown and
+a few fixes; #23 was closed with it). What is left is not code: the production clean slate,
+the real-mail check, and Gonçalo's ticks. The list is in `TODO.md` under "Open before
+sharing". The text below is the review brief as it stood on 5 Oct. It was about 115 commits
+and 270 files, +17900 / -4300 against `master`.
 
 ### Reviewing and merging (5 Oct)
 
-Read the PR #23 description top to bottom. It is grouped by theme, with dates, and each
+Read the PR #26 description, and #23's for the longer account. It is grouped by theme, with dates, and each
 section names the doc that holds the detail. Three things in it need the two of you:
 
 - **Sign-in by emailed link, no passwords (D21, 5 Oct).** François asked for frogViz's
@@ -81,10 +84,10 @@ is clean at the commit that added this section, CI is green on it, and PR #23 is
 
 | | |
 | --- | --- |
-| Branch | `ccr-370df3e4-c44t1l`, clean, pushed |
-| PR #23 | Open, mergeable, CI green. Waiting on a merge decision; nothing on it is waiting on Claude |
+| Branch | `ccr-370df3e4-c44t1l`, clean, pushed; since merged through #26 |
+| PR #23 | Closed on 6 Oct. The branch went in as PR #26 |
 | Suites | At the cloud handoff: e2e 146/146 and backend 168 on `077f695`; unit 153. Current numbers are in the table at the top |
-| Open issues | #3 (MVP 1, Part A partly done), #4 (MVP 2), #22 (Oracle VM, **31 Oct**), #24 (touch targets, fixed 4 Oct on this branch; a real-phone check is left) |
+| Open issues | #3 (MVP 1, Part A partly done), #4 (MVP 2), #22 (Oracle VM, **31 Oct**), #24 (touch targets, fixed 4 Oct and merged; a real-phone check is left) |
 | Decisions open | Gonçalo's tick on D16 and D18 (see `MVP.md` §4.0). Scoring stays all-or-nothing; sign-out revocation is done |
 | Edge-case pass, 4 and 5 Oct | 27 bugs found and fixed (E1 to E27 in [`docs/edge-cases-2026-10.md`](docs/edge-cases-2026-10.md)), each with a test that failed first except E19 and E20 (a two-event race, a two-hour timer). E16 raised per-address auth limits at François's request |
 | CRUD audit, 4 Oct | Done on the laptop and pushed to this PR: 14 bugs found and fixed (C1 to C18 in [`docs/crud-audit-2026-10.md`](docs/crud-audit-2026-10.md)), each with a regression test. `e2e/run.sh` now starts the arq worker, which is how three of them were found. C13: usernames do not change, decided 4 Oct and recorded in `docs/mvp-scope.md` |

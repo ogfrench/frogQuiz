@@ -4,6 +4,12 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### After the merge
+
+- Rehearsed the production clean slate on the merged code: the compose stack with the published backend image, seeded, the `DEPLOY.md` block run as written, then checked (old session 401, old quizzes 404, non-team address 403, a new sign-in makes a fresh account). Recorded in `DEPLOY.md`.
+
+- Marked PR #23 as closed and merged through #26 in `HANDOVER.md` and `TODO.md`, so a reader no longer meets "ready to merge". What is still open there is not code: the production clean slate, the real-mail check, and Gonçalo's ticks on D16 and D18 to D21.
+
 ### The Spam Quarantine notice is a callout
 
 - The line under the sign-in code step, and under a sent confirmation on the resend page, that sends people to the Capgemini Spam Quarantine is now a boxed notice: a mail icon and "Nothing in your inbox?", a sentence, one "Open Spam Quarantine" button that opens the quarantine in a new tab, and the Safelist step in small print. It was grey text under the buttons that people read past, and then asked for a second email that was held too. It is one component, `QuarantineNotice.svelte`, used by both pages. The text moved from `sign_in.junk_*` and `resend_page.junk_*` into one `quarantine` block in the locale file. Checked at 390 and 1440 in light and dark: no horizontal overflow and no console errors.

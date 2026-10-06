@@ -10,7 +10,7 @@ Where the work actually stands. [`MVP.md`](MVP.md) is the plan and holds the dec
 this file is the running state, updated as things land.
 Audit that produced most of it: [`docs/audit-2026-10-01.md`](docs/audit-2026-10-01.md).
 
-**Branch:** `ccr-370df3e4-c44t1l` (PR #23) · **Suites:** 153 unit · 146 e2e · 168 backend (1 skipped)
+**Branch:** merged to `master` on 6 Oct as PR #26 (was `ccr-370df3e4-c44t1l`, PR #23) · **Suites:** 153 unit · 146 e2e · 168 backend (1 skipped)
 · **Last full green run:** 4 Oct on `077f695` — e2e **146/146** in 10.0m on a clean stack,
 unit 153 passed, `pnpm build` OK, `eslint .` 0 errors; backend **168 passed** (1 skipped) and
 `flake8 .` 0, with the sign-out revocation change

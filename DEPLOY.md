@@ -262,6 +262,17 @@ results, ratings, controllers, QuizTivity and both image link tables) and left
 specs then passed on the empty database, signing up, building quizzes, hosting and
 searching. Steps 1 and 3 are standard and were not rehearsed.
 
+Rehearsed again on 6 Oct on the real thing: `docker-compose.yml` with the published
+`ghcr.io/ogfrench/frogquiz-backend:master` image (the merged code), Postgres 14, valkey and
+Meilisearch 0.28, seeded with two accounts, four quizzes, an uploaded image and an
+anonymous quiz. This section's block ran as written, bar the compose flags and no `sudo`
+on Windows. Backup first (the dump holds the seeded address, the tarball its files), then
+users, quizzes and storage items at 0, `alembic_version` kept, uploads empty. Afterwards the
+old session got a 401, the old quizzes and image a 404, a hotmail address a 403, and a
+frog.co address made a new account that saved, indexed and found a public quiz. A failing
+backup stopped the script before anything was deleted. Not rehearsed: a real relay, Neon,
+and the Caddy and frontend containers.
+
 ## Managed Postgres (Neon)
 
 The `db` container can be swapped for Neon when the app host has no persistent disk.
