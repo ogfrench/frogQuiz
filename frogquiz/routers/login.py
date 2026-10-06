@@ -10,6 +10,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import urllib.parse
 import uuid
@@ -372,7 +373,9 @@ async def email_verify(data: EmailVerifyInput, request: Request, response: Respo
         )
         # Every code sent for this sign-in, newest last; "code" is the single-code form
         # written before resends joined a sign-in. Compared in full, not stopping early.
-        typed = hash_session_key(data.code.strip())
+        # Digits only: a code copied from a mail client comes with whatever the mail put
+        # between its halves (a space, a non-breaking space, a hyphen, a newline).
+        typed = hash_session_key(re.sub(r"\D", "", data.code))
         sent = claim.get("codes") or [claim.get("code", "")]
         matched = False
         for hashed in sent:
