@@ -84,9 +84,11 @@ failed first.
       second device, with `MAIL_*` set on the production API. The hotmail address chosen on
       2 Oct can no longer sign in (team domains only). Steps in
       [`DEPLOY.md`](DEPLOY.md#testing-it-for-real); check spam and quarantine
-- [ ] **Clean slate when the sign-in change (D21) deploys** (François, 5 Oct): every
-      account, quiz and upload goes, with a backup first. Gonçalo's go too, so agree it with
-      him. Steps in [`DEPLOY.md`](DEPLOY.md#clean-slate-when-the-sign-in-change-ships)
+- [x] **Clean slate when the sign-in change (D21) deploys.** Done 6 Oct, Gonçalo agreed:
+      Neon was emptied (6 users, 5 quizzes, 1 image, 2 game results), uploads, Redis and the
+      search index too, after the new backend image was pulled. The backup is off the VM, in
+      `~/frogquiz-backups` on François's laptop. Steps, and what the VM looked like, in
+      [`DEPLOY.md`](DEPLOY.md#clean-slate-when-the-sign-in-change-ships)
 - [ ] **Confirm the `worker` container runs in production**, or the 30-day deletion the anonymous copy promises is not kept
 - [ ] **Gonçalo's tick on D16 and D18.** François signed D1 and D3–D15 on 2 Oct after
       asking for each to be explained; D2 and D16 are his "like Kahoot", D8, D9 and D18 are
