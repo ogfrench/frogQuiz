@@ -11,6 +11,10 @@ Redis, so they hold anywhere and in a second.
 import pytest
 
 
+# CI runs pytest with --asyncio-mode=strict, where an async test runs only if marked.
+pytestmark = pytest.mark.asyncio
+
+
 class _FakeRedis:
     """Just enough of Redis for a fixed-window counter: incr, expire, ttl."""
 

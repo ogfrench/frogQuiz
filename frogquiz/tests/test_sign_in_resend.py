@@ -17,6 +17,9 @@ from fastapi import HTTPException
 
 import frogquiz.routers.login as login
 
+# CI runs pytest with --asyncio-mode=strict, where an async test runs only if marked.
+pytestmark = pytest.mark.asyncio
+
 
 class _FakeRedis:
     def __init__(self):
