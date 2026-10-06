@@ -19,6 +19,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { onDestroy } from 'svelte';
 	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
+	import QuarantineNotice from '$lib/QuarantineNotice.svelte';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -151,14 +152,9 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 
 		{#if result === 'sent'}
-			<p class="text-muted-foreground px-6 pb-2 text-sm">
-				{$t('resend_page.junk_before')}<a
-					href="https://spam-quarantine.capgemini.com"
-					target="_blank"
-					rel="noopener"
-					class="underline underline-offset-4">{$t('resend_page.junk_link')}</a
-				>{$t('resend_page.junk_after')}
-			</p>
+			<div class="px-6 pb-2">
+				<QuarantineNotice />
+			</div>
 		{/if}
 
 		<Card.Footer class="justify-center gap-1.5 text-sm">

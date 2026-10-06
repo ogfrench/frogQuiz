@@ -18,6 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { navbarVisible } from '$lib/stores.svelte';
 	import { safeReturnTo } from '$lib/return_to';
 	import { normalizeCode } from '$lib/sign_in_code';
+	import QuarantineNotice from '$lib/QuarantineNotice.svelte';
 	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -323,14 +324,7 @@ SPDX-License-Identifier: MPL-2.0
 						>
 							{$t('sign_in.other_address')}
 						</Button>
-						<p class="text-muted-foreground text-center text-sm">
-							{$t('sign_in.junk_before')}<a
-								href="https://spam-quarantine.capgemini.com"
-								target="_blank"
-								rel="noopener"
-								class="underline underline-offset-4">{$t('sign_in.junk_link')}</a
-							>{$t('sign_in.junk_after')}
-						</p>
+						<QuarantineNotice />
 					</form>
 				{:else if stage === 'username'}
 					<form onsubmit={createAccount} class="grid gap-4">
