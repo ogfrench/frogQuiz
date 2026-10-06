@@ -151,7 +151,14 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 
 		{#if result === 'sent'}
-			<p class="text-muted-foreground px-6 pb-2 text-sm">{$t('resend_page.junk')}</p>
+			<p class="text-muted-foreground px-6 pb-2 text-sm">
+				{$t('resend_page.junk_before')}<a
+					href="https://spam-quarantine.capgemini.com"
+					target="_blank"
+					rel="noopener"
+					class="underline underline-offset-4">{$t('resend_page.junk_link')}</a
+				>{$t('resend_page.junk_after')}
+			</p>
 		{/if}
 
 		<Card.Footer class="justify-center gap-1.5 text-sm">

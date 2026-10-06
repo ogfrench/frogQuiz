@@ -323,7 +323,12 @@ SPDX-License-Identifier: MPL-2.0
 							{$t('sign_in.other_address')}
 						</Button>
 						<p class="text-muted-foreground text-center text-sm">
-							{$t('sign_in.junk')}
+							{$t('sign_in.junk_before')}<a
+								href="https://spam-quarantine.capgemini.com"
+								target="_blank"
+								rel="noopener"
+								class="underline underline-offset-4">{$t('sign_in.junk_link')}</a
+							>{$t('sign_in.junk_after')}
 						</p>
 					</form>
 				{:else if stage === 'username'}

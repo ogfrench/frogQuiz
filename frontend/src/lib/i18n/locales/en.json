@@ -83,7 +83,9 @@
         },
         "send_again": "Send a new code",
         "send_again_wait": "Send a new code in {{time}}",
-        "junk": "Nothing yet? Check your junk folder. Mail from a new sender can take a minute to arrive."
+        "junk_before": "Nothing yet? Check the ",
+        "junk_link": "Capgemini Spam Quarantine",
+        "junk_after": " to release the mail and add the sender to your Safelist."
     },
     "login_page": {
         "welcome_back": "Welcome back.",
@@ -405,7 +407,9 @@
         "too_many": "Too many requests for this address. Try again in an hour.",
         "failed": "Couldn't send the link. Try again.",
         "wait": "Send again in {{time}}",
-        "junk": "Nothing yet? Check your junk folder. Mail from a new sender can take a minute to arrive."
+        "junk_before": "Nothing yet? Check the ",
+        "junk_link": "Capgemini Spam Quarantine",
+        "junk_after": " to release the mail and add the sender to your Safelist."
     },
     "password_reset_page": {
         "reset_password": "Reset password",
