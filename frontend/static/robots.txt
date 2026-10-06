@@ -1,0 +1,6 @@
+# Nobody is turned away here on purpose. Search engines are kept out by the noindex tag
+# in app.html and the X-Robots-Tag header in netlify.toml, which a crawler obeys only
+# if it can fetch the page. A "Disallow: /" would also stop Slack and Teams from reading
+# a pasted link to build its preview.
+User-agent: *
+Disallow:

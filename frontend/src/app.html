@@ -16,6 +16,9 @@ SPDX-License-Identifier: MPL-2.0
 			content="The free Kahoot alternative. Host interactive quizzes right from your browser."
 		/>
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- An internal tool: out of search results. A link preview (Slack, Teams) ignores
+		     this, and robots.txt must not disallow the site, or those would stop too. -->
+		<meta name="robots" content="noindex, nofollow" />
 		<script>
 			// Apply the stored theme before first paint, so dark mode does not flash
 			// light on load. Mirrors the logic in src/routes/+layout.svelte.

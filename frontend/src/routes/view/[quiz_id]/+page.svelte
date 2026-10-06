@@ -20,6 +20,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { get_foreground_color } from '$lib/helpers.ts';
 	import { anonDaysLeft, getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
 	import { sanitizeTitleHtml, htmlToPlainText } from '$lib/sanitize';
+	import { quizShare } from '$lib/share_meta';
+	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -52,6 +54,7 @@ SPDX-License-Identifier: MPL-2.0
 	const { t } = getLocalization();
 	let { data } = $props();
 	let { quiz, logged_in }: { quiz: QuizData; logged_in: boolean } = $state(data);
+	const share = $derived(quizShare(quiz, page.url.origin, `${page.url.origin}${JpgOpenGraph}`));
 
 	// Ownership of an anonymously-created quiz can only be checked client-side
 	// (the secret lives in this browser's localStorage, not on the server).
@@ -197,6 +200,23 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:head>
 	<title>frogQuiz - View {htmlToPlainText(quiz.title)}</title>
+	<!-- What a pasted link to this quiz shows. Rendered on the server, which is the only
+	     place a link preview ever reads it. -->
+	<meta name="description" content={share.description} />
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="frogQuiz" />
+	<meta property="og:url" content={page.url.href} />
+	<meta property="og:title" content={share.title} />
+	<meta property="og:description" content={share.description} />
+	<meta property="og:image" content={share.image} />
+	{#if !share.hasCover}
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+	{/if}
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={share.title} />
+	<meta name="twitter:description" content={share.description} />
+	<meta name="twitter:image" content={share.image} />
 </svelte:head>
 
 <div class="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
