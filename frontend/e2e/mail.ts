@@ -79,7 +79,7 @@ export async function waitForMail(to: string, since = 0) {
 export async function signInMail(to: string, since: number) {
 	const mail = await waitForMail(to, since);
 	const link = mail.text.match(/https?:\/\/\S+[?&]token=[\w-]+/)?.[0];
-	const code = mail.text.match(/code (\d{6})/)?.[1];
+	const code = mail.text.match(/code:?\s+(\d{6})/)?.[1];
 	expect(link, 'a sign-in link in the plain-text part').toBeTruthy();
 	expect(code, 'a six-digit code in the plain-text part').toBeTruthy();
 	return { link: link!, token: new URL(link!).searchParams.get('token')!, code: code!, mail };

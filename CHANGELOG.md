@@ -4,6 +4,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Switches and sign-in email, 7 Oct
+
+- Fixed every switch being invisible: its track and thumb styles keyed on `data-checked` and `data-unchecked`, which bits-ui never sets (it sets `data-state`), so no track was ever drawn and the thumb sat on the same colour as the dialog. This is why the Start game and Advanced settings options showed only a dark dot in dark mode, and a white one in light mode.
+- Made the sign-in code the centrepiece of the sign-in email: it is now a large, widely spaced code on a muted panel above the button, instead of a number buried in a sentence. The plain-text version leads with it too. The base email layout gained an optional code block that the other emails leave empty.
+
 ### Fixes from Gonçalo's testing, 7 Oct
 
 - Fixed the editor losing its header and Save button off the top, and "Add new question" off the bottom, once a quiz was taller than the screen. The column under the header was missing `min-h-0`, so it grew to fit every question and never scrolled. New e2e tests build an eight-question quiz at 1440 and 390.

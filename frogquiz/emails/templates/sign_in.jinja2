@@ -8,7 +8,8 @@ SPDX-License-Identifier: MPL-2.0
 {% block subject %}Your frogQuiz sign-in code: {{ code }}{% endblock %}
 {% block preheader %}Sign in with the button, or type {{ code }}. Both work for 15 minutes.{% endblock %}
 {% block heading %}Sign in to frogQuiz{% endblock %}
-{% block lede %}Use the button, or type the code {{ code }} on the page that asked for it. Both work for 15 minutes. If you didn't ask to sign in, ignore this email.{% endblock %}
+{% block lede %}Type this code on the page that asked for it, or use the button below. Both work for 15 minutes. If you didn't ask to sign in, ignore this email.{% endblock %}
+{% block code_block %}{{ code }}{% endblock %}
 {% block action_url %}{{ link }}{% endblock %}
 {% block action_label %}Sign in{% endblock %}
 {% block footnote %}You're getting this because someone asked to sign in to frogQuiz with this address.{% endblock %}
