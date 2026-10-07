@@ -8,11 +8,14 @@ SPDX-License-Identifier: MPL-2.0
 @import 'tippy.js/dist/tippy.css';
 /* Write your global styles here, in PostCSS syntax */
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+/* An @import after any other rule is ignored by CSS, and this one used to sit above
+   the tw-animate-css import -- so animate-in, fade-in-* and zoom-in-* were never
+   generated and no dialog, sheet or overlay ever animated. Keep it below the imports. */
 /* Tests name classes as strings (radius-scale.test.ts lists the banned ones), which
    Tailwind would otherwise compile into dead rules. */
 @source not './**/*.test.ts';
-@import 'tw-animate-css';
-@import 'shadcn-svelte/tailwind.css';
 /*
 ---break---
 */

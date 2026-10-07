@@ -8,6 +8,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 - Fixed every switch being invisible: its track and thumb styles keyed on `data-checked` and `data-unchecked`, which bits-ui never sets (it sets `data-state`), so no track was ever drawn and the thumb sat on the same colour as the dialog. This is why the Start game and Advanced settings options showed only a dark dot in dark mode, and a white one in light mode.
 - Made the sign-in code the centrepiece of the sign-in email: it is now a large, widely spaced code on a muted panel above the button, instead of a number buried in a sentence. The plain-text version leads with it too. The base email layout gained an optional code block that the other emails leave empty.
+- Fixed the one type error `svelte-check` reported (`question-card.svelte`, iterating an answers union), which was failing CI's type-check step. The frontend check is back to zero errors.
+- Fixed dialogs, alert dialogs and sheets never animating. Two causes: their classes used `data-open:`/`data-closed:`, which bits-ui never sets (it sets `data-state`), and `app.css` had an `@source` rule above the `tw-animate-css` import, so CSS ignored the import and none of the animation classes were generated. Both fixed; dialogs now fade and zoom in and out, and still close and unmount cleanly.
+- Fixed the quiz title and question fields showing CKEditor's own blue focus border instead of the app's ring colour (`--ck-focus-ring` is resolved at the root, so it has to be set on the field).
 
 ### Fixes from Gonçalo's testing, 7 Oct
 

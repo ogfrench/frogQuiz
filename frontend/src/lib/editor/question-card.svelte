@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { EditorData } from '$lib/quiz_types';
+	import type { Answer, EditorData } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { dataSchema, fieldIsValid } from '$lib/yupSchemas';
 	import { editorValidation } from '$lib/editor/validation.svelte';
@@ -212,7 +212,7 @@ SPDX-License-Identifier: MPL-2.0
 									// under "Several". Keep the first and unmark the rest.
 									if (type === QuizQuestionType.CHECK) {
 										let kept = false;
-										for (const answer of data.questions[index].answers) {
+										for (const answer of data.questions[index].answers as Answer[]) {
 											if (answer.right && kept) answer.right = false;
 											else if (answer.right) kept = true;
 										}

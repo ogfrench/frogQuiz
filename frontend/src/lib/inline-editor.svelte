@@ -134,6 +134,12 @@ SPDX-License-Identifier: MPL-2.0
 		border: 1px solid var(--input);
 		border-radius: var(--radius-md);
 		background: var(--background);
+
+		/* ckeditor paints a focused editable with its own blue (--ck-color-focus-border),
+		   and --ck-focus-ring is resolved at :root, so both need setting here. Same token
+		   as the ring below. */
+		--ck-color-focus-border: var(--ring);
+		--ck-focus-ring: 1px solid var(--ring);
 	}
 
 	:global(.ck.ck-editor__editable.ck-focused) {
