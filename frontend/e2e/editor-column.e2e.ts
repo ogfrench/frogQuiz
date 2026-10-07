@@ -158,3 +158,65 @@ test('on a touch screen, the card under your finger is the one you tap', async (
 	expect(unpositioned, 'a touch target with no position escapes to its ancestor').toEqual([]);
 	await ctx.close();
 });
+
+// A quiz taller than the screen. With three short questions everything fits, which is
+// how the missing min-h-0 on the editor's column got past every other test here.
+const LONG = {
+	title: 'Long',
+	description: 'Taller than the screen',
+	questions: Array.from({ length: 8 }, (_, i) =>
+		mc(`Question ${i + 1}?`, [
+			['A', true],
+			['B', false],
+			['C', false],
+			['D', false]
+		])
+	)
+};
+
+for (const viewport of [{ width: 1440, height: 900 }, PHONE]) {
+	test(`a long quiz keeps the header on screen and Add reachable at ${viewport.width}px`, async ({
+		browser,
+		request
+	}) => {
+		const ctx = await browser.newContext({ viewport });
+		const page = await ctx.newPage();
+		const saved = await saveQuiz(request, LONG);
+		await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+		await page.goto(`/edit?quiz_id=${saved.body.id}`);
+		await expect(cards(page)).toHaveCount(8);
+		// Opening the last card scrolls it into view, which is what used to shift the
+		// clipped editor and carry the header off the top.
+		await page
+			.getByRole('button', { name: /Question 8/ })
+			.last()
+			.click();
+		const add = page.getByRole('button', { name: 'Add new question' });
+		await add.scrollIntoViewIfNeeded();
+		await expect(add).toBeInViewport();
+		const headerTop = await page.locator('header').evaluate((h) => h.getBoundingClientRect().top);
+		// Broken, it sat hundreds of pixels above the screen; allow sub-pixel rounding.
+		expect(Math.abs(headerTop), 'the editor header was pushed off the top').toBeLessThan(1);
+		await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeInViewport();
+		await add.click();
+		await expect(page.getByRole('dialog')).toBeVisible();
+		await ctx.close();
+	});
+}
+
+test('switching to one correct answer keeps only the first one marked', async ({
+	page,
+	request
+}) => {
+	await openQuiz(page, request);
+	await page.getByRole('button', { name: 'One correct answer' }).click();
+	const markA = page.getByRole('button', { name: 'Mark as correct: A', exact: true });
+	const markB = page.getByRole('button', { name: 'Mark as correct: B', exact: true });
+	await markB.click();
+	await expect(markA).toHaveAttribute('aria-pressed', 'true');
+	await expect(markB).toHaveAttribute('aria-pressed', 'true');
+	// Back to one: it used to keep both marked, and save "one correct answer" with two.
+	await page.getByRole('button', { name: 'Several correct answers' }).click();
+	await expect(markA).toHaveAttribute('aria-pressed', 'true');
+	await expect(markB).toHaveAttribute('aria-pressed', 'false');
+});

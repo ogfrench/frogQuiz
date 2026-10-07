@@ -376,7 +376,12 @@ SPDX-License-Identifier: MPL-2.0
 		     h-dvh rather than h-screen: 100vh is the wrong number on a phone, where
 		     the browser chrome is counted in and the toolbar ends up off-screen. -->
 		<div class="flex h-dvh w-full flex-col overflow-hidden">
-			<div class="flex min-w-0 flex-1 flex-col">
+			<!-- min-h-0: a flex item's min-height is auto, so without it this column grew to
+			     the height of every question instead of the screen. The canvas below then had
+			     nothing to scroll within, "Add new question" was clipped off the bottom, and
+			     scrolling a new card into view shifted the clipped box until the header and
+			     Save left the top. Only shows once the quiz is taller than the screen. -->
+			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 				<header
 					class="border-border bg-background flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 sm:h-14 sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-0"
 				>

@@ -44,7 +44,24 @@ const config = {
 		port: 3000
 	},
 	optimizeDeps: {
-		include: ['swiper', 'tippy.js']
+		// svelte-range-slider-pips ships Svelte only, which the scan below leaves alone,
+		// so it was still found late and reloaded the page once. Name it outright.
+		include: ['swiper', 'tippy.js', 'svelte-range-slider-pips'],
+		// Dev server only. Vite pre-bundles the dependencies its start-up scan finds and
+		// bundles the rest on demand, reloading the page under the user each time: five
+		// reloads in two minutes of ordinary use. SvelteKit points the scan at the routes,
+		// but the scan reads only <script> blocks, and the editor and the game load their
+		// heavy parts with `{#await import(...)}` in markup -- so CKEditor, Uppy and the
+		// game screens were never seen. Scanning every component directly finds them.
+		// (A hand-kept include list and server.warmup were both tried first; each still
+		// reloaded once.) Setting this replaces SvelteKit's own entries rather than adding
+		// to them, so the first two lines restate SvelteKit's; without them the routes'
+		// own imports went unscanned and reloaded instead.
+		entries: [
+			'src/routes/**/+*.{svelte,js,ts}',
+			'!src/routes/**/+*server.*',
+			'src/lib/**/*.svelte'
+		]
 	},
 	build: {
 		sourcemap: true

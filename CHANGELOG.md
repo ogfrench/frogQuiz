@@ -4,6 +4,12 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Fixes from Gonçalo's testing, 7 Oct
+
+- Fixed the editor losing its header and Save button off the top, and "Add new question" off the bottom, once a quiz was taller than the screen. The column under the header was missing `min-h-0`, so it grew to fit every question and never scrolled. New e2e tests build an eight-question quiz at 1440 and 390.
+- Fixed "One correct answer" keeping several correct answers: switching a question from "Several correct answers" now keeps the first marked answer and unmarks the rest. New e2e test.
+- Stopped the local dev server reloading the page the first time each area is opened (the editor, uploads, a game): five reloads in two minutes of ordinary use, each a slow open. Vite's start-up scan reads only `<script>` blocks and missed everything loaded with `{#await import(...)}` in markup; `frontend/vite.config.js` now scans every component, and names the one Svelte-only package outright. Checked from a cold cache across 52 e2e tests: zero reloads. Dev server only; the built app is unaffected.
+
 ### After the merge
 
 - Ran the production clean slate on 6 Oct, with Gonçalo's agreement: pulled the VM's checkout (150 commits behind) and the merged backend image, took a Neon dump and an uploads tarball and copied both off the box, then emptied users, quizzes and storage items on Neon, the uploads folder, Redis and the search index. `DEPLOY.md` now carries the Neon commands and the stdin catch.

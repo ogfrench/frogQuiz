@@ -207,6 +207,16 @@ SPDX-License-Identifier: MPL-2.0
 								variant="outline"
 								size="sm"
 								onclick={() => {
+									// "One correct answer" is only enforced when an answer is
+									// marked, so switching to it used to keep every answer marked
+									// under "Several". Keep the first and unmark the rest.
+									if (type === QuizQuestionType.CHECK) {
+										let kept = false;
+										for (const answer of data.questions[index].answers) {
+											if (answer.right && kept) answer.right = false;
+											else if (answer.right) kept = true;
+										}
+									}
 									data.questions[index].type =
 										type === QuizQuestionType.CHECK
 											? QuizQuestionType.ABCD
