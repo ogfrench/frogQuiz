@@ -78,6 +78,11 @@ SPDX-License-Identifier: MPL-2.0
 	const game_pin = data.game_pin;
 	let errorMessage = $state('');
 	let success = $state(false);
+	// Nothing on this screen renders until the server answers `registered_as_admin`, so a
+	// socket that never connects (a blocked origin on a preview, a backend that is down) or
+	// a link with no game in it left a blank page with no way out.
+	let connectFailed = $state<'unreachable' | 'no_game' | null>(null);
+	const REPLY_TIMEOUT_MS = 8000;
 	let dataexport_download_a = $state<HTMLAnchorElement>();
 	let warnToLeave = true;
 
@@ -91,16 +96,31 @@ SPDX-License-Identifier: MPL-2.0
 		});
 	};
 	onMount(() => {
+		let waiting: ReturnType<typeof setTimeout> | undefined;
+		// Only before the game has been reached: a dropped connection mid-game is the
+		// reconnect path below, and must not replace a running game with an error.
+		const unreachable = () => {
+			if (!success) connectFailed = 'unreachable';
+		};
 		if (auto_connect) {
 			connect();
 			// A reconnect gets a new sid, which the server doesn't know as the admin
 			// of this game, so re-register or no player event ever arrives again.
 			socket.on('connect', connect);
+			socket.on('connect_error', unreachable);
+			waiting = setTimeout(unreachable, REPLY_TIMEOUT_MS);
+		} else {
+			// No token or PIN in the link: there is no game to register for.
+			connectFailed = 'no_game';
 		}
 		tinykeys(window, {
 			Enter: next_action,
 			Space: next_action
 		});
+		return () => {
+			clearTimeout(waiting);
+			socket.off('connect_error', unreachable);
+		};
 	});
 	socket.on('registered_as_admin', (data) => {
 		game_state.quiz_data = JSON.parse(data['game']);
@@ -114,6 +134,7 @@ SPDX-License-Identifier: MPL-2.0
 			if (data['question_open'] === false) game_state.timer_res = '0';
 		}
 		success = true;
+		connectFailed = null;
 	});
 	socket.on('locked', (int_data) => {
 		game_state.quiz_data.locked = int_data.locked;
@@ -279,11 +300,20 @@ SPDX-License-Identifier: MPL-2.0
 		<FinalResults bind:data={game_state.player_scores} {show_final_results} />
 	{/if}
 	{#if !success}
-		{#if errorMessage !== ''}
+		{#if errorMessage !== '' || connectFailed !== null}
 			<!-- The navbar is hidden on the host screen, so a failed registration used to
-			     leave a red line and no way out. -->
+			     leave a red line and no way out. The server's own refusal wins over the
+			     connection message: it is the more specific one. -->
 			<div class="fq-stage text-center">
-				<p class="text-destructive" role="alert">{errorMessage}</p>
+				<p class="text-destructive" role="alert">
+					{#if errorMessage !== ''}
+						{errorMessage}
+					{:else if connectFailed === 'no_game'}
+						{$t('admin_page.no_game_in_link')}
+					{:else}
+						{$t('admin_page.connection_failed')}
+					{/if}
+				</p>
 				<GrayButton href="/my-quizzes">
 					<ArrowLeft class="size-4" aria-hidden="true" />
 					{$t('words.back')}
