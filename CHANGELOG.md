@@ -18,6 +18,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - The host page registers once on a cold load, not twice; a game the server reports as missing no longer stops registration; a lock change that arrives before registration is applied after it.
 - The REST route that sets the question refreshes the avatar seats like every other write to the game.
 - A join or rejoin payload that is not an object is refused, not raised.
+- Reformatted `music/question/make-tick-loop.py` to the lint rules, which failed CI's backend lint. The generated `tick-loop.wav` is byte-identical.
 
 ### Unused lobby copy removed, 8 Oct
 
