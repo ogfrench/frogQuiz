@@ -119,7 +119,10 @@ SPDX-License-Identifier: MPL-2.0
 			if (!success) connectFailed = 'unreachable';
 		};
 		if (auto_connect) {
-			connect();
+			// The socket connects on its own (socket.ts). Registering here as well while it is
+			// still connecting sent register_as_admin twice on a cold load, and the second
+			// snapshot overwrote the first. The connect listener below registers once it is up.
+			if (socket.connected) connect();
 			// A reconnect gets a new sid, which the server doesn't know as the admin
 			// of this game, so re-register or no player event ever arrives again.
 			socket.on('connect', connect);
@@ -145,7 +148,7 @@ SPDX-License-Identifier: MPL-2.0
 		console.log(game_state.quiz_data);
 		// A reload mid-game used to show the lobby again, with its music, because only
 		// `start_game` ever set this. The game says whether it has started.
-		game_state.game_started = Boolean(game_state.quiz_data.started);
+		game_state.game_started = Boolean(game_state.quiz_data?.started);
 		game_state.players = data['players'] ?? [];
 		setSeats(data['avatars']);
 		// After a dropped connection, not a reload: what happened to the question while
@@ -161,7 +164,9 @@ SPDX-License-Identifier: MPL-2.0
 		held = [];
 	});
 	socket.on('locked', (int_data) => {
-		game_state.quiz_data.locked = int_data.locked;
+		hold(() => {
+			if (game_state.quiz_data) game_state.quiz_data.locked = int_data.locked;
+		});
 	});
 	socket.on('player_joined', (int_data) => {
 		hold(() => {

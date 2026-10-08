@@ -143,7 +143,8 @@ async def rejoin_game(sid: str, data: dict):
     # on after a validation error with `data` still a dict.
     try:
         data = RejoinGameData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
+        # TypeError: a payload that is not an object at all, e.g. a bare string.
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -238,7 +239,8 @@ async def join_game(sid: str, data: dict):
     # one raised KeyError (the same fix rejoin_game got).
     try:
         data = JoinGameData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
+        # TypeError: a payload that is not an object at all, e.g. a bare string.
         await sio.emit("error", room=sid)
         print(e)
         return

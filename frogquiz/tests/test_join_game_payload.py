@@ -11,10 +11,13 @@ nor a database.
 
 import asyncio
 
+import pytest
+
 import frogquiz.socket_server as server
 
 
-def test_a_join_without_a_pin_is_refused_not_raised(monkeypatch):
+@pytest.mark.parametrize("payload", [{"username": "ana"}, "not an object", None])
+def test_a_join_without_a_pin_is_refused_not_raised(monkeypatch, payload):
     emitted: list[str] = []
 
     async def emit(event, *_args, **_kwargs):
@@ -27,5 +30,5 @@ def test_a_join_without_a_pin_is_refused_not_raised(monkeypatch):
     monkeypatch.setattr(server.sio, "emit", emit)
     monkeypatch.setattr(server, "redis", NoRedis())
 
-    asyncio.run(server.join_game("sid", {"username": "ana"}))
+    asyncio.run(server.join_game("sid", payload))
     assert emitted == ["error"]
