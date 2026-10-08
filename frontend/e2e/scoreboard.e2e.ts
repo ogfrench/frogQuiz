@@ -139,7 +139,7 @@ test('one press per question: answers, then the scoreboard, by themselves; none 
 	await expect(host.getByRole('button', { name: 'Scoreboard' })).toHaveCount(0);
 	await expect(host.getByRole('heading', { name: 'What do frogs eat?' })).toBeVisible();
 	await finalResults.click();
-	await expect(host.getByRole('link', { name: 'Back' })).toBeVisible();
+	await expect(host.getByRole('link', { name: 'Finish' })).toBeVisible();
 	await hostCtx.close();
 	for (const m of made) await m.c.close();
 });
@@ -196,7 +196,7 @@ test('Enter runs the same rounds as the buttons, and the scoreboard closes behin
 		.click();
 	await answersShown(host, 'What do frogs eat?');
 	await enter(); // straight to the podium, no scoreboard between
-	await expect(host.getByRole('link', { name: 'Back' })).toBeVisible();
+	await expect(host.getByRole('link', { name: 'Finish' })).toBeVisible();
 	await hostCtx.close();
 	await ana.context.close();
 });

@@ -76,6 +76,22 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 	await showResults(host);
 	await host.waitForTimeout(1200);
 	await advanceToFinalResults(host);
+	// Every frame of the build-up, where the winner's block is drawn: the transition's
+	// effect is only visible while it runs, so it is sampled in the page, not polled.
+	await host.evaluate(() => {
+		const w = window as unknown as { __podium: { h: number; bottom: number }[] };
+		w.__podium = [];
+		const end = performance.now() + 6000;
+		const tick = () => {
+			const el = document.querySelector('.podium-block.is-gold');
+			if (el) {
+				const r = el.getBoundingClientRect();
+				w.__podium.push({ h: r.height, bottom: r.bottom });
+			}
+			if (performance.now() < end) requestAnimationFrame(tick);
+		};
+		requestAnimationFrame(tick);
+	});
 
 	// Svelte keeps a delayed `in:` transition's element in the DOM at opacity 0, so the
 	// reveal is measured rather than asserted on presence.
@@ -92,6 +108,20 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 	await expect.poll(() => opacity('1st place'), { timeout: 6000 }).toBeGreaterThan(0.9);
 	// The crown lands once the winner's block has, not before.
 	await expect(host.locator('.crown')).toBeVisible();
+
+	// The block grows up out of the floor, rather than flying in from the bottom of the
+	// screen (Gonçalo, 7 Oct): part-way through, it is shorter than it ends, and its
+	// foot never leaves the line it stands on.
+	await host.waitForTimeout(1500);
+	const frames = await host.evaluate(
+		() => (window as unknown as { __podium: { h: number; bottom: number }[] }).__podium
+	);
+	const last = frames.at(-1)!;
+	const rising = frames.filter((f) => f.h > 2 && f.h < last.h * 0.9);
+	expect(rising.length, 'the winner never showed part-grown').toBeGreaterThan(3);
+	for (const f of rising) {
+		expect(Math.abs(f.bottom - last.bottom), `the block rose from below the floor: ${JSON.stringify([...new Set(frames.map((x) => Math.round(x.bottom)))])}`).toBeLessThan(2);
+	}
 
 	// Gold, silver and bronze rather than the near-black primary.
 	const medals = await host

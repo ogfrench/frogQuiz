@@ -8,6 +8,8 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import Check from '@lucide/svelte/icons/check';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Download from '@lucide/svelte/icons/download';
+	import { Button } from '$lib/components/ui/button';
 	import { socket } from '$lib/socket';
 	import { getLocalization } from '$lib/i18n';
 	import SomeAdminScreen from '$lib/admin.svelte';
@@ -220,6 +222,42 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
+{#snippet finish_actions()}
+	<!-- In the controls bar, where the step button was (controls.svelte). The token is
+	     one-shot and the server deletes it on download, so pressing again simply mints
+	     another one. Outline, not secondary: the secondary token is near-white on the
+	     podium's white ground and read as a line of text rather than a control. -->
+	<Button
+		variant="outline"
+		class="bg-card/80 backdrop-blur max-sm:max-w-28 max-sm:px-3 max-sm:text-xs max-sm:leading-tight max-sm:whitespace-normal"
+		disabled={export_pending}
+		onclick={request_answer_export}
+	>
+		<Download class="max-sm:hidden" aria-hidden="true" />
+		{export_pending
+			? $t('admin_page.requesting_export_results')
+			: $t('admin_page.download_export_results')}
+	</Button>
+	<!-- Hidden for an anonymous host. The backend writes the GameResults row with
+	     user=NULL, and every read path in routers/results.py is user-scoped, so the row it
+	     saves is unreachable afterwards. Read from `data`, not the `signedIn` store -- see
+	     +page.server.ts. Also hidden for signed-in hosts for the MVP, with Results (D4):
+	     a saved result is only readable from /results. Restore `data.signed_in` here. -->
+	{#if SAVE_RESULTS_ENABLED && data.signed_in}
+		<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
+			{#if results_saved}
+				<Check class="size-4" aria-hidden="true" />
+				<span class="sr-only">{$t('admin_page.save_results')}</span>
+			{:else}{$t('admin_page.save_results')}{/if}
+		</GrayButton>
+	{/if}
+	<!-- Finish, not Back: the game is over and there is nothing to go back to. The one
+	     primary control on the screen. /my-quizzes for everyone: it lists account quizzes
+	     when signed in and this browser's quizzes when not (D1 in MVP.md). No `target`,
+	     so it is a client-side navigation; GrayButton's `_self` made it a full load. -->
+	<Button href="/my-quizzes">{$t('words.finish')}</Button>
+{/snippet}
+
 <svelte:window onbeforeunload={confirmUnload} />
 <svelte:head>
 	<title>frogQuiz - Host</title>
@@ -234,63 +272,6 @@ SPDX-License-Identifier: MPL-2.0
 	class:text-black={bg_color}
 >
 	{#if JSON.stringify(game_state.final_results) !== JSON.stringify([null])}
-		{#if game_state.control_visible}
-			<!-- Two separately positioned fixed divs at top-14 and top-[6.5rem], each
-			     wrapped in a w-fit that fought GrayButton's own w-full, so the pair
-			     rendered as two misaligned pills of different widths hand-placed with
-			     magic numbers. One stack, below the h-12 controls bar, both the same
-			     width. -->
-			<!-- A host can run a game from a phone, where a 176px panel pinned top-right covers
-			     the podium it is sitting on. Below sm it is a row along the bottom instead,
-			     clear of the safe area. -->
-			<div
-				class="fixed inset-x-3 bottom-3 z-30 flex flex-row items-stretch gap-2 pb-[env(safe-area-inset-bottom,0px)] sm:inset-x-auto sm:top-16 sm:right-4 sm:bottom-auto sm:w-44 sm:flex-col sm:pb-0"
-			>
-				<!-- "Download results" used to be the only action here, which left the host
-				     stuck on the podium with nowhere to go once a game ended. -->
-				<!-- /my-quizzes for everyone: it lists account quizzes when signed in and
-				     this browser's quizzes when not (D1 in MVP.md). -->
-				<!-- Outline, not secondary: the podium is a white screen and the secondary
-				     token is near-white on it, so "Request result download" read as a line of
-				     text rather than a control. -->
-				<GrayButton
-					href="/my-quizzes"
-					flex={true}
-					variant="outline"
-					class="flex-1 min-w-0 sm:w-full"
-				>
-					<ArrowLeft class="size-4" aria-hidden="true" />
-					{$t('words.back')}
-				</GrayButton>
-				<!-- The token is one-shot and the server deletes it on download, so pressing
-				     again simply mints another one. -->
-				<GrayButton
-					variant="outline"
-					class="flex-1 min-w-0 sm:w-full"
-					disabled={export_pending}
-					onclick={request_answer_export}
-				>
-					{export_pending
-						? $t('admin_page.requesting_export_results')
-						: $t('admin_page.download_export_results')}
-				</GrayButton>
-				<!-- Hidden for an anonymous host. The backend writes the GameResults row
-				     with user=NULL, and every read path in routers/results.py is
-				     user-scoped, so the row it saves is unreachable afterwards. The
-				     podium and the spreadsheet export both work without an account and
-				     stay. Read from `data`, not the `signedIn` store -- see +page.server.ts. -->
-				<!-- Also hidden for signed-in hosts for the MVP, with Results (D4): a saved
-				     result is only readable from /results. Restore `data.signed_in` here. -->
-				{#if SAVE_RESULTS_ENABLED && data.signed_in}
-					<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
-						{#if results_saved}
-							<Check class="size-4" aria-hidden="true" />
-							<span class="sr-only">{$t('admin_page.save_results')}</span>
-						{:else}{$t('admin_page.save_results')}{/if}
-					</GrayButton>
-				{/if}
-			</div>
-		{/if}
 		<FinalResults bind:data={game_state.player_scores} {show_final_results} />
 	{/if}
 	{#if !success}
@@ -313,7 +294,7 @@ SPDX-License-Identifier: MPL-2.0
 			cqc_code={page.url.searchParams.get('cqc_code')}
 		/>
 	{:else}
-		<SomeAdminScreen {game_token} {bg_color} bind:game_state />
+		<SomeAdminScreen {game_token} {bg_color} bind:game_state finish={finish_actions} />
 	{/if}
 </div>
 <a

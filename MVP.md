@@ -72,7 +72,7 @@ Every route in `frontend/src/routes`, with what it does today and a proposal.
 | `/create` | Makes a new quiz and opens the editor | open | **K** | Done 2026-09-29: signed out → anonymous quiz, signed in → account quiz. Old `?anon=true` links still work |
 | `/edit` | Editor: left rail of questions plus one question card at a time | owner, or anon secret | **K**, redesign | See §4.3 |
 | `/view/[quiz_id]` | Quiz home: title, questions, Play, Practice, Download, owner Edit/Delete, anon expiry/claim | open by link | **K**, redesign (#17) | Redesigned 2026-09-28 (see §4.4); browser check still owed |
-| `/admin` | Host: lobby → question → results → podium | holder of `game_pin` + `game_id` | **K** | Fixed 2026-09-29: Cancel game in the lobby, End game mid-game, podium Back → `/my-quizzes`, and a Back on the registration-error state (§4.3) |
+| `/admin` | Host: lobby → question → results → podium | holder of `game_pin` + `game_id` | **K** | Fixed 2026-09-29: Cancel game in the lobby, End game mid-game, podium Finish → `/my-quizzes`, and a Back on the registration-error state (§4.3) |
 | `/dashboard` | 302 to `/my-quizzes` | open | **M** into `/my-quizzes` | Merged 2026-09-29 (D1). `/dashboard/files` is a separate route and untouched |
 | `/my-quizzes` | Signed out: this browser's quizzes, with expiry. Signed in: the account's quizzes, then this browser's under "On this browser" with Claim | open | **K** = My Quizzes (survivor) | Merged 2026-09-29. Play, Edit and Delete on every row; Analytics and Download on account rows |
 | `/overview` | 301 to `/my-quizzes` | open | **K** (redirect) | Retargeted 2026-09-29 |
@@ -280,7 +280,7 @@ because they may reorder everything else.
 - [x] **Exit the lobby** — host can cancel a game that hasn't started (end the game server-side, return to My Quizzes). New `end_game` socket event; players see "The host ended the game" and the PIN stops resolving
 - [x] **Exit mid-game** — host "End game" with a confirm; goes to the podium or back
 - [x] **Player exit** — a Leave button on the player screen, and a "game ended" state if the host ends it. Leave is offered outside live questions only; it frees the nickname and tells the host. New `leave_game` socket event
-- [x] **Return** — podium Back goes to `/my-quizzes` for everyone (today anonymous → `/`)
+- [x] **Return** — podium Finish (was Back until 2026-10-08) goes to `/my-quizzes` for everyone (today anonymous → `/`)
 - [x] **A way home from every page in the journey** (Gonçalo, 2026-09-29). Pages that hide the navbar leave you stranded: `/play` shows only "Game PIN" and Submit, with no way back. Audit every route that sets `navbarVisible = false` or renders without the navbar, and give each a home control where leaving makes sense. Exception: mid-game screens, where the exit is the Leave / End game control above rather than a bare link that drops you out of a live game.
   Audited 2026-09-29 — the navbar is hidden on six routes: `/play` (Home link, Leave, game-ended screen), `/admin` (Cancel game, End game, podium Back, and now a Back on the registration-error state that used to be a bare red line), `/create` and `/edit` (the editor's Back, now `/my-quizzes` for everyone). `/remote` and `/edit/videos` were skipped: both are Hide candidates
 - [x] Join screen: inline error instead of `alert('Game not found')` / `alert('Unknown error')` — also covers "already started", a taken nickname and being kicked
@@ -355,7 +355,7 @@ Round 2 of local play testing (Gonçalo, 2026-10-07). Eleven findings, fixed in 
 - [x] (2, 3) Start-game "one more detail" becomes "Add a join question"; the nickname step gets a heading and a hint when the PIN is typed as a name (2026-10-08). The spreadsheet column is headed with the host's question, and player text goes in as text, not formulas. Pinned by `e2e/join.e2e.ts` and `test_results_spreadsheet.py`, both failing before the fix
 - [x] (6, 8, 9) One press per question: results by themselves when the question ends, the scoreboard 3 s later, and no scoreboard after the last question (2026-10-08). One rule for the button, Enter/Space and the automatic flow (`lib/play/admin/next_step.ts`). Pinned by `e2e/scoreboard.e2e.ts` (mouse and keyboard-only), `next_step.test.ts` and `test_set_question_number_bounds.py`
 - [x] (4, 5, 7) Host bar inset and a theme switch in the game; an e2e test for images in a game; phone answer tiles in the host's order (2026-10-08). Checked at 390, 834 and 1440 in both themes. Pinned by `e2e/answer-order.e2e.ts` (failed before the fix) and `e2e/game-images.e2e.ts`; images already worked, the spec found nothing to fix
-- [ ] (10) Podium blocks grow from the floor; Finish instead of Back; the action panel redesigned
+- [x] (10) Podium blocks grow from the floor; Finish instead of Back; the action panel redesigned. Done 2026-10-08: the blocks scale up from the floor line, Finish and Download results sit in the host bar where the step button was, and the crown no longer drops the podium when it lands. Pinned by `e2e/podium.e2e.ts`
 - [ ] Closes #3 (MVP1 umbrella). #19 (visual pass) and #16 (modal live check) were closed on 2026-10-02
 - [ ] G ☐ F ☐ — agreed it's ready to share
 

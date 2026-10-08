@@ -102,7 +102,7 @@ test('the host ends mid-game: everyone gets the podium, Back goes to My Quizzes'
 
 	await page.getByRole('button', { name: 'End game' }).click();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'End game' }).click();
-	await expect(page.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '/my-quizzes');
+	await expect(page.getByRole('link', { name: 'Finish' })).toHaveAttribute('href', '/my-quizzes');
 	await expect(phone.getByRole('link', { name: 'Home' })).toBeVisible();
 
 	// Leaving once the game is over is just leaving. Both screens kept their "Leave
@@ -115,7 +115,7 @@ test('the host ends mid-game: everyone gets the podium, Back goes to My Quizzes'
 			void d.accept();
 		});
 	}
-	await page.getByRole('link', { name: 'Back' }).click();
+	await page.getByRole('link', { name: 'Finish' }).click();
 	await page.waitForURL(/\/my-quizzes/);
 	await phone.getByRole('link', { name: 'Home' }).click();
 	await phone.waitForURL((url) => url.pathname === '/');

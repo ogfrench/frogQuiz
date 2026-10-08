@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { socket } from './socket';
@@ -29,9 +30,11 @@ SPDX-License-Identifier: MPL-2.0
 		game_token: string;
 		bg_color: string;
 		game_state: IGameState;
+		/** The podium's actions, for the controls bar. */
+		finish?: Snippet;
 	}
 
-	let { game_token, bg_color, game_state = $bindable() }: Props = $props();
+	let { game_token, bg_color, game_state = $bindable(), finish }: Props = $props();
 
 	socket.on('get_question_results', () => {
 		console.log('get_question_results');
@@ -128,7 +131,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 {#if game_state.control_visible}
-	<Controls {bg_color} {socket_game_controls} {game_token} bind:game_state />
+	<Controls {bg_color} {socket_game_controls} {game_token} {finish} bind:game_state />
 {/if}
 {#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
 	<!-- Just under the controls bar: top-3 plus its h-12, and a hair of air. It was mt-12

@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import Flag from '@lucide/svelte/icons/flag';
@@ -20,9 +21,17 @@ SPDX-License-Identifier: MPL-2.0
 		socket_game_controls: SocketGameControls;
 		game_token: string;
 		game_state: IGameState;
+		/** What the host can do once the podium is up: the page that owns them passes them in. */
+		finish?: Snippet;
 	}
 
-	let { bg_color, socket_game_controls, game_token, game_state = $bindable() }: Props = $props();
+	let {
+		bg_color,
+		socket_game_controls,
+		game_token,
+		game_state = $bindable(),
+		finish
+	}: Props = $props();
 
 	const { t } = getLocalization();
 
@@ -127,6 +136,12 @@ SPDX-License-Identifier: MPL-2.0
 				class="admin-button text-balance max-sm:max-w-36 max-sm:px-3 max-sm:text-xs max-sm:leading-tight"
 				>{label}</button
 			>
+		{/if}
+		<!-- The podium's actions take the step button's place, so the last thing the host
+		     presses is where the next thing has been all game. They were a second panel
+		     under the bar, out of line with it, with both buttons squashed to 20px. -->
+		{#if JSON.stringify(game_state.final_results) !== JSON.stringify([null])}
+			{@render finish?.()}
 		{/if}
 	</div>
 </div>

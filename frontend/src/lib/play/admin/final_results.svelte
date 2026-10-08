@@ -79,6 +79,21 @@ SPDX-License-Identifier: MPL-2.0
 				? $t('play_page.2nd_place')
 				: $t('play_page.3rd place');
 
+	// A block grows up out of the floor line. It used to fly in 160px from below with no
+	// clip, so on a projector it rose from the bottom edge of the screen rather than from
+	// the podium (Gonçalo, 7 Oct). scaleY is a transform and the fade is opacity, the
+	// only two things this app animates (app.css, Motion). The fade is quick, so the
+	// block is solid for almost the whole rise.
+	function grow(_node: Element, { delay = 0, duration = 0 }) {
+		return {
+			delay,
+			duration,
+			easing: cubicOut,
+			css: (t: number) =>
+				`transform-origin: bottom; transform: scaleY(${t}); opacity: ${Math.min(1, t * 4)}`
+		};
+	}
+
 	let canvas: HTMLCanvasElement = $state();
 	let winner_shown = $state(reduced());
 	onMount(() => {
@@ -118,13 +133,24 @@ SPDX-License-Identifier: MPL-2.0
 				<div class="flex min-w-0 flex-1 flex-col items-center gap-3">
 					<div
 						class="flex w-full min-w-0 flex-col items-center gap-0.5 text-center"
-						in:fly|global={{ y: -40, duration: dur(DUR.stage), delay: p.delay + 150, easing: cubicOut }}
+						in:fly|global={{
+							y: 12,
+							duration: dur(DUR.surface),
+							delay: p.delay + dur(DUR.reveal) - dur(DUR.control),
+							easing: cubicOut
+						}}
 					>
 						<!-- The winner gets the one piece of ornament on the screen, and it
-						     arrives after their block has landed. -->
-						{#if p.place === 1 && winner_shown}
-							<span class="crown" style="color: #e0a92a" in:fade|global={{ duration: dur(DUR.surface) }}>
-								<Crown class="size-8 sm:size-10" aria-hidden="true" />
+						     arrives after their block has landed. Its room is held from the
+						     start: inserted on arrival, it made the column taller and dropped the
+						     whole podium, floor and all, 21px in one frame. -->
+						{#if p.place === 1}
+							<span class="grid size-8 place-items-center sm:size-10">
+								{#if winner_shown}
+									<span class="crown" style="color: #e0a92a" in:fade|global={{ duration: dur(DUR.surface) }}>
+										<Crown class="size-8 sm:size-10" aria-hidden="true" />
+									</span>
+								{/if}
 							</span>
 						{/if}
 						<!-- Kahoot's podium is the recognizable shape, and the winner is the
@@ -163,7 +189,7 @@ SPDX-License-Identifier: MPL-2.0
 						class="podium-block {medal(p.place)} flex w-full {p.height} flex-col items-center
 							justify-start gap-1 rounded-t-2xl border border-b-0 border-border pt-3 -mb-[2px]"
 						class:is-winner={p.place === 1}
-						in:fly|global={{ y: 160, duration: dur(DUR.reveal), delay: p.delay, easing: cubicOut }}
+						in:grow|global={{ duration: dur(DUR.reveal), delay: p.delay }}
 					>
 						<span class="fq-display font-bold tabular-nums">{p.place}</span>
 						<!-- One element, not a visible one plus an sr-only copy of the same
