@@ -6,6 +6,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Game music, 8 Oct
 
+- Added a ticking loop to the host question screen that speeds up as the time runs out (the heartbeat curve: calm for the first half, close to double speed at the end, with a wobble that grows). It fades out at zero or when the question ends, and follows the shared mute.
+- Added the question tick, `question/tick-loop.wav`, generated in the repo by `question/make-tick-loop.py` from parameters measured on a sampled game-show tick. It uses no samples, so it carries no third-party licence.
 - Added podium music: Charpentier's Te Deum prelude (public domain, Pracchia-78), the whole piece cut from its first note instead of the 3.4 s of leading silence, with a 1 s fade in, a fade out and 1.5 s of silence at the end so it loops cleanly. It plays on the host's podium only, starting with the confetti when the winner lands.
 - Made the music mute and volume one shared setting for the whole game: muting in the lobby or on the podium mutes every screen live (and survives a reload or a second tab). The lobby slider writes the same setting.
 - Brought every track to about -18 LUFS (measured) so moving between the lobby and the podium never jumps in volume.
