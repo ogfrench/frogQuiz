@@ -354,6 +354,8 @@
     },
     "admin_page": {
         "already_registered_as_admin": "There is already an admin registered for this game.",
+        "connection_failed": "Couldn't reach the game server. Check your connection, then reload this page.",
+        "no_game_in_link": "This link has no game in it. Start the game again from its quiz.",
         "cancel_game": "Cancel game",
         "cancel_confirm_title": "Cancel this game?",
         "cancel_confirm_body": "The PIN stops working, and anyone who has joined is told the game was canceled.",
