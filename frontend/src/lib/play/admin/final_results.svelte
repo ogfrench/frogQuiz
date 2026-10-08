@@ -14,6 +14,10 @@ SPDX-License-Identifier: MPL-2.0
 	import confetti from 'canvas-confetti';
 	import Crown from '@lucide/svelte/icons/crown';
 	import Medal from '@lucide/svelte/icons/medal';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import * as Collapsible from '$lib/components/ui/collapsible';
+	import { buttonVariants } from '$lib/components/ui/button';
+	import FrogAvatar from '$lib/components/FrogAvatar.svelte';
 
 	const { t } = getLocalization();
 
@@ -60,6 +64,11 @@ SPDX-License-Identifier: MPL-2.0
 		}))
 	);
 	let runners_up = $derived(ranked.slice(3, 8));
+	// Everybody below eighth. Folded away by default: the podium is the moment, and a
+	// full ranking is for whoever wants to look for themselves afterwards. On a phone
+	// the player's own place is already in the pill at the bottom.
+	let the_rest = $derived(ranked.slice(8));
+	let show_all = $state(false);
 	const medal = (place: number) =>
 		place === 1 ? 'is-gold' : place === 2 ? 'is-silver' : 'is-bronze';
 	// Only on a player's own screen, and only for the three places that are a place.
@@ -153,6 +162,11 @@ SPDX-License-Identifier: MPL-2.0
 								{/if}
 							</span>
 						{/if}
+						<!-- The winner's frog is the largest, as their name is. -->
+						<FrogAvatar
+							name={p.name}
+							class="mb-1 {p.place === 1 ? 'size-20 sm:size-28' : 'size-14 sm:size-20'}"
+						/>
 						<!-- Kahoot's podium is the recognizable shape, and the winner is the
 						     point of it: their name is the largest thing on the screen and their
 						     score sits in the gold, rather than all three being labeled the same
@@ -207,23 +221,59 @@ SPDX-License-Identifier: MPL-2.0
 			{/each}
 		</div>
 
+		{#snippet row(p: { name: string; score: number; place: number })}
+			<li class="flex items-center gap-3 px-4 py-2">
+				<span class="w-6 text-sm font-semibold text-muted-foreground tabular-nums"
+					>{p.place}</span
+				>
+				<FrogAvatar name={p.name} class="size-8" />
+				<span class="min-w-0 flex-1 truncate font-medium" title={p.name}>{p.name}</span>
+				<span class="text-sm text-muted-foreground tabular-nums">{p.score}</span>
+			</li>
+		{/snippet}
+
 		{#if runners_up.length}
-			<ul
-				class="w-full max-w-md divide-y divide-border overflow-hidden rounded-xl border border-border bg-card"
+			<div
+				class="w-full max-w-md"
 				in:fade|global={{ duration: dur(DUR.surface), delay: reduced() ? 0 : winner_lands + 900 }}
 			>
-				{#each runners_up as p (p.name)}
-					<li class="flex items-center gap-3 px-4 py-2.5">
-						<span class="w-6 text-sm font-semibold text-muted-foreground tabular-nums"
-							>{p.place}</span
-						>
-						<span class="min-w-0 flex-1 truncate font-medium" title={p.name}
-							>{p.name}</span
-						>
-						<span class="text-sm text-muted-foreground tabular-nums">{p.score}</span>
-					</li>
-				{/each}
-			</ul>
+				<Collapsible.Root bind:open={show_all} class="flex flex-col items-center gap-3">
+					<div class="w-full overflow-hidden rounded-xl border border-border bg-card">
+						<ul class="divide-y divide-border">
+							{#each runners_up as p (p.name)}
+								{@render row(p)}
+							{/each}
+						</ul>
+						<!-- A second list rather than the Content inside the first: Content
+						     renders a div, and a div is not allowed as a child of a ul. -->
+						{#if the_rest.length}
+							<Collapsible.Content>
+								<ul class="divide-y divide-border border-t border-border">
+									{#each the_rest as p (p.name)}
+										{@render row(p)}
+									{/each}
+								</ul>
+							</Collapsible.Content>
+						{/if}
+					</div>
+					{#if the_rest.length}
+						<Collapsible.Trigger class={buttonVariants({ variant: 'outline', size: 'sm' })}>
+							{show_all
+								? $t('admin_page.show_fewer_players')
+								: $t('admin_page.show_all_players', { count: ranked.length })}
+							<ChevronDown
+								class="transition-transform {show_all ? 'rotate-180' : ''}"
+								aria-hidden="true"
+							/>
+						</Collapsible.Trigger>
+					{/if}
+				</Collapsible.Root>
+			</div>
+		{/if}
+		<!-- Room under the last row for the fixed score pill on a player's phone, or the
+		     expanded list ends underneath it. -->
+		{#if username && username in data}
+			<div class="h-16 shrink-0" aria-hidden="true"></div>
 		{/if}
 	</div>
 
@@ -233,8 +283,9 @@ SPDX-License-Identifier: MPL-2.0
 		{@const medal = me && me.place <= 3 ? MEDALS[me.place] : null}
 		<div class="fixed bottom-0 left-0 mb-6 flex w-full justify-center px-4">
 			<div
-				class="border-border bg-card/90 flex items-center gap-4 rounded-full border px-5 py-2.5 shadow-lg backdrop-blur"
+				class="border-border bg-card/90 flex items-center gap-3 rounded-full border py-1.5 pr-5 pl-1.5 shadow-lg backdrop-blur"
 			>
+				<FrogAvatar name={username} class="size-9" />
 				<!-- A player who placed gets the medal on their own phone, which is the only
 				     thing they take away from the room. Kahoot does the same, and it is the
 				     difference between "you finished" and "you placed". -->

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import logging
+import random
 from typing import Callable
 
 import aiohttp
@@ -236,3 +237,44 @@ async def has_already_answered(game_pin: str, q_index: int, username: str) -> bo
     else:
         answers = list(filter(lambda a: a.username == username, answers.root))
         return len(answers) > 0
+
+
+# How long a game's avatar seats are kept: the same five hours as `game:{pin}` itself
+# (routers/live.py), so the frogs never expire out from under a game still running.
+AVATAR_TTL_SECONDS = 18000
+
+
+async def assign_avatar(game_pin: str, username: str) -> int:
+    """Give a player their seat for the game, or the one they already have.
+
+    A seat is a plain counter: the frontend draws frog `seat % len(frogs)`, so consecutive
+    seats are different frogs until the room has more players than there are frogs. The
+    server does not know how many frogs there are, and does not need to -- the art can
+    change without touching this.
+
+    The counter starts at a random point, or the first player in every game would get the
+    same frog. A player keeps their seat for the whole game: across a reload, and across
+    leaving and joining again under the same name, because the seat is keyed by name and
+    is never handed back. Kicked or departed players still sit on the scoreboard, so their
+    frog has to stay theirs.
+    """
+    seats = f"game:{game_pin}:avatars"
+    existing = await redis.hget(seats, username)
+    if existing is not None:
+        return int(existing)
+    counter = f"game:{game_pin}:avatar_seq"
+    await redis.set(counter, random.randrange(1000), nx=True, ex=AVATAR_TTL_SECONDS)
+    seat = await redis.incr(counter)
+    # HSETNX, not HSET: if this name somehow got a seat in between, that one stands and
+    # the counter value is simply skipped.
+    await redis.hsetnx(seats, username, seat)
+    # Both kept alive together: a counter that expired on its own would restart at a new
+    # random point and hand out seats already taken.
+    await redis.expire(seats, AVATAR_TTL_SECONDS)
+    await redis.expire(counter, AVATAR_TTL_SECONDS)
+    return int(await redis.hget(seats, username))
+
+
+async def get_avatars(game_pin: str) -> dict[str, int]:
+    """Every seat handed out in this game, by username."""
+    return {name: int(seat) for name, seat in (await redis.hgetall(f"game:{game_pin}:avatars")).items()}

@@ -23,6 +23,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { onMount } from 'svelte';
 	import { totalsFromResults } from '$lib/play/admin/totals';
+	import { addSeat, setSeats } from '$lib/play/avatars.svelte';
 	const { t } = getLocalization();
 
 	interface Props {
@@ -271,6 +272,9 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('solutions', (data) => {
 		solution = data;
 	});
+	// Everybody's frog, not only this player's: the podium names the whole top eight.
+	socket.on('avatars', setSeats);
+	socket.on('avatar', addSeat);
 
 	let bg_color = $derived(gameData ? gameData.background_color : undefined);
 

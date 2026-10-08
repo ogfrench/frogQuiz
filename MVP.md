@@ -363,7 +363,7 @@ Round 2 of local play testing (Gonçalo, 2026-10-07). Eleven findings, fixed in 
 
 - [ ] Azure single sign-on (build on `frogquiz/oauth/`, which is config-gated and deliberately kept)
 - [ ] Internal wiki page: tools, alternatives, pros/cons
-- [ ] MVP2 features (avatars, rank position, word cloud, etc.) — issue #4 and `BACKLOG.md`
+- [ ] MVP2 features (avatars, rank position, word cloud, etc.) — issue #4 and `BACKLOG.md`. Avatars landed early (2026-10-08): a frog per player, assigned by the server and unique within a game, on the lobby, scoreboard, podium and the player's phone. Rank position and word cloud are still open
 - [ ] More languages (D10). The 33 upstream locale files were removed, but i18next, `getLocalization` and every `$t(...)` call are still in place, so adding a language is a translated `locales/<lang>.json` plus a picker
 - [ ] Submit frogQuiz to the internal Use Case Hub
 

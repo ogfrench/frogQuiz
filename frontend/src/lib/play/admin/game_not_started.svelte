@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import X from '@lucide/svelte/icons/x';
+	import FrogAvatar from '$lib/components/FrogAvatar.svelte';
 	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
@@ -142,7 +143,7 @@ SPDX-License-Identifier: MPL-2.0
 									player.username,
 									game_state.players
 								)}
-							class="group rounded-full border border-border bg-card px-4 py-2 text-lg font-medium shadow-sm
+							class="group flex items-center gap-2.5 rounded-full border border-border bg-card py-1.5 pr-4 pl-1.5 text-lg font-medium shadow-sm
 								transition-all hover:border-destructive hover:text-destructive
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
 								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
@@ -151,6 +152,9 @@ SPDX-License-Identifier: MPL-2.0
 							<!-- Wraps inside the pill rather than stretching it past the projector: the
 						     list is flex-wrap, so a chip that is wider than the screen overflows
 						     the page instead of going to the next line. -->
+							<!-- The frog is what a player looks for on the projector to see they are
+							     in; the name confirms it. -->
+							<FrogAvatar name={player.username} class="size-9 lg:size-12" />
 							<span class="block max-w-[20ch] wrap-anywhere group-hover:line-through"
 								>{player.username}</span
 							>
