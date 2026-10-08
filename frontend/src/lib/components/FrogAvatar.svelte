@@ -20,24 +20,19 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { name, class: className, children }: Props = $props();
 
-	const frog = $derived(frogFor(name));
+	const src = $derived(frogFor(name));
 	// The first character, not the first UTF-16 unit: an emoji nickname is two of those.
 	const initial = $derived(Array.from(name.trim())[0]?.toUpperCase() ?? '');
 </script>
 
 <!-- Decorative: the name is always printed beside it, so a screen reader would only
-     hear it twice. -->
+     hear it twice. The ground is opaque because the frogs are drawn at about 90%
+     opacity, so whatever sits behind the circle would tint them. -->
 <Avatar.Root class={cn('bg-muted text-muted-foreground @container size-10', className)} aria-hidden="true">
-	{#if frog}
-		<!-- Padding inside the circle: the art is square, and a hat or a raised hand in a
-		     corner is cut off by the round mask without it. The colour is the frog's own:
-		     once the poses run out, the same set comes round again in another hue. -->
-		<Avatar.Image
-			src={frog.src}
-			alt=""
-			class="object-contain p-[6%]"
-			style={frog.hue ? `filter: hue-rotate(${frog.hue}deg)` : undefined}
-		/>
+	{#if src}
+		<!-- Padding inside the circle: the art is square, and a kite or an umbrella in a
+		     corner is cut off by the round mask without it. -->
+		<Avatar.Image {src} alt="" class="object-contain p-[9%]" />
 	{/if}
 	<!-- Sized to the circle, not the text around it: the same component is 32px in the
 	     lobby and 112px on the podium. Ground and ink come from the root, so one class on
