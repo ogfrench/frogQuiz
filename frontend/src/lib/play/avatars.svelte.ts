@@ -4,8 +4,9 @@
 
 // Every player gets a frog, and nobody chooses it. The server hands each player a seat
 // when they join -- a counter, unique within the game -- and this file turns a seat into
-// a frog. Seats are consecutive, so two players share a frog only once a room has more
-// players than there are frogs.
+// a frog: a pose from the folder, and a colour for it. Seats are consecutive, so the poses
+// are used up first, then the whole set comes round again in the next colour. Two players
+// share a frog only once a room has more players than poses times colours.
 
 // Whatever is in the folder, in file-name order. Adding or removing a frog is a file
 // operation: nothing here or on the server counts them.
@@ -19,6 +20,12 @@ export const FROGS: readonly string[] = Object.keys(files)
 	.sort()
 	.map((path) => files[path]);
 
+/** The `hue-rotate()` angles the poses are shown in, in the order the rounds come. The
+ * first is the art as drawn. */
+export const HUES: readonly number[] = [0, 90, 150, 200, 260, 310];
+
+export type Frog = { src: string; hue: number };
+
 /** Seats by username, for the game this page is in. */
 export const avatars = $state<{ seats: Record<string, number> }>({ seats: {} });
 
@@ -30,11 +37,18 @@ export function setSeats(seats: unknown) {
 			: {};
 }
 
-export function frogForSeat(seat: number | undefined, frogs: readonly string[] = FROGS) {
-	if (seat === undefined || !Number.isInteger(seat) || frogs.length === 0) return undefined;
+export function frogForSeat(
+	seat: number | undefined,
+	frogs: readonly string[] = FROGS,
+	hues: readonly number[] = HUES
+): Frog | undefined {
+	if (seat === undefined || !Number.isInteger(seat) || frogs.length === 0 || hues.length === 0)
+		return undefined;
 	// The counter starts at a random point and only goes up, but a negative seat should
 	// still land on a frog rather than on undefined.
-	return frogs[((seat % frogs.length) + frogs.length) % frogs.length];
+	const pose = ((seat % frogs.length) + frogs.length) % frogs.length;
+	const round = Math.floor(seat / frogs.length);
+	return { src: frogs[pose], hue: hues[((round % hues.length) + hues.length) % hues.length] };
 }
 
 /** The server's `avatar` event: one new seat, sent to everybody already in the room. */
