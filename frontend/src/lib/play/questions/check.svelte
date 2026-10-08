@@ -58,8 +58,11 @@ SPDX-License-Identifier: MPL-2.0
 		<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 	</div>
 
+	<!-- Row by row, as on the host: red top-left, blue top-right, green bottom-left,
+	     purple bottom-right. It filled column by column, so blue and green swapped
+	     places between the projector and the phone. -->
 	<div
-		class="grid grid-rows-2 grid-flow-col auto-cols-[minmax(0,1fr)] gap-3 w-full p-4 h-full"
+		class="grid grid-cols-2 auto-rows-fr gap-3 w-full p-4 h-full"
 		class:has-picks={_selected_answers.some(Boolean)}
 	>
 		{#each answers as answer, i}

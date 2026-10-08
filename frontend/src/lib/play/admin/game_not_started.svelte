@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import X from '@lucide/svelte/icons/x';
 	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state';
 
@@ -55,7 +56,9 @@ SPDX-License-Identifier: MPL-2.0
 		{$t('admin_page.cancel_game')}
 	</ConfirmAction>
 </div>
-<div class="fixed top-3 right-3 z-30">
+<!-- The navbar is hidden in a game, and with it the only theme switch. -->
+<div class="fixed top-3 right-3 z-30 flex items-center gap-2">
+	<ThemeToggle class="bg-card/80 border-border border shadow-sm backdrop-blur" />
 	<LockToggle locked={game_state.quiz_data?.locked} {socket_game_controls} />
 </div>
 

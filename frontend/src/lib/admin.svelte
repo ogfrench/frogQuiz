@@ -131,11 +131,13 @@ SPDX-License-Identifier: MPL-2.0
 	<Controls {bg_color} {socket_game_controls} {game_token} bind:game_state />
 {/if}
 {#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
-	<!-- mt-12 matches the controls bar's h-12. It was mt-10 against an h-10 bar; the
-	     bar is taller now and the rule was cutting across its bottom edge. -->
+	<!-- Just under the controls bar: top-3 plus its h-12, and a hair of air. It was mt-12
+	     when the bar sat flush at the top. -->
 	<span
-		class="bg-destructive/90 fixed top-0 left-0 h-1.5 w-full origin-left rounded-r-full transition-transform duration-1000 ease-linear"
-		class:mt-12={game_state.control_visible}
+		class={[
+			'bg-destructive/90 fixed left-0 h-1.5 w-full origin-left rounded-r-full transition-transform duration-1000 ease-linear',
+			game_state.control_visible ? 'top-[4.25rem]' : 'top-0'
+		]}
 		role="progressbar"
 		aria-label="Time remaining"
 		aria-valuemin="0"
@@ -146,7 +148,8 @@ SPDX-License-Identifier: MPL-2.0
 	></span>
 {/if}
 
-<div class="contents">
+<!-- Every host screen inside is an fq-stage; this keeps them clear of the fixed bar. -->
+<div class="contents" style:--fq-stage-top={game_state.control_visible ? '4.5rem' : null}>
 	{#if game_state.timer_res !== undefined && !final_results_clicked && !game_state.question_results}
 		<!-- Question is shown -->
 		{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}

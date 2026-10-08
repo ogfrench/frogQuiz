@@ -20,6 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import House from '@lucide/svelte/icons/house';
 	import LogOut from '@lucide/svelte/icons/log-out';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { onMount } from 'svelte';
 	import { totalsFromResults } from '$lib/play/admin/totals';
 	const { t } = getLocalization();
@@ -314,6 +315,13 @@ SPDX-License-Identifier: MPL-2.0
 				<LogOut />
 				{$t('play_page.leave_game')}
 			</ConfirmAction>
+		</div>
+	{/if}
+	<!-- The navbar is hidden here, and with it the only theme switch. Not during a
+	     question, where the whole screen is answer tiles and a stray tap costs points. -->
+	{#if !in_question}
+		<div class="fixed top-3 right-3 z-30">
+			<ThemeToggle class="bg-card/80 border-border border shadow-sm backdrop-blur" />
 		</div>
 	{/if}
 	{#if host_gone && joined && !show_final && !game_ended}

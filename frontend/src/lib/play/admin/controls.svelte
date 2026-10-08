@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import Flag from '@lucide/svelte/icons/flag';
 	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
 	import { isLastQuestion, nextStep, performStep, stepState } from '$lib/play/admin/next_step';
@@ -56,15 +57,17 @@ SPDX-License-Identifier: MPL-2.0
 
 <!-- Was a two-column grid whose button cell asked for col-start-3, a column that
      does not exist, so the one control the host actually uses ended up wherever the
-     browser put it. A flex row with space-between says what is meant. -->
+     browser put it. A flex row with space-between says what is meant. Inset from the
+     edges like the lobby's corner controls: flush against the top it read as crammed
+     on a projector (Gonçalo, 7 Oct). fq-stage keeps clear of it (--fq-stage-top). -->
 <div
-	class="fixed inset-x-0 top-0 z-20 flex h-12 items-center justify-between gap-3 px-3"
+	class="fixed inset-x-3 top-3 z-20 flex min-h-12 items-center justify-between gap-2 rounded-2xl sm:gap-3"
 	style="background: {bg_color ? bg_color : 'transparent'}"
 	class:text-black={bg_color}
 >
 	<!-- Question position is the most-referenced state on a projector screen, so
 	     it gets a legible pill rather than 14px of body text in the corner. -->
-	<div class="flex items-center gap-2">
+	<div class="flex min-w-0 items-center gap-2">
 		<p
 			class="rounded-full border border-border bg-card/80 px-3 py-1
 				text-base font-semibold tabular-nums shadow-sm backdrop-blur"
@@ -88,7 +91,9 @@ SPDX-License-Identifier: MPL-2.0
 				class="bg-card/80 backdrop-blur"
 			>
 				<Flag />
-				{$t('admin_page.end_game')}
+				<!-- Icon only on a phone, where the bar has no room for the word and the step
+				     button; the confirm dialog still says what it does. -->
+				<span class="max-sm:sr-only">{$t('admin_page.end_game')}</span>
 			</ConfirmAction>
 			<!-- Late joiners need the PIN once the lobby has gone, as Kahoot keeps it on screen. -->
 			{#if !game_state.quiz_data.locked}
@@ -108,14 +113,19 @@ SPDX-License-Identifier: MPL-2.0
 			/>
 		{/if}
 	</div>
-	<div>
+	<div class="flex items-center gap-2">
+		<!-- The navbar is hidden in a game, and with it the only theme switch. -->
+		<ThemeToggle class="bg-card/80 border-border border shadow-sm backdrop-blur" />
 		<!-- The standings get their own step between the answers and the next question,
 		     the way Kahoot sequences a round. It comes up by itself three seconds after the
 		     answers (admin.svelte); this button is there to skip ahead. -->
 		{#if step !== 'none'}
+			<!-- "Stop time and show solutions" is the longest label. On a phone it takes two
+			     short lines inside the bar; it used to wrap to three and hang below it. -->
 			<button
 				onclick={() => performStep(step, socket_game_controls, game_state, game_token)}
-				class="admin-button">{label}</button
+				class="admin-button text-balance max-sm:max-w-36 max-sm:px-3 max-sm:text-xs max-sm:leading-tight"
+				>{label}</button
 			>
 		{/if}
 	</div>

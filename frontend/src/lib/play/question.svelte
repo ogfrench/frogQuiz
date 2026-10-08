@@ -238,8 +238,11 @@ SPDX-License-Identifier: MPL-2.0
 				<!-- Equal columns: auto-cols-auto sized each column by its answer text, so
 				     with answers shown on the phone one tile could be half the width of
 				     its neighbor. -->
+				<!-- Row by row, as on the host: red top-left, blue top-right, green bottom-left,
+				     purple bottom-right. It filled column by column, so blue and green swapped
+				     places between the projector and the phone. -->
 				<div
-					class="grid grid-rows-2 grid-flow-col auto-cols-[minmax(0,1fr)] gap-3 w-full p-4 h-full"
+					class="grid grid-cols-2 auto-rows-fr gap-3 w-full p-4 h-full"
 				>
 					{#each answers as answer, i}
 						{@const picked = selected_answer === answer.answer}

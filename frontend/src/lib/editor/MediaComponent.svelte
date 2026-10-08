@@ -44,7 +44,14 @@ SPDX-License-Identifier: MPL-2.0
 			return;
 		}
 		const res = await fetch(`/api/v1/storage/info/${src}`);
-		const fileType = res.headers.get('Content-Type');
+		// A deleted or unreadable file draws nothing, rather than an object URL of the
+		// error page as a broken image. And a response with no Content-Type used to throw
+		// here, which left the question's media slot spinning on its placeholder.
+		if (!res.ok) {
+			type = undefined;
+			return;
+		}
+		const fileType = res.headers.get('Content-Type') ?? '';
 		if (fileType.includes('video')) {
 			type = 'video';
 		} else {
