@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { describe, expect, it } from 'vitest';
-import { FROGS, HUES, addSeat, avatars, frogFor, frogForSeat, setSeats } from './avatars.svelte';
+import { FROGS, addSeat, avatars, frogFor, frogForSeat, setSeats } from './avatars.svelte';
 
 describe('frog avatars', () => {
 	it('finds the frogs in the assets folder', () => {
@@ -12,40 +12,22 @@ describe('frog avatars', () => {
 	});
 
 	// The server's promise is consecutive seats; ours is that consecutive seats are
-	// different frogs. That is the whole of "unique per game", and it holds for every
-	// pose in every colour, not just the first round.
+	// different frogs. That is the whole of "unique per game".
 	it('gives a full room of consecutive seats a different frog each', () => {
 		const start = 517; // the server starts the counter at a random point
-		const size = FROGS.length * HUES.length;
-		const room = Array.from({ length: size }, (_, i) => {
-			const frog = frogForSeat(start + i)!;
-			return `${frog.src}@${frog.hue}`;
-		});
-		expect(new Set(room).size).toBe(size);
+		const room = Array.from({ length: FROGS.length }, (_, i) => frogForSeat(start + i));
+		expect(new Set(room).size).toBe(FROGS.length);
 	});
 
-	it('uses up the poses before it starts on the next colour', () => {
-		const first = Array.from({ length: FROGS.length }, (_, i) => frogForSeat(i * 1)!);
-		expect(new Set(first.map((f) => f.hue)).size).toBe(1);
-		expect(new Set(first.map((f) => f.src)).size).toBe(FROGS.length);
-		expect(frogForSeat(FROGS.length)!.hue).not.toBe(frogForSeat(0)!.hue);
-		expect(frogForSeat(FROGS.length)!.src).toBe(frogForSeat(0)!.src);
-	});
-
-	it('shows the first round as drawn, and wraps once colours run out too', () => {
-		expect(frogForSeat(0)!.hue).toBe(0);
-		const all = FROGS.length * HUES.length;
-		expect(frogForSeat(all + 3)).toEqual(frogForSeat(3));
-		const back = frogForSeat(-1)!;
-		expect(back.src).toBe(FROGS[FROGS.length - 1]);
-		expect(back.hue).toBe(HUES[HUES.length - 1]);
+	it('wraps once the room outgrows the frogs, rather than running out', () => {
+		expect(frogForSeat(FROGS.length + 3)).toBe(frogForSeat(3));
+		expect(frogForSeat(-1)).toBe(FROGS[FROGS.length - 1]);
 	});
 
 	it('shows no frog until a seat has arrived', () => {
 		expect(frogForSeat(undefined)).toBeUndefined();
 		expect(frogForSeat(2.5)).toBeUndefined();
 		expect(frogForSeat(3, [])).toBeUndefined();
-		expect(frogForSeat(3, FROGS, [])).toBeUndefined();
 	});
 
 	it('looks players up by name, and a name like "constructor" is not a seat', () => {
