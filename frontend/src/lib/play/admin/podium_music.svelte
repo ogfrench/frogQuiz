@@ -78,7 +78,11 @@ SPDX-License-Identifier: MPL-2.0
 		audio.volume = volume / 100;
 		if (!on) audio.pause();
 		// Switched back on after the piece began: resume rather than restart it.
-		else if (started) audio.play().catch(() => (blocked = true));
+		else if (started)
+			audio.play().catch((e) => {
+				// Same as start(): a mute racing the resume is not a block.
+				if (!(e instanceof DOMException && e.name === 'AbortError')) blocked = true;
+			});
 	});
 
 	const toggle = () => {

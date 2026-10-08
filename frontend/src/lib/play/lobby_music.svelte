@@ -44,7 +44,9 @@ SPDX-License-Identifier: MPL-2.0
 		try {
 			await audio.play();
 			blocked = false;
-		} catch {
+		} catch (e) {
+			// A mute that lands while play() is pending rejects it with AbortError: that is not a block.
+			if (e instanceof DOMException && e.name === 'AbortError') return;
 			blocked = true;
 		}
 	};

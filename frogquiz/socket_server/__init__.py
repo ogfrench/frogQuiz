@@ -195,6 +195,9 @@ async def rejoin_game(sid: str, data: dict):
         {"username": data.username, "sid": sid, "avatar": avatar},
         room=f"admin:{data.game_pin}",
     )
+    # Everyone else's phones need the seat too, not only the host's: a rejoin can hand out a
+    # new one (a player from before seats existed). Idempotent for the phones that have it.
+    await sio.emit("avatar", {"username": data.username, "seat": avatar}, room=data.game_pin, skip_sid=sid)
     # The frogs of everybody already in, which this phone has missed while it was away.
     await sio.emit("avatars", await get_avatars(data.game_pin), room=sid)
     # The game is over: a phone asleep through the podium missed it (E18).
@@ -231,15 +234,17 @@ async def send_open_question(sid: str, game_data: PlayGame, username: str) -> No
 
 @sio.event
 async def join_game(sid: str, data: dict):
-    redis_res = await redis.get(f"game:{data['game_pin']}")
-    if redis_res is None:
-        await sio.emit("game_not_found", room=sid)
-        return
+    # Validated first: the PIN used to be read out of the raw payload, so a message without
+    # one raised KeyError (the same fix rejoin_game got).
     try:
         data = JoinGameData(**data)
     except ValidationError as e:
         await sio.emit("error", room=sid)
         print(e)
+        return
+    redis_res = await redis.get(f"game:{data.game_pin}")
+    if redis_res is None:
+        await sio.emit("game_not_found", room=sid)
         return
     game_data = PlayGame.model_validate_json(redis_res)
     # A started game used to refuse everyone. Now, as in Kahoot, a late joiner gets in with
@@ -370,6 +375,10 @@ async def register_as_admin(sid: str, data: dict):
         await existing_session.save(game_pin)
         # Clears "the host has left" on the phones, if it went out (E22).
         await sio.emit("host_back", room=game_pin)
+    session = {"game_pin": game_pin, "admin": True, "remote": False}
+    await save_session(sid, sio, session)
+    await sio.enter_room(sid, game_pin)
+    await sio.enter_room(sid, f"admin:{data.game_pin}")
     players = [json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")]
     answer_count = 0
     if game.current_question >= 0:
@@ -393,10 +402,6 @@ async def register_as_admin(sid: str, data: dict):
         },
         room=sid,
     )
-    session = {"game_pin": game_pin, "admin": True, "remote": False}
-    await save_session(sid, sio, session)
-    await sio.enter_room(sid, game_pin)
-    await sio.enter_room(sid, f"admin:{data.game_pin}")
 
 
 @sio.event
@@ -420,7 +425,8 @@ async def set_question_number(sid: str, data: str):
     game_pin = session["game_pin"]
     try:
         index = int(float(data))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
+        # OverflowError is "inf": float() takes it, int() does not.
         return
     # Refused before the clock below is touched. "Hide results" on the last question used
     # to ask for the question after it, which raised IndexError; a negative number would

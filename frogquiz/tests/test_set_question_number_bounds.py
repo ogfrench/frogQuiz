@@ -68,7 +68,7 @@ def game_server(monkeypatch):
     return fake, shown
 
 
-@pytest.mark.parametrize("asked", ["2", "-1", "7", "not a number"])
+@pytest.mark.parametrize("asked", ["2", "-1", "7", "not a number", "inf", "nan"])
 def test_a_question_past_either_end_is_refused_before_the_clock_moves(game_server, asked):
     fake, shown = game_server
     asyncio.run(server.set_question_number("sid", asked))

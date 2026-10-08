@@ -89,11 +89,23 @@ SPDX-License-Identifier: MPL-2.0
 	const REPLY_TIMEOUT_MS = 8000;
 	let dataexport_download_a = $state<HTMLAnchorElement>();
 	let warnToLeave = true;
+	// Joins, leaves and seats that arrive between asking to register and the snapshot are held
+	// and applied after it. The snapshot is the server's state at one moment, so an event that
+	// raced it would otherwise be erased by it, and a join that completed during the snapshot
+	// never reached this screen.
+	let awaiting_snapshot = false;
+	let held: Array<() => void> = [];
+	const hold = (apply: () => void) => {
+		if (awaiting_snapshot) held.push(apply);
+		else apply();
+	};
 
 	const socket_game_controls: SocketGameControls = new SocketGameControls(socket);
 	let game_state: GameState = $state(new GameState(game_token));
 
 	const connect = async () => {
+		awaiting_snapshot = true;
+		held = [];
 		socket.emit('register_as_admin', {
 			game_pin: game_pin,
 			game_id: game_token
@@ -117,18 +129,23 @@ SPDX-License-Identifier: MPL-2.0
 			// No token or PIN in the link: there is no game to register for.
 			connectFailed = 'no_game';
 		}
-		tinykeys(window, {
+		const unbind_keys = tinykeys(window, {
 			Enter: next_action,
 			Space: next_action
 		});
 		return () => {
 			clearTimeout(waiting);
 			socket.off('connect_error', unreachable);
+			socket.off('connect', connect);
+			unbind_keys();
 		};
 	});
 	socket.on('registered_as_admin', (data) => {
 		game_state.quiz_data = JSON.parse(data['game']);
 		console.log(game_state.quiz_data);
+		// A reload mid-game used to show the lobby again, with its music, because only
+		// `start_game` ever set this. The game says whether it has started.
+		game_state.game_started = Boolean(game_state.quiz_data.started);
 		game_state.players = data['players'] ?? [];
 		setSeats(data['avatars']);
 		// After a dropped connection, not a reload: what happened to the question while
@@ -139,18 +156,27 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		success = true;
 		connectFailed = null;
+		awaiting_snapshot = false;
+		for (const apply of held) apply();
+		held = [];
 	});
 	socket.on('locked', (int_data) => {
 		game_state.quiz_data.locked = int_data.locked;
 	});
 	socket.on('player_joined', (int_data) => {
-		game_state.players = [...game_state.players, int_data];
+		hold(() => {
+			// Idempotent: the snapshot may already list this player.
+			if (game_state.players.some((p) => p.username === int_data.username)) return;
+			game_state.players = [...game_state.players, int_data];
+		});
 	});
 	// One seat per join. A player who leaves keeps theirs, since they are still on the
 	// scoreboard, so nothing removes from this.
-	socket.on('avatar', addSeat);
+	socket.on('avatar', (int_data) => hold(() => addSeat(int_data)));
 	socket.on('player_left', (int_data) => {
-		game_state.players = game_state.players.filter((p) => p.username !== int_data.username);
+		hold(() => {
+			game_state.players = game_state.players.filter((p) => p.username !== int_data.username);
+		});
 	});
 	// The server says the lobby is closed; only then leave, so a cancel that never
 	// reached it doesn't strand players on a game the host has walked away from.
@@ -243,7 +269,9 @@ SPDX-License-Identifier: MPL-2.0
 	const next_action = (e: KeyboardEvent) => {
 		if (!game_state.game_started) return;
 		const target = e.target as HTMLElement | null;
-		if (target?.closest('button, a, input, textarea, select, [role="switch"], [role="dialog"]')) {
+		if (
+			target?.closest('button, a, input, textarea, select, [role="switch"], [role="dialog"]')
+		) {
 			return;
 		}
 		e.preventDefault();
@@ -348,7 +376,9 @@ SPDX-License-Identifier: MPL-2.0
 					<Card.Footer class="justify-center gap-2">
 						<!-- Reloading only helps when the socket could not be reached. -->
 						{#if errorMessage === '' && connectFailed === 'unreachable'}
-							<Button onclick={() => location.reload()}>{$t('words.try_again')}</Button>
+							<Button onclick={() => location.reload()}
+								>{$t('words.try_again')}</Button
+							>
 						{/if}
 						<Button
 							href="/my-quizzes"

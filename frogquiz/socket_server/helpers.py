@@ -19,6 +19,8 @@ from frogquiz.db.models import (
     RangeQuizAnswer,
     AnswerDataList,
     AnswerData,
+    AVATAR_TTL_SECONDS,
+    avatar_seat_keys,
 )
 from frogquiz.socket_server.models import SubmitAnswerData
 from .models import SubmitAnswerDataOrderType
@@ -224,6 +226,8 @@ async def update_game(game_pin: str, change: Callable[[PlayGame], bool | None]) 
                     return None
                 pipe.multi()
                 pipe.set(key, game.model_dump_json(), ex=7200)
+                for avatar_key in avatar_seat_keys(game_pin):
+                    pipe.expire(avatar_key, AVATAR_TTL_SECONDS)
                 await pipe.execute()
                 return game
             except WatchError:
@@ -237,11 +241,6 @@ async def has_already_answered(game_pin: str, q_index: int, username: str) -> bo
     else:
         answers = list(filter(lambda a: a.username == username, answers.root))
         return len(answers) > 0
-
-
-# How long a game's avatar seats are kept: the same five hours as `game:{pin}` itself
-# (routers/live.py), so the frogs never expire out from under a game still running.
-AVATAR_TTL_SECONDS = 18000
 
 
 async def assign_avatar(game_pin: str, username: str) -> int:

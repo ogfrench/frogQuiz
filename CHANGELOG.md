@@ -4,6 +4,18 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Review fixes before merge, 8 Oct
+
+- Fixed a host reload mid-game showing the lobby, and its music, over the live game: the started state now comes back from the server.
+- Fixed joins, seats and leaves that arrive while the host page is registering being erased by the snapshot. The host now joins the game's rooms before the snapshot is read, and the page applies events that arrived first after it.
+- Avatar seats are refreshed on every write to the game, so a game that is still running can no longer lose its frogs five hours after the last new seat.
+- A rejoining player who gets a new seat is announced to the other phones, not only to the host.
+- The host's question-number handler refuses `inf` instead of raising.
+- `join_game` checks the payload before reading the PIN out of it, so a malformed message is refused rather than raising `KeyError`.
+- The lobby and podium music no longer show Play when a mute interrupts playback.
+- The host page removes its keyboard shortcuts when it is left.
+- Formatted the host page (two lines the branch had left out of Prettier).
+
 ### Unused lobby copy removed, 8 Oct
 
 - Removed `music/lobby/lobby-original.mp3`, an unreduced copy of the lobby track that nothing imported and that was left over from upstream. The game plays `lobby.mp3`; git history keeps the original.
