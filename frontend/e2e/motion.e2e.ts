@@ -16,7 +16,8 @@ import {
 	hostFromViewPage,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 
 const QUIZ = {
@@ -53,9 +54,15 @@ async function toPodium(browser, request, options: { reducedMotion?: 'reduce' | 
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
 
-	await host.getByRole('button', { name: /Start game/ }).first().click();
+	await host
+		.getByRole('button', { name: /Start game/ })
+		.first()
+		.click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next question/ }).first().click();
+	await host
+		.getByRole('button', { name: /Next question/ })
+		.first()
+		.click();
 	await host.waitForTimeout(1200);
 	return { host, phone, hostCtx, ctx };
 }
@@ -89,13 +96,15 @@ test('the podium is held back, then released', async ({ browser, request }) => {
 	const { host, phone, hostCtx, ctx } = await toPodium(browser, request, {});
 	await phone.getByRole('button', { name: /A/ }).first().click();
 	await host.waitForTimeout(6500);
-	await host.getByRole('button', { name: /Show results/ }).first().click();
+	await showResults(host);
 	await host.waitForTimeout(1200);
 	// advanceToFinalResults clears the standings step itself, so this is one call now.
 	await advanceToFinalResults(host);
 
 	const opacity = () =>
-		host.locator('.podium-block.is-gold').evaluate((el) => Number(getComputedStyle(el).opacity));
+		host
+			.locator('.podium-block.is-gold')
+			.evaluate((el) => Number(getComputedStyle(el).opacity));
 
 	// A second in, the winner has not landed: the build-up is the point of the screen.
 	await host.waitForTimeout(1000);
@@ -115,7 +124,7 @@ test('asking for less motion makes the podium instant', async ({ browser, reques
 	});
 	await phone.getByRole('button', { name: /A/ }).first().click();
 	await host.waitForTimeout(6500);
-	await host.getByRole('button', { name: /Show results/ }).first().click();
+	await showResults(host);
 	await host.waitForTimeout(1200);
 	// advanceToFinalResults clears the standings step itself, so this is one call now.
 	await advanceToFinalResults(host);
@@ -123,9 +132,9 @@ test('asking for less motion makes the podium instant', async ({ browser, reques
 	// No build-up, no delay: everything is simply there. Svelte's transitions are
 	// JavaScript and never see the media query, so this is `dur()` doing its job.
 	await host.waitForTimeout(600);
-	const states = await host.locator('.podium-block').evaluateAll((els) =>
-		els.map((el) => Number(getComputedStyle(el).opacity))
-	);
+	const states = await host
+		.locator('.podium-block')
+		.evaluateAll((els) => els.map((el) => Number(getComputedStyle(el).opacity)));
 	expect(states.length).toBeGreaterThan(0);
 	for (const o of states) expect(o, 'a block was still animating in').toBeGreaterThan(0.95);
 	// And the crown, which is a CSS animation rather than a Svelte transition.

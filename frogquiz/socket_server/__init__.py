@@ -402,7 +402,17 @@ async def set_question_number(sid: str, data: str):
     if not session["admin"]:
         return
     game_pin = session["game_pin"]
-    index = int(float(data))
+    try:
+        index = int(float(data))
+    except (TypeError, ValueError):
+        return
+    # Refused before the clock below is touched. "Hide results" on the last question used
+    # to ask for the question after it, which raised IndexError; a negative number would
+    # have wrapped round to the last question. The questions never change mid-game, so
+    # checking them outside the transaction is safe.
+    current = await redis.get(f"game:{game_pin}")
+    if current is None or not 0 <= index < len(PlayGame.model_validate_json(current).questions):
+        return
 
     def show(game: PlayGame) -> None:
         game.current_question = index

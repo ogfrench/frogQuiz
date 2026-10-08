@@ -14,7 +14,8 @@ import {
 	hostFromViewPage,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 
 const QUIZ = {
@@ -174,7 +175,7 @@ test('every control on the player game screens is touch-sized', async ({ browser
 	await expect(player.getByRole('button', { name: 'Lisbon' })).toBeVisible();
 	found['question'] = await audit(player);
 	await player.getByRole('button', { name: 'Lisbon' }).tap();
-	await host.getByRole('button', { name: 'Show results' }).click();
+	await showResults(host);
 	await host.waitForTimeout(1_000);
 	found['results'] = await audit(player);
 

@@ -140,30 +140,61 @@ export async function expectNoHorizontalOverflow(page: Page) {
 }
 
 /**
+ * Gets the host to the answers screen of the question that just ended.
+ *
+ * Since 8 Oct the answers come up by themselves, 0.8 s after the question ends (time up,
+ * everyone answered, or Stop time), and "Show results" is only a skip-ahead that is on
+ * screen for that moment. Clicking it unconditionally raced the automatic flow and could
+ * wait 30 s for a button that had already gone. This presses it if it is still there and
+ * waits for the step after the answers either way: the scoreboard's skip-ahead, the
+ * podium, or the next question (a poll, or nobody answered).
+ */
+export async function showResults(page: Page) {
+	const show = page.getByRole('button', { name: /Show results/ });
+	const after = page.getByRole('button', {
+		name: /^(Scoreboard|Get final results|Next question)/
+	});
+	await expect(show.or(after).first()).toBeVisible({ timeout: 60_000 });
+	await show.click({ timeout: 1000 }).catch(() => undefined);
+	await expect(after.first()).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * The question is over on the host: the clock's step ("Stop time") has given way to
+ * whatever follows it. "Show results is visible" used to mean this, but that button is
+ * now only up for the moment before the answers come up by themselves.
+ */
+export async function expectQuestionEnded(page: Page, timeout = 20_000) {
+	await expect(
+		page
+			.getByRole('button', {
+				name: /^(Show results|Scoreboard|Get final results|Next question)/
+			})
+			.first()
+	).toBeVisible({ timeout });
+}
+
+/**
  * Clears the host's standings step, if it is showing.
  *
- * A round is three host steps, not two: the answers, then the standings, then move on
- * (`show_scoreboard_step` in `lib/play/admin/controls.svelte`, added to match how Kahoot
- * sequences a round). It sits before "Next question" *and* before "Get final results",
- * so every spec that drives a host through a results screen has to pass it. Specs
- * written before that step hung on a screen offering "Scoreboard".
+ * A round is answers, then standings, then move on (`nextStep` in
+ * `lib/play/admin/next_step.ts`, matching how Kahoot sequences a round). The standings
+ * come up by themselves three seconds after the answers; the "Scoreboard" button skips
+ * ahead to them. The last question has no standings step, so the podium is not given
+ * away, and neither does a slide, a poll or a hide-results question. Pass `next` for
+ * those; without it the step is asserted to exist.
  *
- * Conditional rather than assumed: a slide and a hide-results question have no standings
- * moment, so it waits for whichever of the two buttons arrives. Pass `next` for that;
- * without it the step is asserted to exist.
- *
- * It used to read `isVisible()` once, which does not wait. Between "Show results" and
- * the results arriving the bar shows neither button, so under load that read said "no
- * standings step", skipped it, and the caller then waited 60 s for a button that only
- * comes after it. journey-remote-call failed exactly so on 2 Oct with "Scoreboard" on
- * screen. Specs that slept after "Show results" never hit it; the journeys do not sleep.
+ * It waits rather than reading `isVisible()` once: between "Show results" and the results
+ * arriving the bar shows neither button, and a single read under load skipped the step
+ * (journey-remote-call, 2 Oct). The click tolerates the button going in the meantime,
+ * since the automatic scoreboard takes it away.
  */
 export async function clearScoreboardStep(page: Page, next?: Locator) {
 	const scoreboard = page.getByRole('button', { name: 'Scoreboard' });
 	await expect(next ? scoreboard.or(next).first() : scoreboard).toBeVisible({
 		timeout: 15_000
 	});
-	if (await scoreboard.isVisible()) await scoreboard.click();
+	await scoreboard.click({ timeout: 1000 }).catch(() => undefined);
 }
 
 /** Standings, then the next question. */

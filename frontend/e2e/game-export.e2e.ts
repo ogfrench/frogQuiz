@@ -13,13 +13,29 @@ import {
 	hostFromViewPage,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 test('the host downloads the game\u2019s answers in one press', async ({ browser, request }) => {
 	test.setTimeout(5 * 60_000);
-	const saved = await saveQuiz(request, { title: 'Export', description: 'one',
-		questions: [mc('Pick A?', [['A', true], ['B', false]], '5')] });
-	const hostCtx = await browser.newContext({ viewport: { width: 1280, height: 800 }, acceptDownloads: true });
+	const saved = await saveQuiz(request, {
+		title: 'Export',
+		description: 'one',
+		questions: [
+			mc(
+				'Pick A?',
+				[
+					['A', true],
+					['B', false]
+				],
+				'5'
+			)
+		]
+	});
+	const hostCtx = await browser.newContext({
+		viewport: { width: 1280, height: 800 },
+		acceptDownloads: true
+	});
 	const host = await hostCtx.newPage();
 	await rememberAnonQuiz(host, saved.body.id, saved.secret!);
 	const pin = await hostFromViewPage(host, saved.body.id);
@@ -30,13 +46,19 @@ test('the host downloads the game\u2019s answers in one press', async ({ browser
 	await p.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
 	await p.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
-	await host.getByRole('button', { name: /Start game/ }).first().click();
+	await host
+		.getByRole('button', { name: /Start game/ })
+		.first()
+		.click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next question/ }).first().click();
+	await host
+		.getByRole('button', { name: /Next question/ })
+		.first()
+		.click();
 	await host.waitForTimeout(1200);
 	await p.getByRole('button', { name: /A/ }).first().click();
 	await host.waitForTimeout(6500);
-	await host.getByRole('button', { name: /Show results/ }).first().click();
+	await showResults(host);
 	await host.waitForTimeout(1200);
 	// The standings sit between the answers and the podium now, so this is three host
 	// steps rather than two. See clearScoreboardStep in helpers.
@@ -47,5 +69,6 @@ test('the host downloads the game\u2019s answers in one press', async ({ browser
 	await host.getByRole('button', { name: 'Download results' }).click();
 	const file = await download;
 	expect(file.suggestedFilename()).toMatch(/\.xls/);
-	await hostCtx.close(); await ctx.close();
+	await hostCtx.close();
+	await ctx.close();
 });

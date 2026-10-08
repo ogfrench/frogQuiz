@@ -18,9 +18,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { page } from '$app/state';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
-	import { QuizQuestionType, type QuizData } from '$lib/quiz_types';
+	import type { QuizData } from '$lib/quiz_types';
 	import type { Player, PlayerAnswer } from '$lib/admin';
 	import { tinykeys } from '$lib/tinykeys';
+	import { nextStep, performStep, stepState } from '$lib/play/admin/next_step';
 
 	// Save results is hidden for the MVP (MVP.md D4).
 	const SAVE_RESULTS_ENABLED = false;
@@ -68,39 +69,6 @@ SPDX-License-Identifier: MPL-2.0
 			this.scoreboard_open = $state(false);
 		}
 
-		is_game_ready_to_start(): boolean {
-			return !this.game_started && this.players.length > 0;
-		}
-
-		is_game_starting(): boolean {
-			return this.game_started && this.selected_question === -1;
-		}
-
-		is_active_question_last_question(): boolean {
-			return this.selected_question + 1 === this.quiz_data.questions.length;
-		}
-
-		is_question_results_visible(): boolean {
-			return this.timer_res === '0' && this.question_results !== null;
-		}
-
-		is_active_question_slide(): boolean {
-			return (
-				this.quiz_data?.questions?.[this.selected_question]?.type === QuizQuestionType.SLIDE
-			);
-		}
-
-		is_question_ended(): boolean {
-			return (
-				this.timer_res === '0' &&
-				this.question_results === null &&
-				this.selected_question !== -1
-			);
-		}
-
-		is_question_still_ongoing(): boolean {
-			return this.timer_res !== '0' && this.selected_question !== -1;
-		}
 	}
 
 	let { data }: Props = $props();
@@ -237,27 +205,18 @@ SPDX-License-Identifier: MPL-2.0
 		JSON.stringify(game_state.final_results) !== JSON.stringify([null])
 	);
 
-	// This function in called in every keyboard event in this page
-	const next_action = () => {
-		if (
-			game_state.is_active_question_last_question() &&
-			(game_state.is_question_results_visible() || game_state.is_active_question_slide())
-		) {
-			socket_game_controls.get_final_results();
-		} else if (
-			game_state.is_game_starting() ||
-			game_state.is_question_results_visible() ||
-			game_state.is_active_question_slide()
-		) {
-			socket_game_controls.set_question_number(game_state.selected_question + 1);
-		} else if (game_state.is_question_still_ongoing()) {
-			socket_game_controls.show_solutions();
-			game_state.timer_res = '0';
-		} else if (game_state.is_question_ended()) {
-			socket_game_controls.get_question_results(game_token, game_state.shown_question_now);
-		} else {
-			console.warn('No action available for this event');
+	// Enter and Space do what the controls bar's button would: the same step, from
+	// next_step.ts. This had its own copy of the rules, which skipped the scoreboard and
+	// never closed it. A focused control handles its own key -- the bar's button, a
+	// dialog, a switch -- or the press would act twice.
+	const next_action = (e: KeyboardEvent) => {
+		if (!game_state.game_started) return;
+		const target = e.target as HTMLElement | null;
+		if (target?.closest('button, a, input, textarea, select, [role="switch"], [role="dialog"]')) {
+			return;
 		}
+		e.preventDefault();
+		performStep(nextStep(stepState(game_state)), socket_game_controls, game_state, game_token);
 	};
 </script>
 

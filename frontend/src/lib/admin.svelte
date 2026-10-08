@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
 	import { totalsFromResults } from '$lib/play/admin/totals';
+	import { nextStep, performStep, stepState } from '$lib/play/admin/next_step';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const { t } = getLocalization();
@@ -42,6 +43,10 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.timer_res = game_state.quiz_data.questions[data.question_index].time;
 		game_state.selected_question = game_state.selected_question + 1;
 		game_state.answer_count = 0;
+		// Every advance comes through here, so this is where the scoreboard closes. The
+		// Enter/Space shortcut used to skip it without closing it, and from then on every
+		// question's answers were drawn as the scoreboard instead.
+		game_state.scoreboard_open = false;
 
 		clearInterval(timer_interval);
 		timer(game_state.timer_res);
@@ -90,6 +95,36 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	const socket_game_controls: SocketGameControls = new SocketGameControls(socket);
+
+	// One press per question, as in Kahoot (Gonçalo, 7 Oct). When the question ends --
+	// time up, everyone answered, or Stop time -- its answers come up by themselves, and
+	// the scoreboard three seconds after that. The host's press is "Next question". The
+	// last question stops at its answers: no scoreboard, so the podium is not given away.
+	// Slides and hide-results questions are left to the host, as before.
+	const step = $derived(nextStep(stepState(game_state)));
+
+	// Once per question, even if the step flickers back (a reconnect re-reporting the
+	// question closed). A short grace after the clock hits zero, so an answer sent in the
+	// last instant on a phone still lands before the question is closed on the server.
+	let auto_results_for = -1;
+	$effect(() => {
+		if (step !== 'show_results') return;
+		const question = game_state.selected_question;
+		if (auto_results_for === question) return;
+		const timeout = setTimeout(() => {
+			auto_results_for = question;
+			performStep('show_results', socket_game_controls, game_state, game_token);
+		}, 800);
+		return () => clearTimeout(timeout);
+	});
+
+	// Reduced motion keeps the delay: it is pacing, so the room can read the answers,
+	// not an animation.
+	$effect(() => {
+		if (step !== 'scoreboard') return;
+		const timeout = setTimeout(() => (game_state.scoreboard_open = true), 3000);
+		return () => clearTimeout(timeout);
+	});
 </script>
 
 {#if game_state.control_visible}

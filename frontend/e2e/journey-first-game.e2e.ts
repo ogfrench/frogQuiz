@@ -19,7 +19,8 @@ import {
 	expectNoHorizontalOverflow,
 	joinAsPlayer,
 	saveQuizButton,
-	startNewQuiz
+	startNewQuiz,
+	showResults
 } from './helpers';
 
 test('a new colleague makes a quiz and runs it for two people, with no account', async ({
@@ -89,7 +90,7 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 
 		await ana.getByRole('button', { name: 'Tree frog' }).click();
 		await bruno.getByRole('button', { name: 'Gecko' }).click();
-		await page.getByRole('button', { name: 'Show results' }).click();
+		await showResults(page);
 		// Each player is told how they did, which is the whole point of playing.
 		await expect(ana.getByText(/correct/i).first()).toBeVisible({ timeout: 15_000 });
 
@@ -100,7 +101,7 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 		await ana.getByRole('button', { name: /Submit|Done|Confirm/i }).click();
 		await bruno.getByRole('button', { name: 'Frog' }).click();
 		await bruno.getByRole('button', { name: /Submit|Done|Confirm/i }).click();
-		await page.getByRole('button', { name: 'Show results' }).click();
+		await showResults(page);
 	});
 
 	await test.step('the game finishes on the podium', async () => {

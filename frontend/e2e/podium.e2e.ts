@@ -8,13 +8,14 @@
 
 import { expect, test } from '@playwright/test';
 import {
+	advancePastResults,
 	advanceToFinalResults,
-	clearScoreboardStep,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 
 test('the podium reveals third, then second, then first', async ({ browser, request }) => {
@@ -53,9 +54,15 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 		players.push({ ctx, p, ans });
 	}
 	await host.waitForTimeout(1000);
-	await host.getByRole('button', { name: /Start game/ }).first().click();
+	await host
+		.getByRole('button', { name: /Start game/ })
+		.first()
+		.click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next question/ }).first().click();
+	await host
+		.getByRole('button', { name: /Next question/ })
+		.first()
+		.click();
 	await host.waitForTimeout(1200);
 	for (const pl of players) {
 		await pl.p
@@ -66,7 +73,7 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 		await pl.p.waitForTimeout(250);
 	}
 	await host.waitForTimeout(6500);
-	await host.getByRole('button', { name: /Show results/ }).first().click();
+	await showResults(host);
 	await host.waitForTimeout(1200);
 	await advanceToFinalResults(host);
 
@@ -105,7 +112,8 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 	test.setTimeout(5 * 60_000);
 	const saved = await saveQuiz(request, {
 		title: 'Phone host',
-		description: 'one',
+		description: 'two',
+		// Two, so there is a scoreboard to check: the last question has none (8 Oct).
 		questions: [
 			mc(
 				'How many legs does a frog have?',
@@ -114,6 +122,14 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 					['Two', false],
 					['Six', false],
 					['None', false]
+				],
+				'5'
+			),
+			mc(
+				'Where do tadpoles live?',
+				[
+					['Water', true],
+					['Trees', false]
 				],
 				'5'
 			)
@@ -138,15 +154,21 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
 
-	await host.getByRole('button', { name: /Start game/ }).first().click();
+	await host
+		.getByRole('button', { name: /Start game/ })
+		.first()
+		.click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next question/ }).first().click();
+	await host
+		.getByRole('button', { name: /Next question/ })
+		.first()
+		.click();
 	await host.waitForTimeout(1200);
 	expect(await overflow(), 'question').toBeLessThanOrEqual(0);
 	await phone.getByRole('button', { name: /Four/ }).first().click();
 
 	await host.waitForTimeout(6500);
-	await host.getByRole('button', { name: /Show results/ }).first().click();
+	await showResults(host);
 	await host.waitForTimeout(1400);
 	expect(await overflow(), 'per-question results').toBeLessThanOrEqual(0);
 	expect(
@@ -158,10 +180,16 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 
 	// The standings are a game surface too, and a new one -- this test is named for
 	// covering all of them, so it checks that screen at 390 rather than passing through it.
-	await clearScoreboardStep(host);
+	// It comes up by itself, three seconds after the answers.
+	await expect(host.getByRole('heading', { name: 'Scoreboard', exact: true })).toBeVisible({
+		timeout: 6000
+	});
 	await host.waitForTimeout(700);
 	expect(await overflow(), 'scoreboard').toBeLessThanOrEqual(0);
 
+	await advancePastResults(host);
+	await phone.getByRole('button', { name: /Water/ }).first().click();
+	await showResults(host);
 	await advanceToFinalResults(host);
 	await host.waitForTimeout(5000);
 	expect(await overflow(), 'podium').toBeLessThanOrEqual(0);
