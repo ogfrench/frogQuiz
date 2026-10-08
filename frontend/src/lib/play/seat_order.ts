@@ -12,10 +12,14 @@
  */
 export function seatOrder(byPath: Record<string, string>, seed: number): string[] {
 	const random = mulberry32(seed);
+	// By path, so the order does not depend on how the bundler happened to list the files.
+	const urls = Object.keys(byPath)
+		.sort()
+		.map((path) => byPath[path]);
 	const grid = new Map<string, Map<string, string>>();
 	for (const [path, url] of Object.entries(byPath)) {
 		const m = /frog-(\d+)-(\d+)\.webp$/.exec(path);
-		if (!m) return shuffle(Object.values(byPath), random);
+		if (!m) return shuffle(urls, random);
 		const [, colour, pose] = m;
 		if (!grid.has(pose)) grid.set(pose, new Map());
 		grid.get(pose)!.set(colour, url);
@@ -24,7 +28,7 @@ export function seatOrder(byPath: Record<string, string>, seed: number): string[
 	// A pose missing a colour would leave a hole in the laps; shuffling everything at
 	// least still never repeats a frog until all have been handed out.
 	if ([...grid.values()].some((c) => c.size !== colours.length)) {
-		return shuffle(Object.values(byPath), random);
+		return shuffle(urls, random);
 	}
 	const poses = shuffle([...grid.keys()].sort(), random);
 	const offsets = poses.map(() => Math.floor(random() * colours.length));

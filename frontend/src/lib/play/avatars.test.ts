@@ -131,9 +131,15 @@ describe('the frog licence', () => {
 		);
 	});
 
-	it('credits the artist and links the licence in the app', () => {
+	it('credits the artist, links the licence and says what was changed, in the app', () => {
 		const page = read('frontend/src/routes/docs/attribution/+page.svelte');
-		expect(page).toMatch(/intellikat/);
-		expect(page).toMatch(/creativecommons\.org\/licenses\/by\/4\.0/);
+		// The section itself, so the artist's name in the <meta> tags does not count.
+		const section = page.split('<h2>Frog avatars</h2>')[1]?.split('<h2>')[0] ?? '';
+		expect(section).toMatch(/intellikat/);
+		expect(section).toMatch(/creativecommons\.org\/licenses\/by\/4\.0/);
+		expect(section).toMatch(/We changed it/);
+		expect(section).toMatch(/cropped/);
+		expect(section).toMatch(/recoloured/);
+		expect(section).toMatch(/does not endorse/);
 	});
 });

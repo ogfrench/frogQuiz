@@ -10,6 +10,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Recorded where the art came from and what was changed in `frontend/src/lib/assets/frogs/README.md` (source page, release date, licence, download hashes), added a REUSE entry in `.reuse/dep5` and `LICENSES/CC-BY-4.0.txt`, and credited the artist on `/docs/attribution` and in the README.
 - Made the game hand frogs out in a fixed shuffled order instead of file order: no frog is given out twice until all 150 have been, any 25 players in a row get 25 different poses, and colours are mixed from the first player. Unit tests cover every starting seat the server can pick.
 - Added tests that fail if a file lands in the frogs folder without licence cover, or if the REUSE entry, the licence text or the in-app credit is removed.
+- Made the frog generator refuse a sheet of the wrong size and replace the images only once all 150 have been made, so a crash can no longer leave the folder empty; made the credit test check the artist, the licence link and the change notice in the Frog avatars section, so deleting the notice fails it; made the fallback shuffle in `seat_order.ts` independent of file listing order.
+- Added a rule to `CLAUDE.md` that third-party art, icons, images, audio and fonts need a recorded open licence (CC0, CC BY 4.0, MIT, OFL or similar) before they go in the repo.
 
 ### Frog avatars, 8 Oct
 

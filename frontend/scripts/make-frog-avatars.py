@@ -15,10 +15,10 @@ has both: the same frog with its mouth open and the same frog sticking its tongu
 
 Each avatar is one frame cropped to a square around the head and shoulders, so the face
 is still readable at 32 px, and saved as a 256 px WebP. Every pose is then saved again in
-each of the colours in HUES, as frog-<colour>-<pose>.webp. The game hands out frogs in
-file-name order, so a room uses every pose in the art's own green before the first
-recoloured one appears. The tongue, the mouth and the hat band keep their colour: a
-recoloured frog with a green tongue looks ill.
+each of the colours in HUES, as frog-<colour>-<pose>.webp. Colour 0 is the art as drawn.
+The file names are only a grid: which seat gets which frog is decided by the fixed shuffle
+in frontend/src/lib/play/seat_order.ts, not by name order. The tongue, the mouth and the
+hat band keep their colour: a recoloured frog with a green tongue looks ill.
 
 This script is the record of those changes, which CC BY 4.0 asks us to disclose. See
 frontend/src/lib/assets/frogs/README.md.
@@ -26,11 +26,14 @@ frontend/src/lib/assets/frogs/README.md.
     python -I frontend/scripts/make-frog-avatars.py SHEET.png frontend/src/lib/assets/frogs
 
 SHEET.png is adventure_frog_spritesheet-512px.png from https://intellikat.itch.io/ .
-Needs Pillow. Existing frog-*.webp in the output folder are replaced.
+Needs Pillow. Existing frog-*.webp in the output folder are replaced, but only once every
+new one has been made, so a crash or the wrong sheet leaves the folder as it was.
 """
 
 import math
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageChops
@@ -144,21 +147,30 @@ def reds(im: Image.Image) -> Image.Image:
 
 def main(sheet_path: str, out_dir: str) -> None:
     sheet = Image.open(sheet_path).convert("RGBA")
+    if sheet.size != (CELL * COLUMNS, CELL * COLUMNS):
+        sys.exit(f"{sheet_path} is {sheet.size}, expected the {CELL}px sheet, {CELL * COLUMNS} square")
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    for old in out.glob("frog-*.webp"):
-        old.unlink()
     poses = [(frame, crop, True) for frame, crop in sorted(CROPS.items())]
     poses += [(frame, crop, False) for frame, crop in sorted(PLAIN.items())]
-    for pose, (frame, (left, top, side), tongue) in enumerate(poses, start=1):
-        base = with_tongue(sheet, frame) if tongue else cell(sheet, frame)
-        square = base.crop((left, top, left + side, top + side))
-        square = square.resize((SIZE, SIZE), Image.LANCZOS)
-        keep = reds(square)
-        for colour, degrees in enumerate(HUES):
-            frog = Image.composite(square, hue_rotate(square, degrees), keep) if degrees else square
-            frog.save(out / f"frog-{colour}-{pose:02d}.webp", quality=90, alpha_quality=100, method=6)
-        print(f"frame {frame:2d}{'' if tongue else ' (no tongue)'} -> frog-*-{pose:02d}.webp")
+    made = []
+    with tempfile.TemporaryDirectory(dir=out) as scratch:
+        for pose, (frame, (left, top, side), tongue) in enumerate(poses, start=1):
+            base = with_tongue(sheet, frame) if tongue else cell(sheet, frame)
+            square = base.crop((left, top, left + side, top + side))
+            square = square.resize((SIZE, SIZE), Image.LANCZOS)
+            keep = reds(square)
+            for colour, degrees in enumerate(HUES):
+                frog = Image.composite(square, hue_rotate(square, degrees), keep) if degrees else square
+                name = f"frog-{colour}-{pose:02d}.webp"
+                frog.save(Path(scratch) / name, quality=90, alpha_quality=100, method=6)
+                made.append(name)
+            print(f"frame {frame:2d}{'' if tongue else ' (no tongue)'} -> frog-*-{pose:02d}.webp")
+        # Only now, with all of them made, replace what was there.
+        for old in out.glob("frog-*.webp"):
+            old.unlink()
+        for name in made:
+            shutil.move(str(Path(scratch) / name), out / name)
 
 
 if __name__ == "__main__":
