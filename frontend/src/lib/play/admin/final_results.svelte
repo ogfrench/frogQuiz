@@ -18,6 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import FrogAvatar from '$lib/components/FrogAvatar.svelte';
+	import PodiumMusic from '$lib/play/admin/podium_music.svelte';
 
 	const { t } = getLocalization();
 
@@ -125,6 +126,11 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 {#if show_final_results}
+	<!-- The host's screen only: it is the room's speaker. A player's phone has `username`;
+	     the music starts with the confetti, when the winner lands. -->
+	{#if !username}
+		<PodiumMusic delay_ms={reduced() ? 0 : winner_lands} />
+	{/if}
 	<canvas bind:this={canvas} class="pointer-events-none fixed inset-0 z-50 h-full w-full"
 	></canvas>
 

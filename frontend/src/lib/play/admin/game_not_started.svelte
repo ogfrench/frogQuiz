@@ -97,7 +97,7 @@ SPDX-License-Identifier: MPL-2.0
 			type="button"
 			onclick={() => (fullscreen_open = true)}
 			aria-label={$t('play_page.show_qr_full_screen')}
-			class="rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+			class="rounded-2xl bg-white p-3 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
 		>
 			<img
 				alt="QR code to join the game"

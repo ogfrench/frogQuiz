@@ -17,3 +17,13 @@ Comment: "Adventure Frog - Hand Drawn Animated Character",
  https://intellikat.itch.io/frog-adventure-character-spritesheet .
  What was changed, and the script that does it, is in
  frontend/src/lib/assets/frogs/README.md.
+
+Files: frontend/src/lib/assets/music/podium/podium-loop.mp3
+Copyright: 2013 Pracchia-78 <https://commons.wikimedia.org/wiki/User:Pracchia-78>
+License: LicenseRef-Public-Domain
+Comment: Marc-Antoine Charpentier, Te Deum H. 146, Prelude, in a synthesised rendering
+ by Pracchia-78, published on Wikimedia Commons as public domain, attribution not
+ required: https://commons.wikimedia.org/wiki/File:Marc-Antoine_Charpentier_-_Te_Deum_H._146_prelude.ogg
+ Changed by frogQuiz contributors: leading silence trimmed (3.57 s to 92.8 s of the
+ original), 1 s fade in, 1 s fade out, 1.5 s of silence appended, lowered by 4.7 dB to match the lobby track,
+ re-encoded as mp3. The ffmpeg commands are in the music README.

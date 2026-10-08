@@ -4,6 +4,14 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Game music, 8 Oct
+
+- Added podium music: Charpentier's Te Deum prelude (public domain, Pracchia-78), the whole piece cut from its first note instead of the 3.4 s of leading silence, with a 1 s fade in, a fade out and 1.5 s of silence at the end so it loops cleanly. It plays on the host's podium only, starting with the confetti when the winner lands.
+- Made the music mute and volume one shared setting for the whole game: muting in the lobby or on the podium mutes every screen live (and survives a reload or a second tab). The lobby slider writes the same setting.
+- Brought every track to about -18 LUFS (measured) so moving between the lobby and the podium never jumps in volume.
+- Reorganised `frontend/src/lib/assets/music/` into one folder per screen (`lobby/`, `podium/`) with readable file names and a README listing each track's source, licence, loudness and how the podium cut was made.
+- Removed the drop shadow and outline ring from the join QR code in the host lobby; it is now just the code on its white quiet zone.
+
 ### Licensed frog art, 8 Oct
 
 - Replaced the frog avatar images, which had no licence on record, with "Adventure Frog" by intellikat (CC BY 4.0): 150 avatars, 25 poses in 6 colours, cut from the artist's sprite sheet by `frontend/scripts/make-frog-avatars.py`. Four poses get a tongue built from the sheet's own tongue pieces and are also kept without it; the five extra colours are hue rotations that leave the tongue, mouth and hat band as drawn.
