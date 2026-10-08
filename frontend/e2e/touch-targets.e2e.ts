@@ -163,7 +163,7 @@ test('every control on the player game screens is touch-sized', async ({ browser
 	const player = await ctx.newPage();
 	await gotoPlayHydrated(player);
 	await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await player.getByRole('textbox', { name: 'Username' }).fill('thumb');
+	await player.getByRole('textbox', { name: 'Nickname' }).fill('thumb');
 	const found: Record<string, string[]> = { join: await audit(player) };
 	await player.getByRole('button', { name: 'Join game' }).tap();
 	await expect(player.getByText(/You're in/)).toBeVisible();

@@ -60,7 +60,7 @@ test('the host advances answers \u2192 scoreboard \u2192 next question', async (
 		const p = await c.newPage();
 		await gotoPlayHydrated(p);
 		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await p.getByRole('textbox', { name: 'Username' }).fill(n);
+		await p.getByRole('textbox', { name: 'Nickname' }).fill(n);
 		await p.getByRole('button', { name: 'Join game' }).click();
 		made.push({ c, p, a1, a2 });
 	}

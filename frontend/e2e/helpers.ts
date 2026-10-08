@@ -126,7 +126,7 @@ export async function joinAsPlayer(browser: Browser, pin: string, username: stri
 	await gotoPlayHydrated(page);
 	// The PIN form has no submit handler: the sixth digit advances it on its own.
 	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await page.getByRole('textbox', { name: 'Username' }).fill(username);
+	await page.getByRole('textbox', { name: 'Nickname' }).fill(username);
 	await page.getByRole('button', { name: 'Join game' }).click();
 	return { context, page };
 }

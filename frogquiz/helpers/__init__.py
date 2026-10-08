@@ -47,6 +47,7 @@ async def generate_spreadsheet(
     quiz: Quiz,
     player_fields: dict[str, Any],
     player_scores: dict[str, Any],
+    custom_field: str | None = None,
 ) -> BytesIO:
     storage = BytesIO()
     workbook = xlsxwriter.Workbook(storage, {"in_memory": True})
@@ -54,12 +55,16 @@ async def generate_spreadsheet(
     player_worksheet.name = "Players"
     _ = player_worksheet.write(0, 0, "Username")
     _ = player_worksheet.write(0, 1, "Score")
-    _ = player_worksheet.write(0, 2, "Custom-Field")
+    # Headed with the host's own join question, so the column says what it holds. It
+    # was always "Custom-Field".
+    _ = player_worksheet.write_string(0, 2, custom_field or "Join question")
+    # Nicknames and join answers are typed by players, so they go in as text. write()
+    # turns any string starting with "=" into a live formula in the host's spreadsheet.
     for i, player in enumerate(player_scores.keys()):
-        player_worksheet.write(i + 1, 0, player)
+        player_worksheet.write_string(i + 1, 0, player)
         player_worksheet.write(i + 1, 1, player_scores[player])
         try:
-            player_worksheet.write(i + 1, 2, player_fields[player])
+            player_worksheet.write_string(i + 1, 2, player_fields[player])
         except KeyError:
             continue
 

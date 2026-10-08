@@ -15,6 +15,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Switches and sign-in email, 7 Oct
 
+- Renamed the Start game option "Ask players for one more detail" to "Add a join question", with a hint that says players see it on the join screen and the answers go in the results spreadsheet.
+- Headed the join-question column of the results spreadsheet with the host's own question instead of "Custom-Field".
+- Fixed a spreadsheet formula injection: nicknames and join answers typed by players were written with `write()`, which turns any text starting with `=` into a live formula in the host's download. They are now written as plain text. New backend tests in `test_results_spreadsheet.py`.
+- Made the nickname step of joining read as its own step: a "PIN 123 456" line with a check, a "Choose a fun nickname" heading, and a "Nickname" label. Players kept typing the PIN again as their name; a name that is all digits now shows "Ribbit, that looks like the PIN. You're already in! Now pick a name." in place of the length hint, without blocking Join. New e2e test in `join.e2e.ts`; the other specs now find the field as "Nickname".
 - Fixed every switch being invisible: its track and thumb styles keyed on `data-checked` and `data-unchecked`, which bits-ui never sets (it sets `data-state`), so no track was ever drawn and the thumb sat on the same colour as the dialog. This is why the Start game and Advanced settings options showed only a dark dot in dark mode, and a white one in light mode.
 - Made the sign-in code the centrepiece of the sign-in email: it is now a large, widely spaced code on a muted panel above the button, instead of a number buried in a sentence. The plain-text version leads with it too. The base email layout gained an optional code block that the other emails leave empty.
 - Fixed the one type error `svelte-check` reported (`question-card.svelte`, iterating an answers union), which was failing CI's type-check step. The frontend check is back to zero errors.

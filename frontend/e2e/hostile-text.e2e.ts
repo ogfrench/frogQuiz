@@ -177,13 +177,13 @@ test('a nickname cannot be used to wreck the host’s player list', async ({
 		// test used a bare goto and sat on the PIN step until the 60s timeout.
 		await gotoPlayHydrated(p);
 		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await expect(p.getByRole('textbox', { name: 'Username' })).toBeVisible({
+		await expect(p.getByRole('textbox', { name: 'Nickname' })).toBeVisible({
 			timeout: 15_000
 		});
 		// The form's maxlength is bypassed the way a scripted client would bypass it, so
 		// this tests the server's bound rather than the input's.
 		await p
-			.getByRole('textbox', { name: 'Username' })
+			.getByRole('textbox', { name: 'Nickname' })
 			.evaluate((el: HTMLInputElement, v: string) => {
 				el.value = v;
 				el.dispatchEvent(new Event('input', { bubbles: true }));

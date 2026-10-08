@@ -48,7 +48,7 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 		const p = await ctx.newPage();
 		await gotoPlayHydrated(p);
 		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await p.getByRole('textbox', { name: 'Username' }).fill(name);
+		await p.getByRole('textbox', { name: 'Nickname' }).fill(name);
 		await p.getByRole('button', { name: 'Join game' }).click();
 		players.push({ ctx, p, ans });
 	}
@@ -134,7 +134,7 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 	const phone = await ctx.newPage();
 	await gotoPlayHydrated(phone);
 	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await phone.getByRole('textbox', { name: 'Username' }).fill('Robin');
+	await phone.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
 

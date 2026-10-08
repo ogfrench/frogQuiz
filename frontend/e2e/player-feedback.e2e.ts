@@ -22,7 +22,7 @@ test('a player is told whether they were right, and where they stand', async ({ 
 		const p = await ctx.newPage();
 		await gotoPlayHydrated(p);
 		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await p.getByRole('textbox', { name: 'Username' }).fill(name);
+		await p.getByRole('textbox', { name: 'Nickname' }).fill(name);
 		await p.getByRole('button', { name: 'Join game' }).click();
 		return { ctx, p };
 	};

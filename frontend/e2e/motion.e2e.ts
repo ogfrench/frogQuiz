@@ -49,7 +49,7 @@ async function toPodium(browser, request, options: { reducedMotion?: 'reduce' | 
 	const phone = await ctx.newPage();
 	await gotoPlayHydrated(phone);
 	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await phone.getByRole('textbox', { name: 'Username' }).fill('Robin');
+	await phone.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
 

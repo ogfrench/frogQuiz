@@ -449,7 +449,7 @@ test.describe('live game, in the browser', () => {
 		await player.waitForURL(/\/play$/);
 		await connected;
 		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await player.getByRole('textbox', { name: 'Username' }).fill('swiper');
+		await player.getByRole('textbox', { name: 'Nickname' }).fill('swiper');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('swiper')).toBeVisible();
 		await showFirstQuestion(host);
@@ -487,7 +487,7 @@ test.describe('live game, in the browser', () => {
 		});
 		await gotoPlayHydrated(player);
 		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await player.getByRole('textbox', { name: 'Username' }).fill('dropper');
+		await player.getByRole('textbox', { name: 'Nickname' }).fill('dropper');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('dropper')).toBeVisible();
 		await showFirstQuestion(host);
@@ -526,7 +526,7 @@ test.describe('live game, in the browser', () => {
 		const player = await ctx.newPage();
 		await gotoPlayHydrated(player);
 		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await player.getByRole('textbox', { name: 'Username' }).fill('steady');
+		await player.getByRole('textbox', { name: 'Nickname' }).fill('steady');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('steady')).toBeVisible();
 		await showFirstQuestion(host);
@@ -546,7 +546,7 @@ test.describe('live game, in the browser', () => {
 	async function joinIn(page: Page, pin: string, name: string) {
 		await gotoPlayHydrated(page);
 		await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await page.getByRole('textbox', { name: 'Username' }).fill(name);
+		await page.getByRole('textbox', { name: 'Nickname' }).fill(name);
 		await page.getByRole('button', { name: 'Join game' }).click();
 	}
 
@@ -632,7 +632,7 @@ test.describe('live game, in the browser', () => {
 		await gotoPlayHydrated(player);
 		await player.getByRole('textbox', { name: 'Game PIN' }).focus();
 		await player.keyboard.insertText(`${pin.slice(0, 3)} ${pin.slice(3)}`);
-		await expect(player.getByRole('textbox', { name: 'Username' })).toBeVisible();
+		await expect(player.getByRole('textbox', { name: 'Nickname' })).toBeVisible();
 
 		await player.goto('/');
 		const home = player.getByRole('textbox', { name: 'Game PIN' });
