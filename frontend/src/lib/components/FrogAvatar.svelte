@@ -26,12 +26,12 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <!-- Decorative: the name is always printed beside it, so a screen reader would only
-     hear it twice. The ground is opaque because the frogs are drawn at about 90%
-     opacity, so whatever sits behind the circle would tint them. -->
+     hear it twice. The art has a clear background, so the circle's ground shows round
+     the frog. -->
 <Avatar.Root class={cn('bg-muted text-muted-foreground @container size-10', className)} aria-hidden="true">
 	{#if src}
-		<!-- Padding inside the circle: the art is square, and a kite or an umbrella in a
-		     corner is cut off by the round mask without it. -->
+		<!-- Padding inside the circle: the art is square, and a hat brim or a tongue tip
+		     near a corner is cut off by the round mask without it. -->
 		<Avatar.Image {src} alt="" class="object-contain p-[9%]" />
 	{/if}
 	<!-- Sized to the circle, not the text around it: the same component is 32px in the

@@ -2,22 +2,29 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
+import { seatOrder } from './seat_order';
+
 // Every player gets a frog, and nobody chooses it. The server hands each player a seat
 // when they join -- a counter, unique within the game -- and this file turns a seat into
 // a frog. Seats are consecutive, so two players share a frog only once a room has more
 // players than there are frogs.
 
-// Whatever is in the folder, in file-name order. Adding or removing a frog is a file
-// operation: nothing here or on the server counts them.
+// Whatever is in the folder. Adding or removing a frog is a file operation: nothing here
+// or on the server counts them.
 const files = import.meta.glob('../assets/frogs/*.webp', {
 	eager: true,
 	query: '?url',
 	import: 'default'
 }) as Record<string, string>;
 
-export const FROGS: readonly string[] = Object.keys(files)
-	.sort()
-	.map((path) => files[path]);
+// The order seats walk through, which is what keeps a frog from being handed out twice.
+// The files are frog-<colour>-<pose>.webp (frontend/scripts/make-frog-avatars.py): every
+// pose in every colour. Laid out pose-major in a fixed shuffled order, with each pose
+// moving on one colour per lap, any run of seats as long as the pose count has no pose
+// twice, and any run as long as the whole set has no frog twice. Each game starts at a
+// random seat, so each game starts at a different place in the order. The order is fixed
+// rather than random because the host and every phone have to agree on a seat's frog.
+export const FROGS: readonly string[] = seatOrder(files, 0x66726f67);
 
 /** Seats by username, for the game this page is in. */
 export const avatars = $state<{ seats: Record<string, number> }>({ seats: {} });

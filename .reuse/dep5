@@ -8,3 +8,12 @@ Source: https://frogquiz.xyz
 # Files: src/*
 # Copyright: $YEAR $NAME <$CONTACT>
 # License: ...
+
+Files: frontend/src/lib/assets/frogs/*.webp
+Copyright: 2023 intellikat <https://intellikat.itch.io/>
+           2026 frogQuiz contributors (cropped, tongues added, recoloured)
+License: CC-BY-4.0
+Comment: "Adventure Frog - Hand Drawn Animated Character",
+ https://intellikat.itch.io/frog-adventure-character-spritesheet .
+ What was changed, and the script that does it, is in
+ frontend/src/lib/assets/frogs/README.md.
