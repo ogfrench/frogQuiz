@@ -109,6 +109,35 @@ failed first.
       `test_delete_session`, `test_password_update` and `test_signout_everywhere`. Tokens
       minted before the deploy carry no `sid` and lapse within 30 minutes as before
 
+## Open — GitHub issues (8 Oct)
+
+Every open issue, so none lives only on GitHub. Closed with PR #23: #24 (touch targets).
+
+- [ ] **#3 MVP 1: full end-to-end run, fix the bugs, cut what we do not need.** Part A
+      still needs the deployed-site run (`MVP.md` §4.1); Part B's keep/cut calls are in
+      [`docs/mvp-scope.md`](docs/mvp-scope.md)
+- [ ] **#4 MVP 2: close the Kahoot and Mentimeter gap.** Word cloud first, then open-ended
+      with grouping, then a non-competitive mode. Also tracks bringing back the five hidden
+      question types. Not started; one question type per PR
+- [ ] **#22 Oracle VM: 4 OCPU / 24 GB is over the new Always Free limit (2 / 12), and
+      uploads have no backup.** **Deadline 31 Oct.** The shape change in the Oracle console
+      is by hand and still open, as is copying `uploads/` and `.env` off the box; the
+      checklist and the Always Free / PAYG / Hetzner options are in the issue
+- [ ] **#33 Let users change their name; decide how name, username and email relate.**
+      Needs a decision first (what the "name" is, which of the three a user may edit). Note
+      C13 (4 Oct) decided usernames do not change, so this reopens that. Touches auth, so
+      call it out in the PR
+- [ ] **#34 Decide whether quizzes need a real "Private" setting.** Today "Unlisted" is
+      link-only (D13). Decide first; if yes, the read endpoints and both exports must 404
+      for non-owners, which touches auth. Closing the export owner-filter gap is wanted
+      either way
+- [ ] **#35 Concurrency edge cases: same quiz in several tabs or devices, launched twice,
+      edited or deleted while live.** Master already answers a stale editor save with a 409
+      (E8). Still open: `start_quiz` and `get_public_quiz` write the whole quiz row back
+      from a stale copy, so a launch or a page view during an autosave may revert it
+      (predicted, needs a repro); `/editor/finish` takes no `base`; images and results of a
+      live game when its quiz is edited or deleted. First step is a spec per row
+
 ## Found in the feature sweep — all cleared
 
 The five findings from [`docs/feature-inventory.md`](docs/feature-inventory.md) are fixed:

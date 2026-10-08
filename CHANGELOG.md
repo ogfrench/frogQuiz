@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Open issues in TODO, 8 Oct
+
+- Listed every open GitHub issue in `TODO.md` (#3, #4, #22, #33, #34, #35), including the new #35 on editing, launching and deleting the same quiz from several tabs, devices or while a game is live.
+
 ### Switches and sign-in email, 7 Oct
 
 - Fixed every switch being invisible: its track and thumb styles keyed on `data-checked` and `data-unchecked`, which bits-ui never sets (it sets `data-state`), so no track was ever drawn and the thumb sat on the same colour as the dialog. This is why the Start game and Advanced settings options showed only a dark dot in dark mode, and a white one in light mode.
