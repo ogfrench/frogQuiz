@@ -9,6 +9,10 @@ SPDX-License-Identifier: MPL-2.0
 	import Check from '@lucide/svelte/icons/check';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Download from '@lucide/svelte/icons/download';
+	import WifiOff from '@lucide/svelte/icons/wifi-off';
+	import Link2Off from '@lucide/svelte/icons/link-2-off';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { socket } from '$lib/socket';
 	import { getLocalization } from '$lib/i18n';
@@ -304,20 +308,59 @@ SPDX-License-Identifier: MPL-2.0
 			<!-- The navbar is hidden on the host screen, so a failed registration used to
 			     leave a red line and no way out. The server's own refusal wins over the
 			     connection message: it is the more specific one. -->
-			<div class="fq-stage text-center">
-				<p class="text-destructive" role="alert">
-					{#if errorMessage !== ''}
-						{errorMessage}
-					{:else if connectFailed === 'no_game'}
-						{$t('admin_page.no_game_in_link')}
-					{:else}
-						{$t('admin_page.connection_failed')}
-					{/if}
-				</p>
-				<GrayButton href="/my-quizzes">
-					<ArrowLeft class="size-4" aria-hidden="true" />
-					{$t('words.back')}
-				</GrayButton>
+			<!-- The same card the site's other error screens use (ErrorPage.svelte), which cannot
+			     be reused as it is: it wants an HTTP status and offers Home, not Back. Buttons
+			     size to their content; GrayButton is w-full and ran edge to edge here. -->
+			<div class="fq-stage">
+				<Card.Root class="w-full max-w-md" role="alert">
+					<!-- Card.Header is a grid, so centring the icon takes justify-items. -->
+					<Card.Header class="justify-items-center gap-3 text-center">
+						<div
+							class="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full"
+						>
+							{#if errorMessage === '' && connectFailed === 'unreachable'}
+								<WifiOff class="size-6" aria-hidden="true" />
+							{:else if errorMessage === '' && connectFailed === 'no_game'}
+								<Link2Off class="size-6" aria-hidden="true" />
+							{:else}
+								<TriangleAlert class="size-6" aria-hidden="true" />
+							{/if}
+						</div>
+						<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+							{#if errorMessage !== ''}
+								{$t('error_page.unknown_error_title')}
+							{:else if connectFailed === 'no_game'}
+								{$t('admin_page.no_game_in_link')}
+							{:else}
+								{$t('admin_page.connection_failed')}
+							{/if}
+						</h1>
+						<Card.Description class="text-base">
+							{#if errorMessage !== ''}
+								{errorMessage}
+							{:else if connectFailed === 'no_game'}
+								{$t('admin_page.no_game_in_link_hint')}
+							{:else}
+								{$t('admin_page.connection_failed_hint')}
+							{/if}
+						</Card.Description>
+					</Card.Header>
+					<Card.Footer class="justify-center gap-2">
+						<!-- Reloading only helps when the socket could not be reached. -->
+						{#if errorMessage === '' && connectFailed === 'unreachable'}
+							<Button onclick={() => location.reload()}>{$t('words.try_again')}</Button>
+						{/if}
+						<Button
+							href="/my-quizzes"
+							variant={errorMessage === '' && connectFailed === 'unreachable'
+								? 'outline'
+								: 'default'}
+						>
+							<ArrowLeft aria-hidden="true" />
+							{$t('words.back')}
+						</Button>
+					</Card.Footer>
+				</Card.Root>
 			</div>
 		{/if}
 	{:else if !game_state.game_started}

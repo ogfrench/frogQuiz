@@ -14,7 +14,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### Host screen never blank, 8 Oct
 
-- Made the host screen (`/admin`) show an error with a Back button instead of a blank page when the game socket reports a connection error, when the server has not answered within 8 seconds, or when the link has no token or PIN. A Netlify deploy preview hit this: its origin is not in the backend's `CORS_ORIGINS`, so the socket handshake was refused and nothing rendered. The server's own "already an admin" refusal still takes precedence, and a dropped connection after the game is up is unchanged. New strings `admin_page.connection_failed` and `admin_page.no_game_in_link`.
+- Made the host screen (`/admin`) show an error card (icon, heading, hint, Try again and Back buttons, the same card pattern as the site's other error screens) instead of a blank page when the game socket reports a connection error, when the server has not answered within 8 seconds, or when the link has no token or PIN. A Netlify deploy preview hit this: its origin is not in the backend's `CORS_ORIGINS`, so the socket handshake was refused and nothing rendered. The server's own "already an admin" refusal still takes precedence, and a dropped connection after the game is up is unchanged. New strings `admin_page.connection_failed`, `admin_page.connection_failed_hint`, `admin_page.no_game_in_link` and `admin_page.no_game_in_link_hint`.
 
 ### Fixes from testing, round 2, 8 Oct
 
