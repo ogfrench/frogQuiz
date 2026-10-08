@@ -102,6 +102,13 @@ Docker or WSL, runs Playwright against the installed Edge, and tears it all down
 `http://localhost:3000`, including real live games; `bash e2e/stop.sh` stops it. Specs are
 in `frontend/e2e/*.e2e.ts`.
 
+Check what is on 3000 before trusting a run: another session, or another worktree, may
+have its own stack up, and its code is what the specs then test. Run a second stack beside
+it with `E2E_PORT_OFFSET=100 KEEP_UP=1 bash e2e/run.sh --list` (app on 3100, API on 8110),
+point Playwright at it with `E2E_BASE_URL=http://localhost:3100 E2E_API_URL=http://127.0.0.1:8110`,
+and stop it with `E2E_PORT_OFFSET=100 bash e2e/stop.sh`. `E2E_VENV` names the virtualenv
+when pipenv is not installed.
+
 Known bugs are encoded as `test.fail(...)`, so the run is green while they exist and a
 test turns red when its bug is fixed — delete the marker then. What each one is, and
 what has already been checked and holds up, is in

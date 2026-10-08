@@ -36,7 +36,8 @@ test('a first sign-in: an address, the link from the email, a username, and in',
 	await expectNoHorizontalOverflow(page);
 
 	// The link points at the app, from ROOT_ADDRESS, and both parts of the email carry it.
-	expect(link).toMatch(/^http:\/\/localhost:3000\/account\/login\?token=/);
+	const app = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
+	expect(link.startsWith(`${app}/account/login?token=`), link).toBe(true);
 	expect(mail.html).toContain(link);
 	expect(mail.headers).toContain(`Subject: Your frogQuiz sign-in code: ${code}`);
 

@@ -24,7 +24,9 @@ fi
 # run.sh on 2026-10-02 and not here, so a KEEP_UP stack left it listening and the next
 # run died on "port 2526 is already in use" before a single test ran. Keep the two lists
 # in step.
-for port in 6380 7701 8010 3000 2526; do
+# E2E_PORT_OFFSET as given to run.sh, so a second stack can be stopped without the first.
+OFF="${E2E_PORT_OFFSET:-0}"
+for port in $((6380 + OFF)) $((7701 + OFF)) $((8010 + OFF)) $((3000 + OFF)) $((2526 + OFF)); do
   if [ "$OS" = windows ]; then
     for pid in $(netstat -ano | awk -v p=":$port" '$2 ~ p"$" && $4 == "LISTENING" {print $5}' | sort -u); do
       taskkill //F //T //PID "$pid" >/dev/null 2>&1 && echo "stopped :$port (pid $pid)"
