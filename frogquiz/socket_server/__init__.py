@@ -28,8 +28,10 @@ from pydantic import BaseModel, ValidationError
 from datetime import datetime
 
 from frogquiz.socket_server.helpers import (
+    assign_avatar,
     check_answer,
     check_captcha,
+    get_avatars,
     has_already_answered,
     record_answer_once,
     update_game,
@@ -186,11 +188,15 @@ async def rejoin_game(sid: str, data: dict):
     # `player_joined`, so without this a player who reloaded -- or whose phone dropped
     # and came back -- was gone from the host's lobby for the rest of the game even
     # though the server still had them.
+    # A seat, not a fresh one: assign_avatar hands back the frog this name already has.
+    avatar = await assign_avatar(data.game_pin, data.username)
     await sio.emit(
         "player_joined",
-        {"username": data.username, "sid": sid},
+        {"username": data.username, "sid": sid, "avatar": avatar},
         room=f"admin:{data.game_pin}",
     )
+    # The frogs of everybody already in, which this phone has missed while it was away.
+    await sio.emit("avatars", await get_avatars(data.game_pin), room=sid)
     # The game is over: a phone asleep through the podium missed it (E18).
     final = await redis.get(f"game:{data.game_pin}:final_results")
     if final is not None:
@@ -277,6 +283,7 @@ async def join_game(sid: str, data: dict):
         room=sid,
     )
     await GamePlayer(username=data.username, sid=sid).to_player_stack(data.game_pin)
+    avatar = await assign_avatar(data.game_pin, data.username)
 
     if data.custom_field == "":
         data.custom_field = None
@@ -289,7 +296,7 @@ async def join_game(sid: str, data: dict):
 
     await sio.emit(
         "player_joined",
-        {"username": data.username, "sid": sid},
+        {"username": data.username, "sid": sid, "avatar": avatar},
         room=f"admin:{data.game_pin}",
     )
     # +++ Time-Sync +++
@@ -297,6 +304,12 @@ async def join_game(sid: str, data: dict):
     await sio.emit("time_sync", encrypted_datetime, room=sid)
     # --- Time-Sync ---
     await sio.enter_room(sid, data.game_pin)
+    # Every phone keeps the map for the podium, which names other players and so shows
+    # their frogs. The newcomer gets all of it; everybody else, the host included, gets
+    # the one new seat. The whole map to the whole room on every join grew with the
+    # square of the room.
+    await sio.emit("avatars", await get_avatars(data.game_pin), room=sid)
+    await sio.emit("avatar", {"username": data.username, "seat": avatar}, room=data.game_pin, skip_sid=sid)
     # Read again: the host may have moved on since the lookup above.
     current = await redis.get(f"game:{data.game_pin}")
     if game_data.started and current is not None:
@@ -369,6 +382,9 @@ async def register_as_admin(sid: str, data: dict):
             # The host rebuilds its player list from this, so a reconnect doesn't
             # lose everyone who joined while it was away.
             "players": players,
+            # Every seat handed out, including players who have since left: they are still
+            # on the scoreboard.
+            "avatars": await get_avatars(game_pin),
             # And where the question stands: answers and "everyone answered" sent while
             # the host was reconnecting never reached it, so its projector waited out
             # the full timer on a question that was over (E11).

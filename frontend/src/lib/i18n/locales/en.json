@@ -380,6 +380,8 @@
         "held_place": "no change",
         "and_more_players_one": "and {{count}} more player",
         "and_more_players_other": "and {{count}} more players",
+        "show_all_players": "Show all {{count}} players",
+        "show_fewer_players": "Show fewer",
         "show_next_question": "Show next question",
         "start_by_showing_first_question": "Start by showing the first question.",
         "no_answers": "No answers!",

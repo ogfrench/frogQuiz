@@ -24,6 +24,7 @@ SPDX-License-Identifier: MPL-2.0
 	import type { Player, PlayerAnswer } from '$lib/admin';
 	import { tinykeys } from '$lib/tinykeys';
 	import { nextStep, performStep, stepState } from '$lib/play/admin/next_step';
+	import { addSeat, setSeats } from '$lib/play/avatars.svelte';
 
 	// Save results is hidden for the MVP (MVP.md D4).
 	const SAVE_RESULTS_ENABLED = false;
@@ -70,7 +71,6 @@ SPDX-License-Identifier: MPL-2.0
 			this.answer_count = $state(0);
 			this.scoreboard_open = $state(false);
 		}
-
 	}
 
 	let { data }: Props = $props();
@@ -106,6 +106,7 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.quiz_data = JSON.parse(data['game']);
 		console.log(game_state.quiz_data);
 		game_state.players = data['players'] ?? [];
+		setSeats(data['avatars']);
 		// After a dropped connection, not a reload: what happened to the question while
 		// this screen was away. Without it the projector waited out the full timer (E11).
 		if (game_state.selected_question >= 0) {
@@ -120,6 +121,9 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('player_joined', (int_data) => {
 		game_state.players = [...game_state.players, int_data];
 	});
+	// One seat per join. A player who leaves keeps theirs, since they are still on the
+	// scoreboard, so nothing removes from this.
+	socket.on('avatar', addSeat);
 	socket.on('player_left', (int_data) => {
 		game_state.players = game_state.players.filter((p) => p.username !== int_data.username);
 	});
