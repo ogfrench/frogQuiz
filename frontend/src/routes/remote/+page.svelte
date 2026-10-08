@@ -12,15 +12,12 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '$lib/Spinner.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const data = {
 		game_pin: page.url.searchParams.get('game_pin'),
 		game_id: page.url.searchParams.get('game_id')
 	};
-
-	navbarVisible.visible = false;
 
 	const { t } = getLocalization();
 	let timer_interval: NodeJS.Timeout;
@@ -67,7 +64,8 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	const confirmUnload = (e: Event) => {
-		if (warnToLeave) {
+		// Not once the podium is up, as on the host screen.
+		if (warnToLeave && JSON.stringify(final_results) === JSON.stringify([null])) {
 			e.preventDefault();
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore

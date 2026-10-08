@@ -7,7 +7,6 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { getLocalization } from '$lib/i18n';
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -17,7 +16,6 @@ SPDX-License-Identifier: MPL-2.0
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
 
 	const { t } = getLocalization();
-	navbarVisible.visible = true;
 
 	// Open Graph requires absolute URLs. The Vite asset import resolves to a
 	// root-relative path, which Slack, LinkedIn and Discord will not follow, so

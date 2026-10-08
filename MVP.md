@@ -347,6 +347,15 @@ Both of us, on the deployed site, after 4.2–4.4 land.
 | Discover: browse, search, open a public quiz, start it | ☐ | ☐ | ☐ | ☐ |
 
 - [ ] No horizontal scroll at any of the three widths (`document.documentElement.scrollWidth > clientWidth`)
+
+Round 2 of local play testing (Gonçalo, 2026-10-07). Eleven findings, fixed in five batches:
+
+- [x] (1) Navbar missing on a quiz's view page. Not reproduced on any path tried (editor Back, browser back, practice, the Start dialog, a direct load, 390 and 1440); repro steps asked for. The navbar is now worked out from the route in `+layout.svelte` instead of a global flag 21 pages each had to set, so a page can no longer inherit a hidden one (2026-10-08). Guarded by `e2e/editor.e2e.ts`
+- [x] (11) "Leave site?" when leaving the podium, on the host, the phone and the remote. The guards are now off once the game is over (2026-10-08). Pinned by `e2e/game-exits.e2e.ts`, which failed before the fix
+- [ ] (2, 3) Start-game "one more detail" becomes "Add a join question"; the nickname step gets a heading and a hint when the PIN is typed as a name
+- [ ] (6, 8, 9) One press per question: results by themselves when the question ends, the scoreboard 3 s later, and no scoreboard after the last question
+- [ ] (4, 5, 7) Host bar inset and a theme switch in the game; an e2e test for images in a game; phone answer tiles in the host's order
+- [ ] (10) Podium blocks grow from the floor; Finish instead of Back; the action panel redesigned
 - [ ] Closes #3 (MVP1 umbrella). #19 (visual pass) and #16 (modal live check) were closed on 2026-10-02
 - [ ] G ☐ F ☐ — agreed it's ready to share
 

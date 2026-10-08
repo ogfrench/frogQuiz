@@ -12,7 +12,6 @@ SPDX-License-Identifier: MPL-2.0
 	import type { Question as QuestionType } from '$lib/quiz_types';
 	import ShowTitle from '$lib/play/title.svelte';
 	import Question from '$lib/play/question.svelte';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import ShowEndScreen from '$lib/play/admin/final_results.svelte';
 	import KahootResults from '$lib/play/results_kahoot.svelte';
 	import { getLocalization } from '$lib/i18n';
@@ -50,7 +49,6 @@ SPDX-License-Identifier: MPL-2.0
 	// Variables init
 	let question_index = $state('');
 	let unique = $state({});
-	navbarVisible.visible = false;
 	// Every player's answer to the question just closed, as the server sends it.
 	let answer_results: Array<{
 		username: string;
@@ -133,7 +131,9 @@ SPDX-License-Identifier: MPL-2.0
 		// Only warn once the player has actually joined a game. Previously this was
 		// armed from page load, so the browser prompted "Changes you made may not be
 		// saved" on every navigation away from an untouched join screen.
-		if (preventReload && game_pin !== '' && username !== '') {
+		// Nor once the game is over: the podium, or the host ending it. Home from there
+		// asked "Leave site?" about a game that no longer existed.
+		if (preventReload && game_pin !== '' && username !== '' && !show_final && !game_ended) {
 			event.preventDefault();
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore

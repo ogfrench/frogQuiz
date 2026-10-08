@@ -104,6 +104,22 @@ test('the host ends mid-game: everyone gets the podium, Back goes to My Quizzes'
 	await page.getByRole('alertdialog').getByRole('button', { name: 'End game' }).click();
 	await expect(page.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '/my-quizzes');
 	await expect(phone.getByRole('link', { name: 'Home' })).toBeVisible();
+
+	// Leaving once the game is over is just leaving. Both screens kept their "Leave
+	// site?" guard armed through the podium, so each exit asked first. Accept any that
+	// appears, so a regression fails the count below rather than hanging the navigation.
+	const prompts: string[] = [];
+	for (const p of [page, phone]) {
+		p.on('dialog', (d) => {
+			prompts.push(d.type());
+			void d.accept();
+		});
+	}
+	await page.getByRole('link', { name: 'Back' }).click();
+	await page.waitForURL(/\/my-quizzes/);
+	await phone.getByRole('link', { name: 'Home' }).click();
+	await phone.waitForURL((url) => url.pathname === '/');
+	expect(prompts, 'leaving a finished game asked "Leave site?"').toEqual([]);
 	await context.close();
 });
 

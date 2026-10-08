@@ -4,6 +4,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Fixes from testing, round 2, 8 Oct
+
+- Fixed leaving a finished game asking "Leave site?". The host, phone and remote screens kept their unload guard armed through the podium, so Back and Home asked about a game that no longer existed. New e2e check in `game-exits.e2e.ts`.
+- Made the navbar and footer follow the route: they are hidden on the editor and game screens (`/play`, `/admin`, `/create`, `/edit`, `/edit/videos`, `/remote`) and shown everywhere else, decided in `+layout.svelte`. This replaces a global `navbarVisible` flag that 21 pages each had to set and that a page could inherit from the last one. The flag's store is deleted. A navbar missing on a quiz's view page was reported but not reproduced; this removes the one mechanism that could cause it.
+
 ### Open issues in TODO, 8 Oct
 
 - Listed every open GitHub issue in `TODO.md` (#3, #4, #22, #33, #34, #35), including the new #35 on editing, launching and deleting the same quiz from several tabs, devices or while a game is live.

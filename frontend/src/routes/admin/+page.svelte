@@ -10,7 +10,6 @@ SPDX-License-Identifier: MPL-2.0
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import { socket } from '$lib/socket';
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import SomeAdminScreen from '$lib/admin.svelte';
 	import GameNotStarted from '$lib/play/admin/game_not_started.svelte';
 	import { onMount } from 'svelte';
@@ -22,8 +21,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { QuizQuestionType, type QuizData } from '$lib/quiz_types';
 	import type { Player, PlayerAnswer } from '$lib/admin';
 	import { tinykeys } from '$lib/tinykeys';
-
-	navbarVisible.visible = false;
 
 	// Save results is hidden for the MVP (MVP.md D4).
 	const SAVE_RESULTS_ENABLED = false;
@@ -205,8 +202,12 @@ SPDX-License-Identifier: MPL-2.0
 		results_saved = true;
 	});
 
+	// Once the podium is up the game is over and there is nothing left to lose, so leaving
+	// is just leaving. The guard stayed on, and Back from the podium asked "Leave site?".
+	// Back still does a full page load on purpose: this page registers socket handlers it
+	// never removes, and a reload is what clears them before the next game.
 	const confirmUnload = () => {
-		if (warnToLeave) {
+		if (warnToLeave && !show_final_results) {
 			event.preventDefault();
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore

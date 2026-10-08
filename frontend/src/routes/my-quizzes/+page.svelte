@@ -15,7 +15,6 @@ SPDX-License-Identifier: MPL-2.0
 	// Signed in, those same quizzes are listed under the account's, with Claim.
 	import { onMount } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte';
 	import { anonDaysLeft, anonQuizIds, clearAnonSecret, getAnonSecret } from '$lib/anon_quiz';
 	import CommandpaletteNotice from '$lib/components/popover/commandpalettenotice.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
@@ -47,7 +46,6 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { data }: Props = $props();
 	const { t } = getLocalization();
-	navbarVisible.visible = true;
 
 	const signed_in = $derived(Boolean(data.email));
 
