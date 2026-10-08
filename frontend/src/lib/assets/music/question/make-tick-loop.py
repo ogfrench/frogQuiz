@@ -4,11 +4,11 @@
 
 # 8 s tick loop modelled on the tickloop-gameshow measurements:
 #   120 BPM (a click every 500 ms), alternating accents about 6 dB apart,
-#   a softer second hit about 150 ms after each click, energy at 2-3 kHz,
+#   a softer second hit about 150 ms after each click, a 1.2 kHz tone with the noise burst above it,
 #   -20 dB about 45 ms after each click, and silent again before the loop restarts.
 import wave, numpy as np, sys
 SR=44100; DUR=8.0; N=int(SR*DUR)
-GAIN_DB=-11.0
+GAIN_DB=-9.0
 rng=np.random.default_rng(7)   # fixed seed so the same file comes out every run
 def lowpass(x, hz):
     a=np.exp(-2*np.pi*hz/SR); y=np.empty_like(x); acc=0.0
@@ -23,8 +23,8 @@ def click(length_s, f0, tau_tone, tau_noise, noise_gain=0.5):
     ramp=int(0.0003*SR); s[:ramp]*=np.linspace(0,1,ramp)     # 0.3 ms attack
     fade=int(0.015*SR); s[-fade:]*=np.linspace(1,0,fade)    # 15 ms fade-out: no cut at the end
     return s/np.max(np.abs(s))
-main=click(0.10, 2300, tau_tone=0.020, tau_noise=0.014)
-echo=click(0.08, 2300, tau_tone=0.012, tau_noise=0.008)
+main=click(0.10, 1200, tau_tone=0.020, tau_noise=0.014)
+echo=click(0.08, 1200, tau_tone=0.012, tau_noise=0.008)
 out=np.zeros(N); beat=int(0.5*SR)
 for k in range(16):
     start=k*beat

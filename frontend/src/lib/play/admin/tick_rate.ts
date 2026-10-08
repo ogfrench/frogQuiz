@@ -5,12 +5,13 @@
 /**
  * Playback rate of the question tick loop, by the share of the timer that has elapsed.
  *
- * "Heartbeat": a quadratic climb from 1x to about 1.95x, so the first half of a question
- * is calm and the last quarter is not, with a wobble that grows toward the end so the
- * pulse feels alive rather than mechanical. Chosen by ear from six candidates on
- * 2026-10-08; the rest (linear, cubic, stairs, panic) were less musical.
+ * "Gentle": a quadratic climb from 1x to 1.5x. The first half of a question is barely
+ * faster, and the last quarter is clearly urgent. It stays low on purpose: the loop is
+ * played faster rather than re-clocked, so the pitch rises with the speed, and a larger
+ * range squealed. Chosen by ear on 2026-10-08 over heartbeat, linear, late surge, stairs
+ * and panic; heartbeat (1x to 1.95x) was the one that squealed.
  */
 export const tick_rate = (elapsed_share: number): number => {
 	const p = Number.isFinite(elapsed_share) ? Math.min(1, Math.max(0, elapsed_share)) : 0;
-	return 1 + 0.9 * p ** 2 + 0.06 * Math.sin(p * 40) * p;
+	return 1 + 0.5 * p ** 2;
 };

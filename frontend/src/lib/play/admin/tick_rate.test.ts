@@ -6,21 +6,27 @@ import { describe, expect, it } from 'vitest';
 import { tick_rate } from './tick_rate';
 
 describe('tick_rate', () => {
-	it('starts at the loop as recorded and ends at nearly double speed', () => {
+	it('starts at the loop as recorded and ends at 1.5x', () => {
 		expect(tick_rate(0)).toBe(1);
-		expect(tick_rate(1)).toBeGreaterThan(1.8);
-		expect(tick_rate(1)).toBeLessThan(2.1);
+		expect(tick_rate(1)).toBeCloseTo(1.5, 10);
 	});
 
-	it('stays calm for the first half of the timer', () => {
-		for (let p = 0; p <= 0.5; p += 0.01) expect(tick_rate(p)).toBeLessThan(1.3);
+	it('is barely faster for the first half of the timer', () => {
+		for (let p = 0; p <= 0.5; p += 0.01) expect(tick_rate(p)).toBeLessThan(1.13);
 	});
 
-	it('never leaves a range the loop still sounds like itself in', () => {
+	it('never leaves 1x to 1.5x, so the pitch stays in range', () => {
 		for (let p = 0; p <= 1; p += 0.001) {
-			// The wobble dips just under 1x in the first moments, by under a percent.
-			expect(tick_rate(p)).toBeGreaterThan(0.99);
-			expect(tick_rate(p)).toBeLessThan(2.1);
+			expect(tick_rate(p)).toBeGreaterThanOrEqual(1);
+			expect(tick_rate(p)).toBeLessThanOrEqual(1.5 + 1e-9);
+		}
+	});
+
+	it('rises monotonically, so the loop never slows down as time runs out', () => {
+		let last = tick_rate(0);
+		for (let p = 0.001; p <= 1; p += 0.001) {
+			expect(tick_rate(p)).toBeGreaterThanOrEqual(last);
+			last = tick_rate(p);
 		}
 	});
 
