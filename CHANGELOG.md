@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Unused lobby copy removed, 8 Oct
+
+- Removed `music/lobby/lobby-original.mp3`, an unreduced copy of the lobby track that nothing imported and that was left over from upstream. The game plays `lobby.mp3`; git history keeps the original.
+
 ### Game music, 8 Oct
 
 - Added a ticking loop to the host question screen that speeds up as the time runs out, gently (1.0x to 1.5x), with a 1.2 kHz tone and the snare kept, so the pitch does not squeal. It fades out at zero or when the question ends, and follows the shared mute.
