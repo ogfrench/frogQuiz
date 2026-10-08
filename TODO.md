@@ -113,16 +113,24 @@ failed first.
 
 Every open issue, so none lives only on GitHub. Closed with PR #23: #24 (touch targets).
 
-- [ ] **#3 MVP 1: full end-to-end run, fix the bugs, cut what we do not need.** Part A
-      still needs the deployed-site run (`MVP.md` §4.1); Part B's keep/cut calls are in
-      [`docs/mvp-scope.md`](docs/mvp-scope.md)
+- [ ] **#3 MVP 1: full end-to-end run, fix the bugs, cut what we do not need.** Part B is
+      done ([`docs/mvp-scope.md`](docs/mvp-scope.md)). Part A is not: the issue's own list
+      of unwalked rows (passkeys, video, `/remote` and controllers, QuizTivity, OAuth,
+      multi-player load, host reconnect, `/practice`) is from 15 Sep and partly stale, since
+      the e2e suite now covers reconnect, rejoin and practice; passwords and registration
+      are replaced by D21. What is certainly owed is the deployed-site run with a real
+      inbox (`MVP.md` §4.1). Re-tick the issue's boxes against the suite before the next
+      run-through
 - [ ] **#4 MVP 2: close the Kahoot and Mentimeter gap.** Word cloud first, then open-ended
       with grouping, then a non-competitive mode. Also tracks bringing back the five hidden
       question types. Not started; one question type per PR
-- [ ] **#22 Oracle VM: 4 OCPU / 24 GB is over the new Always Free limit (2 / 12), and
-      uploads have no backup.** **Deadline 31 Oct.** The shape change in the Oracle console
-      is by hand and still open, as is copying `uploads/` and `.env` off the box; the
-      checklist and the Always Free / PAYG / Hetzner options are in the issue
+- [ ] **#22 Oracle VM: 4 OCPU / 24 GB is over the new Always Free limit (2 / 12).**
+      **Deadline 31 Oct.** Checked on the VM on 6 Oct: still 4 / 24, Postgres is Neon (so
+      only `uploads/` lived on the disk), and a backup of both was copied to François's
+      laptop before the clean slate. **Still open:** resize to 2 OCPU / 12 GB in the
+      Oracle console (by hand, when no game is live), upgrade to pay-as-you-go with a $1
+      budget alert, the recovery drill, and checking the Netlify variables against
+      `netlify.toml`. `uploads/` is empty now, so there is little left to back up
 - [ ] **#33 Let users change their name; decide how name, username and email relate.**
       Needs a decision first (what the "name" is, which of the three a user may edit). Note
       C13 (4 Oct) decided usernames do not change, so this reopens that. Touches auth, so
