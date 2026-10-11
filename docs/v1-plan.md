@@ -179,6 +179,7 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - `/create` redirects to sign-in
   - the claim banner
 - **The anonymous cap (3b):** 20 new anonymous quizzes per address a day, and 1,000 live in total. It stops creating, never editing.
+- **From the security audit (3b):** the emailed sign-in link becomes single-use, once a scanner that opens links first is shown not to use it up (with #43 case 7); "sign out everywhere" revokes API keys, and the key list shows them; password registration gets the allowed-domain rule, for the day it is switched back on. See `docs/security-audit-2026-10-11.md`.
 - **#43:** the claim cases that still apply, and two races found while planning: the expiry sweep can delete a quiz claimed a moment earlier, and two claims at once can both succeed and count the images twice.
 - **The live scoreboard:** it follows the server's totals, so a hide-results question's points are no longer left out.
 - **The answered count:** "3 of 2 answered". The host adds one per answer, and drops a player who disconnects from the total, so a player who answers and then loses signal is counted on one side only. Found by step 1's cheap review.
@@ -277,3 +278,9 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - **François's answers on #55:** a cap is built in V1 (Claude picked 20 a day per address and 1,000 in total); the 30-day window, unlisted-only anonymous quizzes, the expiry message and running games after expiry stand as recommended.
   - **Found while reading, joined 3b:** the expiry sweep deletes without re-checking, so a claim in between is lost; and the claim checks then writes, so two at once both succeed.
   - **The e2e suite hosts anonymously almost everywhere,** so the e2e stack and CI turn the new flag on, and the off path is tested on its own.
+- **11 Oct, step 3a, the security audit:** François asked whether the gate holds. A live probe as anonymous and as two accounts found it does, with one hole.
+  - **Fixed in 3a:** three `/live` routes accepted any account's API key, and `/user_count` any key, so anyone signed in could read another account's running game, right answer included. Free-text answers also went to every phone.
+  - **Moved to 3b:** single-use sign-in links, API keys revoked by "sign out everywhere", and the domain rule on password registration.
+  - **Moved to step 5:** the server-shared "signed in" store, and the page gate's unsigned token read (no data reaches it).
+  - **Also in 3a, from François's question:** the rich-text fields were square beside rounded ones; every text field now has one shape and one focus ring. CKEditor also dropped those fields' accessible names on the first keystroke.
+  - **Lesson:** a second stack started from the same tree reloads the first one's pages; run the audit and e2e one after the other.
