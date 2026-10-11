@@ -11,19 +11,91 @@ they record.
 
 ## Picking this up on the laptop (11 Oct, evening)
 
-The cloud session stops here, at the user's request. Nothing is uncommitted: `v1` is pushed at
-the commit that carries this section, on top of `530d5dd` (step 3b). **Read "What we missed"
-first: it is the audit of everything the plan, the issues and the code disagree on.**
+The cloud session stopped here, at François's request. Nothing is uncommitted: `v1` is pushed at
+the commit that carries this section. This section is meant to be read alone. **Read "What we
+missed" before touching anything: it is the audit of where the plan, the issues and the code
+disagree.**
 
-### Where things stand
+### 0. Start here: paste this into the laptop Claude
+
+```text
+You are picking up frogQuiz V1 from a cloud session that has ended. Repo ogfrench/frogQuiz,
+branch v1, draft PR #57. Read, in this order: the section "Picking this up on the laptop
+(11 Oct, evening)" at the top of HANDOVER.md, then CLAUDE.md, then docs/v1-plan.md including
+its "Plan changes" log. Then work through "Next, in order" in that section.
+
+First action: check CI on the head of v1 and report it. Do not merge #57 before telling
+François what the audit changed (the section "What we missed", items A to E): it moves what
+v0.5 contains.
+
+The rules that matter most: push only to v1; merge commits only; hide or disable, never
+delete, a feature (François decides any removal, recorded in MVP.md first); claude-code-setup
+is a public repo, so nothing from a private project or any real name goes in it; one e2e
+stack per working tree and no edits under frontend/ while specs run; a failing test first for
+every fix, a CHANGELOG line under "## Unreleased", and a fast-model review per commit.
+François wants short, straight answers and real choices put to him, not long plans.
+```
+
+Optional: `claude --teleport session_01KVaWrDgi2ESR2WbZoLq4MU` from a clean checkout brings back a
+summary of the cloud conversation. The documents carry the same facts. Plain git is enough:
+`git fetch origin && git switch v1 && git pull`. **Only one session pushes to `v1` at a time.**
+
+### 1. The state in one table
 
 | | |
 | --- | --- |
-| **V1 ships in releases** (D35) | v0.5 = steps 0 to 3 (PR #57, now), v0.8 = step 4, v0.9 = step 5, v1.0 = step 6. Each is its own PR from `v1`. |
-| **Step 3** | Done. 3a (data and concurrency) and 3b (the account requirement behind `anonymous_quizzes_enabled`, off by default, the two ceilings, the `/create` redirect, the password domain rule, `docs/anonymous-vs-account.md`). |
-| **Checked on `530d5dd`, locally** | Backend suite 287 passed, 1 skipped, on a fresh database. e2e batch of the specs that touch `/create` and anonymous hosting, 68 of 68. `pnpm test` 249, `svelte-check` 0 errors, `flake8` clean. With the setting off, `/create` answered 303 to sign-in and `/editor/start` 401, checked live. |
-| **Not checked yet** | See F below: CI on the last commit, the full e2e suite on this head, the visual pass. |
-| **App in use?** | No. No real users, no real data. |
+| **What this is** | frogQuiz: an internal Kahoot-style quiz tool, a fork of ClassQuiz (MPL-2.0). FastAPI and python-socketio, SvelteKit 2 with Svelte 5 and shadcn-svelte, Postgres (Neon in production), Redis, Meilisearch, an arq worker. Docker compose on an Oracle VM, the frontend on Netlify. |
+| **Repo, branch, PR** | `ogfrench/frogQuiz`, branch `v1` (ahead of master `8e69034`, which `v1` merges cleanly into), draft PR **#57**. Checklist issue **#56**. The living plan is [`docs/v1-plan.md`](docs/v1-plan.md). |
+| **How V1 ships** (D35) | In releases, PR by PR, each from `v1`: **v0.5** = steps 0 to 3 (#57, now), **v0.8** = step 4, **v0.9** = step 5, **v1.0** = step 6. After each merge `v1` restarts from master. Master before v0.5 is the `mvp` tag. |
+| **Done** | Steps 0, 1, 2 and 3 (3a and 3b). See section 2. |
+| **Checked locally** | Backend suite 287 passed, 1 skipped, on a fresh database. `pnpm test` 249. `svelte-check` 0 errors, 36 warnings. `flake8` clean. The e2e specs that touch `/create`, anonymous hosting, sign-in, the editor and the account flows: 68 of 68. `account-game.e2e.ts` passes with the setting on and off. With it off, `/create` answers 303 to sign-in and `/editor/start` 401, checked live. |
+| **CI** | Not known. It was running on `706c427` and was restarted by the push of `91fc19b`. On `706c427` at that moment `lint`, `secrets`, `python`, `node`, the three image scans and Netlify had passed, and `e2e`, `test` and CodeQL were in progress. **Check it first.** |
+| **Not done** | The full e2e suite on this head, the visual pass of the 3b screens, items A to E below. |
+| **Production** | v0.5 is not deployed. The VM runs whatever it last pulled. The worker's missing uploads folder and Meilisearch v1 take effect only on `docker compose up -d` with the new image (`DEPLOY.md`). No schema change in v0.5, so no migration to run. v0.8 has one. |
+| **App in use?** | No. No real users and no real data. Do not treat anything as a hotfix. |
+| **People** | **François** is the owner and decides alone (D31). **Gonçalo** is the other teammate and is no longer a gate. |
+
+### 2. What has been built (step by step, with the commit to read)
+
+| Step | What | Commits |
+| --- | --- | --- |
+| 0 | Merged PR #37 (the MVP polish, `58d6241`), branched `v1`, wrote the plan and the decisions, housekeeping, visual review tooling and a baseline gallery | `e87f81a` |
+| 1 | CI and production safety. The dependency audit (pip-audit with dated exceptions, pnpm audit, trivy on the compose images, gitleaks) and the backend re-lock that cleared 124 advisories. e2e in CI. Log limits on every compose service. Meilisearch moved from v0.28 to v1.54.3 (new volume, the API rebuilds the index). The host timer redesigned as a drain bar. | `f64b7a0`, `deb3c09`, `c94c78c`, `39ea0c0`, `62268ff` |
+| 3a | **#52:** no results row for a game hosted without an account. **#35:** a view or a launch no longer undoes a save, every writer keeps to its columns, `base` on `/editor/finish`, a 409 offers Keep mine or Load the other version, a failed save says why and keeps the text, a live game keeps its images. The live scoreboard follows the server's totals. "N of M answered" cannot run past M. A security audit, whose one hole (`/live` accepted any account's key) is fixed. Visual review fixes. | `1a7a97d`, `6ee0db8`, `ab677df`, `06e4663`, `57a3445`, `e488d07`, `311df9e`, `0f69b96` |
+| 3a/3b | **#43 races:** the claim and the expiry sweep are conditional writes; the editor's version check runs again with the row locked. | `780d744`, `8a2085a`, `5ebb5bf` |
+| Review | The V1 review: the worker never mounted the upload folder; CI's Meilisearch now matches production; mail documented as required. | `92331b6` |
+| 3b | **#55:** `anonymous_quizzes_enabled` (default off) gives a 401 on every anonymous write path; two ceilings (20 new quizzes per address a day, 1,000 alive at once); `GET /api/v1/utils/config`; `/create` redirects signed-out visitors to sign-in; password registration keeps to the allowed domains; `docs/anonymous-vs-account.md`; decisions D33 to D36. | `530d5dd` |
+
+### 3. Rules that hold (from CLAUDE.md and from François)
+
+- **Branch and merging.** Push only to `v1`. Merge commits only: no squash, no rebase, no history rewrite on a shared branch. Restarting `v1` from master after a merge is the one exception, and only when it holds merged history alone.
+- **Pull requests.** François asked for PR-by-PR releases (D35), so opening each release PR is authorized. Any other PR needs an ask. Do not recreate issues #46 to #49 and #54: they were deleted on purpose.
+- **Hide or disable, never delete.** Anything not needed now goes behind a flag or a route guard. Removing a feature is François's decision, proposed first and recorded in `MVP.md` before any code changes.
+- **Every change:** a failing test first (a race gets a test that holds the first step in place, and it must fail on the old code); a line under `## Unreleased` in `CHANGELOG.md`; a review by a fast model per commit (CLAUDE.md says which work goes to haiku, sonnet or the main model: auth, sessions, races, deletes, migrations and the socket protocol stay with the main model).
+- **Each step ends with:** a full review of its diff, the full e2e suite, a visual pass of the touched screens at 390, 834 and 1440 in both themes, the backend suite on clean infrastructure, CI green, and a re-plan written into `docs/v1-plan.md` under "Plan changes". At the end, François wants a full report: what we set out to do (the issues) against the result.
+- **Upstream independence and licensing.** Nothing may point at `mawoka.eu` or other ClassQuiz-maintainer infrastructure. Never strip or alter an SPDX header; add a second line for frogQuiz contributors. Third-party art, icons, audio and fonts need a recorded open licence first.
+- **`claude-code-setup` is public.** No client or project names, nothing from a private repo, no secrets, hostnames, IPs, emails or people's names. Private terms live outside git (`.private-terms`, the `PRIVATE_TERMS` secret). Run `node scripts/check-public.mjs --require-terms` before pushing; if it fails, fix the text and never loosen the check. A learning written there names its source as a public repo or "a private project", nothing else.
+- **Confirm before anything hard to reverse or outward-facing:** a force push, a merge, a tag, deleting data. Approval for one does not carry to the next.
+- **No model names** in commit messages, PR titles or bodies, or code comments. Follow the session's own attribution instruction for trailers.
+- **How François likes it:** short and straight, US English, no flattery, no em dashes, no emojis. Get to the choices. Do not over-plan: backups (#61) and monitoring (#60) were turned into issues on purpose.
+
+### 4. What François decided (10 and 11 Oct)
+
+All of D22 to D36 are in `MVP.md` §4.0 and the plan's "Decisions" table. The ones people forget:
+
+| Topic | Decision |
+| --- | --- |
+| Who can use it without an account | Creating, uploading and hosting need a team account. Players join by PIN with none. Built behind `anonymous_quizzes_enabled`, off. Anonymous quizzes are unlisted only and last 30 days. A running game continues after expiry. An editor open at expiry keeps its clock, shows the reason and keeps the text. |
+| The ceilings | 20 new quizzes per address a day, 1,000 alive in total. Both are settings. |
+| Copy (#39, D33) | Anyone signed in can copy any public quiz, as well as their own and the Examples. A copy carries the answers, which narrows D18 for public quizzes. |
+| Scoreboard (D34) | The host's scoreboard and results cards stay white on the dark projector. |
+| Releases (D35) | v0.5, v0.8, v0.9, v1.0, PR by PR. Master before v0.5 is tagged `mvp`. |
+| Mail | Sign-in by emailed link works in production. No emergency sign-in. |
+| Backups and monitoring | None for now. Issues #61 and #60, label `post-v1`. |
+| Server image | François builds it from his laptop at the deploy. CI publishes `:master` only when `frogquiz/**` changes, so a change to the Dockerfile, the lock or a migration alone does not reach the VM. |
+| API domain (D32) | `api.frogquiz.xyz`. Claude does what it can; the DNS record is done from the laptop with the Netlify MCP. |
+| `claude-code-setup` | Stays public. Its history was rewritten and force-pushed on 11 Oct to remove private names, and `frogify` stays public. |
+| Hotfix | None. The `/live` security fixes reach master with V1. |
 
 ### What we missed (the audit of 11 Oct, late)
 
@@ -132,14 +204,15 @@ A real-phone game, iOS and Android, is #45 in v1.0 and needs you.
 6. **Steps 4 to 6** as `docs/v1-plan.md` says. Which issue closes in which release:
    - v0.8: #33, #34, #38, #39 (Copy on any public quiz, D33), #40, #41
    - v0.9: #42, #44, #50, and #55
-   - v1.0: #45, #3, #56
+   - v1.0: #45 (it takes the leftover checks of #3, which is already closed as not planned), #56, and #22 once the VM work is done
    - post-V1: #60 (monitoring), #61 (backups)
    - v0.8 has a **migration** (#34, #33): `prestart.sh` runs it when the API container starts, so take the Neon snapshot first.
 7. **At the end:** the full report, what was set out (the issues) against the result.
 
 ### Only the laptop can do these
 
-- **The `mvp` tag** (the cloud git proxy refuses tag pushes): `git tag -a mvp 8e69034 -m "MVP" && git push origin mvp`
+- **The `mvp` tag** (the cloud git proxy refuses tag pushes): `git tag -a mvp 8e69034 -m "MVP" && git push origin mvp`. Later `v0.5`, `v0.8`, `v0.9` and `v1.0`, each on its merge commit.
+- **Pause Netlify's auto-publish** before merging #57, and publish after the API is deployed (E above).
 - **The server image** after v0.5 merges: build and push it from the laptop, then on the VM `docker compose pull && docker compose up -d`. CI publishes `:master` only when `frogquiz/**` changes. The `up -d` also gives the worker its uploads folder. The new setting defaults to off, so nothing needs adding to `.env` for it.
 - **The API domain** (Netlify MCP): an A record `api` → `134.98.158.173` on `frogquiz.xyz`. On the VM, in `/opt/frogquiz/.env`, `SITE_ADDRESS="api.frogquiz.xyz, 134-98-158-173.sslip.io"`, then `docker compose up -d proxy`; check `CORS_ORIGINS` and `ROOT_ADDRESS`. Then Claude points `netlify.toml` at it. `DEPLOY.md` has the runbook.
 - **claude-code-setup** (its history was rewritten and force-pushed on 11 Oct):
@@ -151,12 +224,66 @@ A real-phone game, iOS and Android, is #45 in v1.0 and needs you.
 - **Branch protection** on master.
 - **Approve text** when Claude drafts it: the examples (#39) and the privacy and terms pages (#50).
 
-### One default still to confirm
+### Getting it running on the laptop
 
-The answered count counts only players still in the game: a player who answered and then
-left drops out of both numbers.
+Use Git Bash, from the repo root. pnpm is in `%APPDATA%\npm`. The frontend `build` script is POSIX
+and fails under cmd.exe. The older 10 Oct section below has the full command table and a phone
+walkthrough; its counts are stale, so use these:
+
+| What | Command | Expect now |
+| --- | --- | --- |
+| Unit | `cd frontend && pnpm test` | 249 passed |
+| Types | `cd frontend && pnpm exec svelte-kit sync && pnpm check` | 0 errors, 36 warnings |
+| Lint | `cd frontend && pnpm lint`, and `flake8 .` | 0 errors |
+| Backend, full | `./run_tests.sh` (Podman or Docker for Postgres, Redis, Meilisearch) | 287 passed, 1 skipped, on a fresh database with Redis flushed |
+| e2e, full | `bash e2e/run.sh` | All green. 46 spec files. Known bugs are `test.fail(...)` markers; a test that turns red means its bug is fixed, so delete the marker |
+| e2e, one spec | `bash e2e/run.sh e2e/account-game.e2e.ts` | |
+| Setting off | restart the API with `ANONYMOUS_QUIZZES_ENABLED=False`. `e2e/e2e.env` sets it True; edit it locally and do not commit that | `/create` 303 to sign-in, `/editor/start` 401 |
+| Stack left up | `KEEP_UP=1 bash e2e/run.sh --list`, then `bash e2e/stop.sh` | App 3000, API 8010 |
+
+The cloud session ran the backend suite against the e2e stack's own infrastructure with a
+database named `frogquiz_pytest`, an index of its own in Redis and Meilisearch, and `.env.ci`
+with only the three service URLs changed. Those scripts live in the cloud scratchpad and are not
+in the repo. Do not source `e2e/e2e.env` for the backend suite: it flips
+`VALIDATE_EMAIL_DELIVERABILITY` and gave 63 phantom failures.
+
+### Traps that bit us
+
+- **The suites share state.** The backend suite is order-dependent: a second run on warm infrastructure fails from `test_password_update` onward with about 40 spurious 401s (Redis) or at `test_create_test_user` with a 409 (Postgres). Flush both.
+- **One e2e stack per working tree.** A second one, even on other ports, runs `svelte-kit sync` in the same `frontend/` and reloads the first one's pages mid-test. No edits under `frontend/` while specs run. Rate limits are keyed by address and every local client is `127.0.0.1`, so a probe can hand the specs 429s.
+- **ormar's `update()` writes every column.** A save, a view and a claim then undo each other. Use `update(_columns=[...])` or one SQL statement. UUIDs are hex strings in raw SQL.
+- **Races are proved by holding the first step in place:** monkeypatch the call that sits between the read and the write, and run the worker through `test_client.portal.call`. Timing alone proves nothing.
+- **A test helper that raises inside a transaction rolls the writes back.** It made a control test fail for the wrong reason.
+- **A variant passed as a class keeps the component's default variant.** The conflict dialog's button was white text on white. Pass `variant` as a prop.
+- **CKEditor's stylesheet is more specific than ours.** Its radius, border, focus ring and `font-family` need `.ck.ck-editor__editable:not(.ck-editor__nested-editable)`. Its "powered by" badge leaves a dot unless hidden.
+- **Meilisearch v1 cannot read v0.28 files.** It has its own volume (`meilisearch-data-v1`); `e2e/run.sh` re-downloads the binary when `--version` differs from `docker-compose.yml`.
+- **The public-repo hook blocked our own fixtures** (an email, an IP, a repo name) until they were built at runtime. Expect it on any fixture that looks like a name.
+- **The shadcn-svelte MCP does not exist.** Use the CLI (`CLAUDE.md`). Do not re-litigate it.
+- **Known flake:** `practice.e2e.ts` failed once in each of two full runs, a different symptom each time, and passes alone. `TODO.md` has both. Note a third; do not explain it in advance.
+
+### Where to look
+
+| What | Where |
+| --- | --- |
+| The plan, its decisions and its change log | `docs/v1-plan.md`, `MVP.md` §4.0 (D22 to D36) |
+| What needs an account, and each claim case | `docs/anonymous-vs-account.md` |
+| The security audit | `docs/security-audit-2026-10-11.md` (findings 4 to 7 are deferred, with a place) |
+| The visual review | `docs/visual-review-v1.md`; the gallery is a private claude.ai artifact (`RVbfFcKLYJJN1f7VFnaNcr`), François can share it |
+| Measured concurrency results | `docs/e2e-findings.md`, `docs/edge-cases-2026-10.md`, `docs/crud-audit-2026-10.md` |
+| What was cut and how to turn it back on | `docs/mvp-scope.md` |
+| Uploads, limits, quotas | `docs/uploads.md` |
+| Deploying, the audit exceptions, the VM runbooks | `DEPLOY.md` |
+| What changed, in plain terms | `CHANGELOG.md` (`## Unreleased`) |
+| Open issues | #56 roadmap; #55, #53, #52, #50, #45, #44, #43, #42, #41, #40, #39, #38, #35, #34, #33; #22 (VM, by about 25 Oct); #60 and #61 and #4 after V1. #3 is already closed. |
+
+### One default still to confirm with François
+
+The answered count counts only players still in the game: a player who answered and then left
+drops out of both numbers.
 
 ## Picking this up on the laptop (10 Oct)
+
+*History. Its counts and the V1 shape (one PR) are out of date; the section above is current.*
 
 The cloud session of 8 to 10 Oct stops here. Nothing is uncommitted: PR #37's branch is
 pushed at the commit that added this section.
