@@ -28,6 +28,9 @@ SPDX-License-Identifier: MPL-2.0
 	import { getAnonSecret, setAnonSecret } from '$lib/anon_quiz';
 	import { htmlToPlainText, sanitizeTitleHtml } from '$lib/sanitize';
 	import ThemeToggle from '$lib/theme-toggle.svelte';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import { buttonVariants } from '$lib/components/ui/button';
+	import { dropUnsaved, keepUnsaved, unsavedFor } from '$lib/editor/unsaved_backup';
 
 	const { t } = getLocalization();
 
@@ -178,6 +181,20 @@ SPDX-License-Identifier: MPL-2.0
 	// docs/edge-cases-2026-10.md). Kept out of `data`, or every save would change the
 	// snapshot and trigger another.
 	let base: string | null = (data as { updated_at?: string }).updated_at ?? null;
+	// #35. A save that fails never costs the text: it stays in the page, and a copy is kept
+	// for this tab's session (unsaved_backup.ts) in case the page goes.
+	// The version another tab or device saved first, after a 409. While it is set the
+	// editor asks Keep mine or Load the other version, and autosave holds.
+	let conflict: string | null = $state(null);
+	let conflict_open = $state(false);
+	// Why the last save failed, when it is something the author can act on.
+	let failure: 'signed_out' | 'deleted' | 'expired' | null = $state(null);
+	// This tab's unsaved version from before a reload, offered back.
+	let restorable: string | null = $state(null);
+	// Bumped to remount the cards: each rich-text field reads its text only when it mounts,
+	// so restoring into `data` alone left the old text on screen, to be saved back.
+	let generation = $state(0);
+	let reloading = false;
 
 	const startSession = (id: string | null) => {
 		const anon_secret = id === null ? null : getAnonSecret(id);
@@ -200,6 +217,7 @@ SPDX-License-Identifier: MPL-2.0
 			// false, Save sent nothing, and the editor went to the quiz page saying "Saved".
 			// Normalisation now costs one no-op save instead of somebody's work.
 			saved_snapshot = JSON.stringify(data);
+			if (current_id) restorable = unsavedFor(current_id, saved_snapshot);
 			return;
 		}
 		// Was `alert('Error!')` -- a native dialog with no status, no reason, and
@@ -245,16 +263,36 @@ SPDX-License-Identifier: MPL-2.0
 				}
 			}
 			if (!res.ok) {
-				let detail = '';
+				let json: { detail?: unknown; updated_at?: string } | null = null;
 				try {
-					const json = await res.json();
-					// A 422 carries a list of pydantic errors rather than a sentence.
-					detail = Array.isArray(json?.detail)
-						? (json.detail[0]?.msg ?? '')
-						: (json?.detail ?? '');
+					json = await res.json();
 				} catch {
 					/* not JSON */
 				}
+				if (current_id) keepUnsaved(current_id, body);
+				if (res.status === 409 && json?.updated_at) {
+					conflict = json.updated_at;
+					conflict_open = true;
+					save_error = $t('editor.changed_elsewhere');
+					return;
+				}
+				// 401 is a lapsed session that could not be restarted, 403 a session that now
+				// belongs to nobody here: both mean this browser is not signed in as the owner.
+				if (res.status === 401 || res.status === 403) {
+					failure = 'signed_out';
+					save_error = null;
+					return;
+				}
+				if (res.status === 404) {
+					const expire_at = (data as { expire_at?: string | null }).expire_at;
+					failure = expire_at && new Date(expire_at) < new Date() ? 'expired' : 'deleted';
+					save_error = null;
+					return;
+				}
+				// A 422 carries a list of pydantic errors rather than a sentence.
+				const detail = Array.isArray(json?.detail)
+					? (json.detail[0]?.msg ?? '')
+					: ((json?.detail as string | undefined) ?? '');
 				save_error = detail ? `${res.status}: ${detail}` : `${res.status}`;
 				return;
 			}
@@ -274,7 +312,11 @@ SPDX-License-Identifier: MPL-2.0
 			}
 			saved_snapshot = body;
 			save_error = null;
+			failure = null;
+			// Not while a restore is on offer: the quiet save on load would take it away.
+			if (current_id && restorable === null) dropUnsaved(current_id);
 		} catch {
+			if (current_id) keepUnsaved(current_id, body);
 			save_error = $t('editor.offline');
 		} finally {
 			saving = false;
@@ -286,7 +328,7 @@ SPDX-License-Identifier: MPL-2.0
 	const flush = async (keepalive = false) => {
 		clearTimeout(timer);
 		while (inflight) await inflight;
-		if (!savable || !edit_id || !unsaved) return;
+		if (conflict || reloading || !savable || !edit_id || !unsaved) return;
 		inflight = send(keepalive);
 		try {
 			await inflight;
@@ -312,7 +354,7 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	const confirmUnload = (event: BeforeUnloadEvent) => {
-		if (!unsaved) {
+		if (!unsaved || reloading) {
 			return;
 		}
 		// Try to keep it anyway: keepalive lets the request outlive the page.
@@ -325,7 +367,48 @@ SPDX-License-Identifier: MPL-2.0
 	// Back saves first, and goes to the quiz once it exists rather than to the list.
 	const leave = async () => {
 		await flush();
-		goto(current_id && !save_error ? `/view/${current_id}` : back_href);
+		goto(current_id && !save_error && !failure ? `/view/${current_id}` : back_href);
+	};
+
+	// Sent again on top of the version the other tab saved: this tab's quiz wins.
+	const keepMine = () => {
+		base = conflict;
+		conflict = null;
+		conflict_open = false;
+		save_error = null;
+		flush();
+	};
+	// The other version, by reloading. This tab's text was kept when the save failed, and
+	// the reloaded editor offers it back.
+	const loadTheirs = () => {
+		if (current_id) keepUnsaved(current_id, snapshot);
+		conflict_open = false;
+		reloading = true;
+		location.reload();
+	};
+	const restore = () => {
+		if (restorable === null) return;
+		data = JSON.parse(restorable);
+		restorable = null;
+		generation++;
+	};
+	const discard = () => {
+		if (current_id) dropUnsaved(current_id);
+		restorable = null;
+	};
+	// The quiz this tab was editing is gone; its text becomes a new quiz.
+	const saveAsNew = async () => {
+		const res = await startSession(null);
+		if (!res.ok) {
+			save_error = String(res.status);
+			return;
+		}
+		if (current_id) dropUnsaved(current_id);
+		edit_id = (await res.json()).token;
+		current_id = null;
+		base = null;
+		failure = null;
+		await flush();
 	};
 
 	const saveQuiz = async (e: Event) => {
@@ -336,7 +419,7 @@ SPDX-License-Identifier: MPL-2.0
 			return;
 		}
 		await flush();
-		if (save_error || !playable) {
+		if (save_error || failure || conflict || !playable) {
 			// Kept as a draft; the header now says what is left to do.
 			return;
 		}
@@ -370,34 +453,36 @@ SPDX-License-Identifier: MPL-2.0
 {#await getEditID()}
 	<Spinner />
 {:then _}
-	<form onsubmit={saveQuiz}>
-		<!-- w-screen is 100vw, which includes the scrollbar, and put a horizontal
+	<!-- Keyed so Restore remounts the rich-text fields, which read their text only on mount. -->
+	{#key generation}
+		<form onsubmit={saveQuiz}>
+			<!-- w-screen is 100vw, which includes the scrollbar, and put a horizontal
 		     scrollbar on every editor session. w-full is the width we actually want.
 		     h-dvh rather than h-screen: 100vh is the wrong number on a phone, where
 		     the browser chrome is counted in and the toolbar ends up off-screen. -->
-		<div class="flex h-dvh w-full flex-col overflow-hidden">
-			<!-- min-h-0: a flex item's min-height is auto, so without it this column grew to
+			<div class="flex h-dvh w-full flex-col overflow-hidden">
+				<!-- min-h-0: a flex item's min-height is auto, so without it this column grew to
 			     the height of every question instead of the screen. The canvas below then had
 			     nothing to scroll within, "Add new question" was clipped off the bottom, and
 			     scrolling a new card into view shifted the clipped box until the header and
 			     Save left the top. Only shows once the quiz is taller than the screen. -->
-			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
-				<header
-					class="border-border bg-background flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 sm:h-14 sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-0"
-				>
-					<Button
-						href={back_href}
-						variant="ghost"
-						size="icon"
-						aria-label={$t('words.back')}
-						onclick={(e: MouseEvent) => {
-							e.preventDefault();
-							leave();
-						}}
+				<div class="flex min-h-0 min-w-0 flex-1 flex-col">
+					<header
+						class="border-border bg-background flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 sm:h-14 sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-0"
 					>
-						<ArrowLeft />
-					</Button>
-					<!-- A long title and a long error message were both bare flex items with no
+						<Button
+							href={back_href}
+							variant="ghost"
+							size="icon"
+							aria-label={$t('words.back')}
+							onclick={(e: MouseEvent) => {
+								e.preventDefault();
+								leave();
+							}}
+						>
+							<ArrowLeft />
+						</Button>
+						<!-- A long title and a long error message were both bare flex items with no
 					     basis/flex ratio between them, so a long title's intrinsic width ate almost
 					     all the row before shrinking, leaving the error squeezed to a couple of
 					     characters. Capping the title and giving the error flex-1 splits the row
@@ -405,241 +490,312 @@ SPDX-License-Identifier: MPL-2.0
 					     that room but aligns its contents right, so it still reads as sitting at
 					     the end of the header next to the theme switch rather than trailing the
 					     title. -->
-					<!-- The page's heading (it had none). A new quiz has no title yet, so the
+						<!-- The page's heading (it had none). A new quiz has no title yet, so the
 					     heading falls back to a name for the screen, for screen readers only. -->
-					<!-- On a phone the row is too short for title and status together: the status
+						<!-- On a phone the row is too short for title and status together: the status
 					     got 33px and read "Saved" as "S" and the draft warning as one letter. There
 					     the title takes the row, a quiet status shrinks to its icon, and a red one
 					     wraps onto a line of its own under the header. -->
-					<h1
-						class="min-w-0 max-w-[45%] shrink truncate text-base font-medium max-sm:max-w-none max-sm:flex-1"
-					>
-						{#if htmlToPlainText(data.title ?? '').trim()}
-							{@html sanitizeTitleHtml(data.title)}
-						{:else}
-							<span class="sr-only">{$t('editor.new_quiz')}</span>
-						{/if}
-					</h1>
-					<!-- One line of status, most urgent first. A failed save always shows. What is
+						<h1
+							class="min-w-0 max-w-[45%] shrink truncate text-base font-medium max-sm:max-w-none max-sm:flex-1"
+						>
+							{#if htmlToPlainText(data.title ?? '').trim()}
+								{@html sanitizeTitleHtml(data.title)}
+							{:else}
+								<span class="sr-only">{$t('editor.new_quiz')}</span>
+							{/if}
+						</h1>
+						<!-- One line of status, most urgent first. A failed save always shows. What is
 					     missing shows only after the first Save (D14): a new quiz is empty, and saying so
 					     in red before anyone had typed was the complaint. -->
-					{#if save_error}
-						<p
-							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
-							role="alert"
-						>
-							<TriangleAlert class="size-4 shrink-0" />
-							<span class="truncate max-sm:whitespace-normal">
-								{$t('editor.save_failed', { detail: save_error })}
-							</span>
-						</p>
-					{:else if editorValidation.shown && !playable}
-						<!-- The old header showed a raw yup message, which named a field path rather than
+						{#if save_error}
+							<p
+								class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
+								role="alert"
+							>
+								<TriangleAlert class="size-4 shrink-0" />
+								<span class="truncate max-sm:whitespace-normal">
+									{$t('editor.save_failed', { detail: save_error })}
+								</span>
+							</p>
+						{:else if editorValidation.shown && !playable}
+							<!-- The old header showed a raw yup message, which named a field path rather than
 						     telling the author what to go and fix. The count points at the rail, where each
 						     unfinished question is already flagged. -->
-						<p
-							class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
-							role="status"
+							<p
+								class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
+								role="status"
+							>
+								<TriangleAlert class="size-4 shrink-0" />
+								<span class="truncate max-sm:whitespace-normal">
+									{#if !savable}
+										{$t(`editor.${unsavable_reason}`)}
+									{:else if incomplete_count > 0}
+										<!-- The full sentence truncates to "Saved a..." on a phone. -->
+										<span class="sm:hidden">
+											{$t('editor.draft_needs_attention_short', {
+												count: incomplete_count
+											})}
+										</span>
+										<span class="hidden sm:inline">
+											{$t('editor.draft_needs_attention', {
+												count: incomplete_count
+											})}
+										</span>
+									{:else}
+										{yupErrorMessage}
+									{/if}
+								</span>
+							</p>
+						{:else if saving || current_id}
+							<p
+								class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm max-sm:flex-none"
+								role="status"
+							>
+								{#if saving}
+									<LoaderCircle class="size-4 shrink-0 animate-spin" />
+									<span class="truncate max-sm:sr-only"
+										>{$t('editor.saving')}</span
+									>
+								{:else if !unsaved}
+									<CloudCheck class="size-4 shrink-0" />
+									<span class="truncate max-sm:sr-only">
+										{playable ? $t('editor.saved') : $t('editor.saved_draft')}
+									</span>
+								{/if}
+							</p>
+						{/if}
+						<!-- The editor hides the navbar, which is where the theme switch used to live and only
+					     live -- so the one screen people sit in longest was the one with no way to change it. -->
+						<ThemeToggle
+							class={save_error ||
+							(editorValidation.shown && !playable) ||
+							saving ||
+							current_id
+								? 'ml-3'
+								: 'ml-auto'}
+						/>
+						<Button type="submit" disabled={saving}>
+							<Save />
+							{$t('words.save')}
+						</Button>
+					</header>
+					<!-- #35: why a save failed, when it is something to act on. The text is never
+				     thrown away; it stays here, and a copy is kept for this tab. -->
+					{#if failure}
+						<div
+							role="alert"
+							class="border-destructive/30 bg-destructive/5 text-destructive flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-3 text-sm"
 						>
 							<TriangleAlert class="size-4 shrink-0" />
-							<span class="truncate max-sm:whitespace-normal">
-								{#if !savable}
-									{$t(`editor.${unsavable_reason}`)}
-								{:else if incomplete_count > 0}
-									<!-- The full sentence truncates to "Saved a..." on a phone. -->
-									<span class="sm:hidden">
-										{$t('editor.draft_needs_attention_short', {
-											count: incomplete_count
-										})}
-									</span>
-									<span class="hidden sm:inline">
-										{$t('editor.draft_needs_attention', {
-											count: incomplete_count
-										})}
-									</span>
-								{:else}
-									{yupErrorMessage}
-								{/if}
-							</span>
-						</p>
-					{:else if saving || current_id}
-						<p
-							class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm max-sm:flex-none"
-							role="status"
-						>
-							{#if saving}
-								<LoaderCircle class="size-4 shrink-0 animate-spin" />
-								<span class="truncate max-sm:sr-only">{$t('editor.saving')}</span>
-							{:else if !unsaved}
-								<CloudCheck class="size-4 shrink-0" />
-								<span class="truncate max-sm:sr-only">
-									{playable ? $t('editor.saved') : $t('editor.saved_draft')}
-								</span>
-							{/if}
-						</p>
-					{/if}
-					<!-- The editor hides the navbar, which is where the theme switch used to live and only
-					     live -- so the one screen people sit in longest was the one with no way to change it. -->
-					<ThemeToggle
-						class={save_error ||
-						(editorValidation.shown && !playable) ||
-						saving ||
-						current_id
-							? 'ml-3'
-							: 'ml-auto'}
-					/>
-					<Button type="submit" disabled={saving}>
-						<Save />
-						{$t('words.save')}
-					</Button>
-				</header>
-				<!-- The canvas had no measure. Content stretched to whatever the panel
-				     was, so on a wide screen the settings form ran to 900px of label and
-				     field with a lake ofdead space between them. Cap it and center it, the
-				     way any document editor does. -->
-				<div class="flex min-h-0 flex-1">
-					<!-- The outline is a convenience on a wide screen, not the navigation:
-					     the column itself is the navigation, which is why there is no drawer
-					     to open on a phone and nothing is hidden behind a tap. -->
-					<nav
-						class="border-border hidden w-60 shrink-0 overflow-y-auto border-r px-3 py-6 lg:block"
-						aria-label={$t('editor.outline')}
-					>
-						<p
-							class="text-muted-foreground px-2 pb-2 text-xs font-medium tracking-wide uppercase"
-						>
-							{$t('editor.outline')}
-						</p>
-						<button
-							type="button"
-							class="hover:bg-muted w-full truncate rounded-md px-2 py-1.5 text-left text-sm"
-							onclick={() => {
-								focusCard(-1);
-								document
-									.querySelector('[data-setup-card]')
-									?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-							}}
-						>
-							{$t('editor.quiz_setup')}
-						</button>
-						<ol class="mt-1 flex flex-col">
-							{#each data.questions as question, i (i)}
-								<li>
-									<button
-										type="button"
-										class="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm {selected_question ===
-										i
-											? 'bg-muted font-medium'
-											: ''}"
-										onclick={() => {
-											focusCard(i);
-											scrollToCard(i, 'start');
-										}}
-									>
-										<span class="text-muted-foreground shrink-0 tabular-nums"
-											>{i + 1}</span
-										>
-										<span class="min-w-0 flex-1 truncate">
-											{htmlToPlainText(question.question ?? '').trim() ||
-												$t('editor.no_title')}
-										</span>
-										{#if editorValidation.shown && !isQuestionComplete(question)}
-											<span
-												class="bg-destructive size-1.5 shrink-0 rounded-full"
-											></span>
-										{/if}
-									</button>
-								</li>
-							{/each}
-						</ol>
-					</nav>
-
-					<div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
-						<!-- One column, capped to a measure. Everything in the quiz is on this
-						     page in order: setup, then a card per question, then add. -->
-						<!-- Only the questions are the list. Setup, the insert buttons and Add sat
-						     inside role="list" as well, so a screen reader was handed a list whose
-						     children were text boxes and buttons rather than items (axe:
-						     aria-required-children). Each item is the insert point plus its card. -->
-						<div class="mx-auto flex w-full max-w-2xl flex-col gap-3">
-							<div data-setup-card>
-								<SettingsCard bind:data bind:edit_id />
-							</div>
-
-							{#if data.questions.length > 0}
-								<div
-									class="flex flex-col gap-3"
-									role="list"
-									aria-label={$t('editor.outline')}
-								>
-									{#each data.questions as question, i (keyOf(question))}
-										<div class="flex flex-col gap-3" role="listitem">
-											{#if i > 0}
-												{@render insert_here(i)}
-											{/if}
-											<QuestionCard
-												bind:data
-												bind:edit_id
-												index={i}
-												total={data.questions.length}
-												focused={selected_question === i}
-												dragging={dragging_from === i}
-												onselect={focusCard}
-												onmove={moveQuestion}
-												ondelete={deleteQuestion}
-												onduplicate={duplicateQuestion}
-												ondragstart={(from) => (dragging_from = from)}
-												ondragenter={(over) => (drag_over = over)}
-												ondragend={() => {
-													if (
-														dragging_from !== null &&
-														drag_over !== null
-													) {
-														moveQuestion(dragging_from, drag_over);
-													}
-													dragging_from = null;
-													drag_over = null;
-												}}
-											/>
-										</div>
-									{/each}
-								</div>
-							{/if}
-
-							{#if data.questions.length === 0}
-								<!-- A new quiz: the first question is the next thing to do, so it is
-								     the one thing on offer, not a toolbar button above six optional
-								     fields. -->
-								<button
-									type="button"
-									class="border-border/70 hover:border-primary/50 hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-1 rounded-xl border border-dashed px-6 py-10 text-center transition focus-visible:ring-2 focus-visible:outline-none"
-									onclick={() => openAdd(null)}
-								>
-									<span class="flex items-center gap-2 font-medium">
-										<Plus class="size-4" />
-										{$t('editor.first_question')}
-									</span>
-									<span class="text-muted-foreground text-sm">
-										{$t('editor.first_question_hint')}
-									</span>
-								</button>
-							{:else}
+							<p class="min-w-0 flex-1">
+								{$t(
+									failure === 'signed_out'
+										? 'editor.signed_out'
+										: failure === 'expired'
+											? 'editor.expired'
+											: 'editor.deleted_elsewhere'
+								)}
+							</p>
+							{#if failure !== 'signed_out'}
 								<Button
 									type="button"
 									variant="outline"
-									class="border-border/70 text-muted-foreground hover:text-foreground mt-1 h-14 w-full border-dashed"
-									onclick={() => openAdd(null)}
+									size="sm"
+									onclick={saveAsNew}
 								>
-									<Plus />
-									{$t('editor.add_new_question')}
+									{$t('editor.save_as_new')}
 								</Button>
 							{/if}
+						</div>
+					{/if}
+					{#if restorable !== null}
+						<section
+							aria-label={$t('editor.unsaved_title')}
+							class="border-border bg-muted flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-3 text-sm"
+						>
+							<p class="min-w-0 flex-1">{$t('editor.unsaved_body')}</p>
+							<div class="flex gap-2">
+								<Button type="button" size="sm" onclick={restore}
+									>{$t('editor.restore')}</Button
+								>
+								<Button type="button" variant="ghost" size="sm" onclick={discard}>
+									{$t('editor.discard')}
+								</Button>
+							</div>
+						</section>
+					{/if}
+					<!-- The canvas had no measure. Content stretched to whatever the panel
+				     was, so on a wide screen the settings form ran to 900px of label and
+				     field with a lake ofdead space between them. Cap it and center it, the
+				     way any document editor does. -->
+					<div class="flex min-h-0 flex-1">
+						<!-- The outline is a convenience on a wide screen, not the navigation:
+					     the column itself is the navigation, which is why there is no drawer
+					     to open on a phone and nothing is hidden behind a tap. -->
+						<nav
+							class="border-border hidden w-60 shrink-0 overflow-y-auto border-r px-3 py-6 lg:block"
+							aria-label={$t('editor.outline')}
+						>
+							<p
+								class="text-muted-foreground px-2 pb-2 text-xs font-medium tracking-wide uppercase"
+							>
+								{$t('editor.outline')}
+							</p>
+							<button
+								type="button"
+								class="hover:bg-muted w-full truncate rounded-md px-2 py-1.5 text-left text-sm"
+								onclick={() => {
+									focusCard(-1);
+									document
+										.querySelector('[data-setup-card]')
+										?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+								}}
+							>
+								{$t('editor.quiz_setup')}
+							</button>
+							<ol class="mt-1 flex flex-col">
+								{#each data.questions as question, i (i)}
+									<li>
+										<button
+											type="button"
+											class="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm {selected_question ===
+											i
+												? 'bg-muted font-medium'
+												: ''}"
+											onclick={() => {
+												focusCard(i);
+												scrollToCard(i, 'start');
+											}}
+										>
+											<span
+												class="text-muted-foreground shrink-0 tabular-nums"
+												>{i + 1}</span
+											>
+											<span class="min-w-0 flex-1 truncate">
+												{htmlToPlainText(question.question ?? '').trim() ||
+													$t('editor.no_title')}
+											</span>
+											{#if editorValidation.shown && !isQuestionComplete(question)}
+												<span
+													class="bg-destructive size-1.5 shrink-0 rounded-full"
+												></span>
+											{/if}
+										</button>
+									</li>
+								{/each}
+							</ol>
+						</nav>
+
+						<div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
+							<!-- One column, capped to a measure. Everything in the quiz is on this
+						     page in order: setup, then a card per question, then add. -->
+							<!-- Only the questions are the list. Setup, the insert buttons and Add sat
+						     inside role="list" as well, so a screen reader was handed a list whose
+						     children were text boxes and buttons rather than items (axe:
+						     aria-required-children). Each item is the insert point plus its card. -->
+							<div class="mx-auto flex w-full max-w-2xl flex-col gap-3">
+								<div data-setup-card>
+									<SettingsCard bind:data bind:edit_id />
+								</div>
+
+								{#if data.questions.length > 0}
+									<div
+										class="flex flex-col gap-3"
+										role="list"
+										aria-label={$t('editor.outline')}
+									>
+										{#each data.questions as question, i (keyOf(question))}
+											<div class="flex flex-col gap-3" role="listitem">
+												{#if i > 0}
+													{@render insert_here(i)}
+												{/if}
+												<QuestionCard
+													bind:data
+													bind:edit_id
+													index={i}
+													total={data.questions.length}
+													focused={selected_question === i}
+													dragging={dragging_from === i}
+													onselect={focusCard}
+													onmove={moveQuestion}
+													ondelete={deleteQuestion}
+													onduplicate={duplicateQuestion}
+													ondragstart={(from) => (dragging_from = from)}
+													ondragenter={(over) => (drag_over = over)}
+													ondragend={() => {
+														if (
+															dragging_from !== null &&
+															drag_over !== null
+														) {
+															moveQuestion(dragging_from, drag_over);
+														}
+														dragging_from = null;
+														drag_over = null;
+													}}
+												/>
+											</div>
+										{/each}
+									</div>
+								{/if}
+
+								{#if data.questions.length === 0}
+									<!-- A new quiz: the first question is the next thing to do, so it is
+								     the one thing on offer, not a toolbar button above six optional
+								     fields. -->
+									<button
+										type="button"
+										class="border-border/70 hover:border-primary/50 hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-1 rounded-xl border border-dashed px-6 py-10 text-center transition focus-visible:ring-2 focus-visible:outline-none"
+										onclick={() => openAdd(null)}
+									>
+										<span class="flex items-center gap-2 font-medium">
+											<Plus class="size-4" />
+											{$t('editor.first_question')}
+										</span>
+										<span class="text-muted-foreground text-sm">
+											{$t('editor.first_question_hint')}
+										</span>
+									</button>
+								{:else}
+									<Button
+										type="button"
+										variant="outline"
+										class="border-border/70 text-muted-foreground hover:text-foreground mt-1 h-14 w-full border-dashed"
+										onclick={() => openAdd(null)}
+									>
+										<Plus />
+										{$t('editor.add_new_question')}
+									</Button>
+								{/if}
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-	</form>
+		</form>
+	{/key}
+	<!-- Another tab or device saved first. Escape does not dismiss it: either way on is a
+	     choice about somebody's work, and autosave holds until one is made. -->
+	<AlertDialog.Root bind:open={conflict_open}>
+		<AlertDialog.Content class="max-w-md" escapeKeydownBehavior="ignore">
+			<AlertDialog.Header>
+				<AlertDialog.Title>{$t('editor.conflict_title')}</AlertDialog.Title>
+				<AlertDialog.Description>{$t('editor.conflict_body')}</AlertDialog.Description>
+			</AlertDialog.Header>
+			<AlertDialog.Footer>
+				<AlertDialog.Action
+					type="button"
+					class={buttonVariants({ variant: 'outline' })}
+					onclick={loadTheirs}
+				>
+					{$t('editor.load_theirs')}
+				</AlertDialog.Action>
+				<AlertDialog.Action type="button" onclick={keepMine}>
+					{$t('editor.keep_mine')}
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</AlertDialog.Content>
+	</AlertDialog.Root>
 	<AddNewQuestionPopup
 		bind:questions={data.questions}
 		bind:open={add_open}

@@ -11,6 +11,7 @@ from typing import Optional
 import asyncpg.exceptions
 import bleach
 from fastapi import APIRouter, HTTPException, Depends, Header, Request, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import html
 
@@ -134,12 +135,17 @@ async def finish_edit(
     quiz_input: QuizInput,
     user: User | None = Depends(get_current_user_optional),
     x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+    base: datetime | None = None,
 ):
-    """Save and close the edit session."""
+    """Save and close the edit session.
+
+    Takes `base` as /save does. Without it a tab left open behind a newer save wrote its
+    older copy over that save on close (#35 row 2).
+    """
     # Per address, sized for an office: everybody behind one NAT shares this bucket (E16 in
     # docs/edge-cases-2026-10.md).
     await rate_limit(request, "editor_finish", limit=120, window_seconds=60)
-    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=False)
+    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=False, base=base)
 
 
 @router.post("/save")
@@ -263,9 +269,14 @@ async def _persist(
         # `base` is the version the editor last saw. Every save sends the whole quiz, so a
         # tab left open behind a newer save wrote its older copy over it (E8).
         if base is not None and old_quiz_data.updated_at != base:
-            raise HTTPException(
+            # With the version that is current, so the editor can offer "Keep mine": sent
+            # again with this as its `base`, the same quiz goes through (#35).
+            return JSONResponse(
                 status_code=409,
-                detail="this quiz was changed in another tab or device. Reload to get that version",
+                content={
+                    "detail": "this quiz was changed in another tab or device. Reload to get that version",
+                    "updated_at": old_quiz_data.updated_at.isoformat(),
+                },
             )
         # arq pickles its arguments here, so updating this object below does not reach
         # the job: it still diffs the images against the quiz as it was.
@@ -286,7 +297,22 @@ async def _persist(
                     await storage.delete([image])
                 except DeletionFailedError:
                     pass
-        await quiz.update()
+        # Only what an edit sets. Written whole, the row loaded above put back a view,
+        # a launch, a rating or a claim that landed while this save ran (#35 row 7) --
+        # a claim put back would have made the quiz anonymous again.
+        await quiz.update(
+            _columns=[
+                "title",
+                "public",
+                "description",
+                "updated_at",
+                "questions",
+                "cover_image",
+                "background_color",
+                "background_image",
+                "mod_rating",
+            ]
+        )
         if not is_anonymous:
             # get_meili_data looks up the owning user, which anonymous quizzes don't have --
             # and they're never indexed anyway. This used to run before the fields above

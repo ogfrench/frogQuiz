@@ -105,3 +105,34 @@ def test_views_add_up(test_client, quiz):  # noqa: F811
     for _ in range(3):
         assert test_client.get(f"/api/v1/quiz/get/public/{quiz_id}").status_code == 200
     assert _row(quiz_id)[1] == 3
+
+
+def test_a_save_does_not_revert_a_view_that_landed_during_it(test_client, quiz, monkeypatch):  # noqa: F811
+    # The other direction: the editor's save loaded the row, awaited the image job, then
+    # wrote every column back, views included. It writes only what an edit sets now.
+    import frogquiz.routers.editor as editor_router
+
+    quiz_id, secret = quiz
+    real = editor_router.arq.enqueue_job
+
+    async def a_view_lands_first(*args, **kwargs):
+        engine = sqlalchemy.create_engine(DB_URL)
+        try:
+            with engine.begin() as conn:
+                conn.execute(
+                    sqlalchemy.text("UPDATE quiz SET views = views + 1 WHERE id = :id"),
+                    {"id": uuid.UUID(quiz_id).hex},
+                )
+        finally:
+            engine.dispose()
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr(editor_router.arq, "enqueue_job", a_view_lands_first)
+    headers = {"X-Anon-Secret": secret}
+    token = test_client.post(f"/api/v1/editor/start?edit=true&quiz_id={quiz_id}", headers=headers).json()["token"]
+    body = copy.deepcopy(example_quiz)
+    body["title"] = "Saved"
+    assert test_client.post(f"/api/v1/editor/save?edit_id={token}", json=body, headers=headers).status_code == 200
+    title, views, _ = _row(quiz_id)
+    assert title == "Saved"
+    assert views == 1
