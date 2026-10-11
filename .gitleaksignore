@@ -16,7 +16,9 @@ a22912a88aebed565a0836621e750f19ee64f5b4:.env.ci:generic-api-key:14
 068d0b6f761beee4171fab938f5e78c83fa163be:classquiz/tests/test_storage.py:generic-api-key:60
 a22912a88aebed565a0836621e750f19ee64f5b4:frogquiz/tests/test_storage.py:generic-api-key:60
 
-# A hostname list, not a key: in DEPLOY.md's api.frogquiz.xyz steps,
-# "api.frogquiz.xyz, 134-98-158-173.sslip.io" reads to the generic rule as the key "api"
-# with the sslip.io name as its value.
+# A hostname list, not a key. In DEPLOY.md's steps for the new API name, the new name, a
+# comma and the old sslip.io name read to gitleaks 8.24's generic rule as a key named for
+# the first and a value of the second. This file's first note on it quoted the pair and
+# was flagged the same way. Never quote a flagged line here.
 f64b7a0f9687db48ac2149c6c6a50a3814f22ed7:DEPLOY.md:generic-api-key:368
+deb3c0995aa72b880c9e9f35f08e8d40a4c86e9a:.gitleaksignore:generic-api-key:20
