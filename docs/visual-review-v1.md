@@ -11,7 +11,7 @@ One section per step of [`v1-plan.md`](v1-plan.md).
 ## How to capture
 
 1. Run `VISUAL=1 bash e2e/run.sh e2e/visual.e2e.ts`.
-2. The shots and `manifest.json` land in `e2e/.data/visual/`, which is git-ignored.
+2. The shots and `manifest.jsonl` land in `e2e/.visual/`, which is git-ignored.
 3. Each shot is also checked by the spec:
    - the `.dark` class toggles
    - no horizontal overflow
@@ -40,4 +40,29 @@ Columns: screen, size, theme, finding, outcome. An outcome is a fix commit, or "
 
 ### Step 0: baseline on master
 
-_Pending._
+The first capture covered 113 screens:
+- every visible route at 390, 834 and 1440, light and dark, signed out and in
+- the Start game and Download dialogs
+- the mobile menu
+- a three-player game, host at 1440 and 1920, phones at 390
+
+| Screen | Size | Theme | Finding | Outcome |
+| --- | --- | --- | --- | --- |
+| Host question | 1440, 1920 | both | The timer ring and "N answers submitted" were squeezed into one small row between the question and the answers, with the rest of the projector empty (François, 11 Oct) | Fixed. Four designs were mocked up live, and François chose C: one wide bar above the answers that empties as time runs out, with "N of M answered" at its start and the seconds at its end. The thin rule under the controls bar stays on slides only. |
+| Timer ring, phones | 390 | dark | Hardcoded white disc, gainsboro track and black number, so it read as a white sticker on the dark theme | Fixed. It now uses the `--background`, `--muted` and `--foreground` tokens, with `--destructive` for the arc. |
+| `/account/oauth-error` | all | both | axe violation (no document title). The page is one of the four still on the old layout (`docs/redesign-status.md`). Step 0 listed only 390 and 834 in light, because of the capture gap found in step 1 | Step 5 (#44), with the other three |
+
+**Gap found later:** this baseline missed the signed-out screens at 1440 and in dark. The capture waited at 834 for a phone menu button that is hidden from 768 up, so the rest of that loop never ran. Step 1 fixed the spec and looked at those 80 shots.
+
+### Step 1: CI and production safety
+
+The capture covered 168 screens: the full signed-out set (80, with the gap closed), the signed-in set, and a whole game in both themes. The gallery is a private claude.ai artifact, "frogQuiz V1 visual review", updated in place each step.
+
+| Screen | Size | Theme | Finding | Outcome |
+| --- | --- | --- | --- | --- |
+| Timer ring, phones | 390 | both | The ring froze on its first frame while the number kept counting. The step 0 fix had moved the ring's background into a `style:` directive with a trailing `;`. The first value went in through the attribute, which ignores it. Every later one went through `setProperty`, which rejects the whole value | Fixed. `journey-player-phone.e2e.ts` now checks that the ring's painted background changes; it failed on the bug and passes on the fix. The ring's black frame became the page color. |
+| Timer ring and host bar | 390, 1440 | both | The phone ring fills red as time is spent, while the host's drain bar empties as time runs out. The two halves of one game count in opposite directions | Open, for François at the step boundary: make the ring drain too, or keep it |
+| Every signed-out screen | 834, 1440 | both | The capture gap above | Fixed in `visual.e2e.ts` |
+| `/account/oauth-error` | 390 | both | Besides the axe finding, the heading runs to the screen edge with no gutter | Step 5 (#44) |
+| Host question | 1440, 1920 | both | Drain bar checked: "N of M answered", the bar and the seconds sit on one line above the answers, and no shot overflows | Kept |
+

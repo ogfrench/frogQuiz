@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 - Everything lands in one PR from the branch `v1`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: step 0 in progress** (11 Oct).
+**Status: steps 0 and 1 built and reviewed, waiting on green CI on #57** (11 Oct). Step 3 is next.
 
 ## What V1 means
 
@@ -84,7 +84,7 @@ A question for François is asked at a step boundary, unless it blocks the work.
 - Every shot is checked for:
   - the three CLAUDE.md assertions (the `.dark` class toggles, no horizontal overflow, the token background on `<html>`)
   - axe
-- The PNGs and a manifest go to `e2e/.data/visual/`, which is git-ignored.
+- The PNGs and a manifest go to `e2e/.visual/`, which is git-ignored.
 
 **Review:**
 - Each step looks at the screens it touched. Step 5 looks at every screen.
@@ -94,24 +94,40 @@ A question for François is asked at a step boundary, unless it blocks the work.
 
 ## Steps
 
-### Step 0: merge, branch and housekeeping (in progress)
+### Step 0: merge, branch and housekeeping (done)
 
 - [x] PR #37 merged with a merge commit (`58d6241`), and #51 closed with it.
 - [x] Branch `v1` cut from master.
-- [ ] Draft PR "V1" opened.
-- [ ] This file and `visual-review-v1.md` written.
+- [x] Draft PR "V1" opened: #57.
+- [x] This file and `visual-review-v1.md` written.
   - `TODO.md` points to #56.
   - The decisions are recorded in `MVP.md`.
   - The CLAUDE.md rule is changed.
-- [ ] GitHub:
-  - the labels `v1-blocker` and `post-v1`, with `post-v1` on #4
+- [x] GitHub:
+  - the label `post-v1`, on #4. `v1-blocker` waits for #45's list (see Plan changes).
   - #3 closed into #45
   - #43 made a sub-issue of #55
   - #56 shortened to the checklist
-- [ ] Visual tooling, and a baseline gallery of every screen on the merged master.
+- [x] Visual tooling, and a baseline of every screen on the merged master. The baseline missed the signed-out screens at 1440 and in dark; step 1 found and closed that gap.
 - **François:** after the merge, on the VM, run `docker compose pull && docker compose up -d`, then `docker compose ps`.
 
-### Step 1: CI and production safety
+### Step 1: CI and production safety (built; CI on #57 pending)
+
+**Done on the branch:**
+- [x] The audit workflow, with dated exceptions, and the backend re-lock that took 124 advisories to 5 exceptions.
+- [x] The secret scan. gitleaks over the history found five test fixtures, now allowed by fingerprint in `.gitleaksignore`. A planted token was caught in a throwaway local clone, in place of a throwaway branch on GitHub.
+- [x] e2e in CI (`.github/workflows/e2e.yml`).
+- [x] Log limits on every compose service.
+- [x] The `DEPLOY.md` fixes, and the steps for `api.frogquiz.xyz`.
+- [x] The host timer: François chose design C, the drain bar.
+- [x] Checks: full e2e, the backend suite on the new dependencies (241 passed, 1 skipped), `pnpm test`, `svelte-check`, eslint, flake8, and a visual review of 168 shots.
+
+**Left, and whose:**
+- CI on #57 goes green, or this step re-plans. The image scan runs for the first time there, so Meilisearch v0.28 may fail it, which would bring its upgrade into V1.
+- **François:** the DNS record for `api.frogquiz.xyz`, then the VM's `SITE_ADDRESS`. #22 by 25 Oct.
+- **François, open question:** the phone timer ring fills red as time is spent, while the host's bar drains. Make the ring drain too, or keep it?
+
+**As planned:**
 
 - **#53:**
   - an audit workflow: `pip-audit`, `pnpm audit --prod --audit-level high`, gitleaks, and a scan of the images pinned in compose
@@ -185,6 +201,9 @@ Done above.
 
 - **Meilisearch upgrade:** from `v0.28.0`. Needs a dump and import. It moves forward if the audit finds a high-severity issue.
 - **Results history and Save results:** stay hidden (D4).
+- **python-jose → PyJWT:** in `frogquiz/auth.py`. It removes two dated exceptions (python-jose, ecdsa). Revisit by 31 Dec.
+- **httpx → httpx2:** after the re-lock, authlib and Starlette's test client warn that `httpx` is deprecated in favour of `httpx2`. Only warnings for now; move when either drops `httpx`.
+- **ormar 0.20 → 0.23+:** SQLAlchemy 2, without `databases`. It removes the ormar and setuptools exceptions, and unpins pydantic. Revisit by 31 Dec.
 
 ## Plan changes
 
@@ -200,3 +219,16 @@ Done above.
   - No room-size pass mark.
   - The API moves to `api.frogquiz.xyz`.
   - PR #37 merged.
+- **11 Oct, step 1 started:**
+  - **Audit findings:** the first audit found 124 advisories in 25 backend packages. By the "in scope but bigger" rule, upgrading them joined step 1.
+  - **Pillow** was capped below 11 by `thumbhash-python`, so the ThumbHash encoder was vendored instead.
+  - **ormar's fix** needs a database-layer migration. ormar is held, with dated exceptions, and the migration moved to post-V1, together with replacing python-jose.
+  - **The `v1-blocker` label** waits for #45's blocker list rather than being applied by guess now.
+  - **The API hostname** moves in three ordered steps: DNS, then Caddy serving both names, then `netlify.toml`. The `netlify.toml` edit is a deploy-checklist item, so deploy previews keep working until the DNS is in.
+- **11 Oct, step 1 review:**
+  - **Found by the visual review:** the step 1 timer change had frozen the phone ring on its first frame. It was fixed, and an e2e check now fails if the ring stops moving.
+  - **The capture tooling had a gap:** the signed-out loop stopped at 834 px. Step 0's baseline therefore missed 1440 and dark there. It is fixed, and those 80 shots were reviewed in step 1.
+  - **The secret scan:** shown on a local clone rather than a throwaway branch on GitHub, so no fake secret was pushed anywhere.
+  - **The ThumbHash encoder** no longer uses Pillow's deprecated `getdata`.
+  - **New question for François:** the phone ring and the host bar count time in opposite directions.
+  - **Pending:** CI on #57 decides whether the Meilisearch upgrade moves into V1.

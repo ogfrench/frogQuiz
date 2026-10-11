@@ -397,6 +397,8 @@
         "enter_answer_into_field": "Enter your answer into the input field!",
         "answers_submitted_one": "{{count}} answer submitted",
         "answers_submitted_other": "{{count}} answers submitted",
+        "answered_of": "of {{total}} answered",
+        "time_remaining": "Time remaining",
         "request_export_results": "Request result download",
         "requesting_export_results": "Preparing the file…",
         "download_export_results": "Download results",

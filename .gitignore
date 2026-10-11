@@ -26,3 +26,6 @@ e2e/.data*/
 e2e/.venv/
 .venv/
 e2e/.tools/
+# The visual review's screenshots (frontend/e2e/visual.e2e.ts). Outside e2e/.data, which
+# run.sh wipes at the start of every run.
+e2e/.visual/

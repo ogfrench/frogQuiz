@@ -74,7 +74,7 @@ async function playGame(
 	await ana.getByRole('button', { name: 'Lisbon' }).click();
 	await bruno.getByRole('button', { name: 'Lisbon' }).click();
 	await carla.getByRole('button', { name: 'Porto' }).click();
-	await expect(page.getByText('3 answers submitted')).toBeVisible();
+	await expect(page.getByText('3 of 3 answered')).toBeVisible();
 	await showResults(page);
 	await page.waitForTimeout(resultsDwellMs);
 

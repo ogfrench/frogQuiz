@@ -21,7 +21,7 @@ from frogquiz.helpers import (
     extract_image_ids_from_quiz,
     release_quiz_images,
 )
-from thumbhash import image_to_thumbhash
+from frogquiz.helpers.thumbhash import image_to_thumbhash
 
 # Long enough that no editor still holding an unsaved image is cut short: autosave
 # sends a change within seconds.

@@ -57,7 +57,7 @@ test('a player who reloads in the lobby is still in the game and can answer', as
 	await page.getByRole('button', { name: 'Start game' }).click();
 	await page.getByRole('button', { name: /Next question/ }).click();
 	await player.page.getByRole('button', { name: 'Yes' }).click();
-	await expect(page.getByText('1 answer submitted')).toBeVisible({ timeout: 5000 });
+	await expect(page.getByText('1 of 1 answered')).toBeVisible({ timeout: 5000 });
 	await player.context.close();
 });
 

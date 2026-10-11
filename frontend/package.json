@@ -17,6 +17,7 @@
 		"translations-scan": "i18next-scanner --config i18next-scanner.config.engine.cjs src/**/*.svelte"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "4.13.0",
 		"@eslint/js": "^9.38.0",
 		"@felte/reporter-tippy": "^1.1.10",
 		"@felte/validator-yup": "^1.1.4",

@@ -230,7 +230,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if question.type === QuizQuestionType.ABCD || question.type === QuizQuestionType.VOTING}
 			<div class="relative min-h-0 w-full flex-1">
 				<div
-					class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-black shadow-2xl z-40"
+					class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-background shadow-2xl z-40"
 				>
 					<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 				</div>
@@ -241,9 +241,7 @@ SPDX-License-Identifier: MPL-2.0
 				<!-- Row by row, as on the host: red top-left, blue top-right, green bottom-left,
 				     purple bottom-right. It filled column by column, so blue and green swapped
 				     places between the projector and the phone. -->
-				<div
-					class="grid grid-cols-2 auto-rows-fr gap-3 w-full p-4 h-full"
-				>
+				<div class="grid grid-cols-2 auto-rows-fr gap-3 w-full p-4 h-full">
 					{#each answers as answer, i}
 						{@const picked = selected_answer === answer.answer}
 						{@const waiting = selected_answer !== undefined && !picked}

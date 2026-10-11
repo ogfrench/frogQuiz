@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+
+# Known vulnerabilities and committed secrets (#53). Dependabot proposes updates and CodeQL
+# reads the code; neither fails a build because a version already shipped has an advisory,
+# or because a key was committed. The V1 audit on 11 Oct found 124 advisories in 25 of the
+# backend's locked packages, with nothing failing. This is that check.
+#
+# - python: every advisory in the locked production dependencies fails it, unless it has a
+#   dated entry in .github/audit/pip-audit-ignore.txt. pip-audit has no severity filter, so
+#   it is stricter than "high and critical"; an exception is how a lower one is let through.
+# - node: high and critical advisories in the frontend's production dependencies.
+# - images: the third-party images pinned in docker-compose.yml, which Dependabot does not
+#   track: high and critical findings that have a fix.
+# - secrets: gitleaks over the whole history.
+name: Audit
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    # Mondays: an advisory published during the week fails here even with no push.
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pipx install pipenv && pip install pip-audit==2.9.0
+      - name: Exceptions must not be past their revisit date
+        run: |
+          today=$(date -u +%F)
+          expired=$(grep -Eo 'revisit:[0-9-]+' .github/audit/pip-audit-ignore.txt | cut -d: -f2 | awk -v t="$today" '$1 < t')
+          if [ -n "$expired" ]; then
+            echo "An exception in .github/audit/pip-audit-ignore.txt is past its revisit date." >&2
+            exit 1
+          fi
+      - name: Audit the locked production dependencies
+        run: |
+          pipenv requirements > requirements.txt
+          ignores=$(grep -Eo '^[A-Za-z]+-[0-9A-Za-z-]+' .github/audit/pip-audit-ignore.txt | sed 's/^/--ignore-vuln /' | tr '\n' ' ')
+          pip-audit -r requirements.txt --no-deps --disable-pip --progress-spinner off $ignores
+
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          version: 10.24.0
+      - name: Audit the frontend's production dependencies
+        working-directory: ./frontend
+        run: pnpm audit --prod --audit-level high
+
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # The third-party images in docker-compose.yml. Ours are built from this repo and
+        # covered by the jobs above.
+        image: ["getmeili/meilisearch:v0.28.0", "valkey/valkey:alpine", "postgres:14-alpine"]
+    steps:
+      # Pinned to the commit of the immutable v0.36.0 release: the action's version tags
+      # were rewritten in a supply-chain attack in March 2026 (CVE-2026-33634).
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ matrix.image }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      # Free for a repository owned by a personal account; no licence key.
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

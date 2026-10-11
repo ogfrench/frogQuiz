@@ -159,7 +159,8 @@ SPDX-License-Identifier: MPL-2.0
 {#if game_state.control_visible}
 	<Controls {bg_color} {socket_game_controls} {game_token} {finish} bind:game_state />
 {/if}
-{#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
+<!-- Slides only: a question shows its time as the bar above its answers (question.svelte). -->
+{#if game_state.timer_res !== '0' && game_state.selected_question >= 0 && game_state.quiz_data.questions[game_state.selected_question]?.type === QuizQuestionType.SLIDE}
 	<!-- Just under the controls bar: top-3 plus its h-12, and a hair of air. It was mt-12
 	     when the bar sat flush at the top. -->
 	<span
@@ -168,7 +169,7 @@ SPDX-License-Identifier: MPL-2.0
 			game_state.control_visible ? 'top-[4.25rem]' : 'top-0'
 		]}
 		role="progressbar"
-		aria-label="Time remaining"
+		aria-label={$t('admin_page.time_remaining')}
 		aria-valuemin="0"
 		aria-valuemax={parseInt(game_state.quiz_data.questions[game_state.selected_question].time)}
 		aria-valuenow={parseInt(game_state.timer_res)}
@@ -195,6 +196,7 @@ SPDX-License-Identifier: MPL-2.0
 				selected_question={game_state.selected_question}
 				timer_res={game_state.timer_res}
 				answer_count={game_state.answer_count}
+				player_count={game_state.players.length}
 				{default_colors}
 			/>
 		{/if}

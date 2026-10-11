@@ -313,7 +313,62 @@ The Docker image and `Pipfile.lock` are both on Python 3.13. Bumping means chang
 `Dockerfile`, `Pipfile`, regenerating `Pipfile.lock` and running the test suite —
 `ormar`/`databases`/`sqlalchemy` are the likely breakage.
 
-Backend and frontend lint now run on pull requests. The pytest workflow still does not:
-it decodes a base64 `.env` from the `DOTENV` repository secret, which this fork does not
-have. Add that secret and uncomment the `pull_request` trigger in
-`.github/workflows/pytest.yml` to gate merges on the test suite.
+Backend lint, frontend lint, the backend test suite and the audit run on every pull
+request. The pytest workflow copies `.env.ci`, a throwaway configuration with no
+credentials in it, so it needs no repository secret.
+
+## Security audit (#53)
+
+`.github/workflows/audit.yml` runs on every pull request, on pushes to `master` and on
+Monday mornings. Any one of these fails it:
+
+- **Python:** any advisory in the locked production dependencies, unless it has a dated
+  entry in `.github/audit/pip-audit-ignore.txt`. An entry past its revisit date fails the
+  run too, so an exception never becomes permanent by accident.
+- **Frontend:** a high or critical advisory in the production dependencies.
+- **Images:** a high or critical finding with a fix in a third-party image pinned in
+  `docker-compose.yml`. Dependabot does not track those.
+- **Secrets:** a secret anywhere in the history (gitleaks).
+
+**First run, 11 Oct 2026 (V1 audit):**
+
+- **Backend:** 124 advisories in 25 locked packages. The worst were in starlette,
+  python-multipart, aiohttp, PyJWT, Pillow (which decodes every upload) and
+  cryptography. Nothing had been failing on them.
+  - The lock was regenerated with the fixed versions. That moved FastAPI to 0.135 with
+    starlette 1.7.
+  - Pillow was held below 11 by `thumbhash-python`, so its encoder is now vendored in
+    `frogquiz/helpers/thumbhash.py`. A golden test checks it gives the same hashes.
+  - Five advisories remain, each with a dated exception (2026-12-31):
+    - python-jose and ecdsa, which have no fix and do not apply to HS256 tokens
+    - ormar, held at 0.20.2 because 0.21 drops `databases`
+    - two in setuptools, held there by ormar
+  - Both holds go away with two post-V1 changes: replacing python-jose with PyJWT, and
+    migrating ormar to SQLAlchemy 2.
+- **Frontend:** `pnpm audit --prod --audit-level high` found nothing.
+- **Secrets:** gitleaks 8.28 over all 256 commits found five hits, and none is a
+  credential to anything: the token-signing placeholders in `.env.ci` and `e2e/e2e.env`,
+  and MinIO's public playground keys in a test inherited from ClassQuiz. They are allowed
+  by fingerprint in `.gitleaksignore`, so a new secret in the same files still fails.
+  A GitHub token planted in a throwaway local clone was caught. This was checked locally
+  rather than with a throwaway branch on GitHub, so no fake secret was ever pushed.
+- **GitHub's own scanning:** the repository is public, so GitHub's secret scanning and
+  push protection can also be switched on, under Settings → Code security. That is a
+  settings change for the owner.
+
+## API hostname: `api.frogquiz.xyz`
+
+The API was reached at `134-98-158-173.sslip.io`, a name sslip.io derives from the VM's IP,
+so any new IP broke every link. It moves to `api.frogquiz.xyz` (D32). Do it in this order,
+so nothing is ever unreachable:
+
+1. **DNS:** an A record `api.frogquiz.xyz` pointing at the VM's public IP.
+   `dig +short api.frogquiz.xyz` should print the IP.
+2. **Caddy serves both names:** in the VM's `.env`,
+   `SITE_ADDRESS=api.frogquiz.xyz, 134-98-158-173.sslip.io`, then
+   `docker compose up -d proxy`. Caddy fetches a certificate for each.
+   `curl -sI https://api.frogquiz.xyz/openapi.json` should return 200.
+3. **Point the frontend at it:** in `netlify.toml`, change the host in `VITE_API_ORIGIN`,
+   `API_URL` and the two `[[redirects]]` targets. Check the Netlify UI does not override
+   them. Deploy.
+4. **Later:** drop the sslip.io name from `SITE_ADDRESS` once no shared link uses it.

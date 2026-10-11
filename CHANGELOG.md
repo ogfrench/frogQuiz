@@ -4,6 +4,33 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 step 1: CI and production safety, 11 Oct
+
+- **Backend dependencies:** 124 known advisories in 25 locked backend packages, among them starlette, python-multipart, aiohttp, PyJWT, Pillow and cryptography. They are fixed by a re-lock: FastAPI 0.135 with starlette 1.7, Pillow 12.3, PyJWT 2.15. The Pipfile now states the first safe version of each package it uses directly.
+- **Pillow:** it was held below 11 by `thumbhash-python`, while the worker decoded every upload with it. The ThumbHash encoder is now vendored in `frogquiz/helpers/thumbhash.py` (MIT, credited in the file), and a golden test proves it gives the same hashes.
+- **Holds:**
+  - ormar stays at 0.20.2, because 0.21 drops the `databases` layer frogQuiz is built on.
+  - gunicorn and xxhash stay on their current major, because nothing requires the bump.
+  - The Meilisearch client stays with its server.
+- **Audit workflow:** `.github/workflows/audit.yml` fails on any of these:
+  - a backend advisory with no dated exception, or an exception past its date
+  - a high or critical frontend advisory
+  - a fixable high or critical finding in the compose images
+  - a committed secret (gitleaks)
+- **Exceptions:** the five advisories left have no fix, or are held by ormar. Each has a dated exception in `.github/audit/pip-audit-ignore.txt`.
+- **e2e in CI:** the end-to-end suite runs on pull requests (`.github/workflows/e2e.yml`).
+- **Logs:** every service in `docker-compose.yml` keeps at most three 10 MB log files.
+- **`DEPLOY.md`:** it records the audit's first results and the steps for moving the API to `api.frogquiz.xyz`, and it no longer says the backend tests skip pull requests.
+- **Visual review:** `frontend/e2e/visual.e2e.ts` captures every screen for it, run with `VISUAL=1`. It adds `@axe-core/playwright` 4.13.0 as a dev dependency.
+- **Host question screen:** the timer and the answer count no longer sit squeezed in one small row between the question and the answers. François chose option C of four (a gallery of live mock-ups): one wide bar above the answers that empties as time runs out, with "2 of 3 answered" at its start and the seconds at its end. It replaces the thin rule under the controls bar, which stays on slides only.
+- **Timer ring on the phones:** it now follows the theme. In dark mode it used to be a white disc.
+- **Timer ring, frozen:** the theme change above left the ring stuck on its first frame while the number kept counting, because a trailing `;` made the browser reject every update. The visual review caught it. The phone journey spec now checks that the ring moves. The ring's frame is the page color instead of black.
+- **Motion spec:** it checks the drain bar's fill, which is what moves, rather than its track.
+- **Visual capture:** the signed-out pass stopped at 834 px, waiting for a menu button that is hidden from 768 px up. It now captures 1440 and the dark theme too.
+- **Secrets scan:** gitleaks found five fixtures in the history: the CI and e2e token-signing placeholders, and MinIO's public playground keys in an upstream test. They are allowed by fingerprint in `.gitleaksignore`. A planted GitHub token in a throwaway clone was caught.
+- **ThumbHash encoder:** it reads pixels with `tobytes()`, since Pillow deprecates `getdata` and removes it in Pillow 14. The hashes are unchanged.
+- **Slide timer:** its label is translated.
+
 ### V1 started, 11 Oct
 
 - Merged PR #37 (MVP polish) into master, and started V1 on the branch `v1`.

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# Findings the secrets scan (.github/workflows/audit.yml) lets through, by gitleaks
+# fingerprint: one commit, one file, one line. A new secret in the same file is still
+# caught. Checked 11 Oct 2026 in the V1 audit (#53); none is a credential to anything.
+
+# SECRET_KEY placeholders that only sign tokens on throwaway CI and e2e stacks.
+90c6b0db8388c826a7040748d4eff269e84b670b:.env.ci:generic-api-key:14
+a22912a88aebed565a0836621e750f19ee64f5b4:.env.ci:generic-api-key:14
+9cd2382092f5ad779a4c30178a78a3447c6f96ae:e2e/e2e.env:generic-api-key:16
+
+# MinIO's public playground keys (play.min.io), published in MinIO's own docs, in a test
+# inherited from ClassQuiz.
+068d0b6f761beee4171fab938f5e78c83fa163be:classquiz/tests/test_storage.py:generic-api-key:60
+a22912a88aebed565a0836621e750f19ee64f5b4:frogquiz/tests/test_storage.py:generic-api-key:60
