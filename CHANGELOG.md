@@ -20,6 +20,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - **The frontend can read the setting:** `GET /api/v1/utils/config`. `/create` sends a signed-out visitor to sign-in, and back, when the setting is off.
 - **Password registration keeps to the allowed domains (security audit, 11 Oct):** it is switched off, but it accepted any address, so turning it back on would have let anybody in. It now gives the same 403 as the emailed sign-in.
 - **`docs/anonymous-vs-account.md`:** what needs an account and what does not, and each #43 claim case with its outcome and the test behind it.
+- **The production side of the game now has a browser test:** `account-game.e2e.ts` runs a signed-in host and players with no account, from the view page to the podium. Every other full-game spec hosts without an account, so with `anonymous_quizzes_enabled` off, which is production, none of them could run. It passes with the setting on and off.
+- **`ANONYMOUS_QUIZZES_ENABLED` and its two limits are documented** in `.env.example` and `DEPLOY.md`; before, only `docker-compose.yml` had them.
 - **The expiry sweep deleted a quiz claimed while it ran (#43):** it read the expired quizzes, then deleted each by id, so a claim in between lost the quiz from its new owner's account, images included. It now deletes only a quiz that is still unclaimed and expired, in the same statement, and frees images only for what it deleted.
 
 ### V1 step 3a: data and concurrency, 11 Oct

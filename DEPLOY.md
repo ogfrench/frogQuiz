@@ -190,6 +190,13 @@ Two things go wrong more often than anything else:
 on a new device. A failed send answers 502 after the retries. Players joining by PIN need
 no account and no mail.
 
+**Quizzes without an account are off.** `ANONYMOUS_QUIZZES_ENABLED` defaults to false
+(#55): making, editing, uploading and hosting a quiz need a sign-in, and players still join
+by PIN with none. Leave it unset in production. `GET /api/v1/utils/config` tells the
+frontend. If it is turned on, `ANON_QUIZ_DAILY_LIMIT` (20) and `ANON_QUIZ_TOTAL_LIMIT`
+(1,000) apply; the daily one needs `RATE_LIMIT_ENABLED` and `TRUSTED_PROXY_HOPS=2` behind
+Netlify, or every visitor shares one bucket. `docs/anonymous-vs-account.md` has the matrix.
+
 ### Testing it for real
 
 The suite reads every sign-in mail back from a local sink (`e2e/mailsink.py`), so the

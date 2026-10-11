@@ -11,8 +11,9 @@ they record.
 
 ## Picking this up on the laptop (11 Oct, evening)
 
-The cloud session stops here. Nothing is uncommitted: `v1` is pushed at the commit that
-added this section, on top of `530d5dd` (step 3b).
+The cloud session stops here, at the user's request. Nothing is uncommitted: `v1` is pushed at
+the commit that carries this section, on top of `530d5dd` (step 3b). **Read "What we missed"
+first: it is the audit of everything the plan, the issues and the code disagree on.**
 
 ### Where things stand
 
@@ -21,26 +22,120 @@ added this section, on top of `530d5dd` (step 3b).
 | **V1 ships in releases** (D35) | v0.5 = steps 0 to 3 (PR #57, now), v0.8 = step 4, v0.9 = step 5, v1.0 = step 6. Each is its own PR from `v1`. |
 | **Step 3** | Done. 3a (data and concurrency) and 3b (the account requirement behind `anonymous_quizzes_enabled`, off by default, the two ceilings, the `/create` redirect, the password domain rule, `docs/anonymous-vs-account.md`). |
 | **Checked on `530d5dd`, locally** | Backend suite 287 passed, 1 skipped, on a fresh database. e2e batch of the specs that touch `/create` and anonymous hosting, 68 of 68. `pnpm test` 249, `svelte-check` 0 errors, `flake8` clean. With the setting off, `/create` answered 303 to sign-in and `/editor/start` 401, checked live. |
-| **Not checked yet** | CI on `530d5dd` (it was running). The full e2e suite on `530d5dd` (only the batch above). gitleaks locally (not installed in the container; CI runs it). |
+| **Not checked yet** | See F below: CI on the last commit, the full e2e suite on this head, the visual pass. |
 | **App in use?** | No. No real users, no real data. |
+
+### What we missed (the audit of 11 Oct, late)
+
+Found by reading the issues against the code, and by running the app with the setting off,
+which is production. Ranked. **A to E are to do before v0.5 is cut.**
+
+**A. The interface still promises what the setting now forbids.** With it off, a signed-out
+visitor sees "No account needed. Quizzes made without one stay in this browser and are
+deleted after 30 days" on the home page, "Create a quiz" buttons that go to sign-in, and a
+My Quizzes page that says "Quizzes you made in this browser". Also the Explore empty state
+("You can make one without an account"), the view page, and the privacy policy
+("Quizzes made without an account delete themselves after 30 days"). Strings:
+`frontend/src/lib/i18n/locales/en.json` keys around lines 10 to 12, 497, 687 to 702 and 719;
+`frontend/src/routes/docs/privacy-policy/+page.svelte:52`. **Fix:** read `/api/v1/utils/config`
+once in the root layout's server load and switch the copy: with the setting off, "Sign in to
+create a quiz" and no 30-day wording, and a signed-out My Quizzes that is a sign-in prompt.
+`createGate` already reads the same endpoint. Screenshots of the problem, at 1440 and 390,
+were taken in the cloud session and are not kept; reproduce with
+`ANONYMOUS_QUIZZES_ENABLED=False` and open `/` and `/my-quizzes` signed out.
+
+**B. The whole e2e suite runs with the setting ON, and production runs it OFF.** Nothing
+tested the real product path in a browser until `account-game.e2e.ts` (added now: a signed-in
+host, players with no account; it passes with the setting on and off). Still missing:
+- a spec `anon-off.e2e.ts` for a stack with the setting off: `/create` goes to sign-in and
+  back, `/` and `/my-quizzes` carry no "no account" wording (it is what A fixes), the editor
+  refuses to start. `e2e/e2e.env` no longer names it.
+- a second pass in `.github/workflows/e2e.yml`: restart the API with
+  `ANONYMOUS_QUIZZES_ENABLED=False` and run `account-game`, `anon-off` and `sign-in`.
+
+**C. Three of the five issues #57 would close are not met by their own acceptance lines.**
+Close #52 and #53 at v0.5. For the others, write the deferral on the issue, which V1's
+definition of done allows, or leave them open ("Refs", not "Closes"):
+- **#55:** the grid it asks for (images, game, results, secret and account cells, each with a
+  result) is not in `docs/anonymous-vs-account.md`, which has the rules and the claim cases;
+  question 5 (expiry in the middle of a session) is in the plan but not in `MVP.md`; the
+  expiry warning has no test (`my-quizzes.e2e.ts` shows "expires in N days", nothing asserts
+  it before removal; the claim banner was dropped); and "the privacy text matches the matrix"
+  is #50, in v0.9. Close it at v0.9.
+- **#43:** "checked on a phone, in the same browser and in a second one" was not done, and
+  the claim's failure message is one generic `my_quizzes.claim_failed`, where cases 2, 3 and 6
+  ask for a message that says what happened and what to do. Matrix rows 7, 8, 9, 11 and 12
+  are read from the code, not run.
+- **#35:** `docs/e2e-findings.md` rows 5, 11 and 12 say "not measured", row 6's lobby pointer
+  is not measured, and row 13 was read, not run. Its acceptance says every row is measured.
+
+**D. Release mechanics for v0.5:**
+- `CHANGELOG.md`: rename `## Unreleased` to `## v0.5 (date)` and open a new `## Unreleased`.
+- `frontend/package.json` says `0.0.1`; decide whether releases bump it.
+- Tags `v0.5`, `v0.8`, `v0.9`, `v1.0` after each merge, from the laptop: the cloud git proxy
+  refuses tag pushes, and no tool here creates a GitHub release.
+- PR #57: still titled "V1", still describes one PR, and its Closes line lists 17 issues.
+  Retitle, rewrite, and move the rest to the later PRs. #56's body also still says "All of V1
+  is one PR, #57" and has the old step list.
+- `docs/v1-plan.md` and `MVP.md` D33 to D36 are current.
+
+**E. Deploy order.** Netlify publishes the frontend when #57 merges. The new frontend uses
+the new API: the host's answered count now reads usernames from `registered_as_admin` and
+`player_answer`, and `/create` asks `/utils/config`. A new frontend on the old API breaks a
+live game's host screen, and sends every signed-out visitor of `/create` to sign-in. Nobody
+uses the app yet, so it is a window, not an outage. Still: pause Netlify's auto-publish before
+the merge, build and deploy the API image first, then publish (the order in step 6 of the plan).
+
+**F. The 3b step-end checks are not all done.** Done: the diff review (a fast model: no
+blocker, findings below), the backend suite (287 passed), the e2e batch for the touched specs
+(68 of 68), `account-game` with the setting on and off. Not done: the **full** e2e suite on
+this head, and the visual pass of the touched screens (the gallery is from 3a). **CI on the
+last commit was still running when the session stopped:** at that moment `lint`, `secrets`,
+`python`, `node`, the three image scans and Netlify had passed, and `e2e`, `test` and CodeQL
+were in progress. Check it first.
+
+**G. The review's findings on 3b**, still open (the list in step 2 below).
+
+**H. Docs that are now wrong:** `MVP.md` §1 (the signed-out column of the surfaces table and
+"What anonymous actually means today") and `docs/mvp-scope.md` lines 306 and 351 still say a
+quiz can be made without an account. `HANDOVER.md`'s older sections mention anonymous hosting
+as current; they are history. `netlify.toml` still points at the sslip.io hostname until the
+domain move.
+
+**I. To check on the VM:** `TRUSTED_PROXY_HOPS=2` (the daily cap, if the setting is ever on,
+is otherwise one bucket for everybody), `RATE_LIMIT_ENABLED` on, `ANONYMOUS_QUIZZES_ENABLED`
+unset. And `MAIL_*`, which works.
+
+**J. Process.** No lesson from this session reached the learning loop. Two to write, as
+`learnings/` notes in `claude-code-setup` (public: no names): *a variant passed as a class
+keeps the component's default variant* (already in the plan's lesson line), and *a suite run
+with a feature on never tests the production default* (A and B above). That repo's CI stays
+red until the `PRIVATE_TERMS` secret exists.
+
+**Accepted, with a place:** audit findings 4 and 5 (post-V1), 6 and 7 (step 5); backups #61
+and monitoring #60 (post-V1); `GET /quiz/get/public/{id}` has no visibility check (#34, v0.8).
+A real-phone game, iOS and Android, is #45 in v1.0 and needs you.
 
 ### Next, in order
 
 1. **CI green on #57** at the head of `v1`. Fix anything red first.
-2. **Fix the cheap review's findings on 3b** (it found no blocker; the claim that no anonymous write path is left ungated held). Before v0.5:
+2. **Fix A to C, then the review's findings on 3b** (it found no blocker; no anonymous write
+   path is left ungated). Each with a test that fails first:
    - **Medium:** `test_anonymous_flag.py`'s daily-ceiling test passes only because `test_server.py` flushes Redis before it. `test_ratelimit.py::test_editor_saves_are_limited_per_edit_session` leaks a hit into `ratelimit:anon_quiz_create:testclient`. Delete that key in the `finally` of both tests.
    - `test_anonymous_flag.py`: assert `"Sign in" in detail` on the save and finish 401s, since `_persist` also answers 401 for an unknown edit id.
    - `/create`: pass `url.search` into `createGate` so `/create?title=...` (from the command palette) survives sign-in; give the config fetch `signal: AbortSignal.timeout(2000)`.
-   - `docs/anonymous-vs-account.md`: a signed-in user hosts their own quizzes **and any public one**; `create_gate.test.ts` covers the gate function, not the loader (the loader was checked live, flag off); case 5's e2e asserts the API 404, not the tab's message. Add that the daily ceiling needs `RATE_LIMIT_ENABLED` and a right `TRUSTED_PROXY_HOPS`.
-   - Deploy order: ship the API before the frontend, or the old API's 404 on `/utils/config` sends every signed-out visitor of `/create` to sign-in for a moment.
-3. **Cut v0.5:** retitle #57 "v0.5: steps 0 to 3", set its Closes line to **#35, #43, #52, #53 and #55 only** (the others move to later PRs), mark it ready, merge with a **merge commit**.
-4. **Restart `v1` from master:** `git fetch origin master && git checkout -B v1 origin/master && git push --force-with-lease -u origin v1` (it holds only merged history by then). Open the v0.8 PR for step 4.
-5. **Steps 4 to 6** as `docs/v1-plan.md` says. Which issue closes in which release:
+   - `docs/anonymous-vs-account.md`: a signed-in user hosts their own quizzes **and any public one**; `create_gate.test.ts` covers the gate function, not the loader (the loader was checked live, setting off); case 5's e2e asserts the API 404, not the tab's message.
+   - The startup log says "Nobody can sign in" without mail, which is wrong if an OAuth provider is configured (production has none).
+3. **Full e2e on the new head,** the visual pass of the touched screens, then D and E.
+4. **Cut v0.5:** retitle and rewrite #57, merge with a **merge commit**.
+5. **Restart `v1` from master:** `git fetch origin master && git checkout -B v1 origin/master && git push --force-with-lease -u origin v1` (it holds only merged history by then). Open the v0.8 PR for step 4.
+6. **Steps 4 to 6** as `docs/v1-plan.md` says. Which issue closes in which release:
    - v0.8: #33, #34, #38, #39 (Copy on any public quiz, D33), #40, #41
-   - v0.9: #42, #44, #50
+   - v0.9: #42, #44, #50, and #55
    - v1.0: #45, #3, #56
    - post-V1: #60 (monitoring), #61 (backups)
-6. **At the end:** the full report, what was set out (the issues) against the result.
+   - v0.8 has a **migration** (#34, #33): `prestart.sh` runs it when the API container starts, so take the Neon snapshot first.
+7. **At the end:** the full report, what was set out (the issues) against the result.
 
 ### Only the laptop can do these
 

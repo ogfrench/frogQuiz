@@ -38,7 +38,7 @@ so and where it is planned.
 | 10 | The quiz deleted while a game runs | Same: the images stay until the game ends. | same |
 | 11 | Made unlisted or deleted while someone else hosts | Not measured. | Step 6 (#45) |
 | 12 | Two host screens on one game | Not re-measured here; `game-reload.e2e.ts` covers a reload. | Step 6 (#45) |
-| 13 | An anonymous quiz expires while edited or hosted | Read, not run: the editor says it expired and keeps the text; the expiry sweep holds a running game's images. | Step 3b (#55) |
+| 13 | An anonymous quiz expires while edited or hosted | Read, not run: the editor says it expired and keeps the text; the expiry sweep holds a running game's images. With the setting off in production no anonymous quiz exists to expire, so it stays unmeasured. | Step 6 (#45), if the setting is ever turned on |
 
 ## How each was fixed
 
