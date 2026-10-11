@@ -21,13 +21,18 @@ added this section, on top of `530d5dd` (step 3b).
 | **V1 ships in releases** (D35) | v0.5 = steps 0 to 3 (PR #57, now), v0.8 = step 4, v0.9 = step 5, v1.0 = step 6. Each is its own PR from `v1`. |
 | **Step 3** | Done. 3a (data and concurrency) and 3b (the account requirement behind `anonymous_quizzes_enabled`, off by default, the two ceilings, the `/create` redirect, the password domain rule, `docs/anonymous-vs-account.md`). |
 | **Checked on `530d5dd`, locally** | Backend suite 287 passed, 1 skipped, on a fresh database. e2e batch of the specs that touch `/create` and anonymous hosting, 68 of 68. `pnpm test` 249, `svelte-check` 0 errors, `flake8` clean. With the setting off, `/create` answered 303 to sign-in and `/editor/start` 401, checked live. |
-| **Not checked yet** | CI on `530d5dd` (it was running). The full e2e suite on `530d5dd` (only the batch above). The cheap review of the 3b commit was still running when the session stopped: run it again (below). gitleaks locally (not installed in the container; CI runs it). |
+| **Not checked yet** | CI on `530d5dd` (it was running). The full e2e suite on `530d5dd` (only the batch above). gitleaks locally (not installed in the container; CI runs it). |
 | **App in use?** | No. No real users, no real data. |
 
 ### Next, in order
 
 1. **CI green on #57** at the head of `v1`. Fix anything red first.
-2. **Cheap review of 3b** (a fast model, per CLAUDE.md): `git diff 92331b6..530d5dd`. Fix what it confirms, with a test that fails first.
+2. **Fix the cheap review's findings on 3b** (it found no blocker; the claim that no anonymous write path is left ungated held). Before v0.5:
+   - **Medium:** `test_anonymous_flag.py`'s daily-ceiling test passes only because `test_server.py` flushes Redis before it. `test_ratelimit.py::test_editor_saves_are_limited_per_edit_session` leaks a hit into `ratelimit:anon_quiz_create:testclient`. Delete that key in the `finally` of both tests.
+   - `test_anonymous_flag.py`: assert `"Sign in" in detail` on the save and finish 401s, since `_persist` also answers 401 for an unknown edit id.
+   - `/create`: pass `url.search` into `createGate` so `/create?title=...` (from the command palette) survives sign-in; give the config fetch `signal: AbortSignal.timeout(2000)`.
+   - `docs/anonymous-vs-account.md`: a signed-in user hosts their own quizzes **and any public one**; `create_gate.test.ts` covers the gate function, not the loader (the loader was checked live, flag off); case 5's e2e asserts the API 404, not the tab's message. Add that the daily ceiling needs `RATE_LIMIT_ENABLED` and a right `TRUSTED_PROXY_HOPS`.
+   - Deploy order: ship the API before the frontend, or the old API's 404 on `/utils/config` sends every signed-out visitor of `/create` to sign-in for a moment.
 3. **Cut v0.5:** retitle #57 "v0.5: steps 0 to 3", set its Closes line to **#35, #43, #52, #53 and #55 only** (the others move to later PRs), mark it ready, merge with a **merge commit**.
 4. **Restart `v1` from master:** `git fetch origin master && git checkout -B v1 origin/master && git push --force-with-lease -u origin v1` (it holds only merged history by then). Open the v0.8 PR for step 4.
 5. **Steps 4 to 6** as `docs/v1-plan.md` says. Which issue closes in which release:
