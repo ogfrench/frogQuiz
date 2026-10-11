@@ -7,7 +7,7 @@ import json
 import uuid
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationError, field_validator
 from frogquiz.config import settings, redis
 from frogquiz.db.models import (
     PlayGame,
@@ -23,7 +23,7 @@ from frogquiz.db.models import (
     AnswerDataList,
 )
 from frogquiz.auth import check_api_key
-from frogquiz.socket_server import ReturnQuestion, sio
+from frogquiz.socket_server import question_for_players, sio
 
 settings = settings()
 
@@ -147,7 +147,11 @@ async def _hosts_game(game_pin: str, api_key: str) -> tuple[str, PlayGame]:
         redis_res = await redis.get(f"game:{game_pin}") if game_pin else None
     if redis_res is None or user_id is None:
         raise HTTPException(status_code=404, detail="Game not found or API key not found")
-    game = PlayGame.model_validate_json(redis_res)
+    try:
+        game = PlayGame.model_validate_json(redis_res)
+    except ValidationError:
+        # A crafted PIN like `123456:current_time` lands on one of the game's other keys.
+        raise HTTPException(status_code=404, detail="Game not found or API key not found")
     if game.user_id != user_id:
         raise HTTPException(status_code=404, detail="Game not found or API key not found")
     return game_pin, game
@@ -218,9 +222,8 @@ async def set_next_question(game_pin: str, question_number: int, api_key: str):
         "set_question_number",
         {
             "question_index": question_number,
-            "question": ReturnQuestion(
-                **game_data.model_dump(include={"questions"})["questions"][question_number]
-            ).model_dump(),
+            # What every other path sends players: no right flags, no text answers.
+            "question": question_for_players(game_data, question_number),
         },
         room=game_pin,
     )

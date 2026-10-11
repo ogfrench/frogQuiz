@@ -46,14 +46,22 @@ def _user(client: TestClient, email: str, username: str):
     return cookies, key
 
 
-@pytest.fixture
+# One game for the module: two accounts per test was 24 registrations a run.
+@pytest.fixture(scope="module")
 def game(test_client: TestClient):  # noqa: F811
     host_cookies, host_key = _user(test_client, "live-host@byom.de", "livehost")
     other_cookies, other_key = _user(test_client, "live-other@byom.de", "liveother")
     token = test_client.post("/api/v1/editor/start?edit=false", cookies=host_cookies).json()["token"]
-    quiz_id = test_client.post(
-        f"/api/v1/editor/finish?edit_id={token}", json=copy.deepcopy(example_quiz), cookies=host_cookies
-    ).json()["id"]
+    body = copy.deepcopy(example_quiz)
+    body["questions"].append(
+        {
+            "type": "TEXT",
+            "question": "Young frog?",
+            "time": "10",
+            "answers": [{"answer": "Tadpole", "case_sensitive": False}],
+        }
+    )
+    quiz_id = test_client.post(f"/api/v1/editor/finish?edit_id={token}", json=body, cookies=host_cookies).json()["id"]
     started = test_client.post(f"/api/v1/quiz/start/{quiz_id}?game_mode=kahoot", cookies=host_cookies)
     assert started.status_code == 200
     yield started.json()["game_pin"], host_key, other_key
@@ -77,3 +85,32 @@ def test_a_key_that_does_not_exist_cannot_read_the_game(test_client, game, route
 def test_the_hosts_own_key_still_can(test_client, game, route):  # noqa: F811
     pin, host_key, _ = game
     assert test_client.get(f"{route}?game_pin={pin}&api_key={host_key}").status_code == 200
+
+
+def test_a_crafted_pin_is_a_404_not_a_500(test_client, game):  # noqa: F811
+    pin, host_key, _ = game
+    resp = test_client.get(f"/api/v1/live/scores?game_pin={pin}:current_time&api_key={host_key}")
+    assert resp.status_code == 404
+
+
+def test_set_question_sends_players_no_text_answers(test_client, game, monkeypatch):  # noqa: F811
+    # It built the question for the room itself instead of going through
+    # question_for_players, so a text question's accepted answers still went to the phones.
+    import frogquiz.routers.live as live
+
+    pin, host_key, _ = game
+    sent = []
+
+    async def emit(event, data=None, room=None, **_kwargs):
+        sent.append((event, data))
+
+    monkeypatch.setattr(live.sio, "emit", emit)
+    text_question = len(example_quiz["questions"])
+    resp = test_client.post(
+        f"/api/v1/live/set_question?game_pin={pin}&question_number={text_question}&api_key={host_key}"
+    )
+    assert resp.status_code == 200
+    ((event, data),) = sent
+    assert event == "set_question_number"
+    assert data["question"]["answers"] == []
+    assert "Tadpole" not in str(data)
