@@ -15,7 +15,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte';
 	import { safeReturnTo } from '$lib/return_to';
 	import { normalizeCode } from '$lib/sign_in_code';
 	import QuarantineNotice from '$lib/QuarantineNotice.svelte';
@@ -27,8 +26,6 @@ SPDX-License-Identifier: MPL-2.0
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import VerifiedBadge from './verified_badge.svelte';
 	import TotpComponent from './totp_component.svelte';
-
-	navbarVisible.visible = true;
 
 	let { data } = $props();
 	const { t } = getLocalization();

@@ -9,7 +9,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { createForm } from 'felte';
 	import { getLocalization } from '$lib/i18n';
 	import { validateSchema } from '@felte/validator-yup';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -33,7 +32,6 @@ SPDX-License-Identifier: MPL-2.0
 	);
 	import reporter from '@felte/reporter-tippy';
 
-	navbarVisible.visible = true;
 	import * as yup from 'yup';
 
 	const registerSchema = yup.object({

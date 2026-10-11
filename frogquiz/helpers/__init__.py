@@ -42,11 +42,22 @@ async def get_meili_data(quiz: Quiz) -> dict[str, Any]:
     }
 
 
+def _write_text(ws, row: int, col: int, value: Any) -> int:
+    """A string goes in as text, never as a formula; anything else as write() sees fit.
+
+    write() turns a string starting with "=" into a live formula in whoever opens the file.
+    """
+    if isinstance(value, str):
+        return ws.write_string(row, col, value)
+    return ws.write(row, col, value)
+
+
 async def generate_spreadsheet(
     quiz_results: dict[str, Any],
     quiz: Quiz,
     player_fields: dict[str, Any],
     player_scores: dict[str, Any],
+    custom_field: str | None = None,
 ) -> BytesIO:
     storage = BytesIO()
     workbook = xlsxwriter.Workbook(storage, {"in_memory": True})
@@ -54,12 +65,16 @@ async def generate_spreadsheet(
     player_worksheet.name = "Players"
     _ = player_worksheet.write(0, 0, "Username")
     _ = player_worksheet.write(0, 1, "Score")
-    _ = player_worksheet.write(0, 2, "Custom-Field")
+    # Headed with the host's own join question, so the column says what it holds. It
+    # was always "Custom-Field".
+    _ = player_worksheet.write_string(0, 2, custom_field or "Join question")
+    # Nicknames and join answers are typed by players, so they go in as text. write()
+    # turns any string starting with "=" into a live formula in the host's spreadsheet.
     for i, player in enumerate(player_scores.keys()):
-        player_worksheet.write(i + 1, 0, player)
+        player_worksheet.write_string(i + 1, 0, player)
         player_worksheet.write(i + 1, 1, player_scores[player])
         try:
-            player_worksheet.write(i + 1, 2, player_fields[player])
+            player_worksheet.write_string(i + 1, 2, player_fields[player])
         except KeyError:
             continue
 
@@ -77,7 +92,8 @@ async def generate_spreadsheet(
             answer_data = quiz_results[str(i)]
         except KeyError:
             continue
-        _ = worksheet.write(i + 1, 0, question["question"])
+        # The author may not be the host: a public quiz's question text is someone else's.
+        _ = _write_text(worksheet, i + 1, 0, question["question"])
         _ = worksheet.write(i + 1, 1, question["time"])
 
         try:
@@ -112,12 +128,12 @@ async def generate_spreadsheet(
         _ = ws.write(0, 1, "Correct")
         _ = ws.write(0, 2, "Username")
         for j, _ in enumerate(answer_data):
-            _ = ws.write(j + 1, 0, answer_data[j]["answer"])
+            _ = _write_text(ws, j + 1, 0, answer_data[j]["answer"])
             if answer_data[j]["right"]:
                 _ = ws.write(j + 1, 1, "True")
             else:
                 _ = ws.write(j + 1, 1, "False")
-            _ = ws.write(j + 1, 2, answer_data[j]["username"])
+            _ = _write_text(ws, j + 1, 2, answer_data[j]["username"])
 
     workbook.close()
     _ = storage.seek(0)

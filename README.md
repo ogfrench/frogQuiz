@@ -154,9 +154,21 @@ the software here. The upstream project has its own hosted instance at
 [classquiz.de](https://classquiz.de) and its own
 [docs](https://classquiz.de/docs).
 
+The frog avatars are
+[Adventure Frog](https://intellikat.itch.io/frog-adventure-character-spritesheet)
+by [intellikat](https://intellikat.itch.io/), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): cropped, given tongues
+from the sheet's own pieces, and recoloured. Not endorsed by the artist. What
+was changed, and the script that does it, is in
+[`frontend/src/lib/assets/frogs/README.md`](frontend/src/lib/assets/frogs/README.md).
+
 ## License
 
 This repository is licensed under the
 [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/). Please
 review the license to understand your rights and obligations. In particular,
 the MPL requires that modifications to covered files stay open source.
+
+The exception is the frog avatar images in `frontend/src/lib/assets/frogs/`,
+which keep their own license, CC BY 4.0 (see Credits above and
+`.reuse/dep5`).

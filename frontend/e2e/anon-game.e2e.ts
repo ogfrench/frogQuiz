@@ -11,7 +11,9 @@ import {
 	joinAsPlayer,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults,
+	expectQuestionEnded
 } from './helpers';
 
 const NAMES = ['anabela', 'bruno', 'carla'] as const;
@@ -73,18 +75,16 @@ async function playGame(
 	await bruno.getByRole('button', { name: 'Lisbon' }).click();
 	await carla.getByRole('button', { name: 'Porto' }).click();
 	await expect(page.getByText('3 answers submitted')).toBeVisible();
-	await page.getByRole('button', { name: 'Show results' }).click();
+	await showResults(page);
 	await page.waitForTimeout(resultsDwellMs);
 
 	await advancePastResults(page);
 	await ana.getByRole('button', { name: '4', exact: true }).click();
 	await carla.getByRole('button', { name: '5', exact: true }).click();
 	// Nobody ends the question: the 5 s timer has to.
-	await expect(page.getByRole('button', { name: 'Show results' })).toBeVisible({
-		timeout: 15_000
-	});
+	await expectQuestionEnded(page, 15_000);
 	await expect(bruno.getByRole('button', { name: '4', exact: true })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Show results' }).click();
+	await showResults(page);
 	await page.waitForTimeout(resultsDwellMs);
 
 	await advanceToFinalResults(page);

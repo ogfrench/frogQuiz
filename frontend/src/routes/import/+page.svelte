@@ -12,11 +12,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { Label } from '$lib/components/ui/label/index.js';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Upload from '@lucide/svelte/icons/upload';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-
-	navbarVisible.visible = true;
 
 	const { t } = getLocalization();
 	let url_input = $state('');

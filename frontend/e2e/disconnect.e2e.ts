@@ -12,7 +12,14 @@
 // or leaves through the Leave button.
 
 import { expect, test } from '@playwright/test';
-import { mc, saveQuiz, rememberAnonQuiz, hostFromViewPage, gotoPlayHydrated } from './helpers';
+import {
+	mc,
+	saveQuiz,
+	rememberAnonQuiz,
+	hostFromViewPage,
+	gotoPlayHydrated,
+	expectQuestionEnded
+} from './helpers';
 
 const QUIZ = {
 	title: 'Disconnect',
@@ -36,7 +43,7 @@ async function joinPhone(browser, pin: string, name: string) {
 	const page = await ctx.newPage();
 	await gotoPlayHydrated(page);
 	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await page.getByRole('textbox', { name: 'Username' }).fill(name);
+	await page.getByRole('textbox', { name: 'Nickname' }).fill(name);
 	await page.getByRole('button', { name: 'Join game' }).click();
 	return { ctx, page };
 }
@@ -54,9 +61,15 @@ test('a closed tab stops blocking the question', async ({ browser, request }) =>
 	await expect(host.getByText('Stays')).toBeVisible();
 	await expect(host.getByText('Leaves')).toBeVisible();
 
-	await host.getByRole('button', { name: /Start game/ }).first().click();
+	await host
+		.getByRole('button', { name: /Start game/ })
+		.first()
+		.click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next question/ }).first().click();
+	await host
+		.getByRole('button', { name: /Next question/ })
+		.first()
+		.click();
 	await host.waitForTimeout(1200);
 
 	// One of the two answers. The question stays open: the count is still 2.
@@ -67,15 +80,13 @@ test('a closed tab stops blocking the question', async ({ browser, request }) =>
 	await expect(tileA).toBeDisabled();
 	await host.waitForTimeout(1000);
 	// Still running -- the host has not been handed the results yet.
-	await expect(host.getByRole('button', { name: /Show results/ })).toBeHidden();
+	await expect(host.getByRole('button', { name: 'Stop time and show solutions' })).toBeVisible();
 
 	// The other one's tab closes. No Leave, no goodbye: exactly a shut laptop.
 	await b.ctx.close();
 
 	// With only answered players left, the question ends on its own, long before 60s.
-	await expect(host.getByRole('button', { name: /Show results/ })).toBeVisible({
-		timeout: 20_000
-	});
+	await expectQuestionEnded(host, 20_000);
 
 	await hostCtx.close();
 	await a.ctx.close();

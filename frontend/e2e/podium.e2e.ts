@@ -8,13 +8,14 @@
 
 import { expect, test } from '@playwright/test';
 import {
+	advancePastResults,
 	advanceToFinalResults,
-	clearScoreboardStep,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 
 test('the podium reveals third, then second, then first', async ({ browser, request }) => {
@@ -48,14 +49,20 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 		const p = await ctx.newPage();
 		await gotoPlayHydrated(p);
 		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await p.getByRole('textbox', { name: 'Username' }).fill(name);
+		await p.getByRole('textbox', { name: 'Nickname' }).fill(name);
 		await p.getByRole('button', { name: 'Join game' }).click();
 		players.push({ ctx, p, ans });
 	}
 	await host.waitForTimeout(1000);
-	await host.getByRole('button', { name: /Start game/ }).first().click();
+	await host
+		.getByRole('button', { name: /Start game/ })
+		.first()
+		.click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next question/ }).first().click();
+	await host
+		.getByRole('button', { name: /Next question/ })
+		.first()
+		.click();
 	await host.waitForTimeout(1200);
 	for (const pl of players) {
 		await pl.p
@@ -66,9 +73,25 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 		await pl.p.waitForTimeout(250);
 	}
 	await host.waitForTimeout(6500);
-	await host.getByRole('button', { name: /Show results/ }).first().click();
+	await showResults(host);
 	await host.waitForTimeout(1200);
 	await advanceToFinalResults(host);
+	// Every frame of the build-up, where the winner's block is drawn: the transition's
+	// effect is only visible while it runs, so it is sampled in the page, not polled.
+	await host.evaluate(() => {
+		const w = window as unknown as { __podium: { h: number; bottom: number }[] };
+		w.__podium = [];
+		const end = performance.now() + 6000;
+		const tick = () => {
+			const el = document.querySelector('.podium-block.is-gold');
+			if (el) {
+				const r = el.getBoundingClientRect();
+				w.__podium.push({ h: r.height, bottom: r.bottom });
+			}
+			if (performance.now() < end) requestAnimationFrame(tick);
+		};
+		requestAnimationFrame(tick);
+	});
 
 	// Svelte keeps a delayed `in:` transition's element in the DOM at opacity 0, so the
 	// reveal is measured rather than asserted on presence.
@@ -85,6 +108,20 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 	await expect.poll(() => opacity('1st place'), { timeout: 6000 }).toBeGreaterThan(0.9);
 	// The crown lands once the winner's block has, not before.
 	await expect(host.locator('.crown')).toBeVisible();
+
+	// The block grows up out of the floor, rather than flying in from the bottom of the
+	// screen (Gonçalo, 7 Oct): part-way through, it is shorter than it ends, and its
+	// foot never leaves the line it stands on.
+	await host.waitForTimeout(1500);
+	const frames = await host.evaluate(
+		() => (window as unknown as { __podium: { h: number; bottom: number }[] }).__podium
+	);
+	const last = frames.at(-1)!;
+	const rising = frames.filter((f) => f.h > 2 && f.h < last.h * 0.9);
+	expect(rising.length, 'the winner never showed part-grown').toBeGreaterThan(3);
+	for (const f of rising) {
+		expect(Math.abs(f.bottom - last.bottom), `the block rose from below the floor: ${JSON.stringify([...new Set(frames.map((x) => Math.round(x.bottom)))])}`).toBeLessThan(2);
+	}
 
 	// Gold, silver and bronze rather than the near-black primary.
 	const medals = await host
@@ -105,7 +142,8 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 	test.setTimeout(5 * 60_000);
 	const saved = await saveQuiz(request, {
 		title: 'Phone host',
-		description: 'one',
+		description: 'two',
+		// Two, so there is a scoreboard to check: the last question has none (8 Oct).
 		questions: [
 			mc(
 				'How many legs does a frog have?',
@@ -114,6 +152,14 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 					['Two', false],
 					['Six', false],
 					['None', false]
+				],
+				'5'
+			),
+			mc(
+				'Where do tadpoles live?',
+				[
+					['Water', true],
+					['Trees', false]
 				],
 				'5'
 			)
@@ -134,19 +180,25 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 	const phone = await ctx.newPage();
 	await gotoPlayHydrated(phone);
 	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await phone.getByRole('textbox', { name: 'Username' }).fill('Robin');
+	await phone.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);
 
-	await host.getByRole('button', { name: /Start game/ }).first().click();
+	await host
+		.getByRole('button', { name: /Start game/ })
+		.first()
+		.click();
 	await host.waitForTimeout(800);
-	await host.getByRole('button', { name: /Next question/ }).first().click();
+	await host
+		.getByRole('button', { name: /Next question/ })
+		.first()
+		.click();
 	await host.waitForTimeout(1200);
 	expect(await overflow(), 'question').toBeLessThanOrEqual(0);
 	await phone.getByRole('button', { name: /Four/ }).first().click();
 
 	await host.waitForTimeout(6500);
-	await host.getByRole('button', { name: /Show results/ }).first().click();
+	await showResults(host);
 	await host.waitForTimeout(1400);
 	expect(await overflow(), 'per-question results').toBeLessThanOrEqual(0);
 	expect(
@@ -158,10 +210,16 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 
 	// The standings are a game surface too, and a new one -- this test is named for
 	// covering all of them, so it checks that screen at 390 rather than passing through it.
-	await clearScoreboardStep(host);
+	// It comes up by itself, three seconds after the answers.
+	await expect(host.getByRole('heading', { name: 'Scoreboard', exact: true })).toBeVisible({
+		timeout: 6000
+	});
 	await host.waitForTimeout(700);
 	expect(await overflow(), 'scoreboard').toBeLessThanOrEqual(0);
 
+	await advancePastResults(host);
+	await phone.getByRole('button', { name: /Water/ }).first().click();
+	await showResults(host);
 	await advanceToFinalResults(host);
 	await host.waitForTimeout(5000);
 	expect(await overflow(), 'podium').toBeLessThanOrEqual(0);

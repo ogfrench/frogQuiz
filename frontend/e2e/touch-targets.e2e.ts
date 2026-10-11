@@ -14,7 +14,8 @@ import {
 	hostFromViewPage,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 
 const QUIZ = {
@@ -163,7 +164,7 @@ test('every control on the player game screens is touch-sized', async ({ browser
 	const player = await ctx.newPage();
 	await gotoPlayHydrated(player);
 	await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await player.getByRole('textbox', { name: 'Username' }).fill('thumb');
+	await player.getByRole('textbox', { name: 'Nickname' }).fill('thumb');
 	const found: Record<string, string[]> = { join: await audit(player) };
 	await player.getByRole('button', { name: 'Join game' }).tap();
 	await expect(player.getByText(/You're in/)).toBeVisible();
@@ -174,7 +175,7 @@ test('every control on the player game screens is touch-sized', async ({ browser
 	await expect(player.getByRole('button', { name: 'Lisbon' })).toBeVisible();
 	found['question'] = await audit(player);
 	await player.getByRole('button', { name: 'Lisbon' }).tap();
-	await host.getByRole('button', { name: 'Show results' }).click();
+	await showResults(host);
 	await host.waitForTimeout(1_000);
 	found['results'] = await audit(player);
 

@@ -12,7 +12,8 @@ SPDX-License-Identifier: MPL-2.0
 	import Volume2 from '@lucide/svelte/icons/volume-2';
 	import VolumeX from '@lucide/svelte/icons/volume-x';
 	import Play from '@lucide/svelte/icons/play';
-	import Track from '$lib/assets/music/1-128.mp3';
+	import { music } from '$lib/play/music_pref.svelte';
+	import Track from '$lib/assets/music/lobby/lobby.mp3';
 
 	const { t } = getLocalization();
 
@@ -23,22 +24,10 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { playing = true }: Props = $props();
 
-	const STORE_KEY = 'frogquiz_music';
-	const DEFAULT_VOLUME = 40;
-
 	// A room gets the music by default, because that is the point of a lobby -- but the
-	// choice is remembered, so the host who turned it off once never fights it again.
-	const stored = (() => {
-		try {
-			const raw = localStorage.getItem(STORE_KEY);
-			return raw ? JSON.parse(raw) : null;
-		} catch {
-			return null;
-		}
-	})();
+	// choice is the game's one shared switch (music_pref.svelte.ts), so the host who turned
+	// it off once, here or on any other screen, never fights it again.
 
-	let wanted = $state(stored?.on ?? true);
-	let volume = $state(typeof stored?.volume === 'number' ? stored.volume : DEFAULT_VOLUME);
 	// Browsers refuse to start audio without a gesture, and the host reached this screen
 	// through one -- but a reload has none, so the control says "press to play" rather
 	// than lying about being on.
@@ -46,30 +35,24 @@ SPDX-License-Identifier: MPL-2.0
 
 	let audio: HTMLAudioElement | undefined;
 
-	const remember = () => {
-		try {
-			localStorage.setItem(STORE_KEY, JSON.stringify({ on: wanted, volume }));
-		} catch {
-			/* private window, blocked storage: the choice just does not outlive the tab */
-		}
-	};
-
 	const start = async () => {
 		if (!audio) {
 			audio = new Audio(Track);
 			audio.loop = true;
 		}
-		audio.volume = volume / 100;
+		audio.volume = music.volume / 100;
 		try {
 			await audio.play();
 			blocked = false;
-		} catch {
+		} catch (e) {
+			// A mute that lands while play() is pending rejects it with AbortError: that is not a block.
+			if (e instanceof DOMException && e.name === 'AbortError') return;
 			blocked = true;
 		}
 	};
 
 	$effect(() => {
-		if (playing && wanted) {
+		if (playing && music.on) {
 			start();
 		} else if (audio) {
 			audio.pause();
@@ -77,7 +60,7 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	$effect(() => {
-		if (audio) audio.volume = volume / 100;
+		if (audio) audio.volume = music.volume / 100;
 	});
 
 	// Cutting a loop dead is the one thing that sounds like a bug rather than an ending.
@@ -106,21 +89,20 @@ SPDX-License-Identifier: MPL-2.0
 		variant="ghost"
 		size="icon"
 		class="rounded-full"
-		aria-label={wanted && !blocked ? $t('play_page.music_off') : $t('play_page.music_on')}
-		title={wanted && !blocked ? $t('play_page.music_off') : $t('play_page.music_on')}
+		aria-label={music.on && !blocked ? $t('play_page.music_off') : $t('play_page.music_on')}
+		title={music.on && !blocked ? $t('play_page.music_off') : $t('play_page.music_on')}
 		onclick={() => {
 			if (blocked) {
 				start();
-				wanted = true;
+				music.set_on(true);
 			} else {
-				wanted = !wanted;
+				music.toggle();
 			}
-			remember();
 		}}
 	>
 		{#if blocked}
 			<Play />
-		{:else if wanted}
+		{:else if music.on}
 			<Volume2 />
 		{:else}
 			<VolumeX />
@@ -133,9 +115,9 @@ SPDX-License-Identifier: MPL-2.0
 			min="0"
 			max="100"
 			step="5"
-			bind:value={volume}
-			onchange={remember}
-			disabled={!wanted || blocked}
+			value={music.volume}
+			oninput={(e) => music.set_volume(Number(e.currentTarget.value))}
+			disabled={!music.on || blocked}
 			class="accent-primary w-24 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
 		/>
 	</label>

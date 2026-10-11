@@ -275,6 +275,9 @@ SPDX-License-Identifier: MPL-2.0
 	min-height: 100dvh;
 	width: 100%;
 	padding: var(--fq-space-section) var(--fq-space-group);
+	/* A screen under a fixed bar (the host's controls) sets --fq-stage-top to its height,
+	   so a tall composition starts below the bar instead of under it. */
+	padding-top: max(var(--fq-space-section), var(--fq-stage-top, 0px));
 }
 
 /* A horizontally scrolling container still lets its content's *paint* contribute to

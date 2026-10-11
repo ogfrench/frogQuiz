@@ -16,7 +16,8 @@ import {
 	mc,
 	saveQuiz,
 	saveQuizButton,
-	titleBox
+	titleBox,
+	showResults
 } from './helpers';
 
 test('somebody comes back, finds their quiz, changes it and runs it again', async ({
@@ -95,10 +96,7 @@ test('somebody comes back, finds their quiz, changes it and runs it again', asyn
 			.first()
 			.click();
 		await player.page.getByRole('button', { name: 'Lisbon' }).click();
-		await page
-			.getByRole('button', { name: /Show results/ })
-			.first()
-			.click();
+		await showResults(page);
 		await advanceToFinalResults(page);
 		await expect(page.getByText('ana', { exact: true }).first()).toBeVisible({
 			timeout: 20_000

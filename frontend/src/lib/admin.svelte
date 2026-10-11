@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { socket } from './socket';
@@ -16,6 +17,13 @@ SPDX-License-Identifier: MPL-2.0
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
 	import { totalsFromResults } from '$lib/play/admin/totals';
+	import {
+		AUTO_RESULTS_DELAY_MS,
+		gameIsOver,
+		nextStep,
+		performStep,
+		stepState
+	} from '$lib/play/admin/next_step';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const { t } = getLocalization();
@@ -28,9 +36,14 @@ SPDX-License-Identifier: MPL-2.0
 		game_token: string;
 		bg_color: string;
 		game_state: IGameState;
+		/** The podium's actions, for the controls bar. */
+		finish?: Snippet;
 	}
 
-	let { game_token, bg_color, game_state = $bindable() }: Props = $props();
+	let { game_token, bg_color, game_state = $bindable(), finish }: Props = $props();
+
+	// Mounted on a game that had already ended (a reload on the podium): the podium stays up.
+	if (gameIsOver(game_state.final_results)) final_results_clicked = true;
 
 	socket.on('get_question_results', () => {
 		console.log('get_question_results');
@@ -40,8 +53,14 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.question_results = null;
 		game_state.shown_question_now = data.question_index;
 		game_state.timer_res = game_state.quiz_data.questions[data.question_index].time;
-		game_state.selected_question = game_state.selected_question + 1;
+		// The server's index, not one more than ours: after a reload ours is wherever the
+		// snapshot put it, and counting up from it was only right by luck.
+		game_state.selected_question = data.question_index;
 		game_state.answer_count = 0;
+		// Every advance comes through here, so this is where the scoreboard closes. The
+		// Enter/Space shortcut used to skip it without closing it, and from then on every
+		// question's answers were drawn as the scoreboard instead.
+		game_state.scoreboard_open = false;
 
 		clearInterval(timer_interval);
 		timer(game_state.timer_res);
@@ -50,6 +69,7 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('solutions', (_) => {
 		game_state.timer_res = '0';
 		clearInterval(timer_interval);
+		ticking = false;
 	});
 
 	socket.on('final_results', (data) => {
@@ -75,11 +95,17 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.answer_count += 1;
 	});
 
+	// Whether an interval is counting down. Not $state: the effect below reads it without
+	// re-running on it.
+	let ticking = false;
 	const timer = (time: string) => {
+		clearInterval(timer_interval);
+		ticking = true;
 		let seconds = Number(time);
 		timer_interval = setInterval(() => {
 			if (game_state.timer_res === '0') {
 				clearInterval(timer_interval);
+				ticking = false;
 				return;
 			} else {
 				seconds--;
@@ -89,18 +115,58 @@ SPDX-License-Identifier: MPL-2.0
 		}, 1000);
 	};
 
+	// A clock set from anywhere but a question start (picking a game back up after a reload
+	// or a reconnect) counts down from where the server says it is. Starting it on mount
+	// only left it frozen when this screen was already up.
+	$effect(() => {
+		const time = game_state.timer_res;
+		if (ticking || final_results_clicked || game_state.selected_question < 0) return;
+		if (time !== undefined && time !== '0') timer(time);
+	});
+
 	const socket_game_controls: SocketGameControls = new SocketGameControls(socket);
+
+	// One press per question, as in Kahoot (Gonçalo, 7 Oct). When the question ends --
+	// time up, everyone answered, or Stop time -- its answers come up by themselves, and
+	// the scoreboard three seconds after that. The host's press is "Next question". The
+	// last question stops at its answers: no scoreboard, so the podium is not given away.
+	// Slides and hide-results questions are left to the host, as before.
+	const step = $derived(nextStep(stepState(game_state)));
+
+	// Once per question, even if the step flickers back (a reconnect re-reporting the
+	// question closed), and never after the host has already asked: a press inside the
+	// delay with a slow reply used to be followed by this request as well. The delay
+	// outlasts the server's grace, so a tap sent in the last instant on a phone still lands.
+	$effect(() => {
+		if (step !== 'show_results') return;
+		if (game_state.results_requested_for === game_state.selected_question) return;
+		const timeout = setTimeout(
+			() => performStep('show_results', socket_game_controls, game_state, game_token),
+			AUTO_RESULTS_DELAY_MS
+		);
+		return () => clearTimeout(timeout);
+	});
+
+	// Reduced motion keeps the delay: it is pacing, so the room can read the answers,
+	// not an animation.
+	$effect(() => {
+		if (step !== 'scoreboard') return;
+		const timeout = setTimeout(() => (game_state.scoreboard_open = true), 3000);
+		return () => clearTimeout(timeout);
+	});
 </script>
 
 {#if game_state.control_visible}
-	<Controls {bg_color} {socket_game_controls} {game_token} bind:game_state />
+	<Controls {bg_color} {socket_game_controls} {game_token} {finish} bind:game_state />
 {/if}
 {#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
-	<!-- mt-12 matches the controls bar's h-12. It was mt-10 against an h-10 bar; the
-	     bar is taller now and the rule was cutting across its bottom edge. -->
+	<!-- Just under the controls bar: top-3 plus its h-12, and a hair of air. It was mt-12
+	     when the bar sat flush at the top. -->
 	<span
-		class="bg-destructive/90 fixed top-0 left-0 h-1.5 w-full origin-left rounded-r-full transition-transform duration-1000 ease-linear"
-		class:mt-12={game_state.control_visible}
+		class={[
+			'bg-destructive/90 fixed left-0 h-1.5 w-full origin-left rounded-r-full transition-transform duration-1000 ease-linear',
+			game_state.control_visible ? 'top-[4.25rem]' : 'top-0'
+		]}
 		role="progressbar"
 		aria-label="Time remaining"
 		aria-valuemin="0"
@@ -111,7 +177,8 @@ SPDX-License-Identifier: MPL-2.0
 	></span>
 {/if}
 
-<div class="contents">
+<!-- Every host screen inside is an fq-stage; this keeps them clear of the fixed bar. -->
+<div class="contents" style:--fq-stage-top={game_state.control_visible ? '4.5rem' : null}>
 	{#if game_state.timer_res !== undefined && !final_results_clicked && !game_state.question_results}
 		<!-- Question is shown -->
 		{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}
@@ -168,7 +235,9 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 	{#if game_state.selected_question === -1}
 		<div class="fq-stage justify-center">
-			<h1 class="text-7xl text-center">{@html sanitizeTitleHtml(game_state.quiz_data.title)}</h1>
+			<h1 class="text-7xl text-center">
+				{@html sanitizeTitleHtml(game_state.quiz_data.title)}
+			</h1>
 			<p class="text-3xl pt-8 text-center">{game_state.quiz_data.description}</p>
 			{#if game_state.quiz_data.cover_image}
 				<div class="flex justify-center align-middle items-center">

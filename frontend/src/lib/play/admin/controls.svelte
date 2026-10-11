@@ -6,56 +6,77 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import { QuizQuestionType } from '$lib/quiz_types';
+	import type { Snippet } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import Flag from '@lucide/svelte/icons/flag';
 	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
+	import { isLastQuestion, nextStep, performStep, stepState } from '$lib/play/admin/next_step';
 
 	interface Props {
 		bg_color: string;
 		socket_game_controls: SocketGameControls;
 		game_token: string;
 		game_state: IGameState;
+		/** What the host can do once the podium is up: the page that owns them passes them in. */
+		finish?: Snippet;
 	}
 
-	let { bg_color, socket_game_controls, game_token, game_state = $bindable() }: Props = $props();
+	let {
+		bg_color,
+		socket_game_controls,
+		game_token,
+		game_state = $bindable(),
+		finish
+	}: Props = $props();
 
 	const { t } = getLocalization();
 
-	const show_solutions = () => {
-		socket_game_controls.show_solutions();
-		game_state.timer_res = '0';
-	};
-
-	// The answers are up, the scoreboard has not been asked for yet, and there is a
-	// scoreboard to show. A slide and a hide-results question have no standings moment.
-	const show_scoreboard_step = $derived(
-		!game_state.scoreboard_open &&
-			game_state.timer_res === '0' &&
-			game_state.selected_question !== -1 &&
-			game_state.question_results !== null &&
-			game_state.question_results !== undefined &&
-			JSON.stringify(game_state.final_results) === JSON.stringify([null]) &&
-			game_state.quiz_data?.questions?.[game_state.selected_question]?.type !==
-				QuizQuestionType.SLIDE &&
-			game_state.quiz_data?.questions?.[game_state.selected_question]?.hide_results !== true
-	);
+	// The bar shows the one step the shortcut and the automatic flow would take, from
+	// next_step.ts. It was a chain of conditions of its own, which had drifted from the
+	// shortcut's: the last question offered a Scoreboard that gave the podium away.
+	const step = $derived(nextStep(stepState(game_state)));
+	const label = $derived.by(() => {
+		switch (step) {
+			case 'stop_time':
+				return $t('admin_page.stop_time_and_solutions');
+			case 'show_results':
+				return $t('admin_page.show_results');
+			case 'scoreboard':
+				return $t('admin_page.show_scoreboard');
+			case 'final_results':
+				return $t('admin_page.get_final_results');
+			case 'skip_results':
+				return isLastQuestion({
+					selected_question: game_state.selected_question,
+					questions: game_state.quiz_data.questions
+				})
+					? $t('admin_page.get_final_results')
+					: $t('admin_page.next_question', { question: game_state.selected_question + 2 });
+			case 'next_question':
+				return $t('admin_page.next_question', { question: game_state.selected_question + 2 });
+			default:
+				return '';
+		}
+	});
 </script>
 
 <!-- Was a two-column grid whose button cell asked for col-start-3, a column that
      does not exist, so the one control the host actually uses ended up wherever the
-     browser put it. A flex row with space-between says what is meant. -->
+     browser put it. A flex row with space-between says what is meant. Inset from the
+     edges like the lobby's corner controls: flush against the top it read as crammed
+     on a projector (Gonçalo, 7 Oct). fq-stage keeps clear of it (--fq-stage-top). -->
 <div
-	class="fixed inset-x-0 top-0 z-20 flex h-12 items-center justify-between gap-3 px-3"
+	class="fixed inset-x-3 top-3 z-20 flex min-h-12 items-center justify-between gap-2 rounded-2xl sm:gap-3"
 	style="background: {bg_color ? bg_color : 'transparent'}"
 	class:text-black={bg_color}
 >
 	<!-- Question position is the most-referenced state on a projector screen, so
 	     it gets a legible pill rather than 14px of body text in the corner. -->
-	<div class="flex items-center gap-2">
+	<div class="flex min-w-0 items-center gap-2">
 		<p
 			class="rounded-full border border-border bg-card/80 px-3 py-1
 				text-base font-semibold tabular-nums shadow-sm backdrop-blur"
@@ -79,7 +100,9 @@ SPDX-License-Identifier: MPL-2.0
 				class="bg-card/80 backdrop-blur"
 			>
 				<Flag />
-				{$t('admin_page.end_game')}
+				<!-- Icon only on a phone, where the bar has no room for the word and the step
+				     button; the confirm dialog still says what it does. -->
+				<span class="max-sm:sr-only">{$t('admin_page.end_game')}</span>
 			</ConfirmAction>
 			<!-- Late joiners need the PIN once the lobby has gone, as Kahoot keeps it on screen. -->
 			{#if !game_state.quiz_data.locked}
@@ -99,95 +122,26 @@ SPDX-License-Identifier: MPL-2.0
 			/>
 		{/if}
 	</div>
-	<div>
+	<div class="flex items-center gap-2">
+		<!-- The navbar is hidden in a game, and with it the only theme switch. -->
+		<ThemeToggle class="bg-card/80 border-border border shadow-sm backdrop-blur" />
 		<!-- The standings get their own step between the answers and the next question,
-		     the way Kahoot sequences a round: show the answers, then who is winning, then
-		     move on. `scoreboard_open` is host-side only -- nothing new crosses the socket,
-		     because the totals are already here. -->
-		{#if show_scoreboard_step}
-			<button onclick={() => (game_state.scoreboard_open = true)} class="admin-button"
-				>{$t('admin_page.show_scoreboard')}
-			</button>
-		{:else if game_state.selected_question + 1 === game_state.quiz_data.questions.length && ((game_state.timer_res === '0' && game_state.question_results !== null) || game_state.quiz_data?.questions?.[game_state.selected_question]?.type === QuizQuestionType.SLIDE)}
-			{#if JSON.stringify(game_state.final_results) === JSON.stringify([null])}
-				<button
-					onclick={() => socket_game_controls.get_final_results()}
-					class="admin-button"
-					>{$t('admin_page.get_final_results')}
-				</button>
-			{/if}
-		{:else if game_state.timer_res === '0' || game_state.selected_question === -1}
-			{#if (game_state.selected_question + 1 !== game_state.quiz_data.questions.length && game_state.question_results !== null) || game_state.selected_question === -1}
-				<button
-					onclick={() => {
-						game_state.scoreboard_open = false;
-						socket_game_controls.set_question_number(game_state.selected_question + 1);
-					}}
-					class="admin-button"
-					>{$t('admin_page.next_question', {
-						question: game_state.selected_question + 2
-					})}
-				</button>
-			{/if}
-			{#if game_state.question_results === null && game_state.selected_question !== -1}
-				{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}
-					<button
-						onclick={() => {
-							socket_game_controls.set_question_number(
-								game_state.selected_question + 1
-							);
-						}}
-						class="admin-button"
-						>{$t('admin_page.next_question', {
-							question: game_state.selected_question + 2
-						})}
-					</button>
-				{:else if game_state.quiz_data.questions[game_state.selected_question]?.hide_results === true}
-					<button
-						onclick={() => {
-							socket_game_controls.get_question_results(
-								game_token,
-								game_state.shown_question_now
-							);
-							setTimeout(() => {
-								socket_game_controls.set_question_number(
-									game_state.selected_question + 1
-								);
-							}, 200);
-						}}
-						class="admin-button"
-						>{$t('admin_page.next_question', {
-							question: game_state.selected_question + 2
-						})}
-					</button>
-				{:else}
-					<button
-						onclick={() =>
-							socket_game_controls.get_question_results(
-								game_token,
-								game_state.shown_question_now
-							)}
-						class="admin-button"
-						>{$t('admin_page.show_results')}
-					</button>
-				{/if}
-			{/if}
-		{:else if game_state.selected_question !== -1}
-			{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}
-				<button
-					onclick={() => {
-						socket_game_controls.set_question_number(game_state.selected_question + 1);
-					}}
-					class="admin-button"
-					>{$t('admin_page.next_question', {
-						question: game_state.selected_question + 2
-					})}
-				</button>
-			{:else}
-				<button onclick={show_solutions} class="admin-button"
-					>{$t('admin_page.stop_time_and_solutions')}
-				</button>
-			{/if}
+		     the way Kahoot sequences a round. It comes up by itself three seconds after the
+		     answers (admin.svelte); this button is there to skip ahead. -->
+		{#if step !== 'none'}
+			<!-- "Stop time and show solutions" is the longest label. On a phone it takes two
+			     short lines inside the bar; it used to wrap to three and hang below it. -->
+			<button
+				onclick={() => performStep(step, socket_game_controls, game_state, game_token)}
+				class="admin-button text-balance max-sm:max-w-36 max-sm:px-3 max-sm:text-xs max-sm:leading-tight"
+				>{label}</button
+			>
+		{/if}
+		<!-- The podium's actions take the step button's place, so the last thing the host
+		     presses is where the next thing has been all game. They were a second panel
+		     under the bar, out of line with it, with both buttons squashed to 20px. -->
+		{#if JSON.stringify(game_state.final_results) !== JSON.stringify([null])}
+			{@render finish?.()}
 		{/if}
 	</div>
 </div>

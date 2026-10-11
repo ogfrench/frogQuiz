@@ -1,0 +1,6 @@
+Public domain
+
+The work is in the public domain: its creator has released it without restriction, or
+no copyright subsists in it. It may be used, copied, modified and distributed for any
+purpose, without credit. Each file that uses this identifier names its source and the
+statement it was published with, in .reuse/dep5.

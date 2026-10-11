@@ -7,6 +7,7 @@
 
 import { expect, test, type Locator } from '@playwright/test';
 import {
+	expectNoHorizontalOverflow,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
@@ -124,7 +125,7 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 
 	// Now the enabled state, from the nickname step of a game that exists.
 	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	const nickname = page.getByRole('textbox', { name: 'Username' });
+	const nickname = page.getByRole('textbox', { name: 'Nickname' });
 	await expect(nickname).toBeVisible({ timeout: 15_000 });
 	await nickname.fill('ana');
 	// The nickname step's button: the same component and classes as the PIN step's, so
@@ -153,14 +154,14 @@ test('a player can join with the keyboard alone', async ({ page, request }) => {
 	const phone = await page.context().browser()!.newPage({ viewport: PHONE });
 	await gotoPlayHydrated(phone);
 	await phone.keyboard.type(pin);
-	await expect(phone.getByRole('textbox', { name: 'Username' })).toBeFocused();
+	await expect(phone.getByRole('textbox', { name: 'Nickname' })).toBeFocused();
 	await phone.keyboard.type('Keys');
 	await phone.keyboard.press('Enter');
 	await expect(phone.getByText("You're in, Keys")).toBeVisible();
 	await phone.close();
 });
 
-test('the host can ask players for one more detail, and players are asked for it', async ({
+test('the host can add a join question, and players are asked it', async ({
 	browser,
 	page,
 	request
@@ -170,12 +171,13 @@ test('the host can ask players for one more detail, and players are asked for it
 	await page.goto(`/view/${saved.body.id}`);
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Start game' });
-	// It was a bare "Custom field" switch, with a Title Case English placeholder.
-	const ask = dialog.getByRole('switch', { name: 'Ask players for one more detail' });
-	await expect(ask).toHaveAccessibleDescription(/when they join/);
+	// It was a bare "Custom field" switch, with a Title Case English placeholder, then
+	// "Ask players for one more detail", which did not say players see it.
+	const ask = dialog.getByRole('switch', { name: 'Add a join question' });
+	await expect(ask).toHaveAccessibleDescription(/join screen/);
 	await ask.click();
-	const what = dialog.getByRole('textbox', { name: 'What to ask for' });
-	await expect(what).toHaveAttribute('placeholder', 'Team, or email');
+	const what = dialog.getByRole('textbox', { name: 'The question players answer' });
+	await expect(what).toHaveAttribute('placeholder', 'e.g. Your department');
 	await what.fill('Team');
 	await dialog.getByRole('button', { name: 'Start game' }).click();
 	await page.waitForURL(/\/admin\?/);
@@ -185,9 +187,37 @@ test('the host can ask players for one more detail, and players are asked for it
 	const phone = await player.newPage();
 	await gotoPlayHydrated(phone);
 	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await phone.getByRole('textbox', { name: 'Username' }).fill('Ana');
+	await phone.getByRole('textbox', { name: 'Nickname' }).fill('Ana');
 	await phone.getByRole('textbox', { name: 'Team' }).fill('Frogs');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await expect(page.getByText('Ana')).toBeVisible();
 	await player.close();
+});
+
+// Players typed the PIN again as their name: the sixth digit swapped the form in place,
+// on the same card, with nothing to say the PIN step was over.
+test('the nickname step says it is one, and notices the PIN typed as a name', async ({
+	page,
+	request
+}) => {
+	const saved = await saveQuiz(request, QUIZ);
+	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+	const pin = await hostFromViewPage(page, saved.body.id);
+
+	const phone = await page.context().browser()!.newPage({ viewport: PHONE });
+	await gotoPlayHydrated(phone);
+	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await expect(phone.getByRole('heading', { name: 'Choose a fun nickname' })).toBeVisible();
+	await expect(phone.getByText(`PIN ${pin.slice(0, 3)} ${pin.slice(3)}`)).toBeVisible();
+
+	const nickname = phone.getByRole('textbox', { name: 'Nickname' });
+	await expect(nickname).toHaveAccessibleDescription(/At least 2 characters/);
+	await nickname.fill(pin);
+	await expect(nickname).toHaveAccessibleDescription(/looks like the PIN/);
+	// A nudge, not a block: an all-digit name is allowed.
+	await expect(phone.getByRole('button', { name: 'Join game' })).toBeEnabled();
+	await nickname.fill('Ana');
+	await expect(nickname).toHaveAccessibleDescription(/At least 2 characters/);
+	await expectNoHorizontalOverflow(phone);
+	await phone.close();
 });

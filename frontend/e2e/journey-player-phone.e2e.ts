@@ -21,7 +21,8 @@ import {
 	joinAsPlayer,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 
 test('a player goes from the join screen to the podium and out, all on a phone', async ({
@@ -79,10 +80,7 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 		await expectNoHorizontalOverflow(phone);
 
 		await rival.page.getByRole('button', { name: 'Porto' }).click();
-		await page
-			.getByRole('button', { name: /Show results/ })
-			.first()
-			.click();
+		await showResults(page);
 		await expect(phone.getByText('Correct!')).toBeVisible({ timeout: 15_000 });
 		// Points and standing, not just a tick -- the thing players actually look for.
 		await expect(phone.getByText(/1 of 2/)).toBeVisible();
@@ -95,10 +93,7 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 		await gecko.click();
 		await expect(gecko).toHaveAttribute('aria-pressed', 'true');
 		await rival.page.getByRole('button', { name: 'Tree frog' }).click();
-		await page
-			.getByRole('button', { name: /Show results/ })
-			.first()
-			.click();
+		await showResults(page);
 		await expect(phone.getByText('Not this time')).toBeVisible({ timeout: 15_000 });
 	});
 

@@ -13,7 +13,7 @@
 
 import { expect, test } from '@playwright/test';
 import { signedInContext } from './accounts';
-import { advanceToFinalResults, joinAsPlayer, mc, saveQuiz } from './helpers';
+import { advanceToFinalResults, joinAsPlayer, mc, saveQuiz, showResults } from './helpers';
 
 test('a teammate finds a colleague’s quiz, runs it, and never sees the answers', async ({
 	browser,
@@ -88,7 +88,7 @@ test('a teammate finds a colleague’s quiz, runs it, and never sees the answers
 		await mate.page.getByRole('button', { name: 'Start game' }).click();
 		await mate.page.getByRole('button', { name: /Next question/ }).click();
 		await player.page.getByRole('button', { name: 'Lisbon' }).click();
-		await mate.page.getByRole('button', { name: 'Show results' }).click();
+		await showResults(mate.page);
 		await advanceToFinalResults(mate.page);
 		await expect(mate.page.getByText('ana', { exact: true }).first()).toBeVisible({
 			timeout: 20_000

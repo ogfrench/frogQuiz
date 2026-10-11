@@ -50,7 +50,7 @@ test('the host locks the lobby, a phone is told so, and unlocking lets it in', a
 	await host.getByRole('button', { name: 'Unlock game' }).click();
 	await expect(host.getByRole('button', { name: 'Lock game' })).toBeVisible();
 	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await phone.getByRole('textbox', { name: 'Username' }).fill('knocking');
+	await phone.getByRole('textbox', { name: 'Nickname' }).fill('knocking');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await expect(host.getByRole('button', { name: 'Kick: knocking' })).toBeVisible();
 	await context.close();

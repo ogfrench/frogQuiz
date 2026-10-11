@@ -7,11 +7,8 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Editor from '$lib/editor.svelte';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import type { Question } from '$lib/quiz_types';
 	import { page } from '$app/state';
-
-	navbarVisible.visible = false;
 
 	interface Data {
 		public: boolean;

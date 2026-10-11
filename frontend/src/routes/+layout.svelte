@@ -17,7 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	import '../app.css';
 	import Navbar from '$lib/navbar.svelte';
 	import Footer from '$lib/footer.svelte';
-	import { navbarVisible } from '$lib/stores.svelte';
+	import { page } from '$app/state';
 
 	import { initLocalizationContext } from '$lib/i18n';
 	import { browser } from '$app/environment';
@@ -28,6 +28,22 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { children }: Props = $props();
+
+	// The screens that take the whole viewport: the editor and the live game. Worked out
+	// from the route on every navigation. It used to be a global flag that 21 pages each
+	// had to set as they loaded, and a page that did not inherited whatever the last one
+	// left -- one list here instead of a rule every new page has to remember.
+	const FULLSCREEN_ROUTES = new Set([
+		'/play',
+		'/admin',
+		'/create',
+		'/edit',
+		'/edit/videos',
+		'/remote'
+	]);
+	// An error page keeps the navigation, whatever route it was raised on: a failed load of
+	// /edit used to show the error with no navbar and no footer.
+	const chrome = $derived(page.error != null || !FULLSCREEN_ROUTES.has(page.route.id ?? ''));
 
 	if (browser) {
 		if (
@@ -56,14 +72,14 @@ SPDX-License-Identifier: MPL-2.0
 	>Skip to content</a
 >
 <div class="flex min-h-dvh flex-col">
-	{#if navbarVisible.visible}
+	{#if chrome}
 		<Navbar />
 		<div class="h-16 shrink-0"></div>
 	{/if}
 	<main id="main-content" tabindex="-1" class="flex-1 outline-none">
 		{@render children?.()}
 	</main>
-	{#if navbarVisible.visible}
+	{#if chrome}
 		<Footer />
 	{/if}
 </div>

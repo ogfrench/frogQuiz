@@ -19,7 +19,8 @@ import {
 	expectNoHorizontalOverflow,
 	joinAsPlayer,
 	saveQuizButton,
-	startNewQuiz
+	startNewQuiz,
+	showResults
 } from './helpers';
 
 test('a new colleague makes a quiz and runs it for two people, with no account', async ({
@@ -89,7 +90,7 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 
 		await ana.getByRole('button', { name: 'Tree frog' }).click();
 		await bruno.getByRole('button', { name: 'Gecko' }).click();
-		await page.getByRole('button', { name: 'Show results' }).click();
+		await showResults(page);
 		// Each player is told how they did, which is the whole point of playing.
 		await expect(ana.getByText(/correct/i).first()).toBeVisible({ timeout: 15_000 });
 
@@ -100,7 +101,7 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 		await ana.getByRole('button', { name: /Submit|Done|Confirm/i }).click();
 		await bruno.getByRole('button', { name: 'Frog' }).click();
 		await bruno.getByRole('button', { name: /Submit|Done|Confirm/i }).click();
-		await page.getByRole('button', { name: 'Show results' }).click();
+		await showResults(page);
 	});
 
 	await test.step('the game finishes on the podium', async () => {
@@ -115,9 +116,9 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 
 	await test.step('and they land back where their quizzes are', async () => {
 		// A link, not a button -- game-exits.e2e.ts pins the same control.
-		const back = page.getByRole('link', { name: 'Back' });
-		await expect(back).toHaveAttribute('href', '/my-quizzes');
-		await back.click();
+		const finish = page.getByRole('link', { name: 'Finish' });
+		await expect(finish).toHaveAttribute('href', '/my-quizzes');
+		await finish.click();
 		await page.waitForURL(/\/my-quizzes/);
 		// The quiz they just made is still there afterwards, in this browser.
 		await expect(page.getByText(title)).toBeVisible();

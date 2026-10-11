@@ -8,6 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
 	import Check from '@lucide/svelte/icons/check';
+	import FrogAvatar from '$lib/components/FrogAvatar.svelte';
 
 	interface Props {
 		title: string;
@@ -33,12 +34,19 @@ SPDX-License-Identifier: MPL-2.0
 <div class="fq-stage">
 	<div class="flex flex-col items-center gap-3 text-center">
 		{#if username}
-			<span
-				class="bg-foreground/5 ring-border flex size-14 items-center justify-center rounded-full ring-1
-					motion-safe:animate-in motion-safe:zoom-in-95"
+			<!-- Their frog, which is how they will find themselves on the projector, with
+			     the check that says the join took kept as a badge on it. -->
+			<FrogAvatar
+				name={username}
+				class="size-24 motion-safe:animate-in motion-safe:zoom-in-95"
 			>
-				<Check class="text-foreground/70 size-7" />
-			</span>
+				<span
+					class="bg-primary text-primary-foreground ring-background absolute right-0.5 bottom-0.5
+						flex size-7 items-center justify-center rounded-full ring-2"
+				>
+					<Check class="size-4" aria-hidden="true" />
+				</span>
+			</FrogAvatar>
 			<!-- The one player-supplied string on this screen, so the one that can be
 			     hostile. The server bounds a nickname at 50 characters, which is still
 			     wider than a phone when none of them is a space: measured 6px of

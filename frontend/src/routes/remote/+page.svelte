@@ -12,15 +12,12 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '$lib/Spinner.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const data = {
 		game_pin: page.url.searchParams.get('game_pin'),
 		game_id: page.url.searchParams.get('game_id')
 	};
-
-	navbarVisible.visible = false;
 
 	const { t } = getLocalization();
 	let timer_interval: NodeJS.Timeout;
@@ -67,7 +64,8 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	const confirmUnload = (e: Event) => {
-		if (warnToLeave) {
+		// Not once the podium is up, as on the host screen.
+		if (warnToLeave && JSON.stringify(final_results) === JSON.stringify([null])) {
 			e.preventDefault();
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
@@ -132,6 +130,11 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	socket.on('registered_as_admin', (data) => {
 		game_data = JSON.parse(data.game);
+		// From the server's question, not -1: a remote opened or reloaded mid-game sent "Next
+		// question (1)", which the server now refuses, and was stuck there.
+		game_started = Boolean(game_data.started);
+		selected_question = game_data.current_question ?? -1;
+		shown_question_now = selected_question;
 	});
 
 	socket.on('start_game', (_) => {
@@ -156,7 +159,7 @@ SPDX-License-Identifier: MPL-2.0
 		question_results = null;
 		shown_question_now = data.question_index;
 		timer_res = game_data.questions[data.question_index].time;
-		selected_question = selected_question + 1;
+		selected_question = data.question_index;
 		timer(timer_res);
 	});
 

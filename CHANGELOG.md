@@ -4,6 +4,93 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Full review fixes before merge, 10 Oct
+
+- Fixed a host reload mid-game coming back on the quiz's cover, where one press of "Next question (1)" sent the running game back to the first question. The host now comes back on the question that is up, with its clock, its answer count and the running totals, or on the podium if the game had ended (#51).
+- The server refuses to move a game to a question it has already reached, so no client can rewind a running game.
+- The answers come up 2 seconds after the host's clock runs out, not 0.8: the server still takes a tap for 1.5 seconds after the clock, and closing the question sooner refused those taps.
+- Pressing Show results inside that delay no longer sends a second request when the reply is slow.
+- Finish on the podium is a full page load again, as Back was, so the host page's socket handlers do not stay running after the game.
+- The end-of-game download writes answers, usernames and question text as text in every sheet, not only on the Players sheet, so a value starting with "=" can no longer become a formula.
+- Every socket handler that validates a payload refuses one that is not an object, instead of raising.
+- An error page shows the navbar and footer again on the editor and game routes.
+- The question tick shares one audio context and one decoded track across the game, instead of making a new context and decoding the track again at every question.
+- A host whose connection drops just as the game moves on picks up the new question when it reconnects, instead of offering a Next the server would refuse. A resumed question's clock counts down even when the host screen was already up.
+- The remote control (hidden for the MVP) starts from the question the game is on, not from the first.
+- Two e2e specs no longer race: the crowd-seat spec waits for the late seat map before checking that no second one comes, and the host reload specs no longer wait for a log line only the player page prints.
+
+### Review fixes before merge, 8 Oct
+
+- Fixed a host reload mid-game showing the lobby, and its music, over the live game: the started state now comes back from the server.
+- Fixed joins, seats and leaves that arrive while the host page is registering being erased by the snapshot. The host now joins the game's rooms before the snapshot is read, and the page applies events that arrived first after it.
+- Avatar seats are refreshed on every write to the game, so a game that is still running can no longer lose its frogs five hours after the last new seat.
+- A rejoining player who gets a new seat is announced to the other phones, not only to the host.
+- The host's question-number handler refuses `inf` instead of raising.
+- `join_game` checks the payload before reading the PIN out of it, so a malformed message is refused rather than raising `KeyError`.
+- The lobby and podium music no longer show Play when a mute interrupts playback.
+- The host page removes its keyboard shortcuts when it is left.
+- Formatted the host page (two lines the branch had left out of Prettier).
+- The host page registers once on a cold load, not twice; a game the server reports as missing no longer stops registration; a lock change that arrives before registration is applied after it.
+- The REST route that sets the question refreshes the avatar seats like every other write to the game.
+- A join or rejoin payload that is not an object is refused, not raised.
+- Reformatted `music/question/make-tick-loop.py` to the lint rules, which failed CI's backend lint. The generated `tick-loop.wav` is byte-identical.
+
+### Unused lobby copy removed, 8 Oct
+
+- Removed `music/lobby/lobby-original.mp3`, an unreduced copy of the lobby track that nothing imported and that was left over from upstream. The game plays `lobby.mp3`; git history keeps the original.
+
+### Game music, 8 Oct
+
+- Added a ticking loop to the host question screen that speeds up as the time runs out, gently (1.0x to 1.5x), with a 1.2 kHz tone and the snare kept, so the pitch does not squeal. It fades out at zero or when the question ends, and follows the shared mute.
+- Added the question tick, `question/tick-loop.wav`, generated in the repo by `question/make-tick-loop.py` from parameters measured on a sampled game-show tick. It uses no samples, so it carries no third-party licence.
+- Added podium music: Charpentier's Te Deum prelude (public domain, Pracchia-78), the whole piece cut from its first note instead of the 3.4 s of leading silence, with a 1 s fade in, a fade out and 1.5 s of silence at the end so it loops cleanly. It plays on the host's podium only, starting with the confetti when the winner lands.
+- Made the music mute and volume one shared setting for the whole game: muting in the lobby or on the podium mutes every screen live (and survives a reload or a second tab). The lobby slider writes the same setting.
+- Brought every track to about -18 LUFS (measured) so moving between the lobby and the podium never jumps in volume.
+- Reorganised `frontend/src/lib/assets/music/` into one folder per screen (`lobby/`, `podium/`) with readable file names and a README listing each track's source, licence, loudness and how the podium cut was made.
+- Removed the drop shadow and outline ring from the join QR code in the host lobby; it is now just the code on its white quiet zone.
+
+### Licensed frog art, 8 Oct
+
+- Replaced the frog avatar images, which had no licence on record, with "Adventure Frog" by intellikat (CC BY 4.0): 150 avatars, 25 poses in 6 colours, cut from the artist's sprite sheet by `frontend/scripts/make-frog-avatars.py`. Four poses get a tongue built from the sheet's own tongue pieces and are also kept without it; the five extra colours are hue rotations that leave the tongue, mouth and hat band as drawn.
+- Recorded where the art came from and what was changed in `frontend/src/lib/assets/frogs/README.md` (source page, release date, licence, download hashes), added a REUSE entry in `.reuse/dep5` and `LICENSES/CC-BY-4.0.txt`, and credited the artist on `/docs/attribution` and in the README.
+- Made the game hand frogs out in a fixed shuffled order instead of file order: no frog is given out twice until all 150 have been, any 25 players in a row get 25 different poses, and colours are mixed from the first player. Unit tests cover every starting seat the server can pick.
+- Added tests that fail if a file lands in the frogs folder without licence cover, or if the REUSE entry, the licence text or the in-app credit is removed.
+- Made the frog generator refuse a sheet of the wrong size and replace the images only once all 150 have been made, so a crash can no longer leave the folder empty; made the credit test check the artist, the licence link and the change notice in the Frog avatars section, so deleting the notice fails it; made the fallback shuffle in `seat_order.ts` independent of file listing order.
+- Added a rule to `CLAUDE.md` that third-party art, icons, images, audio and fonts need a recorded open licence (CC0, CC BY 4.0, MIT, OFL or similar) before they go in the repo.
+
+### Frog avatars, 8 Oct
+
+- Added frog avatars: every player is given a frog when they join, with nothing to pick. The server hands each player a seat that is unique within the game and that they keep across a reload or a rejoin under the same name; the frontend turns the seat into a frog.
+- Showed the frogs in the host's lobby, on the scoreboard between questions, on the podium and in places 4 to 8, on the player's "You're in" screen (their frog with a check badge), and in the player's score pill on the podium. Before the seat arrives, the player's initial is shown instead.
+- Added a "Show all N players" toggle under the podium's places 4 to 8 that unfolds the rest of the ranking. The scoreboard between questions still shows the top 5 with no toggle, since nobody should have to click a projector mid-game.
+- Added the shadcn-svelte `avatar` component, a `FrogAvatar` component, unit tests for the seat-to-frog rule and an e2e spec (`avatars.e2e.ts`) for unique seats, kept seats and the same frog on both screens.
+
+### Host screen never blank, 8 Oct
+
+- Made the host screen (`/admin`) show an error card (icon, heading, hint, Try again and Back buttons, the same card pattern as the site's other error screens) instead of a blank page when the game socket reports a connection error, when the server has not answered within 8 seconds, or when the link has no token or PIN. A Netlify deploy preview hit this: its origin is not in the backend's `CORS_ORIGINS`, so the socket handshake was refused and nothing rendered. The server's own "already an admin" refusal still takes precedence, and a dropped connection after the game is up is unchanged. New strings `admin_page.connection_failed`, `admin_page.connection_failed_hint`, `admin_page.no_game_in_link` and `admin_page.no_game_in_link_hint`.
+
+### Fixes from testing, round 2, 8 Oct
+
+- Fixed leaving a finished game asking "Leave site?". The host, phone and remote screens kept their unload guard armed through the podium, so Back and Home asked about a game that no longer existed. New e2e check in `game-exits.e2e.ts`.
+- Made the navbar and footer follow the route: they are hidden on the editor and game screens (`/play`, `/admin`, `/create`, `/edit`, `/edit/videos`, `/remote`) and shown everywhere else, decided in `+layout.svelte`. This replaces a global `navbarVisible` flag that 21 pages each had to set and that a page could inherit from the last one. The flag's store is deleted. A navbar missing on a quiz's view page was reported but not reproduced; this removes the one mechanism that could cause it.
+- Renamed the Start game option "Ask players for one more detail" to "Add a join question", with a hint that says players see it on the join screen and the answers go in the results spreadsheet.
+- Headed the join-question column of the results spreadsheet with the host's own question instead of "Custom-Field".
+- Fixed a spreadsheet formula injection: nicknames and join answers typed by players were written with `write()`, which turns any text starting with `=` into a live formula in the host's download. They are now written as plain text. New backend tests in `test_results_spreadsheet.py`.
+- Made the nickname step of joining read as its own step: a "PIN 123 456" line with a check, a "Choose a fun nickname" heading, and a "Nickname" label. Players kept typing the PIN again as their name; a name that is all digits now shows "Ribbit, that looks like the PIN. You're already in! Now pick a name." in place of the length hint, without blocking Join. New e2e test in `join.e2e.ts`; the other specs now find the field as "Nickname".
+- Made a live game one press per question, as in Kahoot: when a question ends (time up, everyone answered, or Stop time) its answers come up by themselves, and the scoreboard three seconds after that. The host presses Next question. Show results and Scoreboard stay as skip-ahead buttons. Slides and hide-results questions are left to the host, as before.
+- Stopped the last question showing a scoreboard, which gave the podium away: its answers come up, then Get final results. Polls and questions nobody answered skip the scoreboard too (a poll's scoreboard button did nothing).
+- Fixed Enter/Space on the host screen skipping the scoreboard without closing it, after which every question's answers were drawn as the scoreboard and the last question offered only Get final results. The button, the shortcut and the automatic flow now share one rule (`lib/play/admin/next_step.ts`, with unit tests), and the scoreboard closes on every new question. The shortcut no longer fires when a control has focus, so a press cannot act twice.
+- Fixed "Hide results" on the last question asking the server for a question past the end, which raised an error. It goes to the final results now, and the server refuses an out-of-range or negative question number before touching the answer clock (`test_set_question_number_bounds.py`).
+- Rewrote `scoreboard.e2e.ts` as a three-question game run once with the mouse and once from the keyboard alone, and gave the e2e helpers `showResults` and `expectQuestionEnded`, since "Show results" is now only on screen for a moment.
+- Fixed the phone's answer tiles being in a different order from the host's: the phone filled its grid column by column, so blue and green swapped places. Both now read red top-left, blue top-right, green bottom-left, purple bottom-right. New e2e test (`answer-order.e2e.ts`), both with and without the answers on the phone.
+- Inset the host's in-game controls bar from the screen edges, like the lobby's corner controls, and kept the game screens and the timer strip clear of it. On a phone the bar now fits: End game is icon-only there and the step button takes two short lines instead of hanging below the bar.
+- Added the light/dark switch to the host's controls bar, the lobby and the player's screen (not during a question). The navbar is hidden in a game, so there was no way to switch theme.
+- Added an e2e test for images in a live game (`game-images.e2e.ts`): the cover on the host and phone title screens, and a question's image on the projector and, with questions shown on devices, on the phone, each checked as decoded. A media slot whose file is gone, or whose info response has no Content-Type, now draws nothing instead of a broken image or an error.
+- Made the podium's blocks grow up out of the floor line instead of flying in 160px from below, which on a projector looked like they rose from the bottom of the screen. Each name and score now arrives as its block lands. Pinned in `podium.e2e.ts`, which samples the winner's block every frame and failed with the old fly-in.
+- Fixed the whole podium dropping 21px when the winner's crown appeared: the crown was inserted on arrival and made its column taller. Its room is now held from the start.
+- Replaced the podium's Back with Finish, which goes to My Quizzes, and moved it and Download results into the host's controls bar, in the slot the step button used all game. They were a separate panel under the bar, out of line with it, with both buttons squashed to 20px tall. Finish is the one primary control on the screen.
+- Made every port of the local e2e stack follow `E2E_PORT_OFFSET`, so a second stack can run beside another session's or another worktree's (`E2E_PORT_OFFSET=100 KEEP_UP=1 bash e2e/run.sh --list` puts the app on 3100). `run.sh` exports `E2E_BASE_URL` and `E2E_API_URL` for the specs, and `stop.sh` takes the same offset.
+
 ### Open issues in TODO, 8 Oct
 
 - Listed every open GitHub issue in `TODO.md` (#3, #4, #22, #33, #34, #35), including the new #35 on editing, launching and deleting the same quiz from several tabs, devices or while a game is live.

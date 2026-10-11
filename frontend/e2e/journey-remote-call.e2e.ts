@@ -20,7 +20,8 @@ import {
 	joinAsPlayer,
 	mc,
 	rememberAnonQuiz,
-	saveQuiz
+	saveQuiz,
+	showResults
 } from './helpers';
 
 const Q1 = 'Capital of Portugal?';
@@ -77,10 +78,7 @@ test('a host with nobody in the room runs the whole game on everyone’s phones'
 
 		await ana.page.getByRole('button', { name: 'Lisbon' }).click();
 		await bruno.page.getByRole('button', { name: 'Porto' }).click();
-		await page
-			.getByRole('button', { name: /Show results/ })
-			.first()
-			.click();
+		await showResults(page);
 		await expect(ana.page.getByText('Correct!')).toBeVisible({ timeout: 15_000 });
 		await expect(bruno.page.getByText('Not this time')).toBeVisible();
 	});
@@ -93,10 +91,7 @@ test('a host with nobody in the room runs the whole game on everyone’s phones'
 		}
 		await ana.page.getByRole('button', { name: 'Tree frog' }).click();
 		await bruno.page.getByRole('button', { name: 'Tree frog' }).click();
-		await page
-			.getByRole('button', { name: /Show results/ })
-			.first()
-			.click();
+		await showResults(page);
 	});
 
 	await test.step('the game ends on the podium as usual', async () => {

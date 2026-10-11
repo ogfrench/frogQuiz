@@ -257,6 +257,27 @@ test('an existing anonymous quiz can be reopened, edited and saved', async ({ pa
 	expect(stored.description).toBe('Edited description');
 });
 
+// The editor hides the navbar, and leaving it with Back is a client-side goto to the
+// quiz, so the view page must put it back. A navbar missing on the view page was reported
+// on 7 Oct; this path was not the cause, but it is the one most likely to break it.
+test('Back from the editor lands on the quiz with the navbar', async ({ page }) => {
+	await startNewQuiz(page, `Navbar ${Date.now()}`);
+	await addQuestion(page, /^Multiple choice/, 'Q', [
+		['A', true],
+		['B', false]
+	]);
+	await saveQuizButton(page).click();
+	await page.waitForURL(/\/view\//);
+	const id = page.url().split('/view/')[1];
+
+	await page.goto(`/edit?quiz_id=${id}`);
+	await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
+	await page.getByRole('link', { name: 'Back' }).click();
+	await page.waitForURL(new RegExp(`/view/${id}`));
+	await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
+	await expect(page.getByRole('contentinfo')).toBeVisible();
+});
+
 test('the editor fits a phone', async ({ browser }) => {
 	const ctx = await browser.newContext({ viewport: PHONE });
 	const page = await ctx.newPage();

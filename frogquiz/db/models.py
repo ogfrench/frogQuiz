@@ -343,6 +343,17 @@ class TokenData(BaseModel):
     email: str | None = None
 
 
+# Avatar seats outlive the game they belong to. Every write to the game refreshes them
+# (update_game and PlayGame.save), so they can never expire while the game key still exists:
+# the game key lives two hours after its last write, these five.
+AVATAR_TTL_SECONDS = 18000
+
+
+def avatar_seat_keys(game_pin: str) -> tuple[str, str]:
+    """The seat map and the counter behind it, for one game."""
+    return f"game:{game_pin}:avatars", f"game:{game_pin}:avatar_seq"
+
+
 class PlayGame(BaseModel):
     quiz_id: uuid.UUID | str
     description: str
@@ -372,6 +383,8 @@ class PlayGame(BaseModel):
 
     async def save(self, game_pin: str, ex: int = 7200):
         await redis.set(f"game:{game_pin}", self.model_dump_json(), ex=ex)
+        for key in avatar_seat_keys(game_pin):
+            await redis.expire(key, AVATAR_TTL_SECONDS)
 
     def to_player_data(self) -> dict:
         return (

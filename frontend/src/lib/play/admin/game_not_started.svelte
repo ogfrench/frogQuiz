@@ -15,7 +15,9 @@ SPDX-License-Identifier: MPL-2.0
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import X from '@lucide/svelte/icons/x';
+	import FrogAvatar from '$lib/components/FrogAvatar.svelte';
 	import LockToggle from '$lib/play/admin/lock_toggle.svelte';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state';
 
@@ -55,7 +57,9 @@ SPDX-License-Identifier: MPL-2.0
 		{$t('admin_page.cancel_game')}
 	</ConfirmAction>
 </div>
-<div class="fixed top-3 right-3 z-30">
+<!-- The navbar is hidden in a game, and with it the only theme switch. -->
+<div class="fixed top-3 right-3 z-30 flex items-center gap-2">
+	<ThemeToggle class="bg-card/80 border-border border shadow-sm backdrop-blur" />
 	<LockToggle locked={game_state.quiz_data?.locked} {socket_game_controls} />
 </div>
 
@@ -93,7 +97,7 @@ SPDX-License-Identifier: MPL-2.0
 			type="button"
 			onclick={() => (fullscreen_open = true)}
 			aria-label={$t('play_page.show_qr_full_screen')}
-			class="rounded-2xl bg-white p-3 shadow-xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+			class="rounded-2xl bg-white p-3 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
 		>
 			<img
 				alt="QR code to join the game"
@@ -139,7 +143,7 @@ SPDX-License-Identifier: MPL-2.0
 									player.username,
 									game_state.players
 								)}
-							class="group rounded-full border border-border bg-card px-4 py-2 text-lg font-medium shadow-sm
+							class="group flex items-center gap-2.5 rounded-full border border-border bg-card py-1.5 pr-4 pl-1.5 text-lg font-medium shadow-sm
 								transition-all hover:border-destructive hover:text-destructive
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
 								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
@@ -148,6 +152,9 @@ SPDX-License-Identifier: MPL-2.0
 							<!-- Wraps inside the pill rather than stretching it past the projector: the
 						     list is flex-wrap, so a chip that is wider than the screen overflows
 						     the page instead of going to the next line. -->
+							<!-- The frog is what a player looks for on the projector to see they are
+							     in; the name confirms it. -->
+							<FrogAvatar name={player.username} class="size-9 lg:size-12" />
 							<span class="block max-w-[20ch] wrap-anywhere group-hover:line-through"
 								>{player.username}</span
 							>

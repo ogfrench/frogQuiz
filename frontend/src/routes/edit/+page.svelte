@@ -7,12 +7,9 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import Editor from '$lib/editor.svelte';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import { getAnonSecret } from '$lib/anon_quiz';
-
-	navbarVisible.visible = false;
 
 	interface Data {
 		public: boolean;

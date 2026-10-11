@@ -8,9 +8,14 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import Check from '@lucide/svelte/icons/check';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import Download from '@lucide/svelte/icons/download';
+	import WifiOff from '@lucide/svelte/icons/wifi-off';
+	import Link2Off from '@lucide/svelte/icons/link-2-off';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Button } from '$lib/components/ui/button';
 	import { socket } from '$lib/socket';
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import SomeAdminScreen from '$lib/admin.svelte';
 	import GameNotStarted from '$lib/play/admin/game_not_started.svelte';
 	import { onMount } from 'svelte';
@@ -19,11 +24,13 @@ SPDX-License-Identifier: MPL-2.0
 	import { page } from '$app/state';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
-	import { QuizQuestionType, type QuizData } from '$lib/quiz_types';
+	import type { QuizData } from '$lib/quiz_types';
 	import type { Player, PlayerAnswer } from '$lib/admin';
 	import { tinykeys } from '$lib/tinykeys';
-
-	navbarVisible.visible = false;
+	import { nextStep, performStep, stepState } from '$lib/play/admin/next_step';
+	import { addSeat, setSeats } from '$lib/play/avatars.svelte';
+	import { resumeFrom } from '$lib/play/admin/resume';
+	import { totalsFromResults } from '$lib/play/admin/totals';
 
 	// Save results is hidden for the MVP (MVP.md D4).
 	const SAVE_RESULTS_ENABLED = false;
@@ -54,6 +61,7 @@ SPDX-License-Identifier: MPL-2.0
 		public control_visible: boolean;
 		/** Host-side only: the scoreboard step between the answers and the next question. */
 		public scoreboard_open: boolean;
+		public results_requested_for: number;
 
 		constructor(game_id: string) {
 			this.game_id = game_id;
@@ -69,40 +77,7 @@ SPDX-License-Identifier: MPL-2.0
 			this.question_results = $state(null);
 			this.answer_count = $state(0);
 			this.scoreboard_open = $state(false);
-		}
-
-		is_game_ready_to_start(): boolean {
-			return !this.game_started && this.players.length > 0;
-		}
-
-		is_game_starting(): boolean {
-			return this.game_started && this.selected_question === -1;
-		}
-
-		is_active_question_last_question(): boolean {
-			return this.selected_question + 1 === this.quiz_data.questions.length;
-		}
-
-		is_question_results_visible(): boolean {
-			return this.timer_res === '0' && this.question_results !== null;
-		}
-
-		is_active_question_slide(): boolean {
-			return (
-				this.quiz_data?.questions?.[this.selected_question]?.type === QuizQuestionType.SLIDE
-			);
-		}
-
-		is_question_ended(): boolean {
-			return (
-				this.timer_res === '0' &&
-				this.question_results === null &&
-				this.selected_question !== -1
-			);
-		}
-
-		is_question_still_ongoing(): boolean {
-			return this.timer_res !== '0' && this.selected_question !== -1;
+			this.results_requested_for = $state(-1);
 		}
 	}
 
@@ -111,50 +86,121 @@ SPDX-License-Identifier: MPL-2.0
 	const game_pin = data.game_pin;
 	let errorMessage = $state('');
 	let success = $state(false);
+	// Nothing on this screen renders until the server answers `registered_as_admin`, so a
+	// socket that never connects (a blocked origin on a preview, a backend that is down) or
+	// a link with no game in it left a blank page with no way out.
+	let connectFailed = $state<'unreachable' | 'no_game' | null>(null);
+	const REPLY_TIMEOUT_MS = 8000;
 	let dataexport_download_a = $state<HTMLAnchorElement>();
 	let warnToLeave = true;
+	// Joins, leaves and seats that arrive between asking to register and the snapshot are held
+	// and applied after it. The snapshot is the server's state at one moment, so an event that
+	// raced it would otherwise be erased by it, and a join that completed during the snapshot
+	// never reached this screen.
+	let awaiting_snapshot = false;
+	let held: Array<() => void> = [];
+	const hold = (apply: () => void) => {
+		if (awaiting_snapshot) held.push(apply);
+		else apply();
+	};
 
 	const socket_game_controls: SocketGameControls = new SocketGameControls(socket);
 	let game_state: GameState = $state(new GameState(game_token));
 
 	const connect = async () => {
+		awaiting_snapshot = true;
+		held = [];
 		socket.emit('register_as_admin', {
 			game_pin: game_pin,
 			game_id: game_token
 		});
 	};
 	onMount(() => {
+		let waiting: ReturnType<typeof setTimeout> | undefined;
+		// Only before the game has been reached: a dropped connection mid-game is the
+		// reconnect path below, and must not replace a running game with an error.
+		const unreachable = () => {
+			if (!success) connectFailed = 'unreachable';
+		};
 		if (auto_connect) {
-			connect();
+			// The socket connects on its own (socket.ts). Registering here as well while it is
+			// still connecting sent register_as_admin twice on a cold load, and the second
+			// snapshot overwrote the first. The connect listener below registers once it is up.
+			if (socket.connected) connect();
 			// A reconnect gets a new sid, which the server doesn't know as the admin
 			// of this game, so re-register or no player event ever arrives again.
 			socket.on('connect', connect);
+			socket.on('connect_error', unreachable);
+			waiting = setTimeout(unreachable, REPLY_TIMEOUT_MS);
+		} else {
+			// No token or PIN in the link: there is no game to register for.
+			connectFailed = 'no_game';
 		}
-		tinykeys(window, {
+		const unbind_keys = tinykeys(window, {
 			Enter: next_action,
 			Space: next_action
 		});
+		return () => {
+			clearTimeout(waiting);
+			socket.off('connect_error', unreachable);
+			socket.off('connect', connect);
+			unbind_keys();
+		};
 	});
 	socket.on('registered_as_admin', (data) => {
 		game_state.quiz_data = JSON.parse(data['game']);
 		console.log(game_state.quiz_data);
+		// A reload mid-game used to show the lobby again, with its music, because only
+		// `start_game` ever set this. The game says whether it has started.
+		game_state.game_started = Boolean(game_state.quiz_data?.started);
 		game_state.players = data['players'] ?? [];
-		// After a dropped connection, not a reload: what happened to the question while
-		// this screen was away. Without it the projector waited out the full timer (E11).
-		if (game_state.selected_question >= 0) {
+		setSeats(data['avatars']);
+		const server_question = game_state.quiz_data?.current_question ?? -1;
+		if (game_state.selected_question >= 0 && server_question === game_state.selected_question) {
+			// After a dropped connection, not a reload: what happened to the question while
+			// this screen was away. Without it the projector waited out the full timer (E11).
 			game_state.answer_count = data['answer_count'] ?? game_state.answer_count;
 			if (data['question_open'] === false) game_state.timer_res = '0';
+		} else {
+			// A fresh load of a game already under way (a reload, or the host link opened
+			// again), or a reconnect that missed the move to the next question. A reload
+			// used to come back on the cover, whose "Next question 1" sent the game back to
+			// the start. Picks up the question the server is on, or the podium.
+			const resume = resumeFrom({ ...data, game: game_state.quiz_data });
+			if (resume) Object.assign(game_state, resume);
+			if (data['final_results']) {
+				game_state.player_scores = totalsFromResults(
+					data['final_results'],
+					game_state.players.map((p) => p.username)
+				);
+				game_state.final_results = data['final_results'];
+			}
 		}
 		success = true;
+		connectFailed = null;
+		awaiting_snapshot = false;
+		for (const apply of held) apply();
+		held = [];
 	});
 	socket.on('locked', (int_data) => {
-		game_state.quiz_data.locked = int_data.locked;
+		hold(() => {
+			if (game_state.quiz_data) game_state.quiz_data.locked = int_data.locked;
+		});
 	});
 	socket.on('player_joined', (int_data) => {
-		game_state.players = [...game_state.players, int_data];
+		hold(() => {
+			// Idempotent: the snapshot may already list this player.
+			if (game_state.players.some((p) => p.username === int_data.username)) return;
+			game_state.players = [...game_state.players, int_data];
+		});
 	});
+	// One seat per join. A player who leaves keeps theirs, since they are still on the
+	// scoreboard, so nothing removes from this.
+	socket.on('avatar', (int_data) => hold(() => addSeat(int_data)));
 	socket.on('player_left', (int_data) => {
-		game_state.players = game_state.players.filter((p) => p.username !== int_data.username);
+		hold(() => {
+			game_state.players = game_state.players.filter((p) => p.username !== int_data.username);
+		});
 	});
 	// The server says the lobby is closed; only then leave, so a cancel that never
 	// reached it doesn't strand players on a game the host has walked away from.
@@ -205,8 +251,12 @@ SPDX-License-Identifier: MPL-2.0
 		results_saved = true;
 	});
 
+	// Once the podium is up the game is over and there is nothing left to lose, so leaving
+	// is just leaving. The guard stayed on, and Back from the podium asked "Leave site?".
+	// Back still does a full page load on purpose: this page registers socket handlers it
+	// never removes, and a reload is what clears them before the next game.
 	const confirmUnload = () => {
-		if (warnToLeave) {
+		if (warnToLeave && !show_final_results) {
 			event.preventDefault();
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
@@ -236,29 +286,59 @@ SPDX-License-Identifier: MPL-2.0
 		JSON.stringify(game_state.final_results) !== JSON.stringify([null])
 	);
 
-	// This function in called in every keyboard event in this page
-	const next_action = () => {
+	// Enter and Space do what the controls bar's button would: the same step, from
+	// next_step.ts. This had its own copy of the rules, which skipped the scoreboard and
+	// never closed it. A focused control handles its own key -- the bar's button, a
+	// dialog, a switch -- or the press would act twice.
+	const next_action = (e: KeyboardEvent) => {
+		if (!game_state.game_started) return;
+		const target = e.target as HTMLElement | null;
 		if (
-			game_state.is_active_question_last_question() &&
-			(game_state.is_question_results_visible() || game_state.is_active_question_slide())
+			target?.closest('button, a, input, textarea, select, [role="switch"], [role="dialog"]')
 		) {
-			socket_game_controls.get_final_results();
-		} else if (
-			game_state.is_game_starting() ||
-			game_state.is_question_results_visible() ||
-			game_state.is_active_question_slide()
-		) {
-			socket_game_controls.set_question_number(game_state.selected_question + 1);
-		} else if (game_state.is_question_still_ongoing()) {
-			socket_game_controls.show_solutions();
-			game_state.timer_res = '0';
-		} else if (game_state.is_question_ended()) {
-			socket_game_controls.get_question_results(game_token, game_state.shown_question_now);
-		} else {
-			console.warn('No action available for this event');
+			return;
 		}
+		e.preventDefault();
+		performStep(nextStep(stepState(game_state)), socket_game_controls, game_state, game_token);
 	};
 </script>
+
+{#snippet finish_actions()}
+	<!-- In the controls bar, where the step button was (controls.svelte). The token is
+	     one-shot and the server deletes it on download, so pressing again simply mints
+	     another one. Outline, not secondary: the secondary token is near-white on the
+	     podium's white ground and read as a line of text rather than a control. -->
+	<Button
+		variant="outline"
+		class="bg-card/80 backdrop-blur max-sm:max-w-28 max-sm:px-3 max-sm:text-xs max-sm:leading-tight max-sm:whitespace-normal"
+		disabled={export_pending}
+		onclick={request_answer_export}
+	>
+		<Download class="max-sm:hidden" aria-hidden="true" />
+		{export_pending
+			? $t('admin_page.requesting_export_results')
+			: $t('admin_page.download_export_results')}
+	</Button>
+	<!-- Hidden for an anonymous host. The backend writes the GameResults row with
+	     user=NULL, and every read path in routers/results.py is user-scoped, so the row it
+	     saves is unreachable afterwards. Read from `data`, not the `signedIn` store -- see
+	     +page.server.ts. Also hidden for signed-in hosts for the MVP, with Results (D4):
+	     a saved result is only readable from /results. Restore `data.signed_in` here. -->
+	{#if SAVE_RESULTS_ENABLED && data.signed_in}
+		<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
+			{#if results_saved}
+				<Check class="size-4" aria-hidden="true" />
+				<span class="sr-only">{$t('admin_page.save_results')}</span>
+			{:else}{$t('admin_page.save_results')}{/if}
+		</GrayButton>
+	{/if}
+	<!-- Finish, not Back: the game is over and there is nothing to go back to. The one
+	     primary control on the screen. /my-quizzes for everyone: it lists account quizzes
+	     when signed in and this browser's quizzes when not (D1 in MVP.md). A full page
+	     load on purpose, as Back always was: this page registers socket handlers it never
+	     removes, and a client-side navigation left them running, in the game's rooms. -->
+	<Button href="/my-quizzes" data-sveltekit-reload>{$t('words.finish')}</Button>
+{/snippet}
 
 <svelte:window onbeforeunload={confirmUnload} />
 <svelte:head>
@@ -274,75 +354,68 @@ SPDX-License-Identifier: MPL-2.0
 	class:text-black={bg_color}
 >
 	{#if JSON.stringify(game_state.final_results) !== JSON.stringify([null])}
-		{#if game_state.control_visible}
-			<!-- Two separately positioned fixed divs at top-14 and top-[6.5rem], each
-			     wrapped in a w-fit that fought GrayButton's own w-full, so the pair
-			     rendered as two misaligned pills of different widths hand-placed with
-			     magic numbers. One stack, below the h-12 controls bar, both the same
-			     width. -->
-			<!-- A host can run a game from a phone, where a 176px panel pinned top-right covers
-			     the podium it is sitting on. Below sm it is a row along the bottom instead,
-			     clear of the safe area. -->
-			<div
-				class="fixed inset-x-3 bottom-3 z-30 flex flex-row items-stretch gap-2 pb-[env(safe-area-inset-bottom,0px)] sm:inset-x-auto sm:top-16 sm:right-4 sm:bottom-auto sm:w-44 sm:flex-col sm:pb-0"
-			>
-				<!-- "Download results" used to be the only action here, which left the host
-				     stuck on the podium with nowhere to go once a game ended. -->
-				<!-- /my-quizzes for everyone: it lists account quizzes when signed in and
-				     this browser's quizzes when not (D1 in MVP.md). -->
-				<!-- Outline, not secondary: the podium is a white screen and the secondary
-				     token is near-white on it, so "Request result download" read as a line of
-				     text rather than a control. -->
-				<GrayButton
-					href="/my-quizzes"
-					flex={true}
-					variant="outline"
-					class="flex-1 min-w-0 sm:w-full"
-				>
-					<ArrowLeft class="size-4" aria-hidden="true" />
-					{$t('words.back')}
-				</GrayButton>
-				<!-- The token is one-shot and the server deletes it on download, so pressing
-				     again simply mints another one. -->
-				<GrayButton
-					variant="outline"
-					class="flex-1 min-w-0 sm:w-full"
-					disabled={export_pending}
-					onclick={request_answer_export}
-				>
-					{export_pending
-						? $t('admin_page.requesting_export_results')
-						: $t('admin_page.download_export_results')}
-				</GrayButton>
-				<!-- Hidden for an anonymous host. The backend writes the GameResults row
-				     with user=NULL, and every read path in routers/results.py is
-				     user-scoped, so the row it saves is unreachable afterwards. The
-				     podium and the spreadsheet export both work without an account and
-				     stay. Read from `data`, not the `signedIn` store -- see +page.server.ts. -->
-				<!-- Also hidden for signed-in hosts for the MVP, with Results (D4): a saved
-				     result is only readable from /results. Restore `data.signed_in` here. -->
-				{#if SAVE_RESULTS_ENABLED && data.signed_in}
-					<GrayButton onclick={save_quiz} flex={true} disabled={results_saved}>
-						{#if results_saved}
-							<Check class="size-4" aria-hidden="true" />
-							<span class="sr-only">{$t('admin_page.save_results')}</span>
-						{:else}{$t('admin_page.save_results')}{/if}
-					</GrayButton>
-				{/if}
-			</div>
-		{/if}
 		<FinalResults bind:data={game_state.player_scores} {show_final_results} />
 	{/if}
 	{#if !success}
-		{#if errorMessage !== ''}
+		{#if errorMessage !== '' || connectFailed !== null}
 			<!-- The navbar is hidden on the host screen, so a failed registration used to
-			     leave a red line and no way out. -->
-			<div class="fq-stage text-center">
-				<p class="text-destructive" role="alert">{errorMessage}</p>
-				<GrayButton href="/my-quizzes">
-					<ArrowLeft class="size-4" aria-hidden="true" />
-					{$t('words.back')}
-				</GrayButton>
+			     leave a red line and no way out. The server's own refusal wins over the
+			     connection message: it is the more specific one. -->
+			<!-- The same card the site's other error screens use (ErrorPage.svelte), which cannot
+			     be reused as it is: it wants an HTTP status and offers Home, not Back. Buttons
+			     size to their content; GrayButton is w-full and ran edge to edge here. -->
+			<div class="fq-stage">
+				<Card.Root class="w-full max-w-md" role="alert">
+					<!-- Card.Header is a grid, so centring the icon takes justify-items. -->
+					<Card.Header class="justify-items-center gap-3 text-center">
+						<div
+							class="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full"
+						>
+							{#if errorMessage === '' && connectFailed === 'unreachable'}
+								<WifiOff class="size-6" aria-hidden="true" />
+							{:else if errorMessage === '' && connectFailed === 'no_game'}
+								<Link2Off class="size-6" aria-hidden="true" />
+							{:else}
+								<TriangleAlert class="size-6" aria-hidden="true" />
+							{/if}
+						</div>
+						<h1 data-slot="card-title" class="text-2xl font-semibold tracking-tight">
+							{#if errorMessage !== ''}
+								{$t('error_page.unknown_error_title')}
+							{:else if connectFailed === 'no_game'}
+								{$t('admin_page.no_game_in_link')}
+							{:else}
+								{$t('admin_page.connection_failed')}
+							{/if}
+						</h1>
+						<Card.Description class="text-base">
+							{#if errorMessage !== ''}
+								{errorMessage}
+							{:else if connectFailed === 'no_game'}
+								{$t('admin_page.no_game_in_link_hint')}
+							{:else}
+								{$t('admin_page.connection_failed_hint')}
+							{/if}
+						</Card.Description>
+					</Card.Header>
+					<Card.Footer class="justify-center gap-2">
+						<!-- Reloading only helps when the socket could not be reached. -->
+						{#if errorMessage === '' && connectFailed === 'unreachable'}
+							<Button onclick={() => location.reload()}
+								>{$t('words.try_again')}</Button
+							>
+						{/if}
+						<Button
+							href="/my-quizzes"
+							variant={errorMessage === '' && connectFailed === 'unreachable'
+								? 'outline'
+								: 'default'}
+						>
+							<ArrowLeft aria-hidden="true" />
+							{$t('words.back')}
+						</Button>
+					</Card.Footer>
+				</Card.Root>
 			</div>
 		{/if}
 	{:else if !game_state.game_started}
@@ -353,7 +426,7 @@ SPDX-License-Identifier: MPL-2.0
 			cqc_code={page.url.searchParams.get('cqc_code')}
 		/>
 	{:else}
-		<SomeAdminScreen {game_token} {bg_color} bind:game_state />
+		<SomeAdminScreen {game_token} {bg_color} bind:game_state finish={finish_actions} />
 	{/if}
 </div>
 <a

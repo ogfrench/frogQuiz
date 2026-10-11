@@ -12,6 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Minus from '@lucide/svelte/icons/minus';
+	import FrogAvatar from '$lib/components/FrogAvatar.svelte';
 
 	const { t } = getLocalization();
 
@@ -72,6 +73,10 @@ SPDX-License-Identifier: MPL-2.0
 					<span class="w-8 text-xl font-bold tabular-nums lg:w-12 lg:text-3xl">
 						{player.place}
 					</span>
+					<!-- Big enough to be found from the back of the room: a player spots their
+					     frog before they have read the name. neutral-100, not the muted token,
+					     because this card is white in both themes. -->
+					<FrogAvatar name={player.name} class="size-11 bg-neutral-100 text-neutral-500 lg:size-16" />
 					<span class="min-w-0 flex-1 truncate text-lg font-medium lg:text-3xl">
 						{player.name}
 					</span>
