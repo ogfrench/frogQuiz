@@ -124,6 +124,7 @@ A question for François is asked at a step boundary, unless it blocks the work.
 
 - [x] CI's first run on #57 failed four checks, each diagnosed and fixed (see Plan changes): Meilisearch moved to v1.54.3, the postgres scan skips gosu, gitleaks is pinned, and `run.sh` finds a pipx pipenv.
 - [x] The phone timer ring empties, as the host's bar does (François).
+- [x] The host's title card wraps a long title. CI's first e2e run found it overflowing.
 - [x] The cheap review's fixes:
   - the sslip.io hostname is allowed by value in `.gitleaks.toml`, not by commit
   - CI keeps Postgres's own log
@@ -191,7 +192,7 @@ Done above.
 ### Step 5: review and consistency
 
 - **#42:** go through every hidden menu.
-- **#44:** the full visual pass, including the four pages still on the old layout.
+- **#44:** the full visual pass, including the four pages still on the old layout. The capture adds the host's title card before question 1, which it has never shot.
 - **#50:** the docs, and the privacy and terms pages.
 
 ### Step 6: robustness and release
@@ -258,3 +259,7 @@ Done above.
     - The Meilisearch rollback missed the volume declaration, so compose would have refused it.
   - **Moved to step 3:** the host's answered count can exceed the player count.
   - **One local e2e failure,** the lobby QR keyboard test. It pressed Enter before focus reached the dialog's Close button, and the test now waits for that.
+- **11 Oct, CI's first e2e run:** 216 passed, 2 failed.
+  - **The QR test:** the same race as locally.
+  - **A real overflow, older than V1:** on the host's title card before question 1, a title with no spaces ran 757px off the projector. The test had only checked that screen by chance, so it never failed locally. The card now wraps the title, the test checks the card on purpose, and the visual capture adds this screen in step 5.
+  - **Meilisearch rebuild, tested on a stack with real quizzes:** after a wipe, a signed-in search rebuilt the index from Postgres (6 of 6) and found the probe quiz, and so did an API restart. Search needs a signed-in user, which the first attempt at the test missed.

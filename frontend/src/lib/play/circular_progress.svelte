@@ -10,7 +10,8 @@ SPDX-License-Identifier: MPL-2.0
 		progress: number;
 		text: string;
 		color: string;
-		/** Any CSS length. The phones keep 120px; the projector passes a larger, fluid one. */
+		/** Any CSS length. Every caller uses 120px; the projector passed a larger one until
+		 * its timer became the drain bar. */
 		size?: string;
 	}
 

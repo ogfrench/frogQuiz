@@ -40,6 +40,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - **Backend tests in CI:** they also run when a pull request only changes `Pipfile`, `Pipfile.lock`, a migration, `.env.ci`, `run_tests.sh`, `alembic.ini` or `docker-compose.dev.yml`. A Dependabot lock update used to skip them.
 - **Image scan:** each job fails if its exact image and tag are no longer in `docker-compose.yml`, so a tag bumped there cannot leave the scan on the old one. An image newly added to compose still has to be added to the scan by hand.
 - **Deploy guide:** the Meilisearch rollback also restores the old volume's declaration, which compose needs, and the audit section says what each workflow actually runs on.
+- **e2e:** the lobby QR keyboard test waits for focus to reach the dialog's Close button before pressing Enter. It pressed too early in 2 or 3 runs of 20, on the trigger behind the dialog, which only opened it again.
+- **Host title card:** the title and description shown before the first question wrap a long word instead of running off the projector. A title with no spaces overflowed by 757px. `hostile-text.e2e.ts` checks this screen now; it used to reach it only by chance.
 
 ### V1 started, 11 Oct
 

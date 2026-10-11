@@ -137,6 +137,9 @@ test('the full-screen QR code closes from the keyboard', async ({ page, request 
 	await expect(qr).toBeFocused();
 	await qr.press('Enter');
 	await expect(dialog).toBeVisible();
+	// The dialog moves focus to Close once it has opened. An Enter before that lands on
+	// the trigger behind it, which only opens it again. It failed 2 and 3 times in two runs of 20.
+	await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
 	await page.keyboard.press('Enter');
 	await expect(dialog).toBeHidden();
 });

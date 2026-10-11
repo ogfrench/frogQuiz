@@ -65,4 +65,5 @@ The capture covered 168 screens: the full signed-out set (80, with the gap close
 | Every signed-out screen | 834, 1440 | both | The capture gap above | Fixed in `visual.e2e.ts` |
 | `/account/oauth-error` | 390 | both | Besides the axe finding, the heading runs to the screen edge with no gutter | Step 5 (#44) |
 | Host question | 1440, 1920 | both | Drain bar checked: "N of M answered", the bar and the seconds sit on one line above the answers, and no shot overflows | Kept |
+| Host title card, before question 1 | 1280 | light | Found by CI's first e2e run, not by the capture, which has no shot of this screen. A title or description with no spaces ran 757 to 764px off the projector: `admin.svelte` set it at `text-7xl` with no word breaking. It predates V1. The test only caught it when CI was slow, because the long word it waited for is on this screen too | Fixed with `wrap-anywhere`, as on the question screen. `hostile-text.e2e.ts` now checks this screen on purpose, and failed before the fix. Capturing it is added to step 5 |
 
