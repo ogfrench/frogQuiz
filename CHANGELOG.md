@@ -4,6 +4,21 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Full review fixes before merge, 10 Oct
+
+- Fixed a host reload mid-game coming back on the quiz's cover, where one press of "Next question (1)" sent the running game back to the first question. The host now comes back on the question that is up, with its clock, its answer count and the running totals, or on the podium if the game had ended (#51).
+- The server refuses to move a game to a question it has already reached, so no client can rewind a running game.
+- The answers come up 2 seconds after the host's clock runs out, not 0.8: the server still takes a tap for 1.5 seconds after the clock, and closing the question sooner refused those taps.
+- Pressing Show results inside that delay no longer sends a second request when the reply is slow.
+- Finish on the podium is a full page load again, as Back was, so the host page's socket handlers do not stay running after the game.
+- The end-of-game download writes answers, usernames and question text as text in every sheet, not only on the Players sheet, so a value starting with "=" can no longer become a formula.
+- Every socket handler that validates a payload refuses one that is not an object, instead of raising.
+- An error page shows the navbar and footer again on the editor and game routes.
+- The question tick shares one audio context and one decoded track across the game, instead of making a new context and decoding the track again at every question.
+- A host whose connection drops just as the game moves on picks up the new question when it reconnects, instead of offering a Next the server would refuse. A resumed question's clock counts down even when the host screen was already up.
+- The remote control (hidden for the MVP) starts from the question the game is on, not from the first.
+- Two e2e specs no longer race: the crowd-seat spec waits for the late seat map before checking that no second one comes, and the host reload specs no longer wait for a log line only the player page prints.
+
 ### Review fixes before merge, 8 Oct
 
 - Fixed a host reload mid-game showing the lobby, and its music, over the live game: the started state now comes back from the server.

@@ -46,7 +46,17 @@ export interface StepGame {
 	final_results: unknown[];
 	quiz_data: { questions: NextStepState['questions'] } | null | undefined;
 	shown_question_now: number;
+	/** The question whose answers were last asked for, by a press or automatically. */
+	results_requested_for?: number;
 }
+
+/**
+ * How long after the host's clock reaches zero its answers come up by themselves. Longer
+ * than the server's ANSWER_GRACE_MS (1.5 s, socket_server/__init__.py), which still takes a
+ * tap sent in the last instant from a phone: closing the question at 0.8 s refused exactly
+ * those taps. The rest is room for the phone's own round trip.
+ */
+export const AUTO_RESULTS_DELAY_MS = 2000;
 
 export const stepState = (g: Omit<StepGame, 'shown_question_now'>): NextStepState => ({
 	selected_question: g.selected_question,
@@ -57,7 +67,7 @@ export const stepState = (g: Omit<StepGame, 'shown_question_now'>): NextStepStat
 	questions: g.quiz_data?.questions ?? []
 });
 
-export const gameIsOver =(final_results: unknown[]): boolean =>
+export const gameIsOver = (final_results: unknown[]): boolean =>
 	!(final_results.length === 1 && final_results[0] === null);
 
 export const isLastQuestion = (s: Pick<NextStepState, 'selected_question' | 'questions'>) =>
@@ -114,6 +124,7 @@ export function performStep(
 			game_state.timer_res = '0';
 			return;
 		case 'show_results':
+			game_state.results_requested_for = game_state.selected_question;
 			controls.get_question_results(game_token, game_state.shown_question_now);
 			return;
 		case 'scoreboard':
@@ -127,6 +138,7 @@ export function performStep(
 			// the screen that shows them is skipped. On the last question the next thing
 			// is the podium -- it used to ask for a question past the end.
 			const last = isLastQuestion(stepState(game_state));
+			game_state.results_requested_for = game_state.selected_question;
 			controls.get_question_results(game_token, game_state.shown_question_now);
 			setTimeout(() => {
 				if (last) controls.get_final_results();

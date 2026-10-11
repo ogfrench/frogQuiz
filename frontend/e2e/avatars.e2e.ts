@@ -57,10 +57,12 @@ test.describe('seats on the socket', () => {
 			expect(p.avatar).toBe(seats[p.username]);
 		}
 		// The last phone in was sent the whole map, itself included, and no update of its own.
+		// The map goes out after joined_game, which is all join() waits for, so with twenty
+		// joining at once it can still be on its way: let it land, then nothing more may come.
 		const last = players[19];
-		const lastMap = next<Seats>(last, 'avatars', 500);
-		const own = next(last, 'avatar', 500);
-		expect(await lastMap, 'map arrives once, on join').toBeNull();
+		const own = next(last, 'avatar', 1000);
+		await next<Seats>(last, 'avatars', 500);
+		expect(await next<Seats>(last, 'avatars', 500), 'map arrives once, on join').toBeNull();
 		expect(await own).toBeNull();
 	});
 

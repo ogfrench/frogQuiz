@@ -42,6 +42,16 @@ async def get_meili_data(quiz: Quiz) -> dict[str, Any]:
     }
 
 
+def _write_text(ws, row: int, col: int, value: Any) -> int:
+    """A string goes in as text, never as a formula; anything else as write() sees fit.
+
+    write() turns a string starting with "=" into a live formula in whoever opens the file.
+    """
+    if isinstance(value, str):
+        return ws.write_string(row, col, value)
+    return ws.write(row, col, value)
+
+
 async def generate_spreadsheet(
     quiz_results: dict[str, Any],
     quiz: Quiz,
@@ -82,7 +92,8 @@ async def generate_spreadsheet(
             answer_data = quiz_results[str(i)]
         except KeyError:
             continue
-        _ = worksheet.write(i + 1, 0, question["question"])
+        # The author may not be the host: a public quiz's question text is someone else's.
+        _ = _write_text(worksheet, i + 1, 0, question["question"])
         _ = worksheet.write(i + 1, 1, question["time"])
 
         try:
@@ -117,12 +128,12 @@ async def generate_spreadsheet(
         _ = ws.write(0, 1, "Correct")
         _ = ws.write(0, 2, "Username")
         for j, _ in enumerate(answer_data):
-            _ = ws.write(j + 1, 0, answer_data[j]["answer"])
+            _ = _write_text(ws, j + 1, 0, answer_data[j]["answer"])
             if answer_data[j]["right"]:
                 _ = ws.write(j + 1, 1, "True")
             else:
                 _ = ws.write(j + 1, 1, "False")
-            _ = ws.write(j + 1, 2, answer_data[j]["username"])
+            _ = _write_text(ws, j + 1, 2, answer_data[j]["username"])
 
     workbook.close()
     _ = storage.seek(0)

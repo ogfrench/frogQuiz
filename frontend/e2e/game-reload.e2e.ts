@@ -83,6 +83,46 @@ test('the host can reload mid-game and carry on', async ({ page, request, browse
 	await player.context.close();
 });
 
+test('a host who reloads mid-game comes back on the question, and Next moves on, not back', async ({
+	page,
+	request,
+	browser
+}) => {
+	// The reload came back on the quiz's cover with "Next question (1)", and one press sent
+	// the running game back to the first question, which every player had already answered.
+	const { player } = await setUp(page, request, browser);
+	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
+	await player.page.getByRole('button', { name: 'Yes' }).click();
+	await page.reload();
+	await expect(page.getByText('First?')).toBeVisible({ timeout: 15_000 });
+	const next = page.getByRole('button', { name: 'Next question (2)' });
+	await expect(next).toBeVisible({ timeout: 20_000 });
+	await next.click();
+	await expect(player.page.getByRole('button', { name: 'Up' })).toBeVisible({ timeout: 5000 });
+	await player.context.close();
+});
+
+test('a host who reloads on the podium gets the podium back', async ({
+	page,
+	request,
+	browser
+}) => {
+	const { player } = await setUp(page, request, browser);
+	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
+	await player.page.getByRole('button', { name: 'Yes' }).click();
+	await page.getByRole('button', { name: 'Next question (2)' }).click({ timeout: 20_000 });
+	await player.page.getByRole('button', { name: 'Up' }).click();
+	await page.getByRole('button', { name: 'Get final results' }).click({ timeout: 20_000 });
+	const finish = page.getByRole('link', { name: 'Finish' });
+	await expect(finish).toBeVisible();
+	await page.reload();
+	await expect(finish).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByRole('button', { name: /Next question/ })).toHaveCount(0);
+	await player.context.close();
+});
+
 test.describe('repeated and mid-question reloads', () => {
 	test('a player can reload twice and still be in the game', async ({
 		page,

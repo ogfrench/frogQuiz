@@ -4,6 +4,14 @@ SPDX-FileCopyrightText: 2026 frogQuiz contributors
 SPDX-License-Identifier: MPL-2.0
 -->
 
+<script module lang="ts">
+	// One context and one decoded track for the whole game. This component unmounts at every
+	// question's answers, and each mount made its own AudioContext and decoded the 1.4 MB
+	// track again. A context the host's first press unlocked also stays unlocked.
+	let shared_ctx: AudioContext | undefined;
+	let shared_track: Promise<AudioBuffer> | undefined;
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
@@ -61,9 +69,18 @@ SPDX-License-Identifier: MPL-2.0
 
 	const begin = async () => {
 		try {
-			ctx ??= new AudioContext();
+			const context = (ctx ??= shared_ctx ??= new AudioContext());
 			if (!buffer) {
-				buffer = await ctx.decodeAudioData(await (await fetch(Track)).arrayBuffer());
+				shared_track ??= fetch(Track)
+					.then((r) => r.arrayBuffer())
+					.then((b) => context.decodeAudioData(b));
+				try {
+					buffer = await shared_track;
+				} catch (e) {
+					// Not cached as a failure: the next question tries again.
+					shared_track = undefined;
+					throw e;
+				}
 			}
 			await ctx.resume();
 			if (ctx.state !== 'running') throw new Error('suspended');
@@ -110,10 +127,11 @@ SPDX-License-Identifier: MPL-2.0
 		else end();
 	});
 
+	// The context is shared and stays open for the next question; only this question's
+	// sound stops.
 	onMount(() => () => {
 		alive = false;
 		end();
-		setTimeout(() => ctx?.close(), 500);
 	});
 
 	const toggle = () => {

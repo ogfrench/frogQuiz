@@ -226,11 +226,19 @@ async def send_open_question(sid: str, game_data: PlayGame, username: str) -> No
         question = question_for_players(game_data, index)
         # The phone counts down from what it is sent. The full time made it show seconds
         # the server would no longer accept (E5).
-        shown_at = await redis.get(f"game:{game_data.game_pin}:current_time")
-        if shown_at is not None:
-            elapsed = (datetime.now() - datetime.fromisoformat(shown_at)).total_seconds()
-            question["time"] = str(max(1, math.ceil(float(question["time"]) - elapsed)))
+        left = await seconds_left(game_data)
+        if left is not None:
+            question["time"] = str(max(1, left))
         await sio.emit("set_question_number", {"question_index": index, "question": question}, room=sid)
+
+
+async def seconds_left(game_data: PlayGame) -> int | None:
+    """Whole seconds left on the current question by the server's clock, or None if unknown."""
+    shown_at = await redis.get(f"game:{game_data.game_pin}:current_time")
+    if shown_at is None or game_data.current_question < 0:
+        return None
+    elapsed = (datetime.now() - datetime.fromisoformat(shown_at)).total_seconds()
+    return math.ceil(float(game_data.questions[game_data.current_question].time) - elapsed)
 
 
 @sio.event
@@ -352,7 +360,7 @@ async def start_game(sid: str, _data: dict):
 async def register_as_admin(sid: str, data: dict):
     try:
         data = RegisterAsAdminData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -385,6 +393,8 @@ async def register_as_admin(sid: str, data: dict):
     answer_count = 0
     if game.current_question >= 0:
         answer_count = len(await AnswerDataList.get_redis_or_empty(game_pin, game.current_question))
+    left = await seconds_left(game) if game.question_show else None
+    final = await redis.get(f"game:{game_pin}:final_results")
     await sio.emit(
         "registered_as_admin",
         {
@@ -401,6 +411,13 @@ async def register_as_admin(sid: str, data: dict):
             # the full timer on a question that was over (E11).
             "answer_count": answer_count,
             "question_open": game.question_show,
+            # A reload mid-game came back on the cover, and its "Next question 1" sent the
+            # game back to the start. What the host needs to pick the game up where it is:
+            # the clock on an open question, every answer recorded so far (for the running
+            # totals), and the podium if the game is over.
+            "time_left": max(0, left) if left is not None else 0,
+            "results": await generate_final_results(game, game_pin) if game.started else {},
+            "final_results": json.loads(final) if final is not None else None,
         },
         room=sid,
     )
@@ -432,13 +449,21 @@ async def set_question_number(sid: str, data: str):
         return
     # Refused before the clock below is touched. "Hide results" on the last question used
     # to ask for the question after it, which raised IndexError; a negative number would
-    # have wrapped round to the last question. The questions never change mid-game, so
-    # checking them outside the transaction is safe.
+    # have wrapped round to the last question. The game only moves forward: a host who
+    # reloaded mid-game came back on "Next question 1", and one press sent the running game
+    # back to a question every player had already answered.
     current = await redis.get(f"game:{game_pin}")
-    if current is None or not 0 <= index < len(PlayGame.model_validate_json(current).questions):
+    if current is None:
+        return
+    current_game = PlayGame.model_validate_json(current)
+    if not current_game.current_question < index < len(current_game.questions):
         return
 
-    def show(game: PlayGame) -> None:
+    def show(game: PlayGame) -> bool | None:
+        # Checked again inside the transaction: two presses together both pass the check
+        # above, and the second must not show the same question twice.
+        if index <= game.current_question:
+            return False
         game.current_question = index
         game.question_show = True
 
@@ -447,21 +472,12 @@ async def set_question_number(sid: str, data: str):
     game_data = await update_game(game_pin, show)
     if game_data is None:
         return
-    if game_data.questions[int(float(data))].type == QuizQuestionType.SLIDE:
-        await sio.emit(
-            "set_question_number",
-            {
-                "question_index": int(float(data)),
-            },
-            room=sid,
-        )
+    if game_data.questions[index].type == QuizQuestionType.SLIDE:
+        await sio.emit("set_question_number", {"question_index": index}, room=sid)
         return
     await sio.emit(
         "set_question_number",
-        {
-            "question_index": int(float(data)),
-            "question": question_for_players(game_data, int(float(data))),
-        },
+        {"question_index": index, "question": question_for_players(game_data, index)},
         room=game_pin,
     )
 
@@ -471,7 +487,7 @@ async def submit_answer(sid: str, data: dict):
     now = datetime.now()
     try:
         data = SubmitAnswerData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -605,7 +621,7 @@ async def echo_time_sync(sid: str, data: str):
 async def kick_player(sid: str, data: dict):
     try:
         data = KickPlayerInput(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -636,7 +652,7 @@ class _RegisterAsRemoteInput(BaseModel):
 async def register_as_remote(sid: str, data: dict):
     try:
         data = _RegisterAsRemoteInput(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -669,7 +685,7 @@ class _SetControlVisibilityInput(BaseModel):
 async def set_control_visibility(sid: str, data: dict):
     try:
         data = _SetControlVisibilityInput(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return

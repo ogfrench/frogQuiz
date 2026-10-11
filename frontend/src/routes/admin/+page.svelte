@@ -29,6 +29,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { tinykeys } from '$lib/tinykeys';
 	import { nextStep, performStep, stepState } from '$lib/play/admin/next_step';
 	import { addSeat, setSeats } from '$lib/play/avatars.svelte';
+	import { resumeFrom } from '$lib/play/admin/resume';
+	import { totalsFromResults } from '$lib/play/admin/totals';
 
 	// Save results is hidden for the MVP (MVP.md D4).
 	const SAVE_RESULTS_ENABLED = false;
@@ -59,6 +61,7 @@ SPDX-License-Identifier: MPL-2.0
 		public control_visible: boolean;
 		/** Host-side only: the scoreboard step between the answers and the next question. */
 		public scoreboard_open: boolean;
+		public results_requested_for: number;
 
 		constructor(game_id: string) {
 			this.game_id = game_id;
@@ -74,6 +77,7 @@ SPDX-License-Identifier: MPL-2.0
 			this.question_results = $state(null);
 			this.answer_count = $state(0);
 			this.scoreboard_open = $state(false);
+			this.results_requested_for = $state(-1);
 		}
 	}
 
@@ -151,11 +155,26 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.game_started = Boolean(game_state.quiz_data?.started);
 		game_state.players = data['players'] ?? [];
 		setSeats(data['avatars']);
-		// After a dropped connection, not a reload: what happened to the question while
-		// this screen was away. Without it the projector waited out the full timer (E11).
-		if (game_state.selected_question >= 0) {
+		const server_question = game_state.quiz_data?.current_question ?? -1;
+		if (game_state.selected_question >= 0 && server_question === game_state.selected_question) {
+			// After a dropped connection, not a reload: what happened to the question while
+			// this screen was away. Without it the projector waited out the full timer (E11).
 			game_state.answer_count = data['answer_count'] ?? game_state.answer_count;
 			if (data['question_open'] === false) game_state.timer_res = '0';
+		} else {
+			// A fresh load of a game already under way (a reload, or the host link opened
+			// again), or a reconnect that missed the move to the next question. A reload
+			// used to come back on the cover, whose "Next question 1" sent the game back to
+			// the start. Picks up the question the server is on, or the podium.
+			const resume = resumeFrom({ ...data, game: game_state.quiz_data });
+			if (resume) Object.assign(game_state, resume);
+			if (data['final_results']) {
+				game_state.player_scores = totalsFromResults(
+					data['final_results'],
+					game_state.players.map((p) => p.username)
+				);
+				game_state.final_results = data['final_results'];
+			}
 		}
 		success = true;
 		connectFailed = null;
@@ -315,9 +334,10 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 	<!-- Finish, not Back: the game is over and there is nothing to go back to. The one
 	     primary control on the screen. /my-quizzes for everyone: it lists account quizzes
-	     when signed in and this browser's quizzes when not (D1 in MVP.md). No `target`,
-	     so it is a client-side navigation; GrayButton's `_self` made it a full load. -->
-	<Button href="/my-quizzes">{$t('words.finish')}</Button>
+	     when signed in and this browser's quizzes when not (D1 in MVP.md). A full page
+	     load on purpose, as Back always was: this page registers socket handlers it never
+	     removes, and a client-side navigation left them running, in the game's rooms. -->
+	<Button href="/my-quizzes" data-sveltekit-reload>{$t('words.finish')}</Button>
 {/snippet}
 
 <svelte:window onbeforeunload={confirmUnload} />

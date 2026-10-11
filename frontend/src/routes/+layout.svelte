@@ -41,7 +41,9 @@ SPDX-License-Identifier: MPL-2.0
 		'/edit/videos',
 		'/remote'
 	]);
-	const chrome = $derived(!FULLSCREEN_ROUTES.has(page.route.id ?? ''));
+	// An error page keeps the navigation, whatever route it was raised on: a failed load of
+	// /edit used to show the error with no navbar and no footer.
+	const chrome = $derived(page.error != null || !FULLSCREEN_ROUTES.has(page.route.id ?? ''));
 
 	if (browser) {
 		if (

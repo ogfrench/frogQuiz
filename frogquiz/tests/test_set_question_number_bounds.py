@@ -53,8 +53,10 @@ def game_server(monkeypatch):
         return {"game_pin": "123456", "admin": True}
 
     async def update(_pin, change):
+        # As update_game does: a change that returns False writes nothing.
         g = PlayGame.model_validate_json(fake.values["game:123456"])
-        change(g)
+        if change(g) is False:
+            return None
         shown.append(g.current_question)
         return g
 
@@ -81,3 +83,28 @@ def test_the_last_question_itself_is_still_shown(game_server):
     asyncio.run(server.set_question_number("sid", "1"))
     assert shown == [1]
     assert fake.writes == ["game:123456:current_time"]
+
+
+def _at_question(fake: FakeRedis, index: int) -> None:
+    g = PlayGame.model_validate_json(fake.values["game:123456"])
+    g.started = True
+    g.current_question = index
+    fake.values["game:123456"] = g.model_dump_json()
+
+
+@pytest.mark.parametrize("asked", ["0", "1"])
+def test_a_question_already_reached_is_refused(game_server, asked):
+    # A host who reloaded mid-game came back on "Next question 1", and one press sent the
+    # running game back to the first question, which every player had already answered.
+    fake, shown = game_server
+    _at_question(fake, 1)
+    asyncio.run(server.set_question_number("sid", asked))
+    assert shown == []
+    assert fake.writes == []
+
+
+def test_the_question_after_the_current_one_is_shown(game_server):
+    fake, shown = game_server
+    _at_question(fake, 0)
+    asyncio.run(server.set_question_number("sid", "1"))
+    assert shown == [1]

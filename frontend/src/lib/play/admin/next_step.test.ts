@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { QuizQuestionType } from '$lib/quiz_types';
-import { nextStep, performStep, type NextStepState } from './next_step';
+import { AUTO_RESULTS_DELAY_MS, nextStep, performStep, type NextStepState } from './next_step';
 
 const ABCD = { type: QuizQuestionType.ABCD };
 const RESULTS = { answers: [] };
@@ -31,7 +33,9 @@ describe('a round in the middle of the quiz', () => {
 		);
 	});
 	it('stops the clock while the question runs', () => {
-		expect(nextStep(at(0, quiz, { timer_res: '12', question_results: null }))).toBe('stop_time');
+		expect(nextStep(at(0, quiz, { timer_res: '12', question_results: null }))).toBe(
+			'stop_time'
+		);
 	});
 	it('shows the answers once time is up', () => {
 		expect(nextStep(at(0, quiz, { question_results: null }))).toBe('show_results');
@@ -71,7 +75,9 @@ describe('rounds with nothing to rank', () => {
 		expect(nextStep(at(0, [{ type: QuizQuestionType.VOTING }, ABCD]))).toBe('next_question');
 	});
 	it('nobody answering has no scoreboard', () => {
-		expect(nextStep(at(0, [ABCD, ABCD], { question_results: undefined }))).toBe('next_question');
+		expect(nextStep(at(0, [ABCD, ABCD], { question_results: undefined }))).toBe(
+			'next_question'
+		);
 	});
 	it('a hide-results question in the middle skips its answers', () => {
 		expect(
@@ -116,6 +122,27 @@ describe('doing the step', () => {
 		expect(c.set_question_number).not.toHaveBeenCalled();
 		vi.useRealTimers();
 	});
+	it('asking for the answers is recorded, so the automatic request does not send a second', () => {
+		// A press on Show results inside the automatic delay, with a slow reply, used to be
+		// followed by the timer's own request: every phone got the results twice.
+		const c = fake();
+		const s = game(at(0, [ABCD, ABCD], { question_results: null }), 0);
+		performStep('show_results', c, s, 'game');
+		expect(c.get_question_results).toHaveBeenCalledTimes(1);
+		expect((s as { results_requested_for?: number }).results_requested_for).toBe(0);
+	});
+});
+
+it('the automatic answers wait out the server grace for late taps', () => {
+	// The server still takes an answer ANSWER_GRACE_MS after the clock. Closing the question
+	// sooner than that refused the late taps the grace exists for.
+	const server = readFileSync(
+		join(import.meta.dirname, '../../../../../frogquiz/socket_server/__init__.py'),
+		'utf8'
+	);
+	const grace = Number(server.match(/^ANSWER_GRACE_MS = (\d+)$/m)?.[1]);
+	expect(grace).toBeGreaterThan(0);
+	expect(AUTO_RESULTS_DELAY_MS).toBeGreaterThan(grace);
 });
 
 it('nothing is next once the podium is up', () => {

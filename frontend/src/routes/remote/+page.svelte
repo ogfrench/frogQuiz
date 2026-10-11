@@ -130,6 +130,11 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	socket.on('registered_as_admin', (data) => {
 		game_data = JSON.parse(data.game);
+		// From the server's question, not -1: a remote opened or reloaded mid-game sent "Next
+		// question (1)", which the server now refuses, and was stuck there.
+		game_started = Boolean(game_data.started);
+		selected_question = game_data.current_question ?? -1;
+		shown_question_now = selected_question;
 	});
 
 	socket.on('start_game', (_) => {
@@ -154,7 +159,7 @@ SPDX-License-Identifier: MPL-2.0
 		question_results = null;
 		shown_question_now = data.question_index;
 		timer_res = game_data.questions[data.question_index].time;
-		selected_question = selected_question + 1;
+		selected_question = data.question_index;
 		timer(timer_res);
 	});
 
