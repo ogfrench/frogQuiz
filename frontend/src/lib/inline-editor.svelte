@@ -128,11 +128,11 @@ SPDX-License-Identifier: MPL-2.0
 	   title showed as a label over blank space, with "A title is required" above it and
 	   nowhere visible to type. Give the editable the same affordance as every other
 	   field on the page. */
-	/* ckeditor's own selectors plus `_inline`, so these outrank its `border-radius: 0` and
-	   its thin focus border whatever order the stylesheets load in. They lost, and the
-	   title and every question were square with a 1px focus line, next to rounded fields
-	   with a 2px ring (François asked why, 11 Oct). One shape, one border, one ring for
-	   every text field, whatever draws it. */
+	/* ckeditor's own selectors plus `_inline`, so these outrank its square corners and its
+	   thin focus border whatever order the stylesheets load in. They lost, and the title
+	   and every question were square with a 1px focus line, next to fields with curved
+	   corners and a 2px ring (François asked why, 11 Oct). One shape, one border, one ring
+	   for every text field, whatever draws it. */
 	:global(.ck.ck-content),
 	:global(.ck.ck-editor__editable.ck-editor__editable_inline:not(.ck-editor__nested-editable)) {
 		color: inherit;
