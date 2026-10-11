@@ -136,3 +136,43 @@ def test_a_save_does_not_revert_a_view_that_landed_during_it(test_client, quiz, 
     title, views, _ = _row(quiz_id)
     assert title == "Saved"
     assert views == 1
+
+
+def test_a_save_does_not_revert_a_claim_that_landed_during_it(test_client, quiz, monkeypatch):  # noqa: F811
+    # A claim clears the secret and the expiry. Written whole, the editor's save put both
+    # back from its stale row, and the quiz was anonymous again with its old secret.
+    import frogquiz.routers.editor as editor_router
+
+    quiz_id, secret = quiz
+    real = editor_router.arq.enqueue_job
+
+    async def a_claim_lands_first(*args, **kwargs):
+        engine = sqlalchemy.create_engine(DB_URL)
+        try:
+            with engine.begin() as conn:
+                conn.execute(
+                    sqlalchemy.text("UPDATE quiz SET anon_secret = NULL, expire_at = NULL WHERE id = :id"),
+                    {"id": uuid.UUID(quiz_id).hex},
+                )
+        finally:
+            engine.dispose()
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr(editor_router.arq, "enqueue_job", a_claim_lands_first)
+    headers = {"X-Anon-Secret": secret}
+    token = test_client.post(f"/api/v1/editor/start?edit=true&quiz_id={quiz_id}", headers=headers).json()["token"]
+    body = copy.deepcopy(example_quiz)
+    body["title"] = "Saved"
+    assert test_client.post(f"/api/v1/editor/save?edit_id={token}", json=body, headers=headers).status_code == 200
+    engine = sqlalchemy.create_engine(DB_URL)
+    try:
+        with engine.begin() as conn:
+            row = conn.execute(
+                sqlalchemy.text("SELECT title, anon_secret, expire_at FROM quiz WHERE id = :id"),
+                {"id": uuid.UUID(quiz_id).hex},
+            ).one()
+    finally:
+        engine.dispose()
+    assert row.title == "Saved"
+    assert row.anon_secret is None
+    assert row.expire_at is None

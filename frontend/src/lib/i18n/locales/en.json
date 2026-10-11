@@ -337,6 +337,7 @@
         "load_theirs": "Load the other version",
         "signed_out": "Not saved: you are signed out, or signed in as someone else, in this browser. Sign in to the account that owns this quiz, then press Save. Your changes are still here.",
         "deleted_elsewhere": "Not saved: this quiz was deleted in another tab or device. Your changes are still here.",
+        "deleted_or_claimed": "Not saved: this quiz was deleted, or moved into an account, in another tab or device. Your changes are still here.",
         "expired": "Not saved: this quiz expired and was deleted. Your changes are still here.",
         "save_as_new": "Save as a new quiz",
         "unsaved_title": "Unsaved changes",

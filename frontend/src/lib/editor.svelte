@@ -195,6 +195,9 @@ SPDX-License-Identifier: MPL-2.0
 	// so restoring into `data` alone left the old text on screen, to be saved back.
 	let generation = $state(0);
 	let reloading = false;
+	// The backup key for a quiz that has not been saved yet. /create offers it back, so a
+	// first save that fails keeps its text too.
+	const NEW = 'new';
 
 	const startSession = (id: string | null) => {
 		const anon_secret = id === null ? null : getAnonSecret(id);
@@ -217,7 +220,7 @@ SPDX-License-Identifier: MPL-2.0
 			// false, Save sent nothing, and the editor went to the quiz page saying "Saved".
 			// Normalisation now costs one no-op save instead of somebody's work.
 			saved_snapshot = JSON.stringify(data);
-			if (current_id) restorable = unsavedFor(current_id, saved_snapshot);
+			restorable = unsavedFor(current_id ?? NEW, saved_snapshot);
 			return;
 		}
 		// Was `alert('Error!')` -- a native dialog with no status, no reason, and
@@ -234,6 +237,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	const send = async (keepalive: boolean) => {
 		const body = snapshot;
+		// Where a failed save keeps its copy: the quiz, or NEW before it has an id.
+		const backup_key = current_id ?? NEW;
 		const anon_secret = current_id === null ? null : getAnonSecret(current_id);
 		saving = true;
 		const post = () =>
@@ -255,8 +260,10 @@ SPDX-License-Identifier: MPL-2.0
 			let res = await post();
 			// An edit session lapses an hour after its last save. Start another and send
 			// again, rather than failing every save until a reload throws the typing away (E2).
+			let restart_status: number | null = null;
 			if (res.status === 401) {
 				const fresh = await startSession(current_id);
+				restart_status = fresh.status;
 				if (fresh.ok) {
 					edit_id = (await fresh.json()).token;
 					res = await post();
@@ -269,7 +276,7 @@ SPDX-License-Identifier: MPL-2.0
 				} catch {
 					/* not JSON */
 				}
-				if (current_id) keepUnsaved(current_id, body);
+				keepUnsaved(backup_key, body);
 				if (res.status === 409 && json?.updated_at) {
 					conflict = json.updated_at;
 					conflict_open = true;
@@ -278,14 +285,15 @@ SPDX-License-Identifier: MPL-2.0
 				}
 				// 401 is a lapsed session that could not be restarted, 403 a session that now
 				// belongs to nobody here: both mean this browser is not signed in as the owner.
-				if (res.status === 401 || res.status === 403) {
-					failure = 'signed_out';
+				// A lapsed session on a quiz that has since gone: the restart is what says so.
+				if (res.status === 404 || restart_status === 404) {
+					const expire_at = (data as { expire_at?: string | null }).expire_at;
+					failure = expire_at && new Date(expire_at) < new Date() ? 'expired' : 'deleted';
 					save_error = null;
 					return;
 				}
-				if (res.status === 404) {
-					const expire_at = (data as { expire_at?: string | null }).expire_at;
-					failure = expire_at && new Date(expire_at) < new Date() ? 'expired' : 'deleted';
+				if (res.status === 401 || res.status === 403) {
+					failure = 'signed_out';
 					save_error = null;
 					return;
 				}
@@ -314,9 +322,9 @@ SPDX-License-Identifier: MPL-2.0
 			save_error = null;
 			failure = null;
 			// Not while a restore is on offer: the quiet save on load would take it away.
-			if (current_id && restorable === null) dropUnsaved(current_id);
+			if (restorable === null) dropUnsaved(backup_key);
 		} catch {
-			if (current_id) keepUnsaved(current_id, body);
+			keepUnsaved(backup_key, body);
 			save_error = $t('editor.offline');
 		} finally {
 			saving = false;
@@ -328,7 +336,9 @@ SPDX-License-Identifier: MPL-2.0
 	const flush = async (keepalive = false) => {
 		clearTimeout(timer);
 		while (inflight) await inflight;
-		if (conflict || reloading || !savable || !edit_id || !unsaved) return;
+		// Not once the quiz is gone: every pause in typing sent another 404.
+		const gone = failure === 'deleted' || failure === 'expired';
+		if (conflict || gone || reloading || !savable || !edit_id || !unsaved) return;
 		inflight = send(keepalive);
 		try {
 			await inflight;
@@ -381,7 +391,7 @@ SPDX-License-Identifier: MPL-2.0
 	// The other version, by reloading. This tab's text was kept when the save failed, and
 	// the reloaded editor offers it back.
 	const loadTheirs = () => {
-		if (current_id) keepUnsaved(current_id, snapshot);
+		keepUnsaved(current_id ?? NEW, snapshot);
 		conflict_open = false;
 		reloading = true;
 		location.reload();
@@ -393,22 +403,31 @@ SPDX-License-Identifier: MPL-2.0
 		generation++;
 	};
 	const discard = () => {
-		if (current_id) dropUnsaved(current_id);
+		dropUnsaved(current_id ?? NEW);
 		restorable = null;
 	};
 	// The quiz this tab was editing is gone; its text becomes a new quiz.
 	const saveAsNew = async () => {
-		const res = await startSession(null);
+		let res: Response;
+		try {
+			res = await startSession(null);
+		} catch {
+			save_error = $t('editor.offline');
+			return;
+		}
 		if (!res.ok) {
 			save_error = String(res.status);
 			return;
 		}
-		if (current_id) dropUnsaved(current_id);
+		const gone = current_id;
 		edit_id = (await res.json()).token;
 		current_id = null;
 		base = null;
 		failure = null;
 		await flush();
+		// The old quiz's copy goes once the new one holds the text; until then it is the
+		// only copy, and a failed save keeps another under NEW.
+		if (gone && current_id !== null) dropUnsaved(gone);
 	};
 
 	const saveQuiz = async (e: Event) => {
@@ -594,7 +613,9 @@ SPDX-License-Identifier: MPL-2.0
 										? 'editor.signed_out'
 										: failure === 'expired'
 											? 'editor.expired'
-											: 'editor.deleted_elsewhere'
+											: current_id && getAnonSecret(current_id)
+												? 'editor.deleted_or_claimed'
+												: 'editor.deleted_elsewhere'
 								)}
 							</p>
 							{#if failure !== 'signed_out'}
