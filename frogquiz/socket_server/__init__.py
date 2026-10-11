@@ -704,6 +704,21 @@ async def save_quiz(sid: str):
     session: dict = await get_session(sid, sio)
     if not session["admin"]:
         return
+    raw = await redis.get(f"game:{session['game_pin']}")
+    if raw is None:
+        await sio.emit("results_not_saved", {"reason": "This game has ended."}, room=sid)
+        return
+    # A game hosted without an account has no owner, and every results read filters by
+    # owner, so its row could never be opened (#52). The button is hidden for that host;
+    # this is the server's half. A host whose account was deleted mid-game still carries
+    # an id here, and save_quiz_to_storage keeps an ownerless row for them on purpose.
+    if PlayGame.model_validate_json(raw).user_id is None:
+        await sio.emit(
+            "results_not_saved",
+            {"reason": "Results are saved to an account. Sign in before hosting to keep them."},
+            room=sid,
+        )
+        return
     await save_quiz_to_storage(session["game_pin"])
     # No room used to mean every client: one host saving flipped every other signed-in
     # host's Save button to "saved".

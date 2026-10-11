@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 step 3a: data and concurrency, 11 Oct
+
+- **Save results, anonymous host (#52):** the server no longer writes a results row for a game hosted without an account, which nobody could ever open. It answers `results_not_saved` with a reason. A host whose account was deleted mid-game still gets an ownerless row, as before.
+
 ### V1 step 1: CI and production safety, 11 Oct
 
 - **Backend dependencies:** 124 known advisories in 25 locked backend packages, among them starlette, python-multipart, aiohttp, PyJWT, Pillow and cryptography. They are fixed by a re-lock: FastAPI 0.135 with starlette 1.7, Pillow 12.3, PyJWT 2.15. The Pipfile now states the first safe version of each package it uses directly.

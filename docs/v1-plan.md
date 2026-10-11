@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 - Everything lands in one PR from the branch `v1`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: step 1 done** (11 Oct), with every check on #57 green at `62268ff`. Step 3 is next.
+**Status: step 3a in progress** (11 Oct). Step 1 is done, with every check on #57 green at `62268ff` and again at `5f155d3`.
 
 ## What V1 means
 
@@ -40,6 +40,7 @@ They are also recorded in `MVP.md` §4.0, as D22 to D32.
 | Issue | Decision |
 | --- | --- |
 | #55 | Creating, uploading and hosting need a team account. Players join by PIN without one. It is built behind the flag `anonymous_quizzes_enabled`, default off. Old anonymous quizzes can be claimed until they expire, with a banner. |
+| #55, the rest (11 Oct) | A cap on anonymous quizzes, built in V1: 20 new ones per address a day and 1,000 live in total, both settings. The 30-day window stays. Anonymous quizzes are unlisted only. An editor open at expiry keeps its clock, shows the reason and keeps the text. A running game continues after expiry. |
 | #34 | Public, Unlisted and Private, with Unlisted as the default for a new quiz. Private is owner only, and old links to a quiz made Private give 404. A private quiz's images stay reachable by their unguessable URL. |
 | #33 | A username can be changed: 3 to 20 characters, unique whatever the case, and the old URL gives 404. One name, no display name. An optional bio, up to 160 characters. |
 | #39 | **A mix of examples:** about three general-knowledge quizzes and three that matter to the team.<br>- Each is a full, polished quiz of 10 to 12 questions.<br>- Together they use every question type.<br>- Facts are checked against sources, and nothing confidential goes in.<br>- François approves the text before it is seeded.<br>Explore gets Examples, and every quiz gets "Copy to my quizzes". |
@@ -161,6 +162,8 @@ Done above.
 
 ### Step 3: correctness
 
+Split in two on 11 Oct, each with its own step-end review: **3a** is data and concurrency (#52, #35, the scoreboard, the answered count), and **3b** is accounts (#55, #43). Claims reuse 3a's conditional writes, so 3a goes first.
+
 - **#52:** the server refuses to save results for a game with no signed-in host.
 - **#35:**
   - `views` and `plays` become atomic increments.
@@ -175,7 +178,8 @@ Done above.
   - 401 on the anonymous write paths
   - `/create` redirects to sign-in
   - the claim banner
-- **#43:** the claim cases that still apply.
+- **The anonymous cap (3b):** 20 new anonymous quizzes per address a day, and 1,000 live in total. It stops creating, never editing.
+- **#43:** the claim cases that still apply, and two races found while planning: the expiry sweep can delete a quiz claimed a moment earlier, and two claims at once can both succeed and count the images twice.
 - **The live scoreboard:** it follows the server's totals, so a hide-results question's points are no longer left out.
 - **The answered count:** "3 of 2 answered". The host adds one per answer, and drops a player who disconnects from the total, so a player who answers and then loses signal is counted on one side only. Found by step 1's cheap review.
 
@@ -268,3 +272,8 @@ Done above.
   - **Master moved:** #58 (the shared Claude Code setup) landed on master and conflicted with V1 in `CHANGELOG.md`. While the conflict stood, GitHub ran none of #57's pull-request checks. Master was merged in with a merge commit, keeping both sections. When checks go missing, look at the PR's mergeable state first.
   - **Every check on #57 is green at `62268ff`,** CI's e2e included.
   - **Re-plan:** step 3 gains the answered count. Nothing else moved: the step 3 to 6 plan stands as written.
+- **11 Oct, step 3 planned:**
+  - **Split** into 3a (data and concurrency) and 3b (accounts), because one review of all six items would be too large to read.
+  - **François's answers on #55:** a cap is built in V1 (Claude picked 20 a day per address and 1,000 in total); the 30-day window, unlisted-only anonymous quizzes, the expiry message and running games after expiry stand as recommended.
+  - **Found while reading, joined 3b:** the expiry sweep deletes without re-checking, so a claim in between is lost; and the claim checks then writes, so two at once both succeed.
+  - **The e2e suite hosts anonymously almost everywhere,** so the e2e stack and CI turn the new flag on, and the off path is tested on its own.
