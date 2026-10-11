@@ -67,3 +67,17 @@ The capture covered 168 screens: the full signed-out set (80, with the gap close
 | Host question | 1440, 1920 | both | Drain bar checked: "N of M answered", the bar and the seconds sit on one line above the answers, and no shot overflows | Kept |
 | Host title card, before question 1 | 1280 | light | Found by CI's first e2e run, not by the capture, which has no shot of this screen. A title or description with no spaces ran 757 to 764px off the projector: `admin.svelte` set it at `text-7xl` with no word breaking. It predates V1. The test only caught it when CI was slow, because the long word it waited for is on this screen too | Fixed with `wrap-anywhere`, as on the question screen. `hostile-text.e2e.ts` now checks this screen on purpose, and failed before the fix. Capturing it is added to step 5 |
 
+### Step 3a: data and concurrency
+
+The editor's four new states were added to the capture (`editor states` in `visual.e2e.ts`): the conflict dialog, the restore offer, the deleted-quiz banner and the live-game note. The signed-in screens and the whole game were taken again, 154 shots in all. A first-pass triage by a cheaper model was checked against the shots and the code before acting on it.
+
+| Screen | Size | Theme | Finding | Outcome |
+| --- | --- | --- | --- | --- |
+| Editor, conflict dialog | 390, 834, 1440 | both | "Load the other version" was blank: near-white text on a white button. The outline look was passed as a class over the default variant, which kept its text colour. Axe found it | Fixed: an outline variant proper. Axe is clean on all 24 editor-state shots |
+| Editor, title and question | all | both | They used CKEditor's Helvetica stack beside Inter in every other field. Missed by the 11 Oct field-shape fix, which matched corners, border and ring but not the face | Fixed: the editable inherits the page's face |
+| Editor, focused title | 834, 1440 | both | A 2px blue dot: the empty balloon of CKEditor's badge, which was hidden without its frame | Fixed: the balloon is hidden too, by a rule that wins on specificity |
+| Editor, live-game note and restore offer | all | light | Read as quiet header chrome. The triage measured the note at 4.4:1, but the token test pins muted text on muted at 4.5:1 or more; the pixel reading was anti-aliasing | Kept the tokens; the note is now full-strength text, and both have plainer copy |
+| Editor, quiz deleted elsewhere | all | both | The header's Save stayed the strong button, though it can only fail while the quiz is gone; "Save as a new quiz" was an outline button | Fixed: "Save as a new quiz" is the primary button |
+| Host scoreboard and answers | 1440, 1920 | dark | A white card on the dark projector. Older than V1: both cards are hard-coded white with dark text, probably so they read over a quiz's own background colour or image | Step 5 decides |
+| Editor, question card | 390, 834 | both | The card's inner padding is uneven, and its fields do not line up with the ones above it. Older than V1 | Step 5 |
+
