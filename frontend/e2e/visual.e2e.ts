@@ -34,8 +34,10 @@ import {
 	rememberAnonQuiz,
 	saveQuiz,
 	showResults,
+	titleBox,
 	type QuizInput
 } from './helpers';
+import { closeAll, liveGame } from './sockets';
 
 test.skip(process.env.VISUAL !== '1', 'visual capture runs only with VISUAL=1');
 // A step that cannot happen fails in 15 s rather than holding the run to its 30-minute limit.
@@ -242,6 +244,77 @@ test.describe('every screen', () => {
 				await page.goto(`/edit?quiz_id=${id}`);
 				await page.locator('[data-question-card]').first().click();
 				await capture(page, 'editor', theme);
+				await context.close();
+			}
+		}
+		fs.rmSync(state, { force: true });
+	});
+});
+
+// The editor's states from step 3a (#35): a save that lost to another device, the offer to
+// restore what was typed, a quiz deleted under the editor, and a game of it running. Each
+// state gets a fresh page, so leaving the one before never meets an unsaved-changes guard.
+test.describe('editor states', () => {
+	test.setTimeout(30 * 60_000);
+	test.afterEach(() => closeAll());
+
+	test('conflict, restore, deleted, live game', async ({ browser }) => {
+		const user = await registerUser();
+		const login = await browser.newContext();
+		await apiLogin(login.request, user.email);
+		const state = path.join(OUT, '.editor-states.json');
+		await login.storageState({ path: state });
+		await login.close();
+
+		for (const theme of THEMES) {
+			for (const size of SIZES) {
+				const context = await themedContext(browser, theme, size, state);
+				const as = context.request;
+				const open = async (id: string) => {
+					const page = await context.newPage();
+					await page.goto(`/edit?quiz_id=${id}`);
+					await expect(titleBox(page)).toBeVisible();
+					return page;
+				};
+				const newQuiz = async () => (await saveQuiz(as, QUIZ)).body.id as string;
+
+				// Saved from another device while this tab was open.
+				let id = await newQuiz();
+				let page = await open(id);
+				const { token } = await (
+					await as.post(`/api/v1/editor/start?edit=true&quiz_id=${id}`)
+				).json();
+				const elsewhere = await as.post(`/api/v1/editor/save?edit_id=${token}`, {
+					data: { public: false, ...QUIZ, title: 'Saved on the phone' }
+				});
+				expect(elsewhere.status()).toBe(200);
+				await titleBox(page).fill('Typed on the laptop');
+				const choice = page.getByRole('alertdialog', { name: /changed in another tab/i });
+				await expect(choice).toBeVisible({ timeout: 15_000 });
+				await capture(page, 'editor-conflict', theme);
+				await choice.getByRole('button', { name: 'Load the other version' }).click();
+				await expect(page.getByRole('region', { name: 'Unsaved changes' })).toBeVisible({
+					timeout: 15_000
+				});
+				await capture(page, 'editor-restore', theme);
+				await page.close();
+
+				// Deleted in another tab.
+				id = await newQuiz();
+				page = await open(id);
+				expect((await as.delete(`/api/v1/quiz/delete/${id}`)).status()).toBe(200);
+				await titleBox(page).fill('Still mine');
+				await expect(page.getByRole('alert')).toContainText('deleted', { timeout: 15_000 });
+				await capture(page, 'editor-deleted', theme);
+				await page.close();
+
+				// A game of it is running.
+				id = await newQuiz();
+				const endGame = await liveGame(as, id);
+				page = await open(id);
+				await expect(page.getByText(/A game of this quiz is running/)).toBeVisible();
+				await capture(page, 'editor-live-game', theme);
+				await endGame();
 				await context.close();
 			}
 		}

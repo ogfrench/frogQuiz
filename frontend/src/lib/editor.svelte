@@ -29,7 +29,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { htmlToPlainText, sanitizeTitleHtml } from '$lib/sanitize';
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { buttonVariants } from '$lib/components/ui/button';
 	import { dropUnsaved, keepUnsaved, unsavedFor } from '$lib/editor/unsaved_backup';
 
 	const { t } = getLocalization();
@@ -816,11 +815,9 @@ SPDX-License-Identifier: MPL-2.0
 				<AlertDialog.Description>{$t('editor.conflict_body')}</AlertDialog.Description>
 			</AlertDialog.Header>
 			<AlertDialog.Footer>
-				<AlertDialog.Action
-					type="button"
-					class={buttonVariants({ variant: 'outline' })}
-					onclick={loadTheirs}
-				>
+				<!-- As a variant, not a class: merged over the default variant, the outline
+				     classes kept its near-white text, and the button read as blank (axe). -->
+				<AlertDialog.Action type="button" variant="outline" onclick={loadTheirs}>
 					{$t('editor.load_theirs')}
 				</AlertDialog.Action>
 				<AlertDialog.Action type="button" onclick={keepMine}>

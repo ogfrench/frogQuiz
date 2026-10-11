@@ -138,3 +138,22 @@ export async function showQuestion(host: Socket, index: number) {
 	host.emit('set_question_number', String(index));
 	expect(await shown, `question ${index} shown`).not.toBeNull();
 }
+
+/**
+ * Starts a game of a saved quiz and registers a host socket, so the quiz counts as live.
+ * Returns a function that ends the game.
+ */
+export async function liveGame(request: APIRequestContext, quizId: string) {
+	const res = await request.post(`/api/v1/quiz/start/${quizId}?game_mode=kahoot`);
+	expect(res.status(), await res.text()).toBe(200);
+	const { game_pin, game_id } = await res.json();
+	const host = await connect();
+	const registered = next(host, 'registered_as_admin');
+	host.emit('register_as_admin', { game_pin, game_id });
+	expect(await registered, 'host registered').not.toBeNull();
+	return async () => {
+		const ended = next(host, 'game_ended');
+		host.emit('end_game');
+		expect(await ended, 'game ended').not.toBeNull();
+	};
+}

@@ -14,7 +14,7 @@ import path from 'node:path';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { signedInContext } from './accounts';
 import { PNG, mc, saveQuiz, uploadPng } from './helpers';
-import { closeAll, connect, next } from './sockets';
+import { closeAll, liveGame } from './sockets';
 
 const DATA = path.resolve(process.cwd(), '../e2e/.data');
 const onDisk = (id: string) => fs.existsSync(path.join(DATA, 'storage', id.replaceAll('-', '')));
@@ -272,21 +272,6 @@ test('the worker processes an anonymous upload without an error', async ({ reque
 // fetched by its id when its question comes up. Taking it out of the quiz, or deleting
 // the quiz, deleted the file at once, and the projector and the phones lost it mid-game.
 // The files are held now while a game of the quiz runs, and freed when it ends.
-async function liveGame(request: APIRequestContext, quizId: string) {
-	const res = await request.post(`/api/v1/quiz/start/${quizId}?game_mode=kahoot`);
-	expect(res.status(), await res.text()).toBe(200);
-	const { game_pin, game_id } = await res.json();
-	const host = await connect();
-	const registered = next(host, 'registered_as_admin');
-	host.emit('register_as_admin', { game_pin, game_id });
-	expect(await registered, 'host registered').not.toBeNull();
-	return async () => {
-		const ended = next(host, 'game_ended');
-		host.emit('end_game');
-		expect(await ended, 'game ended').not.toBeNull();
-	};
-}
-
 const linkedTo = async (request: APIRequestContext, image: string) => {
 	const items = (await (await request.get('/api/v1/storage/list')).json()) as {
 		id: string;
