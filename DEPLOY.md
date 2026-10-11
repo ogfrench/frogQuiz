@@ -279,7 +279,7 @@ searching. Steps 1 and 3 are standard and were not rehearsed.
 
 Rehearsed again on 6 Oct on the real thing: `docker-compose.yml` with the published
 `ghcr.io/ogfrench/frogquiz-backend:master` image (the merged code), Postgres 14, valkey and
-Meilisearch 0.28, seeded with two accounts, four quizzes, an uploaded image and an
+Meilisearch 0.28 (since moved to v1, see [Meilisearch v1](#meilisearch-v1)), seeded with two accounts, four quizzes, an uploaded image and an
 anonymous quiz. This section's block ran as written, bar the compose flags and no `sudo`
 on Windows. Backup first (the dump holds the seeded address, the tarball its files), then
 users, quizzes and storage items at 0, `alembic_version` kept, uploads empty. Afterwards the
@@ -346,15 +346,49 @@ Monday mornings. Any one of these fails it:
   - Both holds go away with two post-V1 changes: replacing python-jose with PyJWT, and
     migrating ormar to SQLAlchemy 2.
 - **Frontend:** `pnpm audit --prod --audit-level high` found nothing.
+- **Images (first run in CI, on PR #57):**
+  - `getmeili/meilisearch:v0.28.0`: 17 high and critical findings in its Alpine 3.14
+    base (curl, OpenSSL 1.1, zlib). Meilisearch moved to v1.54.3, which scans clean. See
+    [Meilisearch v1](#meilisearch-v1) for the deploy.
+  - `postgres:14-alpine`: 25 findings, all in Go's standard library inside `gosu`. The
+    image's own packages scan clean. gosu runs once at start to drop root and exec
+    postgres, and parses no input, so the scan skips that one file.
+  - `valkey/valkey:alpine`: clean.
 - **Secrets:** gitleaks 8.28 over all 256 commits found five hits, and none is a
   credential to anything: the token-signing placeholders in `.env.ci` and `e2e/e2e.env`,
   and MinIO's public playground keys in a test inherited from ClassQuiz. They are allowed
   by fingerprint in `.gitleaksignore`, so a new secret in the same files still fails.
   A GitHub token planted in a throwaway local clone was caught. This was checked locally
   rather than with a throwaway branch on GitHub, so no fake secret was ever pushed.
+  - CI's first run used gitleaks 8.24.3, the action's default, whose generic rule also
+    flagged a hostname list in this file's `api.frogquiz.xyz` steps. That line is allowed
+    by fingerprint too, and the workflow now pins 8.24.3, which finds nothing else in
+    the whole history. An unpinned version could turn the check red with no change here.
 - **GitHub's own scanning:** the repository is public, so GitHub's secret scanning and
   push protection can also be switched on, under Settings → Code security. That is a
   settings change for the owner.
+
+## Meilisearch v1
+
+V1 moves the search server from v0.28.0 to v1.54.3, because the old image failed the
+audit (above). The Python client, 0.37.1, already worked with v1: the e2e suite has run
+against Meilisearch 1.54 since the first Linux runs. v1 cannot read v0.28's data, so it
+gets a new volume, `meilisearch-data-v1`, and starts empty. Nothing is lost: the index
+is a copy of the public quizzes in Postgres, and the API rebuilds it on start-up when
+the counts differ. A search that finds no index rebuilds it too.
+
+On the VM, with the V1 deploy or before it:
+
+1. `git pull && docker compose pull && docker compose up -d`
+2. `docker compose restart api`, so the rebuild runs once Meilisearch is up. The API
+   does not wait for it, and a start that finds it down only logs a warning.
+3. Search Explore for a known public quiz. `docker compose logs api | grep -i meili`
+   shows the rebuild as a warning, "MeiliSearch and Database got out of sync".
+4. Once search works, remove the old volume: `docker volume ls | grep meilisearch`,
+   then `docker volume rm <project>_meilisearch-data`.
+
+To go back, put `getmeili/meilisearch:v0.28.0` and `meilisearch-data:/data.ms` back in
+`docker-compose.yml`. Until step 4, the old volume is still there.
 
 ## API hostname: `api.frogquiz.xyz`
 

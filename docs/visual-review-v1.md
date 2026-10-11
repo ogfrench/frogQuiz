@@ -61,7 +61,7 @@ The capture covered 168 screens: the full signed-out set (80, with the gap close
 | Screen | Size | Theme | Finding | Outcome |
 | --- | --- | --- | --- | --- |
 | Timer ring, phones | 390 | both | The ring froze on its first frame while the number kept counting. The step 0 fix had moved the ring's background into a `style:` directive with a trailing `;`. The first value went in through the attribute, which ignores it. Every later one went through `setProperty`, which rejects the whole value | Fixed. `journey-player-phone.e2e.ts` now checks that the ring's painted background changes; it failed on the bug and passes on the fix. The ring's black frame became the page color. |
-| Timer ring and host bar | 390, 1440 | both | The phone ring fills red as time is spent, while the host's drain bar empties as time runs out. The two halves of one game count in opposite directions | Open, for François at the step boundary: make the ring drain too, or keep it |
+| Timer ring and host bar | 390, 1440 | both | The phone ring fills red as time is spent, while the host's drain bar empties as time runs out. The two halves of one game count in opposite directions | Fixed. François chose to make the ring drain: the red arc is the time left. `journey-player-phone.e2e.ts` checks that it shrinks |
 | Every signed-out screen | 834, 1440 | both | The capture gap above | Fixed in `visual.e2e.ts` |
 | `/account/oauth-error` | 390 | both | Besides the axe finding, the heading runs to the screen edge with no gutter | Step 5 (#44) |
 | Host question | 1440, 1920 | both | Drain bar checked: "N of M answered", the bar and the seconds sit on one line above the answers, and no shot overflows | Kept |

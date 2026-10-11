@@ -85,7 +85,9 @@ PG_BIN="$(find_pg_bin || true)"
 if [ -n "${E2E_VENV:-}" ]; then
   VENV_RAW="$E2E_VENV"
 else
-  VENV_RAW="$(cd "$ROOT" && python -m pipenv --venv 2>/dev/null || python3 -m pipenv --venv 2>/dev/null)" \
+  # pipenv as a module, or as the command pipx installs, which no interpreter can import.
+  VENV_RAW="$(cd "$ROOT" && { python -m pipenv --venv 2>/dev/null || python3 -m pipenv --venv 2>/dev/null \
+    || pipenv --venv 2>/dev/null; })" \
     || die "no pipenv venv; run 'python -m pipenv sync --dev' first, or set E2E_VENV"
 fi
 VENV="$(cygpath -u "$VENV_RAW" 2>/dev/null || printf '%s' "$VENV_RAW")"

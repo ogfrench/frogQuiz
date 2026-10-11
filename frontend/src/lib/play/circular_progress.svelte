@@ -15,17 +15,19 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { progress, text, color, size = '120px' }: Props = $props();
-	let angle = $derived(360 * progress);
+	// `progress` is the share of the time spent. The colored arc is the time left, so the
+	// ring empties as the host's drain bar does (François, 11 Oct). It used to fill red
+	// instead, and the phone and the projector counted in opposite directions.
+	let angle = $derived(360 * (1 - progress));
 
 	// Theme tokens rather than white, gainsboro and black: in dark mode the hardcoded white
-	// disc sat on the phone like a sticker. The disc is the page ground, the time left is
+	// disc sat on the phone like a sticker. The disc is the page ground, the time spent is
 	// the muted token, and the number is the foreground.
 	// No trailing `;`: `style:` sets the first value through the attribute, which shrugs
 	// it off, and every later one through setProperty, which rejects the whole value. The
 	// ring then froze on its first frame while the number kept counting.
 	let background = $derived(`radial-gradient(var(--background) 58%, transparent 59%),
-	    conic-gradient(transparent 0deg ${angle}deg, var(--muted) ${angle}deg 360deg),
-	    conic-gradient(${color} 0deg, ${color} 360deg)`);
+	    conic-gradient(${color} 0deg ${angle}deg, var(--muted) ${angle}deg 360deg)`);
 </script>
 
 <div

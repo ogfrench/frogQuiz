@@ -30,6 +30,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - **Secrets scan:** gitleaks found five fixtures in the history: the CI and e2e token-signing placeholders, and MinIO's public playground keys in an upstream test. They are allowed by fingerprint in `.gitleaksignore`. A planted GitHub token in a throwaway clone was caught.
 - **ThumbHash encoder:** it reads pixels with `tobytes()`, since Pillow deprecates `getdata` and removes it in Pillow 14. The hashes are unchanged.
 - **Slide timer:** its label is translated.
+- **Phone timer ring:** it now empties as time runs out, as the host's bar does. It used to fill red, so the phone and the projector counted in opposite directions (François, 11 Oct). The phone journey spec checks the direction.
+- **Meilisearch:** moved from v0.28.0 to v1.54.3. The image scan's first run found 17 high and critical findings in the old image. v1 gets a new volume and rebuilds its index from Postgres on start-up; `DEPLOY.md` has the steps and the way back.
+- **Image scan:** it skips `gosu` in the postgres image. Its only findings were Go's standard library in a binary that runs once at start.
+- **Secrets scan:** a hostname list in `DEPLOY.md` that gitleaks 8.24 read as a key is allowed by fingerprint. gitleaks is pinned to 8.24.3, the version the exceptions were checked against, and it no longer tries to comment on the PR.
+- **e2e in CI:** `e2e/run.sh` also finds a pipenv installed with pipx, which no Python can import. The first CI run stopped there before any test.
 
 ### V1 started, 11 Oct
 

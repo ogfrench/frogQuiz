@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 - Everything lands in one PR from the branch `v1`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: steps 0 and 1 built and reviewed, waiting on green CI on #57** (11 Oct). Step 3 is next.
+**Status: step 1's CI fixes built, waiting on green CI on #57** (11 Oct). Step 3 is next.
 
 ## What V1 means
 
@@ -122,10 +122,15 @@ A question for François is asked at a step boundary, unless it blocks the work.
 - [x] The host timer: François chose design C, the drain bar.
 - [x] Checks: full e2e, the backend suite on the new dependencies (241 passed, 1 skipped), `pnpm test`, `svelte-check`, eslint, flake8, and a visual review of 168 shots.
 
+- [x] CI's first run on #57 failed four checks, each diagnosed and fixed (see Plan changes): Meilisearch moved to v1.54.3, the postgres scan skips gosu, gitleaks is pinned with one more fingerprint, and `run.sh` finds a pipx pipenv.
+- [x] The phone timer ring empties, as the host's bar does (François).
+
 **Left, and whose:**
-- CI on #57 goes green, or this step re-plans. The image scan runs for the first time there, so Meilisearch v0.28 may fail it, which would bring its upgrade into V1.
-- **François:** the DNS record for `api.frogquiz.xyz`, then the VM's `SITE_ADDRESS`. #22 by 25 Oct.
-- **François, open question:** the phone timer ring fills red as time is spent, while the host's bar drains. Make the ring drain too, or keep it?
+- CI on #57 goes green.
+- **François:**
+  - the DNS record for `api.frogquiz.xyz`, then the VM's `SITE_ADDRESS`
+  - #22 by 25 Oct
+  - the Meilisearch v1 steps in `DEPLOY.md`, with the next VM pull
 
 **As planned:**
 
@@ -199,7 +204,6 @@ Done above.
 
 ## Post-V1
 
-- **Meilisearch upgrade:** from `v0.28.0`. Needs a dump and import. It moves forward if the audit finds a high-severity issue.
 - **Results history and Save results:** stay hidden (D4).
 - **python-jose → PyJWT:** in `frogquiz/auth.py`. It removes two dated exceptions (python-jose, ecdsa). Revisit by 31 Dec.
 - **httpx → httpx2:** after the re-lock, authlib and Starlette's test client warn that `httpx` is deprecated in favour of `httpx2`. Only warnings for now; move when either drops `httpx`.
@@ -232,3 +236,9 @@ Done above.
   - **The ThumbHash encoder** no longer uses Pillow's deprecated `getdata`.
   - **New question for François:** the phone ring and the host bar count time in opposite directions.
   - **Pending:** CI on #57 decides whether the Meilisearch upgrade moves into V1.
+- **11 Oct, step 1 CI:** the first CI run failed four checks.
+  - **Meilisearch v0.28.0** had 17 high and critical findings, so its upgrade moved from post-V1 into step 1, as planned. It needs no dump: the index is rebuilt from Postgres on start-up. e2e already ran on 1.54, but never through that rebuild, since a fresh stack has nothing to sync, so it was tested on its own.
+  - **postgres:14-alpine:** every finding was in gosu's Go standard library. The scan skips that file, which is not a fix to wait for.
+  - **gitleaks:** CI runs 8.24.3, not the 8.28 used locally, and 8.24's rule read a hostname list in `DEPLOY.md` as a key. It is pinned now, so local and CI agree.
+  - **e2e:** `run.sh` could not find a pipenv installed with pipx. It died before any test.
+  - **François's answer:** the phone ring drains, like the host bar.

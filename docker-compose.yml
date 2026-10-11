@@ -146,13 +146,16 @@ services:
       - caddy-data:/data
       - caddy-config:/config
   meilisearch:
-    image: getmeili/meilisearch:v0.28.0
+    # v1 cannot open v0.28's files, so it gets a new volume and starts empty; the API's
+    # start-up sync rebuilds the index from Postgres. v1 keeps its data in /meili_data.
+    # Moving back is the old tag and the old volume, which is left alone. See DEPLOY.md.
+    image: getmeili/meilisearch:v1.54.3
     restart: always
     logging: *logging
     environment:
       MEILI_NO_ANALYTICS: "true"
     volumes:
-      - meilisearch-data:/data.ms
+      - meilisearch-data-v1:/meili_data
   worker:
     image: ghcr.io/ogfrench/frogquiz-backend:master
     build:
@@ -166,6 +169,6 @@ services:
 
 volumes:
   data:
-  meilisearch-data:
+  meilisearch-data-v1:
   caddy-data:
   caddy-config:

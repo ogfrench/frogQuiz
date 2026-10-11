@@ -24,7 +24,7 @@ qrcode = "*"
 jinja2 = "*"
 argon2-cffi = "*"
 aiofiles = "*"
-# Held with the server, getmeili/meilisearch v0.28.0 in docker-compose.yml: the two move together.
+# Held with the server, getmeili/meilisearch v1.54.3 in docker-compose.yml: the two move together.
 meilisearch = "==0.37.1"
 bleach = ">=6.4.0"
 bidict = "*"
