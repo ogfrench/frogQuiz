@@ -12,6 +12,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 ### V1 step 3a: data and concurrency, 11 Oct
 
 - **"Load the other version" was nearly invisible:** the conflict dialog's second button got the outline look through its class, merged over the default button's, so it kept the default's near-white text on a white button. The step's visual capture caught it (axe, every size, both themes). It is now an outline variant proper.
+- **From the step's visual review:** the rich-text fields (title, question) used CKEditor's Helvetica beside Inter in every other field, and now take the page's face. Hiding CKEditor's badge had left its empty frame on a focused field as a 2px blue dot; it is hidden too. The live-game note is at full text strength with plainer copy, the restore offer reads more simply, and on a deleted quiz "Save as a new quiz" is the strong button, since the header's Save can only fail.
 - **Visual capture, the editor's new states:** `visual.e2e.ts` now shoots the conflict dialog, the restore offer, the deleted-quiz banner and the live-game note at every size in both themes. The helper that starts a live game moved to `e2e/sockets.ts` so both specs share it.
 
 - **CLAUDE.md, delegating to cheaper models:** which work goes to haiku, to sonnet, or stays on the main model in this repo, and what must run one at a time. The general version is the `model-delegation` skill in `ogfrench/claude-code-setup`.

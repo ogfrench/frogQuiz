@@ -115,7 +115,10 @@ SPDX-License-Identifier: MPL-2.0
 ></div>
 
 <style>
-	:global(.ck-powered-by) {
+	/* The badge's own balloon too: with only the badge hidden, its empty frame stayed on
+	   the field as a 2px blue dot (the step 3a visual review). */
+	:global(.ck-powered-by),
+	:global(.ck.ck-balloon-panel.ck-powered-by-balloon) {
 		display: none;
 	}
 
@@ -136,6 +139,8 @@ SPDX-License-Identifier: MPL-2.0
 	:global(.ck.ck-content),
 	:global(.ck.ck-editor__editable.ck-editor__editable_inline:not(.ck-editor__nested-editable)) {
 		color: inherit;
+		/* The page's face, not ckeditor's Helvetica stack beside Inter in the next field. */
+		font-family: inherit;
 		min-height: 2.75rem;
 		padding: 0.5rem 0.75rem;
 		border: 1px solid var(--input);

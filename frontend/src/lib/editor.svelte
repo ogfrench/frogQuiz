@@ -622,12 +622,9 @@ SPDX-License-Identifier: MPL-2.0
 								)}
 							</p>
 							{#if failure !== 'signed_out'}
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onclick={saveAsNew}
-								>
+								<!-- The way on from here, so the strong button: the header's Save can
+								     only fail again while the quiz is gone. -->
+								<Button type="button" size="sm" onclick={saveAsNew}>
 									{$t('editor.save_as_new')}
 								</Button>
 							{/if}
@@ -636,7 +633,7 @@ SPDX-License-Identifier: MPL-2.0
 					{#if live_game}
 						<p
 							role="status"
-							class="border-border bg-muted text-muted-foreground shrink-0 border-b px-4 py-2 text-sm"
+							class="border-border bg-muted text-foreground shrink-0 border-b px-4 py-2 text-sm"
 						>
 							{$t('editor.live_game')}
 						</p>
