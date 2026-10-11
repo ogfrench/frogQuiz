@@ -68,12 +68,20 @@ def _sign_up(client: TestClient, name: str):
 
 @pytest.fixture(scope="module")
 def users(test_client: TestClient):  # noqa: F811
-    made = {name: _sign_up(test_client, name) for name in ("claim-ana", "claim-ben")}
-    yield made
-    for user in made.values():
-        # Deleting the account takes its quizzes with it.
-        test_client.request("DELETE", "/api/v1/users/me", json={"password": PASSWORD}, cookies=user["cookies"])
-    test_client.cookies.clear()
+    made = {}
+    try:
+        for name in ("claim-ana", "claim-ben"):
+            made[name] = _sign_up(test_client, name)
+        yield made
+    finally:
+        # Deleting an account takes its quizzes with it. Whatever was made goes, even if the
+        # second sign-up failed, or the next run starts with a 409.
+        for user in made.values():
+            resp = test_client.request(
+                "DELETE", "/api/v1/users/me", json={"password": PASSWORD}, cookies=user["cookies"]
+            )
+            assert resp.status_code == 200
+        test_client.cookies.clear()
 
 
 def _anon_quiz(client: TestClient):
@@ -91,6 +99,19 @@ def _claim_in_sql(quiz_id: str, user_id: str):
     )
 
 
+@pytest.fixture
+def released(monkeypatch):
+    """Image releases by the sweep, with one made-up image per quiz so there is one to see."""
+    freed = []
+
+    async def release(ids):
+        freed.extend(ids)
+
+    monkeypatch.setattr(worker, "extract_image_ids_from_quiz", lambda quiz: [f"image-of-{quiz.id.hex}"])
+    monkeypatch.setattr(worker, "release_quiz_images", release)
+    return freed
+
+
 def test_a_claim_that_lost_the_race_takes_nothing(test_client: TestClient, users, monkeypatch):  # noqa: F811
     quiz_id, secret = _anon_quiz(test_client)
     ana, ben = users["claim-ana"], users["claim-ben"]
@@ -106,29 +127,47 @@ def test_a_claim_that_lost_the_race_takes_nothing(test_client: TestClient, users
     assert _owner(quiz_id) == ana["id"]
 
 
-def test_the_sweep_spares_a_quiz_claimed_while_it_ran(test_client: TestClient, users, monkeypatch):  # noqa: F811
+def test_a_claim_on_a_quiz_that_expired_while_it_ran_takes_nothing(
+    test_client: TestClient, users, monkeypatch  # noqa: F811
+):
+    quiz_id, secret = _anon_quiz(test_client)
+    real = quiz_router._quiz_expired
+
+    def expires_first(quiz):
+        verdict = real(quiz)
+        _sql("UPDATE quiz SET expire_at = now() - interval '1 day' WHERE id = :id", id=uuid.UUID(quiz_id).hex)
+        return verdict
+
+    monkeypatch.setattr(quiz_router, "_quiz_expired", expires_first)
+    resp = test_client.post(
+        f"/api/v1/quiz/claim/{quiz_id}", headers={"X-Anon-Secret": secret}, cookies=users["claim-ben"]["cookies"]
+    )
+    assert resp.status_code == 404
+    assert _owner(quiz_id) is None
+
+
+def test_the_sweep_spares_a_quiz_claimed_while_it_ran(
+    test_client: TestClient, users, monkeypatch, released  # noqa: F811
+):
     quiz_id, _ = _anon_quiz(test_client)
     ana = users["claim-ana"]
     _sql("UPDATE quiz SET expire_at = now() - interval '1 day' WHERE id = :id", id=uuid.UUID(quiz_id).hex)
-    released = []
 
     async def claimed_then_not_live(quiz):
-        if str(quiz) == quiz_id or getattr(quiz, "hex", None) == uuid.UUID(quiz_id).hex:
+        if uuid.UUID(str(quiz)).hex == uuid.UUID(quiz_id).hex:
             _claim_in_sql(quiz_id, ana["id"])
         return False
 
-    async def release(ids):
-        released.extend(ids)
-
     monkeypatch.setattr(worker, "is_live", claimed_then_not_live)
-    monkeypatch.setattr(worker, "release_quiz_images", release)
     # On the app's own loop, where the database is connected.
     test_client.portal.call(worker.clean_expired_anonymous_quizzes, None)
     assert _owner(quiz_id) == ana["id"]
+    assert f"image-of-{uuid.UUID(quiz_id).hex}" not in released
 
 
-def test_the_sweep_still_deletes_what_nobody_claimed(test_client: TestClient):  # noqa: F811
+def test_the_sweep_still_deletes_what_nobody_claimed(test_client: TestClient, released):  # noqa: F811
     quiz_id, _ = _anon_quiz(test_client)
     _sql("UPDATE quiz SET expire_at = now() - interval '1 day' WHERE id = :id", id=uuid.UUID(quiz_id).hex)
     test_client.portal.call(worker.clean_expired_anonymous_quizzes, None)
     assert _owner(quiz_id) == "deleted"
+    assert f"image-of-{uuid.UUID(quiz_id).hex}" in released
