@@ -219,6 +219,10 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 | D30 | Large-room target (#45) | **F (2026-10-11): no pass mark**; record the player count where a game first breaks | — | ☑ |
 | D31 | Who decides | **F (2026-10-11): François decides; the joint-decision rule is dropped.** Claude proposes and never removes a feature on its own (CLAUDE.md) | — | ☑ |
 | D32 | API hostname | **F (2026-10-11): `api.frogquiz.xyz`** instead of `134-98-158-173.sslip.io`, so an IP change is a DNS edit | — | ☑ |
+| D33 | Who can copy a quiz (#39) | **F (2026-10-11): anyone signed in can copy any public quiz**, as well as their own and the Examples. A copy carries the answers, so this narrows D18 for public quizzes: their answer key is no longer the owner's alone. Unlisted and private quizzes copy only for their owner | — | ☑ |
+| D34 | The host scoreboard and results cards are white on the dark projector | **F (2026-10-11): keep the white cards.** They read over any quiz background colour or image; recorded as an exception in step 5's style note | — | ☑ |
+| D35 | How V1 ships | **F (2026-10-11): in releases, PR by PR.** v0.5 is steps 0 to 3 (PR #57), v0.8 step 4, v0.9 step 5, v1.0 step 6. Each is its own PR from `v1`, restarted from master after the last merge. Master as of 11 Oct (`8e69034`) is tagged `mvp`. Replaces D22's single PR | — | ☑ |
+| D36 | Ceilings on quizzes made without an account (#55), for when D23's setting is on | **F (2026-10-11): 20 new ones per address a day and 1,000 alive at once**, both settings. The 30-day window stays; they are always unlisted. The matrix is [`docs/anonymous-vs-account.md`](docs/anonymous-vs-account.md) | — | ☑ |
 
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
@@ -229,7 +233,7 @@ signature. **D16 and D18 still need Gonçalo's tick**: both are François's call
 calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
 the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
 
-**From 11 Oct (D31) François decides alone**, so D22 to D32 carry no G column, and the
+**From 11 Oct (D31) François decides alone**, so D22 to D36 carry no G column, and the
 open G ticks above (D16 to D21) are no longer a gate. They stay as a record.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on

@@ -7,10 +7,10 @@ SPDX-License-Identifier: MPL-2.0
 # V1 plan
 
 **This is the living plan for V1.** Issue #56 holds the step checklist and links here.
-- Everything lands in one PR from the branch `v1`.
+- V1 ships in four releases, each its own PR from the branch `v1` (D35, 11 Oct): **v0.5** is steps 0 to 3 (PR #57), **v0.8** step 4, **v0.9** step 5, **v1.0** step 6. After each merge, `v1` restarts from master. Master before v0.5 is tagged `mvp`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: step 3a in progress** (11 Oct). Step 1 is done, with every check on #57 green at `62268ff` and again at `5f155d3`.
+**Status: step 3 done; v0.5 (#57) is being cut** (11 Oct). Step 4 opens the v0.8 PR.
 
 ## What V1 means
 
@@ -35,7 +35,7 @@ SPDX-License-Identifier: MPL-2.0
 
 ## Decisions (François, 10 and 11 Oct)
 
-They are also recorded in `MVP.md` §4.0, as D22 to D32.
+They are also recorded in `MVP.md` §4.0, as D22 to D36.
 
 | Issue | Decision |
 | --- | --- |
@@ -53,7 +53,9 @@ They are also recorded in `MVP.md` §4.0, as D22 to D32.
 | #53 | High and critical findings fail the build. A finding with no fix gets an exception with a date. |
 | Rule | François decides. The rule that a removal needed François and Gonçalo jointly is dropped (11 Oct). Claude proposes and never removes a feature on its own. |
 | Domain | The API moves from `134-98-158-173.sslip.io` to `api.frogquiz.xyz`. |
-| Merge | One V1 PR, with a full review at the end of each step and one before the merge. |
+| Merge | In releases, PR by PR (11 Oct, D35): v0.5, v0.8, v0.9, v1.0. A full review at the end of each step, and one before each merge. Master before v0.5 is tagged `mvp`. |
+| Copy | Anyone signed in can copy any public quiz, as well as their own and the Examples (11 Oct, D33). A copy carries the answers, so this narrows D18 for public quizzes. |
+| Scoreboard | The host's scoreboard and results cards stay white on the dark projector (11 Oct, D34). |
 | Hotfix | None (11 Oct). The audit's `/live` fixes reach master with V1, not ahead of it on their own branch. |
 | Use | The app is not in use yet (11 Oct): no real users and no real data. |
 | Mail | Sign-in by emailed link works in production, and mail is trusted: no emergency sign-in (11 Oct). |
@@ -170,7 +172,7 @@ Done above.
 
 Split in two on 11 Oct, each with its own step-end review: **3a** is data and concurrency (#52, #35, the scoreboard, the answered count), and **3b** is accounts (#55, #43). Claims reuse 3a's conditional writes, so 3a goes first.
 
-**Status:** 3a is done (11 Oct). 3b is under way: the two #43 races are fixed (`780d744`), and so is the editor's version check (`5ebb5bf`). Trimmed on 11 Oct because the app is not in use: nothing exists yet that the screens for old anonymous quizzes would serve.
+**Status:** done (11 Oct). 3a, then 3b: the two #43 races (`780d744`), the editor's version check (`5ebb5bf`), and the #55 setting with its ceilings, the `/create` redirect and the matrix. Trimmed on 11 Oct because the app is not in use: nothing exists yet that the screens for old anonymous quizzes would serve.
 
 - **#52:** the server refuses to save results for a game with no signed-in host.
 - **#35:**
@@ -199,7 +201,7 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
 1. **#34 visibility.** A schema change, flagged in the PR.
 2. **#33 profile.** `/user/[username]`, username change, bio. An account change, flagged in the PR.
 3. **#38 Explore filters.** A username change (#33) re-indexes that user's quizzes, or the author filter goes stale.
-4. **#39 examples and Copy.** **Open decision (found 11 Oct):** D26 gives every quiz "Copy to my quizzes", while D18 keeps a quiz's answer key to its owner, and a copy carries the answers. Claude recommends Copy on your own quizzes and on the Examples only. Also to settle in the build: who may mark a quiz as an example, and that a copy copies its images and counts them against the copier's quota.
+4. **#39 examples and Copy.** Copy works on your own quizzes, the Examples and any public quiz (D33, 11 Oct). Also to settle in the build: who may mark a quiz as an example, and that a copy copies its images and counts them against the copier's quota.
 
 **In parallel:**
 - **#40:** Play from the editor.
@@ -214,7 +216,7 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - fixes by area: the editor, the game screens, account, Explore
   - baseline on 11 Oct, all of `frontend/src` (hidden routes included): 173 hard-coded colour classes, 45 raw `<svg>`, 32 `w-screen` or `h-screen`, 25 inline colour styles
   - the full visual pass, including the four pages still on the old layout, and the host's title card before question 1
-  - from 3a: the scoreboard and results cards are hard-coded white in dark mode (decide: keep for custom backgrounds, or tokens); the question card's uneven padding at 390 and 834; the conflict dialog's wording
+  - from 3a: the scoreboard and results cards stay white in dark mode (D34), as a recorded exception; the question card's uneven padding at 390 and 834; the conflict dialog's wording
 - **#50:** the docs, and the privacy and terms pages. Also the stale notes found on 11 Oct: test counts in `HANDOVER.md` and `TODO.md`, the "still open" polish list in `e2e-findings.md` (mostly fixed), and where `DISABLED_ROUTES` lives.
 - **From the security audit:** finding 6 (the page gate reads the token unsigned) and finding 7 (the server-shared "signed in" store).
 
@@ -325,3 +327,7 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - **François's answers:** the app is not in use; mail works, no emergency sign-in; no backups for now (#61); monitoring later (#60); he builds the server image from his laptop; the cap stays at 20 a day and 1,000 in total; the domain move is done by Claude where it can be.
   - **Trimmed from 3b,** since nothing exists for them to serve: the screens for old anonymous quizzes, the new #43 e2e cases, and two low audit findings (single-use links, API keys and sign-out-everywhere), now post-V1.
   - **Open:** D18 against D26 (Copy and answer keys), before #39.
+- **11 Oct, step 3b closed, and V1 ships in releases:**
+  - **Built:** the #55 setting, off by default, with a 401 on every anonymous write path and the two ceilings; `GET /api/v1/utils/config` tells the frontend, and `/create` sends a signed-out visitor to sign-in; password registration keeps to the allowed domains (audit). The matrix and the #43 claim cases are in `docs/anonymous-vs-account.md`.
+  - **François's answers:** releases PR by PR, v0.5 now (steps 0 to 3), then v0.8, v0.9 and v1.0 (D35); master tagged `mvp`; Copy on any public quiz (D33, settles the D18 and D26 conflict); the white scoreboard cards stay (D34).
+  - **Re-plan:** step 4 is v0.8, from `v1` restarted on master after #57 merges. #56 stays open until v1.0.

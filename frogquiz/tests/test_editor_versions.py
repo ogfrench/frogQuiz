@@ -36,9 +36,7 @@ def quiz(test_client: TestClient):  # noqa: F811
 
 
 def _tab(client, quiz_id, secret):
-    resp = client.post(
-        f"/api/v1/editor/start?edit=true&quiz_id={quiz_id}", headers={"X-Anon-Secret": secret}
-    )
+    resp = client.post(f"/api/v1/editor/start?edit=true&quiz_id={quiz_id}", headers={"X-Anon-Secret": secret})
     assert resp.status_code == 200
     return resp.json()["token"]
 
@@ -54,9 +52,7 @@ def test_a_stale_tab_cannot_overwrite_a_newer_save_on_close(test_client, quiz): 
     headers = {"X-Anon-Secret": secret}
     tab_a, tab_b = _tab(test_client, quiz_id, secret), _tab(test_client, quiz_id, secret)
 
-    newer = test_client.post(
-        f"/api/v1/editor/save?edit_id={tab_a}&base={first}", json=_titled("A's"), headers=headers
-    )
+    newer = test_client.post(f"/api/v1/editor/save?edit_id={tab_a}&base={first}", json=_titled("A's"), headers=headers)
     assert newer.status_code == 200
 
     stale = test_client.post(
@@ -81,9 +77,7 @@ def test_keep_mine_sends_again_on_top_of_the_current_version(test_client, quiz):
     assert refused.status_code == 409
     current = refused.json()["updated_at"]
 
-    kept = test_client.post(
-        f"/api/v1/editor/save?edit_id={tab_b}&base={current}", json=_titled("B's"), headers=headers
-    )
+    kept = test_client.post(f"/api/v1/editor/save?edit_id={tab_b}&base={current}", json=_titled("B's"), headers=headers)
     assert kept.status_code == 200
     assert test_client.get(f"/api/v1/quiz/get/public/{quiz_id}").json()["title"] == "B's"
 

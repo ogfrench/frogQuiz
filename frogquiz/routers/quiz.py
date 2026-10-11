@@ -25,7 +25,12 @@ from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, U
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError, BaseModel
 
-from frogquiz.auth import get_current_user, get_current_user_optional, verify_anon_secret
+from frogquiz.auth import (
+    get_current_user,
+    get_current_user_optional,
+    require_anonymous_quizzes,
+    verify_anon_secret,
+)
 from frogquiz.config import redis, settings, meilisearch
 from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
 from frogquiz.helpers.box_controller import generate_code
@@ -163,6 +168,7 @@ async def start_quiz(
     except ValueError:
         raise HTTPException(status_code=400, detail="badly formed quiz id")
     if user is None:
+        require_anonymous_quizzes()
         await rate_limit(request, "quiz_start_anon", limit=20, window_seconds=60)
     quiz = await _find_own_quiz(quiz_id, user, x_anon_secret)
     if quiz is None and user is not None:

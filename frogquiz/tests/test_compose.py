@@ -34,3 +34,9 @@ def test_the_worker_mounts_every_volume_the_api_does():
 def test_the_worker_runs_with_the_api_settings():
     services = _services()
     assert services["worker"]["environment"] == services["api"]["environment"]
+
+
+def test_ci_runs_the_search_production_runs():
+    # The backend suite's compose ran Meilisearch v1.7 while production ran v1.54.3.
+    dev = yaml.safe_load((COMPOSE.parent / "docker-compose.dev.yml").read_text())["services"]
+    assert dev["meilisearch"]["image"] == _services()["meilisearch"]["image"]

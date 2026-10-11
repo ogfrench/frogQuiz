@@ -18,6 +18,8 @@ on:
       - "run_tests.sh"
       - "alembic.ini"
       - "docker-compose.dev.yml"
+      # test_compose.py reads it.
+      - "docker-compose.yml"
       - ".github/workflows/pytest.yml"
   pull_request:
     paths:
@@ -29,6 +31,8 @@ on:
       - "run_tests.sh"
       - "alembic.ini"
       - "docker-compose.dev.yml"
+      # test_compose.py reads it.
+      - "docker-compose.yml"
       - ".github/workflows/pytest.yml"
   workflow_dispatch:
 

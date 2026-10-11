@@ -64,11 +64,16 @@ async def startup() -> None:
     # until someone can't get back into their account.
     if not settings.mail_configured:
         logging.getLogger("frogquiz").warning(
-            "No mail server configured (MAIL_SERVER/MAIL_ADDRESS). " "Password recovery is unavailable%s.",
+            "No mail server configured (MAIL_SERVER/MAIL_ADDRESS). %s",
             (
-                ""
-                if settings.skip_email_verification
-                else ", and registration will fail because SKIP_EMAIL_VERIFICATION is False"
+                "Nobody can sign in: sign-in is by an emailed link or code."
+                if not settings.enable_password_login
+                else "Password recovery is unavailable%s."
+                % (
+                    ""
+                    if settings.skip_email_verification
+                    else ", and registration will fail because SKIP_EMAIL_VERIFICATION is False"
+                )
             ),
         )
 

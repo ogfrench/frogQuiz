@@ -15,6 +15,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 - **A claim that lost a race took the quiz anyway (#43):** two claims at once both passed the "still unclaimed" check before either wrote, so the second moved a just-claimed quiz into its own account and counted its images twice. The claim is now one conditional write, and the loser gets the same 404 as any other failed claim.
 - **Two saves in the same instant could both pass the version check (#35, from step 3a's review):** the editor's save read the quiz's version, then wrote, so a save landing in between passed the same check and was overwritten. The check now runs again with the row locked, at the moment of the write, and the second save gets the 409 that offers Keep mine.
+- **Making, editing, uploading and hosting a quiz need an account (#55):** behind the setting `anonymous_quizzes_enabled`, off by default. With it off, each of those gets a 401 that says to sign in; players still join by PIN with no account, and a quiz made while it was on can still be read, claimed or deleted with its secret. CI and the e2e stack turn it on, since the suite hosts without an account.
+- **Two ceilings on quizzes made without an account (#55):** 20 new ones per address a day and 1,000 alive at once, both settings. Past either, a new quiz gets a 429 that says to sign in; editing one that exists is never stopped.
+- **The frontend can read the setting:** `GET /api/v1/utils/config`. `/create` sends a signed-out visitor to sign-in, and back, when the setting is off.
+- **Password registration keeps to the allowed domains (security audit, 11 Oct):** it is switched off, but it accepted any address, so turning it back on would have let anybody in. It now gives the same 403 as the emailed sign-in.
+- **`docs/anonymous-vs-account.md`:** what needs an account and what does not, and each #43 claim case with its outcome and the test behind it.
 - **The expiry sweep deleted a quiz claimed while it ran (#43):** it read the expired quizzes, then deleted each by id, so a claim in between lost the quiz from its new owner's account, images included. It now deletes only a quiz that is still unclaimed and expired, in the same statement, and frees images only for what it deleted.
 
 ### V1 step 3a: data and concurrency, 11 Oct

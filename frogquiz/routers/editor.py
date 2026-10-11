@@ -27,7 +27,12 @@ from frogquiz.config import (
 )
 from frogquiz.db import database
 from frogquiz.db.models import Quiz, QuizInput, User, QuizQuestionType, StorageItem
-from frogquiz.auth import get_current_user_optional, hash_anon_secret, verify_anon_secret
+from frogquiz.auth import (
+    get_current_user_optional,
+    hash_anon_secret,
+    require_anonymous_quizzes,
+    verify_anon_secret,
+)
 from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 import os
 from datetime import datetime, timedelta
@@ -101,6 +106,8 @@ async def init_editor(
     # Per address, sized for an office: everybody behind one NAT shares this bucket (E16 in
     # docs/edge-cases-2026-10.md).
     await rate_limit(request, "editor_start", limit=120, window_seconds=60)
+    if user is None:
+        require_anonymous_quizzes()
     if not edit and quiz_id is not None:
         raise HTTPException(status_code=400, detail="You can't choose the id for your quiz")
     if edit and quiz_id is None:
@@ -150,7 +157,7 @@ async def finish_edit(
     # Per address, sized for an office: everybody behind one NAT shares this bucket (E16 in
     # docs/edge-cases-2026-10.md).
     await rate_limit(request, "editor_finish", limit=120, window_seconds=60)
-    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=False, base=base)
+    return await _persist(request, response, edit_id, quiz_input, user, x_anon_secret, keep_session=False, base=base)
 
 
 @router.post("/save")
@@ -174,10 +181,34 @@ async def save_edit(
     # docs/edge-cases-2026-10.md). The address limit stays, generous, against scripts.
     await rate_limit_key(f"editor_save_session:{edit_id}", limit=60, window_seconds=60)
     await rate_limit(request, "editor_save", limit=600, window_seconds=60)
-    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=True, base=base)
+    return await _persist(request, response, edit_id, quiz_input, user, x_anon_secret, keep_session=True, base=base)
+
+
+async def _anonymous_quiz_ceilings(request: Request) -> None:
+    """429 when a new quiz without an account would pass either ceiling (#55).
+
+    Checked on the save that creates the quiz, which is the only place one is made. The
+    total is read, then the quiz is written, so a burst of saves at once can pass it by a
+    few: it is a ceiling against a script, not an exact count.
+    """
+    alive = await database.fetch_val(
+        "SELECT count(*) FROM quiz WHERE user_id IS NULL AND (expire_at IS NULL OR expire_at >= :now)",
+        {"now": datetime.now()},
+    )
+    if alive >= settings.anon_quiz_total_limit:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many quizzes without an account right now. Sign in to keep going.",
+        )
+    try:
+        await rate_limit(request, "anon_quiz_create", limit=settings.anon_quiz_daily_limit, window_seconds=86400)
+    except HTTPException as limited:
+        limited.detail = "You have reached today's limit for quizzes without an account. Sign in to keep going."
+        raise
 
 
 async def _persist(
+    request: Request,
     response: Response,
     edit_id: str,
     quiz_input: QuizInput,
@@ -198,6 +229,8 @@ async def _persist(
         raise HTTPException(status_code=403, detail="This edit session belongs to another user")
     is_anonymous = session_data.user_id is None
     if is_anonymous:
+        # A session opened while the setting was on is still in Redis for up to an hour.
+        require_anonymous_quizzes()
         # Anonymous quizzes are never public/searchable -- there's no
         # account behind them to hold accountable for indexed content.
         quiz_input.public = False
@@ -355,6 +388,7 @@ async def _persist(
         anon_secret_hash = None
         expire_at = None
         if is_anonymous:
+            await _anonymous_quiz_ceilings(request)
             raw_anon_secret = secrets.token_hex(32)
             anon_secret_hash = hash_anon_secret(raw_anon_secret)
             expire_at = datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS)

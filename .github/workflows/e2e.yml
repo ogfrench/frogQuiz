@@ -16,6 +16,8 @@ on:
       - "frogquiz/**"
       - "migrations/**"
       - "e2e/**"
+      # run.sh reads the Meilisearch version from it.
+      - "docker-compose.yml"
       - "Pipfile.lock"
       - ".github/workflows/e2e.yml"
   workflow_dispatch:
