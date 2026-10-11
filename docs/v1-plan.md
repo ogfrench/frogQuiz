@@ -122,8 +122,14 @@ A question for François is asked at a step boundary, unless it blocks the work.
 - [x] The host timer: François chose design C, the drain bar.
 - [x] Checks: full e2e, the backend suite on the new dependencies (241 passed, 1 skipped), `pnpm test`, `svelte-check`, eslint, flake8, and a visual review of 168 shots.
 
-- [x] CI's first run on #57 failed four checks, each diagnosed and fixed (see Plan changes): Meilisearch moved to v1.54.3, the postgres scan skips gosu, gitleaks is pinned with one more fingerprint, and `run.sh` finds a pipx pipenv.
+- [x] CI's first run on #57 failed four checks, each diagnosed and fixed (see Plan changes): Meilisearch moved to v1.54.3, the postgres scan skips gosu, gitleaks is pinned, and `run.sh` finds a pipx pipenv.
 - [x] The phone timer ring empties, as the host's bar does (François).
+- [x] The cheap review's fixes:
+  - the sslip.io hostname is allowed by value in `.gitleaks.toml`, not by commit
+  - CI keeps Postgres's own log
+  - the backend suite also runs for a lock-only or migration-only PR
+  - each image scan fails if its tag is no longer the one `docker-compose.yml` runs
+  - the Meilisearch rollback in `DEPLOY.md` works as written
 
 **Left, and whose:**
 - CI on #57 goes green.
@@ -169,6 +175,7 @@ Done above.
   - the claim banner
 - **#43:** the claim cases that still apply.
 - **The live scoreboard:** it follows the server's totals, so a hide-results question's points are no longer left out.
+- **The answered count:** "3 of 2 answered". The host adds one per answer, and drops a player who disconnects from the total, so a player who answers and then loses signal is counted on one side only. Found by step 1's cheap review.
 
 ### Step 4: features
 
@@ -242,3 +249,12 @@ Done above.
   - **gitleaks:** CI runs 8.24.3, not the 8.28 used locally, and 8.24's rule read a hostname list in `DEPLOY.md` as a key. It is pinned now, so local and CI agree.
   - **e2e:** `run.sh` could not find a pipenv installed with pipx. It died before any test.
   - **François's answer:** the phone ring drains, like the host bar.
+- **11 Oct, step 1 cheap review:** no blockers.
+  - **The DEPLOY.md hostname** was allowed by commit, so a squash, a rebase or an edit to that line would turn the scan red again. It is now allowed by value, in `.gitleaks.toml`, and the two commit fingerprints are gone.
+  - **Fixed in step 1:**
+    - CI did not keep `pg.log`, the file its own error message points to.
+    - The backend suite skipped a PR that only touched the lock or a migration.
+    - A tag bumped in compose would have left the image scan on the old one.
+    - The Meilisearch rollback missed the volume declaration, so compose would have refused it.
+  - **Moved to step 3:** the host's answered count can exceed the player count.
+  - **One local e2e failure,** the lobby QR keyboard test. It pressed Enter before focus reached the dialog's Close button, and the test now waits for that.

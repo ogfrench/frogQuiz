@@ -313,9 +313,11 @@ The Docker image and `Pipfile.lock` are both on Python 3.13. Bumping means chang
 `Dockerfile`, `Pipfile`, regenerating `Pipfile.lock` and running the test suite —
 `ormar`/`databases`/`sqlalchemy` are the likely breakage.
 
-Backend lint, frontend lint, the backend test suite and the audit run on every pull
-request. The pytest workflow copies `.env.ci`, a throwaway configuration with no
-credentials in it, so it needs no repository secret.
+Backend lint, frontend lint and the backend test suite run on every pull request that
+touches their files. The backend suite counts the lock and the migrations as its files,
+so a Dependabot PR runs it. The audit runs on every pull request. The pytest workflow
+copies `.env.ci`, a throwaway configuration with no credentials in it, so it needs no
+repository secret.
 
 ## Security audit (#53)
 
@@ -328,7 +330,8 @@ Monday mornings. Any one of these fails it:
 - **Frontend:** a high or critical advisory in the production dependencies.
 - **Images:** a high or critical finding with a fix in a third-party image pinned in
   `docker-compose.yml`. Dependabot does not track those.
-- **Secrets:** a secret anywhere in the history (gitleaks).
+- **Secrets:** a secret in a pull request's or a push's new commits, or, on the Monday
+  run, anywhere in the history (gitleaks).
 
 **First run, 11 Oct 2026 (V1 audit):**
 
@@ -361,9 +364,10 @@ Monday mornings. Any one of these fails it:
   A GitHub token planted in a throwaway local clone was caught. This was checked locally
   rather than with a throwaway branch on GitHub, so no fake secret was ever pushed.
   - CI's first run used gitleaks 8.24.3, the action's default, whose generic rule also
-    flagged a hostname list in this file's `api.frogquiz.xyz` steps. That line is allowed
-    by fingerprint too, and the workflow now pins 8.24.3, which finds nothing else in
-    the whole history. An unpinned version could turn the check red with no change here.
+    flagged a hostname list in this file's `api.frogquiz.xyz` steps. `.gitleaks.toml`
+    allows that one hostname by value, which holds however the line is later edited.
+    The workflow now pins 8.24.3, which finds nothing else in the whole history. An
+    unpinned version could turn the check red with no change here.
 - **GitHub's own scanning:** the repository is public, so GitHub's secret scanning and
   push protection can also be switched on, under Settings → Code security. That is a
   settings change for the owner.
@@ -387,8 +391,10 @@ On the VM, with the V1 deploy or before it:
 4. Once search works, remove the old volume: `docker volume ls | grep meilisearch`,
    then `docker volume rm <project>_meilisearch-data`.
 
-To go back, put `getmeili/meilisearch:v0.28.0` and `meilisearch-data:/data.ms` back in
-`docker-compose.yml`. Until step 4, the old volume is still there.
+To go back, in `docker-compose.yml` put back `getmeili/meilisearch:v0.28.0`, the mount
+`meilisearch-data:/data.ms`, and `meilisearch-data:` under the top-level `volumes:`
+(compose refuses a mount of an undeclared volume). Until step 4, the old volume is still
+there.
 
 ## API hostname: `api.frogquiz.xyz`
 

@@ -33,9 +33,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - **Phone timer ring:** it now empties as time runs out, as the host's bar does. It used to fill red, so the phone and the projector counted in opposite directions (François, 11 Oct). The phone journey spec checks the direction.
 - **Meilisearch:** moved from v0.28.0 to v1.54.3. The image scan's first run found 17 high and critical findings in the old image. v1 gets a new volume and rebuilds its index from Postgres on start-up; `DEPLOY.md` has the steps and the way back.
 - **Image scan:** it skips `gosu` in the postgres image. Its only findings were Go's standard library in a binary that runs once at start.
-- **Secrets scan:** a hostname list in `DEPLOY.md` that gitleaks 8.24 read as a key is allowed by fingerprint. gitleaks is pinned to 8.24.3, the version the exceptions were checked against, and it no longer tries to comment on the PR.
+- **Secrets scan:** gitleaks 8.24 read a hostname list in `DEPLOY.md` as a key. `.gitleaks.toml` allows that one hostname by value, rather than one commit's line, so editing the line or rewriting the history cannot turn the scan red. gitleaks is pinned to 8.24.3, the version the exceptions were checked against, and it no longer tries to comment on the PR.
 - **e2e in CI:** `e2e/run.sh` also finds a pipenv installed with pipx, which no Python can import. The first CI run stopped there before any test.
 - **e2e outside root:** `e2e/run.sh` starts Postgres with its Unix socket off. Debian's build puts the socket where only the postgres user may write, so the GitHub runner, or any non-root account, failed to start it with no message. It now says why it stopped, and CI keeps the logs of a failed run.
+- **e2e in CI:** a failed run also keeps Postgres's own log, the file its error message names.
+- **Backend tests in CI:** they also run when a pull request only changes `Pipfile`, `Pipfile.lock`, a migration, `.env.ci`, `run_tests.sh`, `alembic.ini` or `docker-compose.dev.yml`. A Dependabot lock update used to skip them.
+- **Image scan:** each job fails if its exact image and tag are no longer in `docker-compose.yml`, so a tag bumped there cannot leave the scan on the old one. An image newly added to compose still has to be added to the scan by hand.
+- **Deploy guide:** the Meilisearch rollback also restores the old volume's declaration, which compose needs, and the audit section says what each workflow actually runs on.
 
 ### V1 started, 11 Oct
 

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+
+# gitleaks reads this file from the repository root by itself. It keeps every default rule
+# and allows one value that is public DNS, not a key: the VM's sslip.io hostname, which
+# sslip.io derives from the IP. Written next to the new API name and a comma, it reads to
+# gitleaks 8.24's generic rule as a key's value. Allowing the value rather than one commit's
+# line (.gitleaksignore) holds when the line is edited, moved or the history is rewritten.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "The VM's sslip.io hostname"
+regexes = ['''^134-98-158-173\.sslip\.io$''']

@@ -49,7 +49,7 @@ The first capture covered 113 screens:
 | Screen | Size | Theme | Finding | Outcome |
 | --- | --- | --- | --- | --- |
 | Host question | 1440, 1920 | both | The timer ring and "N answers submitted" were squeezed into one small row between the question and the answers, with the rest of the projector empty (François, 11 Oct) | Fixed. Four designs were mocked up live, and François chose C: one wide bar above the answers that empties as time runs out, with "N of M answered" at its start and the seconds at its end. The thin rule under the controls bar stays on slides only. |
-| Timer ring, phones | 390 | dark | Hardcoded white disc, gainsboro track and black number, so it read as a white sticker on the dark theme | Fixed. It now uses the `--background`, `--muted` and `--foreground` tokens, with `--destructive` for the arc. |
+| Timer ring, phones | 390 | dark | Hardcoded white disc, gainsboro track and black number, so it read as a white sticker on the dark theme | Fixed. It now uses the `--background`, `--muted` and `--foreground` tokens, with the red its callers pass (`#ef4444`) for the arc. |
 | `/account/oauth-error` | all | both | axe violation (no document title). The page is one of the four still on the old layout (`docs/redesign-status.md`). Step 0 listed only 390 and 834 in light, because of the capture gap found in step 1 | Step 5 (#44), with the other three |
 
 **Gap found later:** this baseline missed the signed-out screens at 1440 and in dark. The capture waited at 834 for a phone menu button that is hidden from 768 up, so the rest of that loop never ran. Step 1 fixed the spec and looked at those 80 shots.

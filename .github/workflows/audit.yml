@@ -13,7 +13,8 @@
 # - node: high and critical advisories in the frontend's production dependencies.
 # - images: the third-party images pinned in docker-compose.yml, which Dependabot does not
 #   track: high and critical findings that have a fix.
-# - secrets: gitleaks over the whole history.
+# - secrets: gitleaks over a pull request's or push's new commits, and over the whole history
+#   on the Monday run.
 name: Audit
 
 on:
@@ -74,6 +75,19 @@ jobs:
         # covered by the jobs above.
         image: ["getmeili/meilisearch:v1.54.3", "valkey/valkey:alpine", "postgres:14-alpine"]
     steps:
+      - uses: actions/checkout@v6
+      # Dependabot does not update compose images, and nothing ties this list to the file:
+      # a tag bumped there but not here would leave this job scanning the old image. Whole
+      # fields, so a longer tag or a commented-out line does not pass. An image added to
+      # compose still has to be added here by hand.
+      - name: The image is still the one docker-compose.yml runs
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          awk -v i="$IMAGE" '$1 == "image:" && $2 == i { found = 1 } END { exit !found }' docker-compose.yml || {
+            echo "::error::$IMAGE is not in docker-compose.yml; update the matrix in audit.yml"
+            exit 1
+          }
       # Pinned to the commit of the immutable v0.36.0 release: the action's version tags
       # were rewritten in a supply-chain attack in March 2026 (CVE-2026-33634).
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25

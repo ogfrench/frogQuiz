@@ -67,6 +67,7 @@ jobs:
             e2e/.data/report
             e2e/.data/playwright
             e2e/.data/*.log
+            e2e/.data/pg/pg.log
           retention-days: 14
           # e2e/.data is a dot directory, which upload-artifact skips unless told.
           include-hidden-files: true

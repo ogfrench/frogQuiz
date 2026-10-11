@@ -5,12 +5,31 @@
 # .github/workflows/app.yaml
 name: PyTest
 on:
+  # The suite installs the lock, runs the migrations, and starts its database from
+  # docker-compose.dev.yml, so a change to any of them alone is tested too: a Dependabot PR
+  # touches only Pipfile.lock.
   push:
     paths:
       - "frogquiz/**"
+      - "migrations/**"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - ".env.ci"
+      - "run_tests.sh"
+      - "alembic.ini"
+      - "docker-compose.dev.yml"
+      - ".github/workflows/pytest.yml"
   pull_request:
     paths:
       - "frogquiz/**"
+      - "migrations/**"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - ".env.ci"
+      - "run_tests.sh"
+      - "alembic.ini"
+      - "docker-compose.dev.yml"
+      - ".github/workflows/pytest.yml"
   workflow_dispatch:
 
 jobs:
