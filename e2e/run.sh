@@ -182,8 +182,14 @@ fi
 # ---- Postgres --------------------------------------------------------------------
 log "starting Postgres on $PG_PORT"
 pg initdb -D "$PGDATA" -U postgres --auth=trust -E UTF8 --no-locale >"$DATA/initdb.log" 2>&1
+# Everything connects over TCP, so the Unix socket is off: Debian's build puts it in
+# /var/run/postgresql, which only the postgres user may write, and a server started by
+# anyone else (the GitHub runner, a laptop account) died there on its lock file.
+PG_OPTS="-p $PG_PORT -c listen_addresses=127.0.0.1"
+[ "$OS" != "windows" ] && PG_OPTS="$PG_OPTS -c unix_socket_directories=''"
 # pg_ctl leaves the server holding its stdout; without the redirect this hangs.
-pg pg_ctl -D "$PGDATA" -o "-p $PG_PORT -c listen_addresses=127.0.0.1" -l "$PGDATA/pg.log" -w start >/dev/null 2>&1 </dev/null
+pg pg_ctl -D "$PGDATA" -o "$PG_OPTS" -l "$PGDATA/pg.log" -w start >/dev/null 2>&1 </dev/null \
+  || die "Postgres did not start; see $PGDATA/pg.log and $DATA/initdb.log"
 "$PG_BIN/psql" -h 127.0.0.1 -p $PG_PORT -U postgres -qc "create database frogquiz;"
 
 # ---- Redis, Meilisearch ----------------------------------------------------------

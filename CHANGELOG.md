@@ -35,6 +35,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - **Image scan:** it skips `gosu` in the postgres image. Its only findings were Go's standard library in a binary that runs once at start.
 - **Secrets scan:** a hostname list in `DEPLOY.md` that gitleaks 8.24 read as a key is allowed by fingerprint. gitleaks is pinned to 8.24.3, the version the exceptions were checked against, and it no longer tries to comment on the PR.
 - **e2e in CI:** `e2e/run.sh` also finds a pipenv installed with pipx, which no Python can import. The first CI run stopped there before any test.
+- **e2e outside root:** `e2e/run.sh` starts Postgres with its Unix socket off. Debian's build puts the socket where only the postgres user may write, so the GitHub runner, or any non-root account, failed to start it with no message. It now says why it stopped, and CI keeps the logs of a failed run.
 
 ### V1 started, 11 Oct
 
