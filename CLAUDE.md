@@ -218,3 +218,20 @@ Every time you make a code/config change in this repo (not for pure Q&A or resea
 - Both teammates work on a **shared branch** — no heavy PR/branching ceremony for this internal project.
 - Quality/safety gate: commits should go through a **Claude review pass using a cheap/fast model** before being considered done, checking for correctness and safety issues (not a full design review). Treat this as the equivalent of a lightweight teammate review, not a blocker for experimentation.
 - Since there's no formal PR review, be more conservative by default on risky operations (schema changes, deleting code, touching auth/session logic) — surface them clearly rather than assuming shared context.
+
+## Delegating to cheaper models
+
+The general rule (hand a task to the cheapest model whose mistake would be caught, cheaply, before it lands), how to brief an agent and how to check its work are in the `model-delegation` skill, from `ogfrench/claude-code-setup` (`agent-workflow` plugin). It lands in `.claude/skills/` on the next sync. In this repo:
+
+| Model | Work here |
+| --- | --- |
+| **haiku** | Run `pnpm test`, `svelte-check`, `flake8` and the backend suite, and report the failures. Read CI logs. Rebuild the visual gallery. Fix stale counts in `HANDOVER.md` and `TODO.md`. Draft CHANGELOG lines from a diff. |
+| **sonnet** | The cheap review on every commit (Collaboration workflow, above). Bounded features with their test written first. First-pass triage of a visual capture. A read-only probe of a local stack (security, CRUD) with its own accounts. |
+| **The main model** | Auth, sessions, the claim and anonymous ownership. Anything that deletes files or rows (images, the expiry sweep). Migrations. The socket protocol. Integrating agents' work, and every step-end review. |
+
+What runs one at a time here, whichever model:
+
+- **One e2e stack per working tree.** A second one, even on other ports, runs `svelte-kit sync` in the same `frontend/` and reloads the first one's pages mid-test. An agent that needs its own stack gets its own worktree, or waits.
+- **Rate limits are keyed by address,** and every local client is `127.0.0.1`. An agent probing the API while specs run can hand them 429s.
+- **The backend suite's database** (`frogquiz_pytest`) and Redis index: two runs at once need different names.
+- **No edits under `frontend/` while specs run.** Vite reloads the open pages.
