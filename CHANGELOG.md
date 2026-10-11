@@ -6,7 +6,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ### V1 step 3a: data and concurrency, 11 Oct
 
-- **Save results, anonymous host (#52):** the server no longer writes a results row for a game hosted without an account, which nobody could ever open. It answers `results_not_saved` with a reason. A host whose account was deleted mid-game still gets an ownerless row, as before.
+- **Save results, anonymous host (#52):** the server no longer writes a results row for a game hosted without an account, which nobody could ever open. It answers `results_not_saved` with a reason. A host whose account was deleted mid-game still gets an ownerless row, as before. A save for a game that has already gone from Redis now gets the same refusal, where it used to raise in the handler.
+- **A view or a launch undid a save (#35 row 7):** opening a quiz's page or starting a game added one to its count on a copy of the quiz loaded at the start, and wrote the whole row back. A save that landed in between was reverted. A test that lands the save inside that window reproduced it for both. Views and plays are now one-statement increments, which also stops two at once losing a count.
+- **Other writers keep to their columns:** a claim, a rating, a moderator's rating and an Excel import into an existing quiz now write only what they change. The worker's image job no longer writes the quiz row at all: its links are saved on their own, and its copy of the quiz was stale.
 
 ### V1 step 1: CI and production safety, 11 Oct
 

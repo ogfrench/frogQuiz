@@ -93,4 +93,6 @@ async def rate_quiz(data: RateQuizInput, quiz_id: uuid.UUID, user: User = Depend
         quiz.likes += 1
     else:
         quiz.dislikes += 1
-    await quiz.update()
+    # Only the two counts: written whole, the row loaded above put back any save that
+    # landed in between (#35 row 7).
+    await quiz.update(_columns=["likes", "dislikes"])

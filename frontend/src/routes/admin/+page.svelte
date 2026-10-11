@@ -32,7 +32,9 @@ SPDX-License-Identifier: MPL-2.0
 	import { resumeFrom } from '$lib/play/admin/resume';
 	import { totalsFromResults } from '$lib/play/admin/totals';
 
-	// Save results is hidden for the MVP (MVP.md D4).
+	// Save results is hidden for the MVP (MVP.md D4). Turning it back on also needs a
+	// handler for `results_not_saved`: the server refuses an anonymous host with a reason
+	// (#52), and without one that click does nothing.
 	const SAVE_RESULTS_ENABLED = false;
 
 	const { t } = getLocalization();

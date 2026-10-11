@@ -217,7 +217,8 @@ async def handle_import_from_excel(data: BinaryIO, user: User) -> Quiz:
         existing_quiz.questions = [*existing_quiz.questions, *questions]
         existing_quiz.updated_at = datetime.now()
         existing_quiz.mod_rating = None
-        _ = await existing_quiz.update()
+        # Only what an import changes, so it cannot put back an older title (#35 row 7).
+        _ = await existing_quiz.update(_columns=["questions", "updated_at", "mod_rating"])
         quiz = existing_quiz
     return quiz
 

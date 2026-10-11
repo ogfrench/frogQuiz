@@ -39,6 +39,25 @@ def _quiz_expired(quiz: Quiz) -> bool:
     return quiz.expire_at is not None and quiz.expire_at < datetime.now()
 
 
+_COUNTERS = {
+    "views": "UPDATE quiz SET views = views + 1 WHERE id = :id",
+    "plays": "UPDATE quiz SET plays = plays + 1 WHERE id = :id",
+}
+
+
+async def _count(quiz: Quiz, column: str) -> None:
+    """Add one to `views` or `plays`, in one statement that touches nothing else.
+
+    Both used to add one to the copy loaded at the start of the request and write the
+    whole row back. A save that landed in between was reverted, `updated_at` included,
+    and the editor's next save then got a 409 it had not earned (#35 row 7). The view
+    runs on every visit to a quiz page, so it took only a viewer, not a second editor.
+    Two at once also lost a count.
+    """
+    await database.execute(_COUNTERS[column], {"id": quiz.id.hex})
+    setattr(quiz, column, getattr(quiz, column) + 1)
+
+
 async def _find_own_quiz(quiz_id: uuid.UUID, user: User | None, anon_secret: str | None) -> Quiz | None:
     """The quiz if the caller owns it, by account or by anonymous secret.
 
@@ -117,8 +136,7 @@ async def get_public_quiz(quiz_id: uuid.UUID):
     if quiz is None or _quiz_expired(quiz):
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
     else:
-        quiz.views += 1
-        await quiz.update()
+        await _count(quiz, "views")
         return PublicQuizResponse(**quiz.model_dump())
 
 
@@ -165,8 +183,7 @@ async def start_quiz(
             status_code=400,
             content={"detail": f"This quiz is a draft. Finish question {numbers} in the editor first."},
         )
-    quiz.plays += 1
-    await quiz.update()
+    await _count(quiz, "plays")
     game_pin = randint(100000, 999999)
     if custom_field == "":
         custom_field = None
@@ -239,7 +256,9 @@ async def claim_quiz(
     quiz.user_id = user.id
     quiz.anon_secret = None
     quiz.expire_at = None
-    await quiz.update()
+    # Only the columns a claim changes: written whole, a save that landed after the load
+    # above went back to what this request had read (#35 row 7).
+    await quiz.update(_columns=["user_id", "anon_secret", "expire_at"])
     # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
     # ownerless, they counted against nobody's quota and outlived the account. Only the
     # ones already hashed are counted here; calculate_hash counts the rest when it runs,

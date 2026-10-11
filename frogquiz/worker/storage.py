@@ -146,7 +146,6 @@ async def quiz_update(ctx, old_quiz: Quiz, quiz_id: uuid.UUID):
     print("Change detected")
     removed_images = list(set(old_images) - set(new_images))
     added_images = list(set(new_images) - set(old_images))
-    change_made = False
     for image in removed_images:
         if "--" in image:
             await storage.delete([image])
@@ -156,7 +155,6 @@ async def quiz_update(ctx, old_quiz: Quiz, quiz_id: uuid.UUID):
                 continue
             if image in linked:
                 await new_quiz.storageitems.remove(item)
-                change_made = True
             # Unlinking was all this did, so taking an image off a question left the file
             # in storage for good and left its bytes counted against the owner's quota
             # forever -- `storage_used` is only ever incremented. The editor's own X on a
@@ -171,6 +169,6 @@ async def quiz_update(ctx, old_quiz: Quiz, quiz_id: uuid.UUID):
             if item is None:
                 continue
             await new_quiz.storageitems.add(item)
-            change_made = True
-    if change_made:
-        await new_quiz.update()
+    # No write of the quiz row here. add() and remove() above write the link table at
+    # once, and this job's copy of the quiz was loaded when it started: written back, it
+    # undid any save the editor made while the job ran (#35 row 7).

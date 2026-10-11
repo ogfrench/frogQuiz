@@ -58,4 +58,5 @@ async def set_mod_rating_for_quiz(
     if quiz is None:
         raise HTTPException(status_code=404, detail="Quiz not found")
     quiz.mod_rating = data.rating
-    return await quiz.update()
+    # Only the rating, so an owner's save that landed in between is kept (#35 row 7).
+    return await quiz.update(_columns=["mod_rating"])
