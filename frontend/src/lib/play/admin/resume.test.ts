@@ -10,7 +10,7 @@ const answer = (username: string, score: number) => ({ username, score });
 const snapshot = (over: Partial<AdminSnapshot> = {}): AdminSnapshot => ({
 	game: { started: true, current_question: 1 },
 	players: [{ username: 'ana' }, { username: 'ben' }, { username: 'cy' }],
-	answer_count: 2,
+	answered: ['ana', 'ben'],
 	question_open: true,
 	time_left: 7,
 	results: {
@@ -38,7 +38,7 @@ describe('a host who reloads', () => {
 		expect(r.shown_question_now).toBe(1);
 		expect(r.timer_res).toBe('7');
 		expect(r.question_results).toBeNull();
-		expect(r.answer_count).toBe(2);
+		expect(r.answered).toEqual(['ana', 'ben']);
 	});
 
 	it('after the question closed comes back with the clock at zero, so its answers come up', () => {

@@ -12,6 +12,8 @@ import asyncpg.exceptions
 import bleach
 from fastapi import APIRouter, HTTPException, Depends, Header, Request, Response
 from fastapi.responses import JSONResponse
+
+from frogquiz.helpers.live_images import is_live
 from pydantic import BaseModel
 import html
 
@@ -50,6 +52,8 @@ ANON_QUIZ_EXPIRE_DAYS = 30
 
 class InitEditorResponse(BaseModel):
     token: str
+    # A game of this quiz is running: it keeps the version it started with (#35).
+    live: bool = False
 
 
 class EditSessionData(BaseModel):
@@ -120,7 +124,7 @@ async def init_editor(
         EditSessionData(quiz_id=quiz_id, edit=edit, user_id=user.id if user is not None else None).model_dump_json(),
         ex=3600,
     )
-    return InitEditorResponse(token=edit_id)
+    return InitEditorResponse(token=edit_id, live=edit and await is_live(quiz_id))
 
 
 async def _end_session(edit_id: str):

@@ -55,7 +55,7 @@ SPDX-License-Identifier: MPL-2.0
 		public selected_question: number;
 		public timer_res: string;
 		public question_results: any;
-		public answer_count: number;
+		public answered: string[];
 		public shown_question_now: number;
 		public final_results: Array<null> | Array<Array<PlayerAnswer>>;
 		public game_started: boolean;
@@ -77,7 +77,7 @@ SPDX-License-Identifier: MPL-2.0
 			this.final_results = $state([null]);
 			this.game_started = $state(false);
 			this.question_results = $state(null);
-			this.answer_count = $state(0);
+			this.answered = $state([]);
 			this.scoreboard_open = $state(false);
 			this.results_requested_for = $state(-1);
 		}
@@ -161,7 +161,7 @@ SPDX-License-Identifier: MPL-2.0
 		if (game_state.selected_question >= 0 && server_question === game_state.selected_question) {
 			// After a dropped connection, not a reload: what happened to the question while
 			// this screen was away. Without it the projector waited out the full timer (E11).
-			game_state.answer_count = data['answer_count'] ?? game_state.answer_count;
+			game_state.answered = data['answered'] ?? game_state.answered;
 			if (data['question_open'] === false) game_state.timer_res = '0';
 		} else {
 			// A fresh load of a game already under way (a reload, or the host link opened

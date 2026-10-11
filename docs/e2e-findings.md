@@ -18,6 +18,28 @@ convention and were fixed the same day. The edge-case pass of the same evening (
 passing, dropped connections, a back swipe, a capital letter) is E1 to E27, in
 [`edge-cases-2026-10.md`](edge-cases-2026-10.md).
 
+## Concurrency, #35 (measured 11 Oct, step 3a)
+
+The same quiz open in two places, launched twice, or changed under a running game. Each
+row is what was measured on the local stack, not predicted; a row nobody has run yet says
+so and where it is planned.
+
+| # | Scenario | Measured | Test |
+|---|---|---|---|
+| 1 | Two tabs, both autosave | The second gets a 409, now with the current version. The editor asks Keep mine (saves over it) or Load the other version (reloads, keeps this tab's text, offers Restore). Both measured. | `editor-conflict.e2e.ts` |
+| 2 | A stale tab saves and closes | `/editor/finish` took no `base` and wrote the older copy over the newer. It takes `base` now and answers 409. The editor itself saves through `/save`, so this was an API-only hole. | `test_editor_versions.py` |
+| 3 | Deleted in another tab, then typed in | A 404 showed as "Could not save: 404". Now it says the quiz was deleted, keeps the text, and offers Save as a new quiz, which was measured creating one. | `editor-conflict.e2e.ts` |
+| 4 | Signed out elsewhere while editing | It showed "403: This edit session belongs to another user". Now it says the browser is signed out or signed in as someone else, and the text stays. | `editor-conflict.e2e.ts` |
+| 5 | New quiz, first save in two tabs | Not measured. By design two edit sessions make two quizzes. | Step 6 (#45) |
+| 6 | One quiz launched twice | `plays` lost a count to a read-and-write; it is one statement now (`views` measured the same way, 3 of 3). The lobby pointer overwrite is not measured. | `test_counter_writes.py`; the rest in step 6 |
+| 7 | A view or a launch lands during a save | **Reproduced:** the save's title went back to the old one, for both. Fixed, and the reverse (a save undoing a view, or a claim) too. | `test_counter_writes.py` |
+| 8 | Edited while a game of it runs | The game keeps its snapshot; the editor now says a game is running. | `crud-lifecycle.e2e.ts` (edits mid-game) |
+| 9 | An image taken out while a game runs | The image job deletes a removed image within seconds when no game runs (the existing lifecycle test). With a game running it now holds it: still on disk after the job, freed when the game ends. | `crud-lifecycle.e2e.ts` › a live game keeps its images |
+| 10 | The quiz deleted while a game runs | Same: the images stay until the game ends. | same |
+| 11 | Made unlisted or deleted while someone else hosts | Not measured. | Step 6 (#45) |
+| 12 | Two host screens on one game | Not re-measured here; `game-reload.e2e.ts` covers a reload. | Step 6 (#45) |
+| 13 | An anonymous quiz expires while edited or hosted | Read, not run: the editor says it expired and keeps the text; the expiry sweep holds a running game's images. | Step 3b (#55) |
+
 ## How each was fixed
 
 | # | Fix |

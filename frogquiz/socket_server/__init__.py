@@ -14,7 +14,8 @@ import random
 import socketio
 from cryptography.fernet import Fernet
 
-from frogquiz.config import redis, settings
+from frogquiz.config import arq, redis, settings
+from frogquiz.helpers.live_images import end_live
 from frogquiz.db.models import (
     PlayGame,
     QuizQuestionType,
@@ -395,9 +396,9 @@ async def register_as_admin(sid: str, data: dict):
     await sio.enter_room(sid, game_pin)
     await sio.enter_room(sid, f"admin:{data.game_pin}")
     players = [json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")]
-    answer_count = 0
+    answered: list[str] = []
     if game.current_question >= 0:
-        answer_count = len(await AnswerDataList.get_redis_or_empty(game_pin, game.current_question))
+        answered = [a.username for a in await AnswerDataList.get_redis_or_empty(game_pin, game.current_question)]
     left = await seconds_left(game) if game.question_show else None
     final = await redis.get(f"game:{game_pin}:final_results")
     await sio.emit(
@@ -414,7 +415,9 @@ async def register_as_admin(sid: str, data: dict):
             # And where the question stands: answers and "everyone answered" sent while
             # the host was reconnecting never reached it, so its projector waited out
             # the full timer on a question that was over (E11).
-            "answer_count": answer_count,
+            "answered": answered,
+            # A host page from before `answered` reads this during a deploy.
+            "answer_count": len(answered),
             "question_open": game.question_show,
             # A reload mid-game came back on the cover, and its "Next question 1" sent the
             # game back to the start. What the host needs to pick the game up where it is:
@@ -437,6 +440,13 @@ async def get_question_results(sid: str, data: dict):
     answer_data_list = await AnswerDataList.get_redis_or_empty(game_pin, data["question_number"])
     if await update_game(game_pin, lambda g: setattr(g, "question_show", False)) is None:
         return
+    # The running totals, to the host's room only, and ahead of the results so the screens
+    # those open read them. Every answer is added here as it is recorded, hide-results
+    # questions included. The host used to add a question's points itself when its results
+    # screen mounted, and a hide-results question has no results screen, so the live
+    # scoreboard left those points out while the podium counted them.
+    totals = await redis.hgetall(f"game_session:{game_pin}:player_scores")
+    await sio.emit("scores", {name: int(points) for name, points in totals.items()}, room=f"admin:{game_pin}")
     await sio.emit("question_results", answer_data_list.model_dump(), room=game_pin)
 
 
@@ -549,7 +559,10 @@ async def submit_answer(sid: str, data: dict):
     await redis.expire(f"game_session:{game_pin}:players:{username}", 7200)
     # Both were emitted with no room, so to every client in every game: one game's last
     # answer ended the question in all the others.
-    await sio.emit("player_answer", {}, room=f"admin:{game_pin}")
+    # With the name, so the host counts who answered rather than how many answers came:
+    # a player who answered and then left stayed in the count and dropped out of the
+    # total, and the projector read "3 of 2 answered".
+    await sio.emit("player_answer", {"username": username}, room=f"admin:{game_pin}")
     if await everyone_here_answered(game_pin, answers) and await close_question(game_pin, question_index):
         await sio.emit("everyone_answered", {}, room=game_pin)
 
@@ -579,6 +592,9 @@ async def get_final_results(sid: str, _data: dict):
     # Kept for a phone that was asleep when they went out: its rejoin gets the podium (E18).
     await redis.set(f"game:{session['game_pin']}:final_results", json.dumps(results), ex=7200)
     await sio.emit("final_results", results, room=session["game_pin"])
+    # The game is over: images its quiz no longer uses can go now (#35).
+    await end_live(game_data.quiz_id, session["game_pin"])
+    await arq.enqueue_job("release_held_images_job", str(game_data.quiz_id))
 
 
 @sio.event
@@ -762,6 +778,8 @@ async def end_game(sid: str, _data: dict | None = None):
     await redis.delete(*keys)
     if game_data.user_id is not None:
         await redis.delete(f"game_in_lobby:{game_data.user_id.hex}")
+    await end_live(game_data.quiz_id, game_pin)
+    await arq.enqueue_job("release_held_images_job", str(game_data.quiz_id))
     await sio.emit("game_ended", room=game_pin)
 
 

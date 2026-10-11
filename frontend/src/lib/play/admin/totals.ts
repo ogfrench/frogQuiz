@@ -16,6 +16,23 @@ type ScoredAnswer = { username: string; score: number };
  * Players in `known` who never scored are kept at 0 rather than dropped, so everyone
  * who joined still shows on the podium.
  */
+/**
+ * Each player's total from the server's running tally (the `scores` event), with every
+ * player in `known` at 0 or more. The server adds an answer's points as it records it,
+ * hide-results questions included, which the host's own per-question sum missed.
+ */
+export function totalsFromServer(
+	scores: Record<string, number | string> | null | undefined,
+	known: Iterable<string> = []
+): Record<string, number> {
+	const totals: Record<string, number> = {};
+	for (const name of known) totals[name] = 0;
+	for (const [name, points] of Object.entries(scores ?? {})) {
+		totals[name] = Number(points) || 0;
+	}
+	return totals;
+}
+
 export function totalsFromResults(
 	results: Record<string, ScoredAnswer[] | null | undefined>,
 	known: Iterable<string> = []

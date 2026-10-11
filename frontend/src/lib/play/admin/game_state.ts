@@ -18,7 +18,8 @@ export interface IGameState {
 	selected_question: number;
 	timer_res: string;
 	question_results: any;
-	answer_count: number;
+	/** Who has answered the question that is up. Counted against `players` (answered.ts). */
+	answered: string[];
 	shown_question_now: number;
 	final_results: Array<null> | Array<Array<PlayerAnswer>>;
 	game_started: boolean;

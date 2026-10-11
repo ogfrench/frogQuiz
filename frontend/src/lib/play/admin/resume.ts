@@ -10,7 +10,8 @@ type ScoredAnswer = { username: string; score: number };
 export interface AdminSnapshot {
 	game: { started?: boolean; current_question?: number } | null;
 	players?: { username: string }[];
-	answer_count?: number;
+	/** Who has answered the question that is up. */
+	answered?: string[];
 	question_open?: boolean;
 	/** Whole seconds left on an open question, by the server's clock. */
 	time_left?: number;
@@ -24,7 +25,7 @@ export interface Resume {
 	shown_question_now: number;
 	timer_res: string;
 	question_results: null;
-	answer_count: number;
+	answered: string[];
 	player_scores: Record<string, number>;
 }
 
@@ -49,7 +50,7 @@ export function resumeFrom(s: AdminSnapshot): Resume | null {
 		shown_question_now: index,
 		timer_res: left > 0 ? String(left) : '0',
 		question_results: null,
-		answer_count: s.answer_count ?? 0,
+		answered: s.answered ?? [],
 		player_scores: totalsFromResults(
 			earlier,
 			(s.players ?? []).map((p) => p.username)

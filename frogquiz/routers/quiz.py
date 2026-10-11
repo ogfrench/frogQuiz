@@ -30,6 +30,7 @@ from frogquiz.config import redis, settings, meilisearch
 from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
+from frogquiz.helpers.live_images import hold_images, is_live, mark_live
 from frogquiz.helpers.ratelimit import rate_limit
 from frogquiz.kahoot_importer.import_quiz import import_quiz
 import urllib.parse
@@ -224,6 +225,8 @@ async def start_quiz(
         code = generate_code(6)
         await redis.set(f"game:cqc:code:{code}", game_pin, ex=3600)
     await redis.set(f"game:{str(game.game_pin)}", game.model_dump_json(), ex=18000)
+    # While this game runs, its quiz's images are held rather than released (#35).
+    await mark_live(quiz.id, game.game_pin)
 
     if user is not None:
         await redis.set(f"game_pin:{user.id}:{quiz_id}", game_pin, ex=18000)
@@ -374,9 +377,14 @@ async def delete_quiz(
     # Captured before the delete, released after: while the quiz row exists every one of
     # its images still counts as referenced, and the reference count is the whole point.
     image_ids = extract_image_ids_from_quiz(quiz)
+    live = await is_live(quiz.id)
     meilisearch.index(settings.meilisearch_index).delete_document(str(quiz.id))
     deleted = await quiz.delete()
-    await release_quiz_images(image_ids)
+    if live:
+        # A game of it is still showing these; its end releases them (#35 row 10).
+        await hold_images(quiz.id, image_ids)
+    else:
+        await release_quiz_images(image_ids)
     return deleted
 
 

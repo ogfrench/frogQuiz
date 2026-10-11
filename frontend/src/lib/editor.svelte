@@ -195,6 +195,9 @@ SPDX-License-Identifier: MPL-2.0
 	// so restoring into `data` alone left the old text on screen, to be saved back.
 	let generation = $state(0);
 	let reloading = false;
+	// A game of this quiz is running (#35). It keeps the version it started with, and the
+	// images an edit removes stay until it ends; the author is told, not stopped.
+	let live_game = $state(false);
 	// The backup key for a quiz that has not been saved yet. /create offers it back, so a
 	// first save that fails keeps its text too.
 	const NEW = 'new';
@@ -214,6 +217,7 @@ SPDX-License-Identifier: MPL-2.0
 		if (res.status === 200) {
 			const json = await res.json();
 			edit_id = json.token;
+			live_game = json.live === true;
 			// The baseline is what the editor was given, taken now. It used to be taken
 			// 500ms later, to let the rich-text fields normalize what they loaded -- but an
 			// edit typed inside that window was swallowed by the baseline, so `unsaved` read
@@ -629,6 +633,14 @@ SPDX-License-Identifier: MPL-2.0
 								</Button>
 							{/if}
 						</div>
+					{/if}
+					{#if live_game}
+						<p
+							role="status"
+							class="border-border bg-muted text-muted-foreground shrink-0 border-b px-4 py-2 text-sm"
+						>
+							{$t('editor.live_game')}
+						</p>
 					{/if}
 					{#if restorable !== null}
 						<section

@@ -22,6 +22,7 @@ from frogquiz.helpers import (
     release_quiz_images,
 )
 from frogquiz.helpers.thumbhash import image_to_thumbhash
+from frogquiz.helpers.live_images import hold_images, is_live, release_all_held_images, release_held_images
 
 # Long enough that no editor still holding an unsaved image is cut short: autosave
 # sends a change within seconds.
@@ -125,8 +126,13 @@ async def clean_expired_anonymous_quizzes(ctx):
         # double-key form, so a modern upload was never freed and an expired anonymous
         # quiz left its images in storage for good.
         image_ids = extract_image_ids_from_quiz(quiz)
+        live = await is_live(quiz.id)
         await quiz.delete()
-        await release_quiz_images(image_ids)
+        if live:
+            # A game started before it expired runs to its end, with its images (#55).
+            await hold_images(quiz.id, image_ids)
+        else:
+            await release_quiz_images(image_ids)
 
 
 # skipcq: PYL-W0613
@@ -146,9 +152,16 @@ async def quiz_update(ctx, old_quiz: Quiz, quiz_id: uuid.UUID):
     print("Change detected")
     removed_images = list(set(old_images) - set(new_images))
     added_images = list(set(new_images) - set(old_images))
+    # A live game of this quiz still shows the old images: unlink them, but keep the files
+    # until it ends (#35 row 9). release_held_images frees them then.
+    live = await is_live(quiz_id)
+    held = []
     for image in removed_images:
+        if live:
+            held.append(image)
         if "--" in image:
-            await storage.delete([image])
+            if not live:
+                await storage.delete([image])
         else:
             item = linked.get(image) or await StorageItem.objects.get_or_none(id=uuid.UUID(image))
             if item is None:
@@ -162,7 +175,9 @@ async def quiz_update(ctx, old_quiz: Quiz, quiz_id: uuid.UUID):
             # be what reclaims the space, not a media library we deliberately do not have.
             # Also run for an image that was never linked, which is every image added by
             # an edit while no worker was running.
-            await delete_storage_item_if_unreferenced(item)
+            if not live:
+                await delete_storage_item_if_unreferenced(item)
+    await hold_images(quiz_id, held)
     for image in added_images:
         if "--" not in image and image not in linked:
             item = await StorageItem.objects.get_or_none(id=uuid.UUID(image))
@@ -172,3 +187,13 @@ async def quiz_update(ctx, old_quiz: Quiz, quiz_id: uuid.UUID):
     # No write of the quiz row here. add() and remove() above write the link table at
     # once, and this job's copy of the quiz was loaded when it started: written back, it
     # undid any save the editor made while the job ran (#35 row 7).
+
+
+async def release_held_images_job(ctx, quiz_id: str):
+    """Queued when a game ends: free the images its quiz stopped using during it."""
+    await release_held_images(quiz_id)
+
+
+async def release_held_images_sweep(ctx):
+    """For games that expired without an end (a host who closed the tab)."""
+    await release_all_held_images()

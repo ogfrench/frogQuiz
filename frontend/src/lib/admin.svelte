@@ -16,7 +16,8 @@ SPDX-License-Identifier: MPL-2.0
 	import Question from '$lib/play/admin/question.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
-	import { totalsFromResults } from '$lib/play/admin/totals';
+	import { totalsFromResults, totalsFromServer } from '$lib/play/admin/totals';
+	import { answeredCount } from '$lib/play/admin/answered';
 	import {
 		AUTO_RESULTS_DELAY_MS,
 		gameIsOver,
@@ -56,7 +57,7 @@ SPDX-License-Identifier: MPL-2.0
 		// The server's index, not one more than ours: after a reload ours is wherever the
 		// snapshot put it, and counting up from it was only right by luck.
 		game_state.selected_question = data.question_index;
-		game_state.answer_count = 0;
+		game_state.answered = [];
 		// Every advance comes through here, so this is where the scoreboard closes. The
 		// Enter/Space shortcut used to skip it without closing it, and from then on every
 		// question's answers were drawn as the scoreboard instead.
@@ -86,13 +87,25 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.timer_res = '0';
 	});
 
+	// The server's running totals, sent just before each question's results. The scoreboard
+	// reads them; the results screen no longer adds a question's points itself.
+	socket.on('scores', (data) => {
+		game_state.player_scores = totalsFromServer(data, [
+			...Object.keys(game_state.player_scores),
+			...game_state.players.map((p) => p.username)
+		]);
+	});
+
 	socket.on('question_results', (data) => {
 		game_state.question_results = data;
 		game_state.timer_res = '0';
 	});
 
-	socket.on('player_answer', (_) => {
-		game_state.answer_count += 1;
+	socket.on('player_answer', (data) => {
+		const name = data?.username;
+		if (name && !game_state.answered.includes(name)) {
+			game_state.answered = [...game_state.answered, name];
+		}
 	});
 
 	// Whether an interval is counting down. Not $state: the effect below reads it without
@@ -195,7 +208,7 @@ SPDX-License-Identifier: MPL-2.0
 				quiz_data={game_state.quiz_data}
 				selected_question={game_state.selected_question}
 				timer_res={game_state.timer_res}
-				answer_count={game_state.answer_count}
+				answer_count={answeredCount(game_state.answered, game_state.players)}
 				player_count={game_state.players.length}
 				{default_colors}
 			/>
@@ -228,7 +241,6 @@ SPDX-License-Identifier: MPL-2.0
 				<Spinner />
 			{:then c}
 				<c.default
-					bind:data={game_state.player_scores}
 					question={game_state.quiz_data.questions[game_state.selected_question]}
 					new_data={game_state.question_results}
 				/>
