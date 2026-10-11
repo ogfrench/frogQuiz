@@ -64,7 +64,8 @@ async def submit_answer_fn(data_answer: int, game_pin: str, player_id: str, now:
     await redis.set(f"answer_given:{player_id}:{game.current_question}", "True", ex=600)
     await redis.hincrby(f"game_session:{game_pin}:player_scores", username, max(0, score))
     player_count = await redis.scard(f"game_session:{game_pin}:players")
-    await sio.emit("player_answer", {}, room=f"admin:{game_pin}")
+    # With the name, as the socket path sends it: the host counts who answered.
+    await sio.emit("player_answer", {"username": username}, room=f"admin:{game_pin}")
     if len(answers) >= player_count:
         game.question_show = False
         await game.save(game_pin)

@@ -36,7 +36,8 @@ export interface Resume {
  * A reload mid-game came back on the quiz's cover, whose "Next question 1" sent the game back
  * to the start. Now it comes back on the question that is up: with its clock if it is still
  * open, or at zero if it closed, so its answers come up as they would have. The question's
- * answers are left out of the totals, since showing them adds their points.
+ * answers are left out of the totals until its results come up, when the server's own
+ * running totals (`scores`) replace these.
  */
 export function resumeFrom(s: AdminSnapshot): Resume | null {
 	const index = s.game?.current_question ?? -1;

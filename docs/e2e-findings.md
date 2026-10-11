@@ -34,7 +34,7 @@ so and where it is planned.
 | 6 | One quiz launched twice | `plays` lost a count to a read-and-write; it is one statement now (`views` measured the same way, 3 of 3). The lobby pointer overwrite is not measured. | `test_counter_writes.py`; the rest in step 6 |
 | 7 | A view or a launch lands during a save | **Reproduced:** the save's title went back to the old one, for both. Fixed, and the reverse (a save undoing a view, or a claim) too. | `test_counter_writes.py` |
 | 8 | Edited while a game of it runs | The game keeps its snapshot; the editor now says a game is running. | `crud-lifecycle.e2e.ts` (edits mid-game) |
-| 9 | An image taken out while a game runs | The image job deletes a removed image within seconds when no game runs (the existing lifecycle test). With a game running it now holds it: still on disk after the job, freed when the game ends. | `crud-lifecycle.e2e.ts` › a live game keeps its images |
+| 9 | An image taken out while a game runs | The image job deletes a removed image within seconds when no game runs (the existing lifecycle test). With a game running it now holds it: still on disk after the job, freed when the game ends. Measured with the host ending it from the lobby; the podium ends it through the same release, and the release itself (once, never lost, never swept as an orphan) has unit tests in `test_live_images.py`. | `crud-lifecycle.e2e.ts` › a live game keeps its images |
 | 10 | The quiz deleted while a game runs | Same: the images stay until the game ends. | same |
 | 11 | Made unlisted or deleted while someone else hosts | Not measured. | Step 6 (#45) |
 | 12 | Two host screens on one game | Not re-measured here; `game-reload.e2e.ts` covers a reload. | Step 6 (#45) |

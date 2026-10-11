@@ -22,7 +22,13 @@ from frogquiz.helpers import (
     release_quiz_images,
 )
 from frogquiz.helpers.thumbhash import image_to_thumbhash
-from frogquiz.helpers.live_images import hold_images, is_live, release_all_held_images, release_held_images
+from frogquiz.helpers.live_images import (
+    held_image_ids,
+    hold_images,
+    is_live,
+    release_all_held_images,
+    release_held_images,
+)
 
 # Long enough that no editor still holding an unsaved image is cut short: autosave
 # sends a change within seconds.
@@ -44,6 +50,8 @@ async def clean_orphaned_uploads(ctx):
     used = set()
     for quiz in await Quiz.objects.all():
         used.update(str(image) for image in extract_image_ids_from_quiz(quiz))
+    # Held for a game still showing them: out of every quiz's JSON, but not unused (#35).
+    used.update(await held_image_ids())
     cutoff = datetime.now() - ORPHAN_GRACE
     items = (
         await StorageItem.objects.select_related([StorageItem.quizzes, StorageItem.quiztivities])

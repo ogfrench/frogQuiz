@@ -15,18 +15,11 @@ game's end releases them, and so does the periodic sweep once the game has expir
 without an end -- a host who closed the tab.
 """
 
-import logging
 import uuid
 
 from frogquiz.config import redis
-from frogquiz.db.models import Quiz, StorageItem
-from frogquiz.helpers import (
-    delete_storage_item_if_unreferenced,
-    extract_image_ids_from_quiz,
-    release_quiz_images,
-)
-
-LOGGER = logging.getLogger("frogquiz.live_images")
+from frogquiz.db.models import Quiz
+from frogquiz.helpers import extract_image_ids_from_quiz, release_quiz_images
 
 # A game's key lives five hours (routers/quiz.py start_quiz); the marker no longer.
 GAME_TTL = 18000
@@ -49,7 +42,9 @@ def _held(quiz_id) -> str:
 
 async def mark_live(quiz_id, game_pin) -> None:
     await redis.sadd(_live(quiz_id), str(game_pin))
-    await redis.expire(_live(quiz_id), GAME_TTL)
+    # As long as anything held: a busy game's key is renewed on every move and can outlive
+    # five hours, and `is_live` prunes PINs whose game has gone anyway.
+    await redis.expire(_live(quiz_id), HELD_TTL)
 
 
 async def end_live(quiz_id, game_pin) -> None:
@@ -79,25 +74,36 @@ async def release_held_images(quiz_id) -> None:
     """Release what was held for this quiz, once no game of it is live."""
     if await is_live(quiz_id):
         return
-    ids = set(await redis.smembers(_held(quiz_id)))
+    # Claimed in one transaction: a game ended twice, or the job and the sweep together,
+    # both read the same ids before either deleted the key, and the owner got the bytes
+    # back twice.
+    async with redis.pipeline(transaction=True) as pipe:
+        pipe.smembers(_held(quiz_id))
+        pipe.delete(_held(quiz_id))
+        ids, _ = await pipe.execute()
+    ids = {str(i) for i in ids}
     if not ids:
         return
-    await redis.delete(_held(quiz_id))
-    quiz = await Quiz.objects.get_or_none(id=uuid.UUID(str(quiz_id)))
-    if quiz is None:
-        # Deleted, or expired and swept, while the game ran.
-        await release_quiz_images(list(ids))
-        return
-    # An image put back into the quiz since is in use again.
-    still = {str(i) for i in extract_image_ids_from_quiz(quiz)}
-    for image in ids - still:
-        try:
-            item = await StorageItem.objects.get_or_none(id=uuid.UUID(image))
-        except ValueError:
-            LOGGER.warning("held image %s is not a storage id; left alone", image)
-            continue
-        if item is not None:
-            await delete_storage_item_if_unreferenced(item)
+    try:
+        quiz = await Quiz.objects.get_or_none(id=uuid.UUID(_id(quiz_id)))
+        # An image put back into the quiz since is in use again. A deleted quiz uses none.
+        still = set() if quiz is None else {str(i) for i in extract_image_ids_from_quiz(quiz)}
+        # release_quiz_images counts every other reference first, and frees an old
+        # `uuid--uuid` key too, which a bare StorageItem lookup could not.
+        await release_quiz_images(list(ids - still))
+    except Exception:
+        # Back on the list for the next sweep rather than lost. Anything already freed is
+        # skipped then: a soft-deleted upload is not freed twice.
+        await hold_images(quiz_id, ids)
+        raise
+
+
+async def held_image_ids() -> set[str]:
+    """Every image held for any quiz, so the orphan sweep leaves them alone."""
+    ids: set[str] = set()
+    async for key in redis.scan_iter(match="held_images:*"):
+        ids.update(str(i) for i in await redis.smembers(key))
+    return ids
 
 
 async def release_all_held_images() -> None:
