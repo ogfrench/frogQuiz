@@ -55,10 +55,8 @@ services:
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
 
       # --- MAIL CONFIG ---
-      # Optional: leave unset to run without mail, and set SKIP_EMAIL_VERIFICATION
-      # to True so registration doesn't ask for a confirmation it can't send.
-      # Without a relay there is no password recovery either -- the only way back
-      # into a forgotten account is the database.
+      # Required: signing in is by an emailed link or code only (passwords are off), so
+      # without a relay nobody can sign in on a new device. See DEPLOY.md.
       MAIL_SERVER: ${MAIL_SERVER:-}
       MAIL_PORT: ${MAIL_PORT:-587}
       # starttls (587, the usual), ssl (465), or none (local relay only).
@@ -166,6 +164,11 @@ services:
     restart: *restart
     logging: *logging
     command: arq frogquiz.worker.WorkerSettings
+    # The same upload folder as the api. Without it the worker read and deleted an empty
+    # folder of its own: no upload was ever hashed or counted, and freed images stayed on
+    # disk. tests/test_compose.py keeps the two in step.
+    volumes:
+      - ./uploads:/app/data
 
 volumes:
   data:

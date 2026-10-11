@@ -185,10 +185,10 @@ Two things go wrong more often than anything else:
   no confirmation is ever sent. That is a reasonable setting for an internal
   deployment; it is not a mail configuration, and password recovery still needs one.
 
-To run without mail at all, leave the block blank and set
-`SKIP_EMAIL_VERIFICATION=True`. Registration then works and recovery does not;
-the API says so with a 503 rather than pretending, and the app logs a warning at
-startup.
+**Mail is required.** Signing in is by an emailed link or code only (passwords are off,
+`ENABLE_PASSWORD_LOGIN` defaults to false), so without a working relay nobody can sign in
+on a new device. A failed send answers 502 after the retries. Players joining by PIN need
+no account and no mail.
 
 ### Testing it for real
 
@@ -402,13 +402,27 @@ The API was reached at `134-98-158-173.sslip.io`, a name sslip.io derives from t
 so any new IP broke every link. It moves to `api.frogquiz.xyz` (D32). Do it in this order,
 so nothing is ever unreachable:
 
-1. **DNS:** an A record `api.frogquiz.xyz` pointing at the VM's public IP.
-   `dig +short api.frogquiz.xyz` should print the IP.
-2. **Caddy serves both names:** in the VM's `.env`,
+1. **DNS (François, in Netlify).** `frogquiz.xyz` is served by Netlify DNS (its
+   nameservers are `dns1` to `dns4.p05.nsone.net`, checked 11 Oct). In the Netlify UI:
+   Domains, `frogquiz.xyz`, DNS settings, Add new record: type `A`, name `api`, value
+   `134.98.158.173` (the VM's public IP), TTL default. Then
+   `dig +short api.frogquiz.xyz` (or `nslookup api.frogquiz.xyz`) prints the IP.
+2. **Caddy serves both names (François, on the VM).** In `/opt/frogquiz/.env` set
    `SITE_ADDRESS=api.frogquiz.xyz, 134-98-158-173.sslip.io`, then
-   `docker compose up -d proxy`. Caddy fetches a certificate for each.
-   `curl -sI https://api.frogquiz.xyz/openapi.json` should return 200.
-3. **Point the frontend at it:** in `netlify.toml`, change the host in `VITE_API_ORIGIN`,
-   `API_URL` and the two `[[redirects]]` targets. Check the Netlify UI does not override
-   them. Deploy.
+   `docker compose up -d proxy`. `COMPOSE_FILE` in the same `.env` already selects the
+   Neon override, so no `-f` flags. Caddy fetches a certificate for each name on its
+   first request. `curl -sI https://api.frogquiz.xyz/openapi.json` returns 200.
+   While there, check two values that the browser depends on and that the move does not
+   change: `CORS_ORIGINS` lists `https://frogquiz.xyz` and `https://www.frogquiz.xyz`
+   (live games open their socket straight to the API, and it refuses any other origin),
+   and `ROOT_ADDRESS` is `https://frogquiz.xyz` (the address in every sign-in email).
+3. **Point the frontend at it (Claude, on the `v1` branch, once step 2 answers).** In
+   `netlify.toml`, the host in `VITE_API_ORIGIN`, `API_URL` and the two `[[redirects]]`
+   targets. Check the Netlify UI does not override them (Site configuration,
+   Environment variables). It ships with the V1 deploy.
 4. **Later:** drop the sslip.io name from `SITE_ADDRESS` once no shared link uses it.
+
+Deploy previews build with the same `netlify.toml`, so they call the production API too.
+Their sockets are refused (their origin is not in `CORS_ORIGINS`), and a sign-in link from
+one goes to `ROOT_ADDRESS`, not to the preview. Use the local stack for anything that needs
+a live game.

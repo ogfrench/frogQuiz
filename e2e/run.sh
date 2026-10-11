@@ -172,10 +172,14 @@ case "$OS" in
   *)       MEILI_BIN="$TOOLS/meilisearch"
            case "$(uname -m)" in aarch64|arm64) MEILI_ASSET=meilisearch-linux-aarch64 ;; *) MEILI_ASSET=meilisearch-linux-amd64 ;; esac ;;
 esac
-if [ ! -x "$MEILI_BIN" ]; then
-  log "fetching Meilisearch ($MEILI_ASSET, one-off, ~350 MB)"
+# The version production runs, read from docker-compose.yml, so the suite tests what ships.
+# It used to fetch whatever was latest, and keep it.
+MEILI_VERSION="$(sed -n 's#^ *image: getmeili/meilisearch:\(v[0-9.]*\) *$#\1#p' "$ROOT/docker-compose.yml")"
+[ -n "$MEILI_VERSION" ] || die "no getmeili/meilisearch image in docker-compose.yml"
+if [ ! -x "$MEILI_BIN" ] || ! "$MEILI_BIN" --version 2>/dev/null | grep -qx "meilisearch ${MEILI_VERSION#v}"; then
+  log "fetching Meilisearch $MEILI_VERSION ($MEILI_ASSET, ~350 MB)"
   curl -fL --retry 3 -o "$MEILI_BIN" \
-    "https://github.com/meilisearch/meilisearch/releases/latest/download/$MEILI_ASSET"
+    "https://github.com/meilisearch/meilisearch/releases/download/$MEILI_VERSION/$MEILI_ASSET"
   chmod +x "$MEILI_BIN"
 fi
 

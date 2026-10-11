@@ -55,6 +55,11 @@ They are also recorded in `MVP.md` §4.0, as D22 to D32.
 | Domain | The API moves from `134-98-158-173.sslip.io` to `api.frogquiz.xyz`. |
 | Merge | One V1 PR, with a full review at the end of each step and one before the merge. |
 | Hotfix | None (11 Oct). The audit's `/live` fixes reach master with V1, not ahead of it on their own branch. |
+| Use | The app is not in use yet (11 Oct): no real users and no real data. |
+| Mail | Sign-in by emailed link works in production, and mail is trusted: no emergency sign-in (11 Oct). |
+| Backups | None for now (11 Oct). Picked up after V1: #61. |
+| Monitoring | Knowing when the app is down is picked up after V1: #60 (11 Oct). |
+| Server image | François builds the backend image from his laptop at the deploy (11 Oct). CI publishes `:master` only when `frogquiz/**` changes, so a change to the Dockerfile, the lock or a migration alone would not reach the VM. |
 
 ## How the plan adapts
 
@@ -165,7 +170,7 @@ Done above.
 
 Split in two on 11 Oct, each with its own step-end review: **3a** is data and concurrency (#52, #35, the scoreboard, the answered count), and **3b** is accounts (#55, #43). Claims reuse 3a's conditional writes, so 3a goes first.
 
-**Status:** 3a is done (11 Oct). 3b is under way: the two #43 races are fixed (`780d744`), and the rest of 3b below is next, with one addition from 3a's review: the editor's version check becomes a conditional write too.
+**Status:** 3a is done (11 Oct). 3b is under way: the two #43 races are fixed (`780d744`), and so is the editor's version check (`5ebb5bf`). Trimmed on 11 Oct because the app is not in use: nothing exists yet that the screens for old anonymous quizzes would serve.
 
 - **#52:** the server refuses to save results for a game with no signed-in host.
 - **#35:**
@@ -176,14 +181,16 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - 401 and 404 messages name the cause.
   - A live-game marker protects the quiz's images.
 - **#55:**
-  - the matrix in `docs/anonymous-vs-account.md`
-  - the flag
-  - 401 on the anonymous write paths
-  - `/create` redirects to sign-in
-  - the claim banner
+  - the flag, `anonymous_quizzes_enabled`, default off, passed through compose
+  - 401 on the anonymous write paths when it is off; the claim and a secret holder's reads keep working
+  - `/create` redirects to sign-in when it is off
+  - the e2e stack and CI turn it on, since the suite hosts anonymously; the off path gets its own tests
+  - the matrix in `docs/anonymous-vs-account.md`, and the decisions in `MVP.md`
+  - **dropped (11 Oct, app not in use):** the claim banner and "deleted on {date}" for old anonymous quizzes. None exist.
 - **The anonymous cap (3b):** 20 new anonymous quizzes per address a day, and 1,000 live in total. It stops creating, never editing.
-- **From the security audit (3b):** the emailed sign-in link becomes single-use, once a scanner that opens links first is shown not to use it up (with #43 case 7); "sign out everywhere" revokes API keys, and the key list shows them; password registration gets the allowed-domain rule, for the day it is switched back on. See `docs/security-audit-2026-10-11.md`.
-- **#43:** the claim cases that still apply, and two races found while planning: the expiry sweep can delete a quiz claimed a moment earlier, and two claims at once can both succeed and count the images twice.
+- **From the security audit (3b):** password registration gets the allowed-domain rule, for the day it is switched back on. See `docs/security-audit-2026-10-11.md`.
+  - **Moved to post-V1 (11 Oct, Claude's call):** the single-use sign-in link (finding 4, low). Sign-in by link is the only way in and works; making it single-use risks a mail scanner using the link up first, for a low finding. And "sign out everywhere" revoking API keys (finding 5, low): no screen creates a key, so nobody holds one.
+- **#43:** the two races found while planning are fixed with tests (the sweep deleting a quiz claimed a moment earlier, two claims at once). The other claim cases get a written outcome in the matrix; no new e2e tests, since the flag is off and no anonymous quiz exists to claim (11 Oct).
 - **The live scoreboard:** it follows the server's totals, so a hide-results question's points are no longer left out.
 - **The answered count:** "3 of 2 answered". The host adds one per answer, and drops a player who disconnects from the total, so a player who answers and then loses signal is counted on one side only. Found by step 1's cheap review.
 
@@ -191,33 +198,42 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
 
 1. **#34 visibility.** A schema change, flagged in the PR.
 2. **#33 profile.** `/user/[username]`, username change, bio. An account change, flagged in the PR.
-3. **#38 Explore filters.**
-4. **#39 examples and Copy.**
+3. **#38 Explore filters.** A username change (#33) re-indexes that user's quizzes, or the author filter goes stale.
+4. **#39 examples and Copy.** **Open decision (found 11 Oct):** D26 gives every quiz "Copy to my quizzes", while D18 keeps a quiz's answer key to its owner, and a copy carries the answers. Claude recommends Copy on your own quizzes and on the Examples only. Also to settle in the build: who may mark a quiz as an example, and that a copy copies its images and counts them against the copier's quota.
 
 **In parallel:**
 - **#40:** Play from the editor.
-- **#41:** undo and redo.
+- **#41:** undo and redo. The issue also asks for a "Question deleted. Undo" toast, for images to stay until an undo can no longer bring them back, and for undo in the header on a phone.
 
 ### Step 5: review and consistency
 
-- **#42:** go through every hidden menu.
-- **#44:** the full visual pass, including the four pages still on the old layout. The capture adds the host's title card before question 1, which it has never shot.
-- **#50:** the docs, and the privacy and terms pages.
+- **#42:** go through every hidden menu, with what the issue asks: `docs/ux-review-hidden-menus.md`, one row per menu, and one issue per fix. Includes the lobby popover that still links to the hidden `/remote`.
+- **#44, the consistency pass, as the issue asks (the plan had only the capture):**
+  - a one-page style note in `docs/`, with the exceptions (the frog palette, the answer colours, the QR's white ground)
+  - a test that fails on the banned patterns on live routes, like the radius test
+  - fixes by area: the editor, the game screens, account, Explore
+  - baseline on 11 Oct, all of `frontend/src` (hidden routes included): 173 hard-coded colour classes, 45 raw `<svg>`, 32 `w-screen` or `h-screen`, 25 inline colour styles
+  - the full visual pass, including the four pages still on the old layout, and the host's title card before question 1
+  - from 3a: the scoreboard and results cards are hard-coded white in dark mode (decide: keep for custom backgrounds, or tokens); the question card's uneven padding at 390 and 834; the conflict dialog's wording
+- **#50:** the docs, and the privacy and terms pages. Also the stale notes found on 11 Oct: test counts in `HANDOVER.md` and `TODO.md`, the "still open" polish list in `e2e-findings.md` (mostly fixed), and where `DISABLED_ROUTES` lives.
+- **From the security audit:** finding 6 (the page gate reads the token unsigned) and finding 7 (the server-shared "signed in" store).
 
 ### Step 6: robustness and release
 
-- **#45:** the edge-case matrix, and the room-size number.
+- **#45:** the edge-case matrix, and the room-size number (`simulate_players.py`). It also takes #3's leftover checks (passkeys, `/practice`, the results export) and #24's real-thumb tap test. Its acceptance needs a run on the deployed site on François's phone and laptop, so it closes after the deploy, not at the merge.
+- **The move to `api.frogquiz.xyz`** (`DEPLOY.md`): François adds the DNS record in Netlify and sets `SITE_ADDRESS` on the VM; Claude then points `netlify.toml` at it.
 - **Final full review**, then the V1-level re-plan.
 - **Checkpoint:** François approves the merge.
 - **Deploy, in this order:**
   1. a Neon snapshot of production
   2. pause Netlify
   3. merge
-  4. pull on the VM
-  5. smoke-test the API
-  6. publish the frontend
-  7. seed the examples
-  8. a run on a phone and a laptop
+  4. on the VM: build the backend image from François's laptop (or the VM) and pull, since CI does not rebuild it for every change
+  5. `docker compose up -d`, which also gives the worker its uploads folder
+  6. smoke-test the API
+  7. publish the frontend
+  8. seed the examples
+  9. a run on a phone and a laptop, then close #45 and #56
 
 ## Post-V1
 
@@ -303,3 +319,9 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - **A default, not yet confirmed by François:** the answered count counts only the players still in the game.
   - **Re-plan:** 3b as planned, plus the editor's version check. Steps 4 to 6 unchanged.
   - **Lesson:** a variant passed as a class merges over the component's own default variant, and whatever the second one does not set survives. Pass variants as props.
+- **11 Oct, the V1 review (François asked what was missed):**
+  - **Found and fixed:** the worker never mounted the upload folder (older than V1), so on the VM nothing was hashed or counted and freed images stayed on disk. Meilisearch in CI now matches production. Mail is documented as required.
+  - **Plan gaps closed:** #44 is a consistency pass with a style note and a test, not only a capture; #42 gets its doc and table; step 5 lists what moved there from 3a and the audit; #45 closes after the deploy, as do #56's post-deploy items; #41, #39 and #38 carry what their issues ask beyond the plan.
+  - **François's answers:** the app is not in use; mail works, no emergency sign-in; no backups for now (#61); monitoring later (#60); he builds the server image from his laptop; the cap stays at 20 a day and 1,000 in total; the domain move is done by Claude where it can be.
+  - **Trimmed from 3b,** since nothing exists for them to serve: the screens for old anonymous quizzes, the new #43 e2e cases, and two low audit findings (single-use links, API keys and sign-out-everywhere), now post-V1.
+  - **Open:** D18 against D26 (Copy and answer keys), before #39.

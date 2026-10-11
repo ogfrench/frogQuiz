@@ -4,6 +4,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 readiness, from the review of 11 Oct
+
+- **The worker could not see the uploads (older than V1):** only the `api` service mounted `./uploads`, so the worker read and deleted an empty folder of its own. On the VM no upload was ever hashed, given a thumbnail or counted against its owner's quota, and every image the worker freed (the sweeps, an edit, the end of a game) lost its row but kept its file. The worker now mounts the same folder, and `tests/test_compose.py` fails if the two drift apart. The e2e stack runs both on one folder, which is why it never showed.
+- **Meilisearch in CI matches production:** the backend suite's compose ran v1.7 and the e2e stack fetched whatever was latest. Both now run v1.54.3, read from `docker-compose.yml`, and the dev compose gets a new search volume for it.
+- **Mail is documented as required:** three places still said the app could run without mail. Signing in is by emailed link or code only, so it cannot.
+- **The move to `api.frogquiz.xyz`:** `DEPLOY.md` now says where the DNS record goes (Netlify DNS), what to check on the VM (`CORS_ORIGINS`, `ROOT_ADDRESS`), and that deploy previews call the production API.
+
 ### V1 step 3b: accounts, 11 Oct
 
 - **A claim that lost a race took the quiz anyway (#43):** two claims at once both passed the "still unclaimed" check before either wrote, so the second moved a just-claimed quiz into its own account and counted its images twice. The claim is now one conditional write, and the loser gets the same 404 as any other failed claim.
