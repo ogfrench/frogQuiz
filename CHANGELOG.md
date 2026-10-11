@@ -51,6 +51,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Dropped the rule that removing a feature needs François and Gonçalo jointly (François's call, D31). CLAUDE.md now says François decides and Claude never removes a feature on its own.
 - `TODO.md` is now a record only; open work is in issue #56 and `docs/v1-plan.md`.
 
+### Claude Code setup, 11 Oct
+
+- Added the shared Claude Code skills under `.claude/skills/` and pointed `.claude/settings.json` at the ogfrench/claude-code-setup plugin marketplace, synced from that repo.
+
 ### Full review fixes before merge, 10 Oct
 
 - Fixed a host reload mid-game coming back on the quiz's cover, where one press of "Next question (1)" sent the running game back to the first question. The host now comes back on the question that is up, with its clock, its answer count and the running totals, or on the podium if the game had ended (#51).
