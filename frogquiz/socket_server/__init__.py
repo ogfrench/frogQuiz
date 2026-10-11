@@ -28,8 +28,10 @@ from pydantic import BaseModel, ValidationError
 from datetime import datetime
 
 from frogquiz.socket_server.helpers import (
+    assign_avatar,
     check_answer,
     check_captcha,
+    get_avatars,
     has_already_answered,
     record_answer_once,
     update_game,
@@ -141,7 +143,8 @@ async def rejoin_game(sid: str, data: dict):
     # on after a validation error with `data` still a dict.
     try:
         data = RejoinGameData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
+        # TypeError: a payload that is not an object at all, e.g. a bare string.
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -186,11 +189,18 @@ async def rejoin_game(sid: str, data: dict):
     # `player_joined`, so without this a player who reloaded -- or whose phone dropped
     # and came back -- was gone from the host's lobby for the rest of the game even
     # though the server still had them.
+    # A seat, not a fresh one: assign_avatar hands back the frog this name already has.
+    avatar = await assign_avatar(data.game_pin, data.username)
     await sio.emit(
         "player_joined",
-        {"username": data.username, "sid": sid},
+        {"username": data.username, "sid": sid, "avatar": avatar},
         room=f"admin:{data.game_pin}",
     )
+    # Everyone else's phones need the seat too, not only the host's: a rejoin can hand out a
+    # new one (a player from before seats existed). Idempotent for the phones that have it.
+    await sio.emit("avatar", {"username": data.username, "seat": avatar}, room=data.game_pin, skip_sid=sid)
+    # The frogs of everybody already in, which this phone has missed while it was away.
+    await sio.emit("avatars", await get_avatars(data.game_pin), room=sid)
     # The game is over: a phone asleep through the podium missed it (E18).
     final = await redis.get(f"game:{data.game_pin}:final_results")
     if final is not None:
@@ -216,24 +226,35 @@ async def send_open_question(sid: str, game_data: PlayGame, username: str) -> No
         question = question_for_players(game_data, index)
         # The phone counts down from what it is sent. The full time made it show seconds
         # the server would no longer accept (E5).
-        shown_at = await redis.get(f"game:{game_data.game_pin}:current_time")
-        if shown_at is not None:
-            elapsed = (datetime.now() - datetime.fromisoformat(shown_at)).total_seconds()
-            question["time"] = str(max(1, math.ceil(float(question["time"]) - elapsed)))
+        left = await seconds_left(game_data)
+        if left is not None:
+            question["time"] = str(max(1, left))
         await sio.emit("set_question_number", {"question_index": index, "question": question}, room=sid)
+
+
+async def seconds_left(game_data: PlayGame) -> int | None:
+    """Whole seconds left on the current question by the server's clock, or None if unknown."""
+    shown_at = await redis.get(f"game:{game_data.game_pin}:current_time")
+    if shown_at is None or game_data.current_question < 0:
+        return None
+    elapsed = (datetime.now() - datetime.fromisoformat(shown_at)).total_seconds()
+    return math.ceil(float(game_data.questions[game_data.current_question].time) - elapsed)
 
 
 @sio.event
 async def join_game(sid: str, data: dict):
-    redis_res = await redis.get(f"game:{data['game_pin']}")
-    if redis_res is None:
-        await sio.emit("game_not_found", room=sid)
-        return
+    # Validated first: the PIN used to be read out of the raw payload, so a message without
+    # one raised KeyError (the same fix rejoin_game got).
     try:
         data = JoinGameData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
+        # TypeError: a payload that is not an object at all, e.g. a bare string.
         await sio.emit("error", room=sid)
         print(e)
+        return
+    redis_res = await redis.get(f"game:{data.game_pin}")
+    if redis_res is None:
+        await sio.emit("game_not_found", room=sid)
         return
     game_data = PlayGame.model_validate_json(redis_res)
     # A started game used to refuse everyone. Now, as in Kahoot, a late joiner gets in with
@@ -277,6 +298,7 @@ async def join_game(sid: str, data: dict):
         room=sid,
     )
     await GamePlayer(username=data.username, sid=sid).to_player_stack(data.game_pin)
+    avatar = await assign_avatar(data.game_pin, data.username)
 
     if data.custom_field == "":
         data.custom_field = None
@@ -289,7 +311,7 @@ async def join_game(sid: str, data: dict):
 
     await sio.emit(
         "player_joined",
-        {"username": data.username, "sid": sid},
+        {"username": data.username, "sid": sid, "avatar": avatar},
         room=f"admin:{data.game_pin}",
     )
     # +++ Time-Sync +++
@@ -297,6 +319,12 @@ async def join_game(sid: str, data: dict):
     await sio.emit("time_sync", encrypted_datetime, room=sid)
     # --- Time-Sync ---
     await sio.enter_room(sid, data.game_pin)
+    # Every phone keeps the map for the podium, which names other players and so shows
+    # their frogs. The newcomer gets all of it; everybody else, the host included, gets
+    # the one new seat. The whole map to the whole room on every join grew with the
+    # square of the room.
+    await sio.emit("avatars", await get_avatars(data.game_pin), room=sid)
+    await sio.emit("avatar", {"username": data.username, "seat": avatar}, room=data.game_pin, skip_sid=sid)
     # Read again: the host may have moved on since the lookup above.
     current = await redis.get(f"game:{data.game_pin}")
     if game_data.started and current is not None:
@@ -332,7 +360,7 @@ async def start_game(sid: str, _data: dict):
 async def register_as_admin(sid: str, data: dict):
     try:
         data = RegisterAsAdminData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -357,10 +385,16 @@ async def register_as_admin(sid: str, data: dict):
         await existing_session.save(game_pin)
         # Clears "the host has left" on the phones, if it went out (E22).
         await sio.emit("host_back", room=game_pin)
+    session = {"game_pin": game_pin, "admin": True, "remote": False}
+    await save_session(sid, sio, session)
+    await sio.enter_room(sid, game_pin)
+    await sio.enter_room(sid, f"admin:{data.game_pin}")
     players = [json.loads(player) for player in await redis.smembers(f"game_session:{game_pin}:players")]
     answer_count = 0
     if game.current_question >= 0:
         answer_count = len(await AnswerDataList.get_redis_or_empty(game_pin, game.current_question))
+    left = await seconds_left(game) if game.question_show else None
+    final = await redis.get(f"game:{game_pin}:final_results")
     await sio.emit(
         "registered_as_admin",
         {
@@ -369,18 +403,24 @@ async def register_as_admin(sid: str, data: dict):
             # The host rebuilds its player list from this, so a reconnect doesn't
             # lose everyone who joined while it was away.
             "players": players,
+            # Every seat handed out, including players who have since left: they are still
+            # on the scoreboard.
+            "avatars": await get_avatars(game_pin),
             # And where the question stands: answers and "everyone answered" sent while
             # the host was reconnecting never reached it, so its projector waited out
             # the full timer on a question that was over (E11).
             "answer_count": answer_count,
             "question_open": game.question_show,
+            # A reload mid-game came back on the cover, and its "Next question 1" sent the
+            # game back to the start. What the host needs to pick the game up where it is:
+            # the clock on an open question, every answer recorded so far (for the running
+            # totals), and the podium if the game is over.
+            "time_left": max(0, left) if left is not None else 0,
+            "results": await generate_final_results(game, game_pin) if game.started else {},
+            "final_results": json.loads(final) if final is not None else None,
         },
         room=sid,
     )
-    session = {"game_pin": game_pin, "admin": True, "remote": False}
-    await save_session(sid, sio, session)
-    await sio.enter_room(sid, game_pin)
-    await sio.enter_room(sid, f"admin:{data.game_pin}")
 
 
 @sio.event
@@ -402,9 +442,28 @@ async def set_question_number(sid: str, data: str):
     if not session["admin"]:
         return
     game_pin = session["game_pin"]
-    index = int(float(data))
+    try:
+        index = int(float(data))
+    except (TypeError, ValueError, OverflowError):
+        # OverflowError is "inf": float() takes it, int() does not.
+        return
+    # Refused before the clock below is touched. "Hide results" on the last question used
+    # to ask for the question after it, which raised IndexError; a negative number would
+    # have wrapped round to the last question. The game only moves forward: a host who
+    # reloaded mid-game came back on "Next question 1", and one press sent the running game
+    # back to a question every player had already answered.
+    current = await redis.get(f"game:{game_pin}")
+    if current is None:
+        return
+    current_game = PlayGame.model_validate_json(current)
+    if not current_game.current_question < index < len(current_game.questions):
+        return
 
-    def show(game: PlayGame) -> None:
+    def show(game: PlayGame) -> bool | None:
+        # Checked again inside the transaction: two presses together both pass the check
+        # above, and the second must not show the same question twice.
+        if index <= game.current_question:
+            return False
         game.current_question = index
         game.question_show = True
 
@@ -413,21 +472,12 @@ async def set_question_number(sid: str, data: str):
     game_data = await update_game(game_pin, show)
     if game_data is None:
         return
-    if game_data.questions[int(float(data))].type == QuizQuestionType.SLIDE:
-        await sio.emit(
-            "set_question_number",
-            {
-                "question_index": int(float(data)),
-            },
-            room=sid,
-        )
+    if game_data.questions[index].type == QuizQuestionType.SLIDE:
+        await sio.emit("set_question_number", {"question_index": index}, room=sid)
         return
     await sio.emit(
         "set_question_number",
-        {
-            "question_index": int(float(data)),
-            "question": question_for_players(game_data, int(float(data))),
-        },
+        {"question_index": index, "question": question_for_players(game_data, index)},
         room=game_pin,
     )
 
@@ -437,7 +487,7 @@ async def submit_answer(sid: str, data: dict):
     now = datetime.now()
     try:
         data = SubmitAnswerData(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -571,7 +621,7 @@ async def echo_time_sync(sid: str, data: str):
 async def kick_player(sid: str, data: dict):
     try:
         data = KickPlayerInput(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -602,7 +652,7 @@ class _RegisterAsRemoteInput(BaseModel):
 async def register_as_remote(sid: str, data: dict):
     try:
         data = _RegisterAsRemoteInput(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return
@@ -635,7 +685,7 @@ class _SetControlVisibilityInput(BaseModel):
 async def set_control_visibility(sid: str, data: dict):
     try:
         data = _SetControlVisibilityInput(**data)
-    except ValidationError as e:
+    except (ValidationError, TypeError) as e:
         await sio.emit("error", room=sid)
         print(e)
         return

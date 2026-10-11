@@ -6,7 +6,6 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { getLocalization } from '$lib/i18n';
 	import SearchCard from '$lib/search-card.svelte';
@@ -14,8 +13,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input';
 	import Search from '@lucide/svelte/icons/search';
 	import type { PageData } from './$types';
-
-	navbarVisible.visible = true;
 
 	const { t } = getLocalization();
 

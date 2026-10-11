@@ -24,4 +24,6 @@ export interface IGameState {
 	game_started: boolean;
 	quiz_data: QuizData;
 	control_visible: boolean;
+	/** The question whose answers were last asked for, so they are asked for once. */
+	results_requested_for?: number;
 }

@@ -24,7 +24,9 @@ import {
 	PHONE,
 	rememberAnonQuiz,
 	saveQuiz,
-	titleBox
+	titleBox,
+	showResults,
+	expectQuestionEnded
 } from './helpers';
 import {
 	API_URL,
@@ -449,7 +451,7 @@ test.describe('live game, in the browser', () => {
 		await player.waitForURL(/\/play$/);
 		await connected;
 		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await player.getByRole('textbox', { name: 'Username' }).fill('swiper');
+		await player.getByRole('textbox', { name: 'Nickname' }).fill('swiper');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('swiper')).toBeVisible();
 		await showFirstQuestion(host);
@@ -463,9 +465,7 @@ test.describe('live game, in the browser', () => {
 		});
 		await player.getByRole('button', { name: 'Lisbon' }).click();
 		// The only player answered, so the question ends well before its 60 seconds.
-		await expect(host.getByRole('button', { name: /Show results/ })).toBeVisible({
-			timeout: 10_000
-		});
+		await expectQuestionEnded(host, 10_000);
 		await ctx.close();
 		await hostCtx.close();
 	});
@@ -487,7 +487,7 @@ test.describe('live game, in the browser', () => {
 		});
 		await gotoPlayHydrated(player);
 		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await player.getByRole('textbox', { name: 'Username' }).fill('dropper');
+		await player.getByRole('textbox', { name: 'Nickname' }).fill('dropper');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('dropper')).toBeVisible();
 		await showFirstQuestion(host);
@@ -497,9 +497,7 @@ test.describe('live game, in the browser', () => {
 		await sockets.at(-1)!.close({ code: 4000, reason: 'wifi dropped' });
 		await reconnected;
 		await player.getByRole('button', { name: 'Lisbon' }).click();
-		await expect(host.getByRole('button', { name: /Show results/ })).toBeVisible({
-			timeout: 10_000
-		});
+		await expectQuestionEnded(host, 10_000);
 		await ctx.close();
 		await hostCtx.close();
 	});
@@ -526,7 +524,7 @@ test.describe('live game, in the browser', () => {
 		const player = await ctx.newPage();
 		await gotoPlayHydrated(player);
 		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await player.getByRole('textbox', { name: 'Username' }).fill('steady');
+		await player.getByRole('textbox', { name: 'Nickname' }).fill('steady');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('steady')).toBeVisible();
 		await showFirstQuestion(host);
@@ -536,9 +534,7 @@ test.describe('live game, in the browser', () => {
 		await sockets.at(-1)!.close({ code: 4000, reason: 'wifi dropped' });
 		await player.getByRole('button', { name: 'Lisbon' }).click();
 		await expect.poll(() => sockets.length).toBeGreaterThan(before);
-		await expect(host.getByRole('button', { name: /Show results/ })).toBeVisible({
-			timeout: 10_000
-		});
+		await expectQuestionEnded(host, 10_000);
 		await ctx.close();
 		await hostCtx.close();
 	});
@@ -546,7 +542,7 @@ test.describe('live game, in the browser', () => {
 	async function joinIn(page: Page, pin: string, name: string) {
 		await gotoPlayHydrated(page);
 		await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-		await page.getByRole('textbox', { name: 'Username' }).fill(name);
+		await page.getByRole('textbox', { name: 'Nickname' }).fill(name);
 		await page.getByRole('button', { name: 'Join game' }).click();
 	}
 
@@ -605,14 +601,14 @@ test.describe('live game, in the browser', () => {
 		await expect(host.getByText('reloader')).toBeVisible();
 		await showFirstQuestion(host);
 		await player.getByRole('button', { name: 'Lisbon' }).click();
-		await host.getByRole('button', { name: 'Show results' }).click();
+		await showResults(host);
 		await expect(player.getByText(/Total score/)).toBeVisible();
 
 		await player.reload();
 		await player.waitForTimeout(2000);
 		await advancePastResults(host);
 		await player.getByRole('button', { name: 'Madrid' }).click();
-		await host.getByRole('button', { name: 'Show results' }).click();
+		await showResults(host);
 		await advanceToFinalResults(host);
 		// Two quick right answers on a 60 s timer: each close to 1000, so over 1000 together.
 		const line = player.getByText(/Your score: \d+/);
@@ -632,7 +628,7 @@ test.describe('live game, in the browser', () => {
 		await gotoPlayHydrated(player);
 		await player.getByRole('textbox', { name: 'Game PIN' }).focus();
 		await player.keyboard.insertText(`${pin.slice(0, 3)} ${pin.slice(3)}`);
-		await expect(player.getByRole('textbox', { name: 'Username' })).toBeVisible();
+		await expect(player.getByRole('textbox', { name: 'Nickname' })).toBeVisible();
 
 		await player.goto('/');
 		const home = player.getByRole('textbox', { name: 'Game PIN' });

@@ -194,7 +194,8 @@ async def set_next_question(game_pin: str, question_number: int, api_key: str):
     if game_data.user_id != user_id:
         raise HTTPException(status_code=404, detail="Game not found or API key not found")
     game_data.current_question = question_number
-    await redis.set(f"game:{game_pin}", game_data.model_dump_json(), ex=18000)
+    # Through PlayGame.save, not a bare set: that also keeps the avatar seats alive.
+    await game_data.save(game_pin, ex=18000)
     await sio.emit(
         "set_question_number",
         {

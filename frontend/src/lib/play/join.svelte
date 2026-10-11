@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
+	import Check from '@lucide/svelte/icons/check';
 	import { hcaptcha_site_key, recaptcha_key } from '$lib/config';
 	import { signedIn } from '$lib/stores';
 
@@ -52,6 +53,13 @@ SPDX-License-Identifier: MPL-2.0
 	// it a player could type past the server's cap and only find out by having the
 	// join rejected, with nothing shown on this screen to say why.
 	const MAX_CUSTOM_FIELD_LENGTH = 200;
+
+	// Players kept typing the PIN again as their name: the sixth digit swaps the form in
+	// place, and nothing said the PIN step was over. All digits is a nudge, not an error
+	// -- "007" is a fine nickname -- so Join stays enabled.
+	const looks_like_pin = $derived(/^\d+$/.test(String(username ?? '').trim()));
+	// Read back as two groups of three, the way the host screen shows it.
+	const pin_display = $derived(`${game_pin.slice(0, 3)} ${game_pin.slice(3)}`);
 
 	let hcaptchaSitekey = hcaptcha_site_key;
 
@@ -290,10 +298,32 @@ SPDX-License-Identifier: MPL-2.0
 				onsubmit={setUsername}
 				class="border-border/70 bg-card w-full rounded-xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
 			>
-				<Label for="join-username" class="text-sm font-medium">{$t('words.username')}</Label
+				<!-- A second step that says it is one. It used to be the PIN card again with a
+				     different label, so players typed the PIN a second time as their name. -->
+				<p class="text-muted-foreground flex items-center gap-1.5 text-sm">
+					<Check class="size-4" aria-hidden="true" />
+					{$t('play_page.pin_accepted', { pin: pin_display })}
+				</p>
+				<h2 class="mt-3 text-2xl font-semibold tracking-tight">
+					{$t('play_page.nickname_heading')}
+				</h2>
+				<p class="text-muted-foreground mt-1 text-sm">{$t('play_page.nickname_subline')}</p>
+				<Label for="join-username" class="mt-5 text-sm font-medium"
+					>{$t('play_page.nickname_label')}</Label
 				>
-				<p id="join-username-hint" class="text-muted-foreground mt-1.5 text-sm">
-					{$t('play_page.nickname_hint', { count: MIN_NICKNAME })}
+				<!-- The same element either way, so aria-describedby reads whichever is showing,
+				     and aria-live announces the swap as the player types. -->
+				<p
+					id="join-username-hint"
+					aria-live="polite"
+					class={[
+						'mt-1.5 text-sm',
+						looks_like_pin ? 'text-foreground font-medium' : 'text-muted-foreground'
+					]}
+				>
+					{looks_like_pin
+						? $t('play_page.nickname_looks_like_pin')
+						: $t('play_page.nickname_hint', { count: MIN_NICKNAME })}
 				</p>
 				<!-- autocomplete="nickname", not the browser default of guessing: with no
 				     token at all Chrome and Safari read this as an account field and

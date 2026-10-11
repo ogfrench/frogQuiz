@@ -15,7 +15,6 @@ SPDX-License-Identifier: MPL-2.0
      same Card primitives as login and register, with one neutral outcome. -->
 <script lang="ts">
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -24,7 +23,6 @@ SPDX-License-Identifier: MPL-2.0
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 
-	navbarVisible.visible = true;
 	const { t } = getLocalization();
 
 	let email = $state('');

@@ -12,7 +12,6 @@ SPDX-License-Identifier: MPL-2.0
 	import type { Question as QuestionType } from '$lib/quiz_types';
 	import ShowTitle from '$lib/play/title.svelte';
 	import Question from '$lib/play/question.svelte';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import ShowEndScreen from '$lib/play/admin/final_results.svelte';
 	import KahootResults from '$lib/play/results_kahoot.svelte';
 	import { getLocalization } from '$lib/i18n';
@@ -21,8 +20,10 @@ SPDX-License-Identifier: MPL-2.0
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import House from '@lucide/svelte/icons/house';
 	import LogOut from '@lucide/svelte/icons/log-out';
+	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { onMount } from 'svelte';
 	import { totalsFromResults } from '$lib/play/admin/totals';
+	import { addSeat, setSeats } from '$lib/play/avatars.svelte';
 	const { t } = getLocalization();
 
 	interface Props {
@@ -50,7 +51,6 @@ SPDX-License-Identifier: MPL-2.0
 	// Variables init
 	let question_index = $state('');
 	let unique = $state({});
-	navbarVisible.visible = false;
 	// Every player's answer to the question just closed, as the server sends it.
 	let answer_results: Array<{
 		username: string;
@@ -133,7 +133,9 @@ SPDX-License-Identifier: MPL-2.0
 		// Only warn once the player has actually joined a game. Previously this was
 		// armed from page load, so the browser prompted "Changes you made may not be
 		// saved" on every navigation away from an untouched join screen.
-		if (preventReload && game_pin !== '' && username !== '') {
+		// Nor once the game is over: the podium, or the host ending it. Home from there
+		// asked "Leave site?" about a game that no longer existed.
+		if (preventReload && game_pin !== '' && username !== '' && !show_final && !game_ended) {
 			event.preventDefault();
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
@@ -270,6 +272,9 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('solutions', (data) => {
 		solution = data;
 	});
+	// Everybody's frog, not only this player's: the podium names the whole top eight.
+	socket.on('avatars', setSeats);
+	socket.on('avatar', addSeat);
 
 	let bg_color = $derived(gameData ? gameData.background_color : undefined);
 
@@ -314,6 +319,13 @@ SPDX-License-Identifier: MPL-2.0
 				<LogOut />
 				{$t('play_page.leave_game')}
 			</ConfirmAction>
+		</div>
+	{/if}
+	<!-- The navbar is hidden here, and with it the only theme switch. Not during a
+	     question, where the whole screen is answer tiles and a stray tap costs points. -->
+	{#if !in_question}
+		<div class="fixed top-3 right-3 z-30">
+			<ThemeToggle class="bg-card/80 border-border border shadow-sm backdrop-blur" />
 		</div>
 	{/if}
 	{#if host_gone && joined && !show_final && !game_ended}

@@ -231,6 +231,13 @@ the explanation.
       spinner). No 5xx in `api.log` for either. Both passed straight after in isolation,
       with the worker running. Same rule: note a recurrence, do not explain it in advance.
 
+- [ ] **`practice.e2e.ts › practice runs a quiz end to end` failed again on 10 Oct**, in the
+      full run on PR #37's head (215/216), with a different symptom from 4 Oct: the last
+      question was answered and revealed, "See my score" was on screen and clicked, and the
+      page stayed on the question (`getByText('2 / 3')` not found). Re-run straight after:
+      3/3 clean in isolation. The PR touched nothing on the practice page but its navbar
+      store import. Two occurrences, two symptoms: still no cause.
+
 ## Open — CRUD audit (4 Oct)
 
 - [x] **C1 to C18** in [`docs/crud-audit-2026-10.md`](docs/crud-audit-2026-10.md): every bug

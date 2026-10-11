@@ -19,6 +19,8 @@ export interface QuizData {
 	game_pin: string;
 	started: boolean;
 	locked?: boolean;
+	/** On the host and remote, which carry the live game: -1 until the first question. */
+	current_question?: number;
 	cover_image?: string;
 	background_color?: string;
 	background_image?: string;

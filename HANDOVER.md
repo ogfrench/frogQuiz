@@ -4,10 +4,124 @@ SPDX-FileCopyrightText: 2026 frogQuiz contributors
 SPDX-License-Identifier: MPL-2.0
 -->
 
-# Handover — `ccr-370df3e4-c44t1l`
+# Handover
 
-For François and Gonçalo, 2–4 October 2026. Read this first; everything else is linked from
-here. It was PR #23.
+The newest section comes first. The older ones are kept below for the decisions and commands
+they record.
+
+## Picking this up on the laptop (10 Oct)
+
+The cloud session of 8 to 10 Oct stops here. Nothing is uncommitted: PR #37's branch is
+pushed at the commit that added this section.
+
+### Where things stand
+
+| | |
+| --- | --- |
+| **PR #37** (MVP polish) | Branch `ccr-370df3e4-c44t1l`. The mandatory full review ran on 10 Oct. Every finding it confirmed is fixed, each with a test that failed first; the PR description has the list. Suites: e2e 218 of 218 (one full run on Chromium), unit 235, the backend socket and export tests 28, `flake8` 0, `svelte-check` 0 errors. **Waiting for your go to merge**, with "Create a merge commit". |
+| **After #37 merges** | On the VM: `docker compose pull && docker compose up -d`, then `docker compose ps` to see the `worker` running. Until then, the new frontend shows players a letter instead of a frog. Nothing breaks. |
+| **V1** | One PR from a branch called **`v1`**, cut from master once #37 is in. The order is issue #56 (the V1 roadmap). Not started. |
+| **Deadline** | #22: the Oracle VM must be at 2 OCPU / 12 GB, backed up, and on Pay As You Go by about 25 Oct. Oracle reclaims it on 31 Oct. |
+| **Folded into #37** | #51 (the host reload restores the question). It can close when #37 merges. |
+
+### The V1 decisions (François, 10 Oct, in chat)
+
+Record these in `MVP.md` §4.0 when V1 starts. Gonçalo has not seen them yet.
+
+| Issue | Decision |
+| --- | --- |
+| #55 | Creating, uploading and hosting need a team account. Players still join by PIN without one. It is built as a flag, `anonymous_quizzes_enabled`, default off. Existing anonymous quizzes can be claimed until they expire. **This turns off a live feature, so CLAUDE.md needs Gonçalo's agreement before the V1 merge.** |
+| #34 | Three levels (Public, Unlisted and Private), and new quizzes are Unlisted by default. Private is owner only, and old links to a quiz made Private give 404. This is a schema change. |
+| #33 | Usernames can be changed: 3 to 20 characters, unique whatever the case, and the old URL gives 404. There is one name, no separate display name. An optional bio, up to 160 characters. |
+| #39 | Examples in Explore, plus a server-side "Copy to my quizzes". About six examples, written fresh. |
+| #40 | Play saves pending edits first, then opens the game in a new tab. |
+| #41 | Undo and redo cover structure and fields. Question text keeps CKEditor's own undo. History lasts for the session, 50 steps. |
+| #50 | Claude drafts the privacy and terms text, and François approves it. The contact address is still needed. |
+
+These follow each issue's own recommendation, unless you say otherwise:
+
+| Issue | Rule |
+| --- | --- |
+| #35 | A 409 offers Reload or Keep mine, and never loses typed text. A live game keeps its images until it ends. |
+| #43 | A claim that puts an account over its quota still goes through. |
+| #53 | High and critical audit findings fail the build. |
+
+**Also added to V1 on 10 Oct:**
+
+- A Neon snapshot before the V1 migration.
+- Log rotation in `docker-compose.yml`.
+- A scan of the compose images, which nothing tracks today: Meilisearch is pinned at `v0.28.0` (2022) and Valkey floats on `alpine`.
+- Branch protection on master.
+- A real hostname for the API instead of the sslip.io one.
+- The live scoreboard leaves out hide-results points, though the podium counts them.
+
+### Getting it onto the laptop
+
+- **Plain git:** `git fetch origin && git switch ccr-370df3e4-c44t1l && git pull`. After #37
+  merges: `git switch master && git pull && git switch -c v1`.
+- **With the conversation:** `claude --teleport session_01KVaWrDgi2ESR2WbZoLq4MU`, from a clean
+  checkout, signed in with `/login`. The conversation has been compacted, so what comes back is a
+  summary of the same documents.
+- **One session pushes at a time.** The cloud session is not watching PR #37 and will not push
+  behind you.
+
+### Running everything on the laptop
+
+Use Git Bash, from the repo root unless the table says otherwise. pnpm is in `%APPDATA%\npm`.
+
+| What | Command | Expect |
+| --- | --- | --- |
+| Unit | `cd frontend && pnpm test` | 235 passed, about 10 s |
+| Types | `cd frontend && pnpm exec svelte-kit sync && pnpm check` | 0 errors, about 36 warnings |
+| Frontend lint | `cd frontend && pnpm lint` | 0 errors |
+| Backend lint | `flake8 .` | 0 |
+| Backend, full | `./run_tests.sh` (needs Podman or Docker for Postgres, Redis and Meilisearch) | Fresh database, Redis flushed first (§7) |
+| Backend, no containers | `pytest frogquiz/tests/test_set_question_number_bounds.py frogquiz/tests/test_join_game_payload.py frogquiz/tests/test_results_spreadsheet.py frogquiz/tests/test_avatar_seats_outlive_the_game.py`, with `.env.ci` loaded | 28 passed |
+| e2e, full | `bash e2e/run.sh` | 218 tests, about 22 min. Edge on Windows. The cloud ran Chromium, so Edge is a real second browser |
+| e2e, one spec | `bash e2e/run.sh e2e/game-reload.e2e.ts` | |
+| Stack left up | `KEEP_UP=1 bash e2e/run.sh --list`, then `bash e2e/stop.sh` | App on 3000, API on 8010 |
+| A phone on the stack | See "A phone against the local stack" in the 4 Oct section below | |
+
+**Known flake:** `practice.e2e.ts › practice runs a quiz end to end` failed once in each of two
+full runs (4 and 10 Oct), with a different symptom each time. It passes alone. `TODO.md` has
+both occurrences. Note a third with its symptom; don't explain it in advance.
+
+### What needs you or the laptop
+
+| Item | Route |
+| --- | --- |
+| #22, the Oracle console | By hand: resize to 2/12, upgrade to Pay As You Go with a $1 budget alert, and take a boot volume backup. Then copy `uploads/` and `.env` off the box over `scp`. |
+| VM pull after each merge | `ssh ubuntu@<ip> 'cd frogQuiz && docker compose pull && docker compose up -d && docker compose ps'` |
+| Merging #37, and later V1 | On GitHub, or `gh pr merge 37 --merge`. Before the V1 merge, pause Netlify auto-publishing. Publish again once the VM has the new backend: the V1 migration changes the quiz table. |
+| GitHub settings | Secret scanning with push protection, and branch protection on master (green CI, PR required) |
+| Gonçalo | His agreement on #55 (anonymous creation off), and a look at the decisions table |
+| Approvals | The privacy and terms text, the contact address, and the example quizzes' content |
+| A phone and a laptop on the deployed site | After the V1 deploy: #45, and #3's Part A |
+
+### Tools worth having on the laptop
+
+- **`gh`** with `gh auth login`. A local session has no GitHub connector and no PR events, so
+  CI and review comments are read with `gh pr checks 37` and `gh pr view 37 --comments`.
+- **Claude in Chrome**, or the Desktop app's browser pane, for the UI walks and the deployed-site
+  run.
+- **Context7** (`claude mcp add`) for shadcn-svelte docs, which CLAUDE.md points to.
+- **Remote Control** (`/remote-control`) to follow a laptop session from the phone.
+
+The 4 Oct section below has the details and doc links for each.
+
+### Next, in order
+
+1. Read PR #37's description. Merge it with a merge commit, then pull on the VM.
+2. Do #22 on the Oracle console, whatever else is happening.
+3. Cut `v1` from master. Open a draft PR straight away, so CI runs on every push. Do #56's
+   step 0 housekeeping, and record the decisions in `MVP.md`.
+4. Work #56's steps 1 to 6. Each step ends with a full review of its diff and a full e2e run.
+
+---
+
+## Earlier: the `ccr-370df3e4-c44t1l` handover (2–6 Oct)
+
+For François and Gonçalo, 2–4 October 2026. It was PR #23.
 
 **State: merged on 6 Oct as PR #26** (the same branch, plus the sign-in resend cooldown and
 a few fixes; #23 was closed with it). What is left is not code: the production clean slate,

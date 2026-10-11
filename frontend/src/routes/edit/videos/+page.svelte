@@ -8,12 +8,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { FFmpeg } from '@ffmpeg/ffmpeg';
 	import { fetchFile } from '@ffmpeg/util';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
-	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { getLocalization } from '$lib/i18n';
 	const { t } = getLocalization();
 
 	let file_input: HTMLInputElement = $state();
-	navbarVisible.visible = false;
 
 	let stats: { progress: number; time_elapsed: number; speed: number } = $state({
 		progress: 0,

@@ -156,6 +156,9 @@ by accident.
   - the key arrives as a query parameter, so it ends up in access logs;
   - the comparison isn't constant-time;
   - it returns the full user row, password hash included.
+- One `KeyError: 'REQUEST_METHOD'` from engineio during a socket connection, in `api.log`
+  on 2026-10-07, during an e2e run. Seen once, never reproduced, and no test failed with it.
+  Noted so that a second sighting has something to match against.
 - **CLAUDE.md's verification snippet is out of date.** It checks `getComputedStyle(document.body).backgroundColor`, but `app.css` deliberately keeps `body` transparent and puts the page ground on `html`. The check should read `document.documentElement`.
 
 ## What held up

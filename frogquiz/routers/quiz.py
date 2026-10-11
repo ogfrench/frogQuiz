@@ -382,7 +382,11 @@ async def export_quiz_answers(export_token: str, game_pin: str):
     player_fields = await redis.hgetall(f"game:{game_pin}:players:custom_fields")
     score_data = await redis.hgetall(f"game_session:{game_pin}:player_scores")
     spreadsheet = await generate_spreadsheet(
-        quiz=quiz, quiz_results=data, player_fields=player_fields, player_scores=score_data
+        quiz=quiz,
+        quiz_results=data,
+        player_fields=player_fields,
+        player_scores=score_data,
+        custom_field=game_data.custom_field,
     )
 
     def iter_file():

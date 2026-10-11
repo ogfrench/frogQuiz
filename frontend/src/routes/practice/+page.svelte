@@ -14,7 +14,6 @@ SPDX-License-Identifier: MPL-2.0
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { getLocalization } from '$lib/i18n';
-	import { navbarVisible } from '$lib/stores.svelte';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 	import { get_foreground_color } from '$lib/helpers.ts';
 	import { answerColor } from '$lib/play/answer_colors';
@@ -32,7 +31,6 @@ SPDX-License-Identifier: MPL-2.0
 	import X from '@lucide/svelte/icons/x';
 
 	const { t } = getLocalization();
-	navbarVisible.visible = true;
 
 	const quiz_id = page.url.searchParams.get('quiz_id');
 	const back_href = quiz_id ? `/view/${quiz_id}` : '/explore';

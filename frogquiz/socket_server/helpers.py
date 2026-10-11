@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import logging
+import random
 from typing import Callable
 
 import aiohttp
@@ -18,6 +19,8 @@ from frogquiz.db.models import (
     RangeQuizAnswer,
     AnswerDataList,
     AnswerData,
+    AVATAR_TTL_SECONDS,
+    avatar_seat_keys,
 )
 from frogquiz.socket_server.models import SubmitAnswerData
 from .models import SubmitAnswerDataOrderType
@@ -223,6 +226,8 @@ async def update_game(game_pin: str, change: Callable[[PlayGame], bool | None]) 
                     return None
                 pipe.multi()
                 pipe.set(key, game.model_dump_json(), ex=7200)
+                for avatar_key in avatar_seat_keys(game_pin):
+                    pipe.expire(avatar_key, AVATAR_TTL_SECONDS)
                 await pipe.execute()
                 return game
             except WatchError:
@@ -236,3 +241,39 @@ async def has_already_answered(game_pin: str, q_index: int, username: str) -> bo
     else:
         answers = list(filter(lambda a: a.username == username, answers.root))
         return len(answers) > 0
+
+
+async def assign_avatar(game_pin: str, username: str) -> int:
+    """Give a player their seat for the game, or the one they already have.
+
+    A seat is a plain counter: the frontend draws frog `seat % len(frogs)`, so consecutive
+    seats are different frogs until the room has more players than there are frogs. The
+    server does not know how many frogs there are, and does not need to -- the art can
+    change without touching this.
+
+    The counter starts at a random point, or the first player in every game would get the
+    same frog. A player keeps their seat for the whole game: across a reload, and across
+    leaving and joining again under the same name, because the seat is keyed by name and
+    is never handed back. Kicked or departed players still sit on the scoreboard, so their
+    frog has to stay theirs.
+    """
+    seats = f"game:{game_pin}:avatars"
+    existing = await redis.hget(seats, username)
+    if existing is not None:
+        return int(existing)
+    counter = f"game:{game_pin}:avatar_seq"
+    await redis.set(counter, random.randrange(1000), nx=True, ex=AVATAR_TTL_SECONDS)
+    seat = await redis.incr(counter)
+    # HSETNX, not HSET: if this name somehow got a seat in between, that one stands and
+    # the counter value is simply skipped.
+    await redis.hsetnx(seats, username, seat)
+    # Both kept alive together: a counter that expired on its own would restart at a new
+    # random point and hand out seats already taken.
+    await redis.expire(seats, AVATAR_TTL_SECONDS)
+    await redis.expire(counter, AVATAR_TTL_SECONDS)
+    return int(await redis.hget(seats, username))
+
+
+async def get_avatars(game_pin: str) -> dict[str, int]:
+    """Every seat handed out in this game, by username."""
+    return {name: int(seat) for name, seat in (await redis.hgetall(f"game:{game_pin}:avatars")).items()}

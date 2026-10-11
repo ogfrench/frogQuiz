@@ -13,6 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
+	import TickLoop from '$lib/play/admin/tick_loop.svelte';
 
 	interface Props {
 		quiz_data: QuizData;
@@ -40,6 +41,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 
+	const question_seconds = $derived(parseInt(quiz_data.questions[selected_question].time));
+
 	let circular_progress = $derived.by(() => {
 		try {
 			return (
@@ -59,6 +62,9 @@ SPDX-License-Identifier: MPL-2.0
      flush against the top of the viewport: the title was overlapped by the fixed
      controls bar and the timer rule, and the bottom half of the projector was
      empty. -->
+<!-- Host screen only: the tick loop speeds up as the time runs out, and stops at zero. -->
+<TickLoop remaining={parseInt(timer_res)} total={question_seconds} />
+
 <div class="fq-stage">
 	<div class="fq-section">
 		<!-- wrap-anywhere so one long word cannot push the layout sideways: a 272-character title with no spaces in it overflowed by thousands of pixels on 2026-10-02. QuizInput caps the length now, but quizzes saved before that are not revalidated. -->

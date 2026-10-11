@@ -17,7 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz/docs - Attribution</title>
 	<meta
 		name="description"
-		content="frogQuiz is a fork of ClassQuiz. Who built the software it is based on."
+		content="frogQuiz is a fork of ClassQuiz. Who built the software it is based on, and who drew the frogs."
 	/>
 </svelte:head>
 <article
@@ -59,6 +59,24 @@ SPDX-License-Identifier: MPL-2.0
 	<p>
 		frogQuiz currently ships in English only, so those translations are not in this build. They
 		remain in ClassQuiz, and the credit stands regardless.
+	</p>
+
+	<h2>Frog avatars</h2>
+	<p>
+		The frog every player is given in a game is
+		<a href="https://intellikat.itch.io/frog-adventure-character-spritesheet"
+			>Adventure Frog — Hand Drawn Animated Character</a
+		>
+		by <a href="https://intellikat.itch.io/">intellikat</a>, licensed under
+		<a href="https://creativecommons.org/licenses/by/4.0/"
+			>Creative Commons Attribution 4.0 International (CC BY 4.0)</a
+		>.
+	</p>
+	<p>
+		We changed it: each avatar is one frame of the sprite sheet cropped to a square around the
+		head and shoulders; four of them have a tongue put together from the sheet's own tongue
+		pieces; and every pose is also recoloured into five more colours, with the tongue, mouth and
+		hat band left as drawn. intellikat does not endorse frogQuiz.
 	</p>
 
 	<h2>frogQuiz</h2>

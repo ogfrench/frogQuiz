@@ -29,19 +29,23 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# E2E_DATA and PG_PORT can be overridden so a second stack can run beside one another
-# session left up: `E2E_DATA=e2e/.data2 PG_PORT=5434 bash e2e/run.sh`. The other ports
-# stay fixed because the frontend and specs assume them, so stop that stack's API and
-# Vite first (`bash e2e/stop.sh`); it is only its Postgres that can be left alone.
+# A second stack can run beside one another session left up, from this checkout or from
+# another worktree: E2E_PORT_OFFSET moves every port by the same amount, and the specs
+# follow it through E2E_BASE_URL and E2E_API_URL, which this script exports.
+#   E2E_PORT_OFFSET=100 KEEP_UP=1 bash e2e/run.sh --list     # web on 3100, API on 8110
+#   E2E_PORT_OFFSET=100 bash e2e/stop.sh
+# Two stacks in the same checkout also need their own E2E_DATA. PG_PORT still overrides
+# Postgres's port on its own.
 DATA="${E2E_DATA:-$ROOT/e2e/.data}"
 case "$DATA" in /*|?:*) ;; *) DATA="$ROOT/$DATA" ;; esac
 TOOLS="$ROOT/e2e/.tools"
-PG_PORT="${PG_PORT:-5433}"
-REDIS_PORT=6380
-MEILI_PORT=7701
-MAIL_PORT_LOCAL=2526
-API_PORT=8010
-WEB_PORT=3000
+OFF="${E2E_PORT_OFFSET:-0}"
+PG_PORT="${PG_PORT:-$((5433 + OFF))}"
+REDIS_PORT=$((6380 + OFF))
+MEILI_PORT=$((7701 + OFF))
+MAIL_PORT_LOCAL=$((2526 + OFF))
+API_PORT=$((8010 + OFF))
+WEB_PORT=$((3000 + OFF))
 
 log() { printf '\033[1;32m[e2e]\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31m[e2e]\033[0m %s\n' "$*" >&2; exit 1; }
@@ -209,6 +213,11 @@ rm -rf "$DATA/mail"
 # ---- API -------------------------------------------------------------------------
 set -a; . "$ROOT/e2e/e2e.env"; set +a
 export DB_URL="postgresql://postgres@127.0.0.1:$PG_PORT/frogquiz"
+# e2e.env names the default ports; these follow E2E_PORT_OFFSET.
+export REDIS="redis://127.0.0.1:$REDIS_PORT/0?decode_responses=True"
+export MEILISEARCH_URL="http://127.0.0.1:$MEILI_PORT"
+export ROOT_ADDRESS="http://localhost:$WEB_PORT"
+export CORS_ORIGINS="http://localhost:$WEB_PORT"
 export STORAGE_PATH="$DATA/storage"
 # Points the app at the sink above. MAIL_USERNAME and MAIL_PASSWORD stay empty, which
 # is what makes the backend skip AUTH; MAIL_SECURITY=none keeps it off STARTTLS.
@@ -247,7 +256,8 @@ wait_http "http://localhost:$WEB_PORT/" web
 if [ -z "${E2E_BROWSER:-}" ]; then
   case "$OS" in windows) export E2E_BROWSER=msedge ;; *) export E2E_BROWSER=chromium ;; esac
 fi
-log "running Playwright ($E2E_BROWSER)"
+export E2E_BASE_URL="http://localhost:$WEB_PORT" E2E_API_URL="http://127.0.0.1:$API_PORT"
+log "running Playwright ($E2E_BROWSER) against $E2E_BASE_URL"
 set +e
 "$PNPM" exec playwright test "$@"
 status=$?
