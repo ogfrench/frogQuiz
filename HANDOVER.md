@@ -9,6 +9,53 @@ SPDX-License-Identifier: MPL-2.0
 The newest section comes first. The older ones are kept below for the decisions and commands
 they record.
 
+## Picking this up on the laptop (11 Oct, evening)
+
+The cloud session stops here. Nothing is uncommitted: `v1` is pushed at the commit that
+added this section, on top of `530d5dd` (step 3b).
+
+### Where things stand
+
+| | |
+| --- | --- |
+| **V1 ships in releases** (D35) | v0.5 = steps 0 to 3 (PR #57, now), v0.8 = step 4, v0.9 = step 5, v1.0 = step 6. Each is its own PR from `v1`. |
+| **Step 3** | Done. 3a (data and concurrency) and 3b (the account requirement behind `anonymous_quizzes_enabled`, off by default, the two ceilings, the `/create` redirect, the password domain rule, `docs/anonymous-vs-account.md`). |
+| **Checked on `530d5dd`, locally** | Backend suite 287 passed, 1 skipped, on a fresh database. e2e batch of the specs that touch `/create` and anonymous hosting, 68 of 68. `pnpm test` 249, `svelte-check` 0 errors, `flake8` clean. With the setting off, `/create` answered 303 to sign-in and `/editor/start` 401, checked live. |
+| **Not checked yet** | CI on `530d5dd` (it was running). The full e2e suite on `530d5dd` (only the batch above). The cheap review of the 3b commit was still running when the session stopped: run it again (below). gitleaks locally (not installed in the container; CI runs it). |
+| **App in use?** | No. No real users, no real data. |
+
+### Next, in order
+
+1. **CI green on #57** at the head of `v1`. Fix anything red first.
+2. **Cheap review of 3b** (a fast model, per CLAUDE.md): `git diff 92331b6..530d5dd`. Fix what it confirms, with a test that fails first.
+3. **Cut v0.5:** retitle #57 "v0.5: steps 0 to 3", set its Closes line to **#35, #43, #52, #53 and #55 only** (the others move to later PRs), mark it ready, merge with a **merge commit**.
+4. **Restart `v1` from master:** `git fetch origin master && git checkout -B v1 origin/master && git push --force-with-lease -u origin v1` (it holds only merged history by then). Open the v0.8 PR for step 4.
+5. **Steps 4 to 6** as `docs/v1-plan.md` says. Which issue closes in which release:
+   - v0.8: #33, #34, #38, #39 (Copy on any public quiz, D33), #40, #41
+   - v0.9: #42, #44, #50
+   - v1.0: #45, #3, #56
+   - post-V1: #60 (monitoring), #61 (backups)
+6. **At the end:** the full report, what was set out (the issues) against the result.
+
+### Only the laptop can do these
+
+- **The `mvp` tag** (the cloud git proxy refuses tag pushes): `git tag -a mvp 8e69034 -m "MVP" && git push origin mvp`
+- **The server image** after v0.5 merges: build and push it from the laptop, then on the VM `docker compose pull && docker compose up -d`. CI publishes `:master` only when `frogquiz/**` changes. The `up -d` also gives the worker its uploads folder. The new setting defaults to off, so nothing needs adding to `.env` for it.
+- **The API domain** (Netlify MCP): an A record `api` → `134.98.158.173` on `frogquiz.xyz`. On the VM, in `/opt/frogquiz/.env`, `SITE_ADDRESS="api.frogquiz.xyz, 134-98-158-173.sslip.io"`, then `docker compose up -d proxy`; check `CORS_ORIGINS` and `ROOT_ADDRESS`. Then Claude points `netlify.toml` at it. `DEPLOY.md` has the runbook.
+- **claude-code-setup** (its history was rewritten and force-pushed on 11 Oct):
+  - save any local work, then `git fetch origin && git reset --hard origin/main`
+  - `git config core.hooksPath .githooks`
+  - create `.private-terms` (gitignored) and the `PRIVATE_TERMS` repo secret with the same names
+  - run `sync-to-repos.sh`, then `setup-user.sh`
+- **#22, the VM:** 2 OCPU / 12 GB, backed up, Pay As You Go, by about 25 Oct. Oracle reclaims it on 31 Oct.
+- **Branch protection** on master.
+- **Approve text** when Claude drafts it: the examples (#39) and the privacy and terms pages (#50).
+
+### One default still to confirm
+
+The answered count counts only players still in the game: a player who answered and then
+left drops out of both numbers.
+
 ## Picking this up on the laptop (10 Oct)
 
 The cloud session of 8 to 10 Oct stops here. Nothing is uncommitted: PR #37's branch is
