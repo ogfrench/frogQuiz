@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### Claude Code setup, 11 Oct
+
+- Added the shared Claude Code skills under `.claude/skills/` and pointed `.claude/settings.json` at the ogfrench/claude-code-setup plugin marketplace, synced from that repo.
+
 ### Full review fixes before merge, 10 Oct
 
 - Fixed a host reload mid-game coming back on the quiz's cover, where one press of "Next question (1)" sent the running game back to the first question. The host now comes back on the question that is up, with its clock, its answer count and the running totals, or on the podium if the game had ended (#51).
