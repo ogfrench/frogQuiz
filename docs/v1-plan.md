@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 - Everything lands in one PR from the branch `v1`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: step 1's CI fixes built, waiting on green CI on #57** (11 Oct). Step 3 is next.
+**Status: step 1 done** (11 Oct), with every check on #57 green at `62268ff`. Step 3 is next.
 
 ## What V1 means
 
@@ -111,7 +111,7 @@ A question for François is asked at a step boundary, unless it blocks the work.
 - [x] Visual tooling, and a baseline of every screen on the merged master. The baseline missed the signed-out screens at 1440 and in dark; step 1 found and closed that gap.
 - **François:** after the merge, on the VM, run `docker compose pull && docker compose up -d`, then `docker compose ps`.
 
-### Step 1: CI and production safety (built; CI on #57 pending)
+### Step 1: CI and production safety (done)
 
 **Done on the branch:**
 - [x] The audit workflow, with dated exceptions, and the backend re-lock that took 124 advisories to 5 exceptions.
@@ -132,8 +132,9 @@ A question for François is asked at a step boundary, unless it blocks the work.
   - each image scan fails if its tag is no longer the one `docker-compose.yml` runs
   - the Meilisearch rollback in `DEPLOY.md` works as written
 
+- [x] Checks at the end of the step: every check on #57 green at `62268ff`, the full e2e suite on a fresh stack (218 passed, 0 failed, 4 skipped), and the Meilisearch rebuild tested on its own.
+
 **Left, and whose:**
-- CI on #57 goes green.
 - **François:**
   - the DNS record for `api.frogquiz.xyz`, then the VM's `SITE_ADDRESS`
   - #22 by 25 Oct
@@ -263,3 +264,7 @@ Done above.
   - **The QR test:** the same race as locally.
   - **A real overflow, older than V1:** on the host's title card before question 1, a title with no spaces ran 757px off the projector. The test had only checked that screen by chance, so it never failed locally. The card now wraps the title, the test checks the card on purpose, and the visual capture adds this screen in step 5.
   - **Meilisearch rebuild, tested on a stack with real quizzes:** after a wipe, a signed-in search rebuilt the index from Postgres (6 of 6) and found the probe quiz, and so did an API restart. Search needs a signed-in user, which the first attempt at the test missed.
+- **11 Oct, step 1 closed:**
+  - **Master moved:** #58 (the shared Claude Code setup) landed on master and conflicted with V1 in `CHANGELOG.md`. While the conflict stood, GitHub ran none of #57's pull-request checks. Master was merged in with a merge commit, keeping both sections. When checks go missing, look at the PR's mergeable state first.
+  - **Every check on #57 is green at `62268ff`,** CI's e2e included.
+  - **Re-plan:** step 3 gains the answered count. Nothing else moved: the step 3 to 6 plan stands as written.
