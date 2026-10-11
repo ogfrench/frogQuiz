@@ -235,7 +235,9 @@ Tested and passing, so worth knowing before anyone "fixes" them:
 - **Changing the password** through My Account signs other devices out; the old password
   stops working and the new one works.
 - **The live-stats API** (`/api/v1/live/*`) checks that the API key's owner is the game's
-  host.
+  host. *(Corrected 11 Oct: only `/`, `/players` and `/set_question` did. `/scores`,
+  `/get_question/now` and `/voting` accepted any account's key, and `/user_count` any key
+  at all. All seven check the host now; see `docs/security-audit-2026-10-11.md`.)*
 
 Already covered elsewhere and not repeated here: anonymous ownership by secret
 (`test_anonymous_quiz.py`, `e2e-findings.md` › What held up), logout (`test_logout.py`),

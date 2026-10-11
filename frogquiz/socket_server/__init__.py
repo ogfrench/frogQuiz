@@ -134,6 +134,11 @@ def question_for_players(game_data: PlayGame, index: int) -> dict:
     temp_return["type"] = question_type
     if question_type == QuizQuestionType.ORDER:
         random.shuffle(temp_return["answers"])
+    if question_type == QuizQuestionType.TEXT:
+        # A text question's answers are the ones it accepts: the solution itself. They
+        # went to every phone (security audit, 11 Oct), and the phone never uses them --
+        # it shows a box to type in, and the server marks what comes back.
+        temp_return["answers"] = []
     return ReturnQuestion(**temp_return).model_dump()
 
 
