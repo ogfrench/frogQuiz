@@ -116,9 +116,10 @@ SPDX-License-Identifier: MPL-2.0
 
 <style>
 	/* The badge's own balloon too: with only the badge hidden, its empty frame stayed on
-	   the field as a 2px blue dot (the step 3a visual review). */
+	   the field as a 2px blue dot (the step 3a visual review). One class more than
+	   ckeditor's `_visible` rule, so this wins whatever order the stylesheets load in. */
 	:global(.ck-powered-by),
-	:global(.ck.ck-balloon-panel.ck-powered-by-balloon) {
+	:global(.ck.ck-balloon-panel.ck-powered-by-balloon.ck-balloon-panel_visible) {
 		display: none;
 	}
 

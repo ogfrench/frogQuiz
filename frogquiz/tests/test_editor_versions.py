@@ -11,10 +11,14 @@ it on close. The 409 now also says which version is current, so the editor can o
 """
 
 import copy
+import uuid
 
 import pytest
+import sqlalchemy
 from fastapi.testclient import TestClient
 
+import frogquiz.routers.editor as editor_router
+from frogquiz.config import settings as get_settings
 from frogquiz.tests import test_client, example_quiz  # noqa: F401
 
 # Creates a quiz and deletes it again, so test_server.py's exact counts are taken first.
@@ -92,3 +96,35 @@ def test_finish_without_base_still_saves(test_client, quiz):  # noqa: F811
         f"/api/v1/editor/finish?edit_id={tab}", json=_titled("No base"), headers={"X-Anon-Secret": secret}
     )
     assert resp.status_code == 200
+
+
+def test_two_saves_in_the_same_instant_cannot_both_pass_the_check(test_client, quiz, monkeypatch):  # noqa: F811
+    """The check read the version, and the write came later: a save landing in between
+    passed the same check and was overwritten. The other save is landed in that window on
+    purpose, through the job the save queues between the two."""
+    quiz_id, secret, first = quiz
+    tab = _tab(test_client, quiz_id, secret)
+    real = editor_router.arq.enqueue_job
+    landed = []
+
+    async def another_save_lands_first(*args, **kwargs):
+        if not landed:
+            engine = sqlalchemy.create_engine(str(get_settings().db_url))
+            try:
+                with engine.begin() as conn:
+                    conn.execute(
+                        sqlalchemy.text("UPDATE quiz SET title = 'Other tab', updated_at = now() WHERE id = :id"),
+                        {"id": uuid.UUID(quiz_id).hex},
+                    )
+            finally:
+                engine.dispose()
+            landed.append(True)
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr(editor_router.arq, "enqueue_job", another_save_lands_first)
+    resp = test_client.post(
+        f"/api/v1/editor/save?edit_id={tab}&base={first}", json=_titled("This tab"), headers={"X-Anon-Secret": secret}
+    )
+    assert landed
+    assert resp.status_code == 409
+    assert test_client.get(f"/api/v1/quiz/get/public/{quiz_id}").json()["title"] == "Other tab"

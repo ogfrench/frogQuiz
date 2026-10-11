@@ -165,6 +165,8 @@ Done above.
 
 Split in two on 11 Oct, each with its own step-end review: **3a** is data and concurrency (#52, #35, the scoreboard, the answered count), and **3b** is accounts (#55, #43). Claims reuse 3a's conditional writes, so 3a goes first.
 
+**Status:** 3a is done (11 Oct). 3b is under way: the two #43 races are fixed (`780d744`), and the rest of 3b below is next, with one addition from 3a's review: the editor's version check becomes a conditional write too.
+
 - **#52:** the server refuses to save results for a game with no signed-in host.
 - **#35:**
   - `views` and `plays` become atomic increments.
@@ -285,3 +287,19 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - **Moved to step 5:** the server-shared "signed in" store, and the page gate's unsigned token read (no data reaches it).
   - **Also in 3a, from François's question:** the rich-text fields were square beside rounded ones; every text field now has one shape and one focus ring. CKEditor also dropped those fields' accessible names on the first keystroke.
   - **Lesson:** a second stack started from the same tree reloads the first one's pages; run the audit and e2e one after the other.
+- **11 Oct, step 3a closed:**
+  - **Checks:** every check on #57 green at `311df9e`, CI's e2e included. Locally: the e2e batch for the step's specs (105 of 105), the backend suite on a fresh database, `pnpm test` (246), `svelte-check` (0 errors), and a capture of the touched screens: 154 shots, axe and overflow clean once the fixes below were in.
+  - **The visual review found three bugs, all fixed:**
+    - The conflict dialog's "Load the other version" was blank: the outline look was passed as a class over the default variant and kept its near-white text. Axe flagged it at every size, in both themes.
+    - The title and question fields used CKEditor's Helvetica beside Inter in every other field.
+    - CKEditor's hidden badge left its empty frame on a focused field as a 2px blue dot.
+    - Also polish: the live-game note at full strength, plainer copy for it and for the restore offer, and "Save as a new quiz" as the primary button once a quiz is gone.
+  - **The step-end review of the whole diff (main model):** the backend holds. One gap: the editor's version check reads, then writes, so two saves in the same instant can both pass it. It joins 3b, with the other conditional writes.
+  - **Moved to step 5, all older than V1:**
+    - The scoreboard and results cards are hard-coded white, also in dark mode. Probably deliberate, so they read over a quiz's own background colour or image; step 5 decides.
+    - The question card's inner padding is uneven at 390 and 834.
+    - The conflict dialog's wording.
+  - **François (11 Oct):** no hotfix; the `/live` fixes reach master with V1.
+  - **A default, not yet confirmed by François:** the answered count counts only the players still in the game.
+  - **Re-plan:** 3b as planned, plus the editor's version check. Steps 4 to 6 unchanged.
+  - **Lesson:** a variant passed as a class merges over the component's own default variant, and whatever the second one does not set survives. Pass variants as props.

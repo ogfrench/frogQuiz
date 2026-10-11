@@ -25,6 +25,7 @@ from frogquiz.config import (
     ALLOWED_TAGS_FOR_QUIZ,
     arq,
 )
+from frogquiz.db import database
 from frogquiz.db.models import Quiz, QuizInput, User, QuizQuestionType, StorageItem
 from frogquiz.auth import get_current_user_optional, hash_anon_secret, verify_anon_secret
 from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
@@ -301,22 +302,41 @@ async def _persist(
                     await storage.delete([image])
                 except DeletionFailedError:
                     pass
-        # Only what an edit sets. Written whole, the row loaded above put back a view,
-        # a launch, a rating or a claim that landed while this save ran (#35 row 7) --
-        # a claim put back would have made the quiz anonymous again.
-        await quiz.update(
-            _columns=[
-                "title",
-                "public",
-                "description",
-                "updated_at",
-                "questions",
-                "cover_image",
-                "background_color",
-                "background_image",
-                "mod_rating",
-            ]
-        )
+        async with database.transaction():
+            # The version, checked again with the row locked. The check above and the write
+            # below were two steps, so a save landing between them passed the same check
+            # and was overwritten by this one. Two saves at once now take turns, and the
+            # second gets the 409. (The image job queued above then diffs against whichever
+            # save won, which is what it would see anyway.)
+            current = await database.fetch_val(
+                "SELECT updated_at FROM quiz WHERE id = :id FOR UPDATE", {"id": quiz.id.hex}
+            )
+            if current is None:
+                raise HTTPException(status_code=404, detail="Quiz not found")
+            if base is not None and current != base:
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "detail": "this quiz was changed in another tab or device. Reload to get that version",
+                        "updated_at": current.isoformat(),
+                    },
+                )
+            # Only what an edit sets. Written whole, the row loaded above put back a view,
+            # a launch, a rating or a claim that landed while this save ran (#35 row 7) --
+            # a claim put back would have made the quiz anonymous again.
+            await quiz.update(
+                _columns=[
+                    "title",
+                    "public",
+                    "description",
+                    "updated_at",
+                    "questions",
+                    "cover_image",
+                    "background_color",
+                    "background_image",
+                    "mod_rating",
+                ]
+            )
         if not is_anonymous:
             # get_meili_data looks up the owning user, which anonymous quizzes don't have --
             # and they're never indexed anyway. This used to run before the fields above
