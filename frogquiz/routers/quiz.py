@@ -256,12 +256,22 @@ async def claim_quiz(
     quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
     if quiz is None or _quiz_expired(quiz) or not verify_anon_secret(x_anon_secret, quiz.anon_secret):
         raise HTTPException(status_code=404, detail="quiz not found")
+    # One conditional write, taken only while the quiz is still unclaimed, unexpired and
+    # holds the secret just checked. Two claims at once both passed the read above, and the
+    # second wrote over the first: the quiz went to whoever came last, and its images were
+    # counted twice (#43). The expiry sweep deletes on the opposite condition, so a claim and
+    # the sweep never both win. Only these three columns, so a save in between stays (#35).
+    won = await database.fetch_one(
+        "UPDATE quiz SET user_id = :user, anon_secret = NULL, expire_at = NULL"
+        " WHERE id = :id AND user_id IS NULL AND anon_secret = :secret"
+        " AND (expire_at IS NULL OR expire_at >= :now) RETURNING id",
+        {"user": user.id.hex, "id": quiz.id.hex, "secret": quiz.anon_secret, "now": datetime.now()},
+    )
+    if won is None:
+        raise HTTPException(status_code=404, detail="quiz not found")
     quiz.user_id = user.id
     quiz.anon_secret = None
     quiz.expire_at = None
-    # Only the columns a claim changes: written whole, a save that landed after the load
-    # above went back to what this request had read (#35 row 7).
-    await quiz.update(_columns=["user_id", "anon_secret", "expire_at"])
     # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
     # ownerless, they counted against nobody's quota and outlived the account. Only the
     # ones already hashed are counted here; calculate_hash counts the rest when it runs,

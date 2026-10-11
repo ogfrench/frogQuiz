@@ -54,6 +54,7 @@ They are also recorded in `MVP.md` §4.0, as D22 to D32.
 | Rule | François decides. The rule that a removal needed François and Gonçalo jointly is dropped (11 Oct). Claude proposes and never removes a feature on its own. |
 | Domain | The API moves from `134-98-158-173.sslip.io` to `api.frogquiz.xyz`. |
 | Merge | One V1 PR, with a full review at the end of each step and one before the merge. |
+| Hotfix | None (11 Oct). The audit's `/live` fixes reach master with V1, not ahead of it on their own branch. |
 
 ## How the plan adapts
 

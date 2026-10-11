@@ -135,7 +135,15 @@ async def clean_expired_anonymous_quizzes(ctx):
         # quiz left its images in storage for good.
         image_ids = extract_image_ids_from_quiz(quiz)
         live = await is_live(quiz.id)
-        await quiz.delete()
+        # Deleted only if still unclaimed and expired, in the one statement. A claim that
+        # landed after the read above lost its quiz to this sweep, and its images with it
+        # (#43). The claim writes on the opposite condition, so exactly one of them wins.
+        gone = await database.fetch_one(
+            "DELETE FROM quiz WHERE id = :id AND user_id IS NULL AND expire_at < :now RETURNING id",
+            {"id": quiz.id.hex, "now": datetime.now()},
+        )
+        if gone is None:
+            continue
         if live:
             # A game started before it expired runs to its end, with its images (#55).
             await hold_images(quiz.id, image_ids)

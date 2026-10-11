@@ -4,7 +4,14 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 step 3b: accounts, 11 Oct
+
+- **A claim that lost a race took the quiz anyway (#43):** two claims at once both passed the "still unclaimed" check before either wrote, so the second moved a just-claimed quiz into its own account and counted its images twice. The claim is now one conditional write, and the loser gets the same 404 as any other failed claim.
+- **The expiry sweep deleted a quiz claimed while it ran (#43):** it read the expired quizzes, then deleted each by id, so a claim in between lost the quiz from its new owner's account, images included. It now deletes only a quiz that is still unclaimed and expired, in the same statement, and frees images only for what it deleted.
+
 ### V1 step 3a: data and concurrency, 11 Oct
+
+- **Visual capture, the editor's new states:** `visual.e2e.ts` now shoots the conflict dialog, the restore offer, the deleted-quiz banner and the live-game note at every size in both themes. The helper that starts a live game moved to `e2e/sockets.ts` so both specs share it.
 
 - **CLAUDE.md, delegating to cheaper models:** which work goes to haiku, to sonnet, or stays on the main model in this repo, and what must run one at a time. The general version is the `model-delegation` skill in `ogfrench/claude-code-setup`.
 - **Save results, anonymous host (#52):** the server no longer writes a results row for a game hosted without an account, which nobody could ever open. It answers `results_not_saved` with a reason. A host whose account was deleted mid-game still gets an ownerless row, as before. A save for a game that has already gone from Redis now gets the same refusal, where it used to raise in the handler.
