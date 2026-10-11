@@ -18,52 +18,30 @@ pushed at the commit that added this section.
 
 | | |
 | --- | --- |
-| **PR #37** (MVP polish) | Branch `ccr-370df3e4-c44t1l`. The mandatory full review ran on 10 Oct. Every finding it confirmed is fixed, each with a test that failed first; the PR description has the list. Suites: e2e 218 of 218 (one full run on Chromium), unit 235, the backend socket and export tests 28, `flake8` 0, `svelte-check` 0 errors. **Waiting for your go to merge**, with "Create a merge commit". |
-| **After #37 merges** | On the VM: `docker compose pull && docker compose up -d`, then `docker compose ps` to see the `worker` running. Until then, the new frontend shows players a letter instead of a frog. Nothing breaks. |
-| **V1** | One PR from a branch called **`v1`**, cut from master once #37 is in. The order is issue #56 (the V1 roadmap). Not started. |
+| **PR #37** (MVP polish) | **Merged on 11 Oct** as `58d6241`, with a merge commit, after the mandatory full review. Every finding it confirmed was fixed, each with a test that failed first; the PR description has the list. Suites on its last commit: e2e 218 of 218 (one full run on Chromium), unit 235, the backend socket and export tests 28, `flake8` 0, `svelte-check` 0 errors. |
+| **On the VM, now** | `docker compose pull && docker compose up -d`, then `docker compose ps` to see the `worker` running. Until then the new frontend shows players a letter instead of a frog. Nothing breaks. |
+| **V1** | Started on 11 Oct on the branch **`v1`**, with one draft PR. The living plan is [`docs/v1-plan.md`](docs/v1-plan.md): read it first, then its "Plan changes" log. #56 holds the checklist. |
 | **Deadline** | #22: the Oracle VM must be at 2 OCPU / 12 GB, backed up, and on Pay As You Go by about 25 Oct. Oracle reclaims it on 31 Oct. |
-| **Folded into #37** | #51 (the host reload restores the question). It can close when #37 merges. |
+| **Folded into #37** | #51 (the host reload restores the question), closed by the merge. |
 
-### The V1 decisions (François, 10 Oct, in chat)
+### The V1 decisions
 
-Record these in `MVP.md` §4.0 when V1 starts. Gonçalo has not seen them yet.
-
-| Issue | Decision |
-| --- | --- |
-| #55 | Creating, uploading and hosting need a team account. Players still join by PIN without one. It is built as a flag, `anonymous_quizzes_enabled`, default off. Existing anonymous quizzes can be claimed until they expire. **This turns off a live feature, so CLAUDE.md needs Gonçalo's agreement before the V1 merge.** |
-| #34 | Three levels (Public, Unlisted and Private), and new quizzes are Unlisted by default. Private is owner only, and old links to a quiz made Private give 404. This is a schema change. |
-| #33 | Usernames can be changed: 3 to 20 characters, unique whatever the case, and the old URL gives 404. There is one name, no separate display name. An optional bio, up to 160 characters. |
-| #39 | Examples in Explore, plus a server-side "Copy to my quizzes". About six examples, written fresh. |
-| #40 | Play saves pending edits first, then opens the game in a new tab. |
-| #41 | Undo and redo cover structure and fields. Question text keeps CKEditor's own undo. History lasts for the session, 50 steps. |
-| #50 | Claude drafts the privacy and terms text, and François approves it. The contact address is still needed. |
-
-These follow each issue's own recommendation, unless you say otherwise:
-
-| Issue | Rule |
-| --- | --- |
-| #35 | A 409 offers Reload or Keep mine, and never loses typed text. A live game keeps its images until it ends. |
-| #43 | A claim that puts an account over its quota still goes through. |
-| #53 | High and critical audit findings fail the build. |
-
-**Also added to V1 on 10 Oct:**
-
-- A Neon snapshot before the V1 migration.
-- Log rotation in `docker-compose.yml`.
-- A scan of the compose images, which nothing tracks today: Meilisearch is pinned at `v0.28.0` (2022) and Valkey floats on `alpine`.
-- Branch protection on master.
-- A real hostname for the API instead of the sslip.io one.
-- The live scoreboard leaves out hide-results points, though the podium counts them.
+They are in [`docs/v1-plan.md`](docs/v1-plan.md) and in `MVP.md` §4.0 as D22 to D32. They include:
+- No anonymous creation or hosting: built behind a flag.
+- Three visibility levels, Unlisted by default.
+- Changeable usernames.
+- A mix of example quizzes.
+- The contact francois.prevot@frog.co.
+- `api.frogquiz.xyz` for the API.
+- **From 11 Oct François decides alone (D31).** The joint-decision rule is gone from CLAUDE.md.
 
 ### Getting it onto the laptop
 
-- **Plain git:** `git fetch origin && git switch ccr-370df3e4-c44t1l && git pull`. After #37
-  merges: `git switch master && git pull && git switch -c v1`.
+- **Plain git:** `git fetch origin && git switch v1 && git pull`.
 - **With the conversation:** `claude --teleport session_01KVaWrDgi2ESR2WbZoLq4MU`, from a clean
   checkout, signed in with `/login`. The conversation has been compacted, so what comes back is a
   summary of the same documents.
-- **One session pushes at a time.** The cloud session is not watching PR #37 and will not push
-  behind you.
+- **One session pushes at a time.** Only one session should be on `v1` at once.
 
 ### Running everything on the laptop
 
@@ -111,11 +89,12 @@ The 4 Oct section below has the details and doc links for each.
 
 ### Next, in order
 
-1. Read PR #37's description. Merge it with a merge commit, then pull on the VM.
+1. Pull on the VM (PR #37 is merged).
 2. Do #22 on the Oracle console, whatever else is happening.
-3. Cut `v1` from master. Open a draft PR straight away, so CI runs on every push. Do #56's
-   step 0 housekeeping, and record the decisions in `MVP.md`.
-4. Work #56's steps 1 to 6. Each step ends with a full review of its diff and a full e2e run.
+3. Follow [`docs/v1-plan.md`](docs/v1-plan.md). Its status line says which step is in progress. Each step ends with these, then a re-plan of the steps that remain:
+   - a full review of the step's diff
+   - a full e2e run
+   - a visual review
 
 ---
 

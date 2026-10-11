@@ -6,6 +6,9 @@ SPDX-License-Identifier: MPL-2.0
 
 # TODO — live tracker
 
+> **From 11 Oct the open work is tracked in GitHub issue #56 and [`docs/v1-plan.md`](docs/v1-plan.md),
+> not here.** This file is kept as the record of 1 to 10 Oct; nothing new is added to it.
+
 Where the work actually stands. [`MVP.md`](MVP.md) is the plan and holds the decisions;
 this file is the running state, updated as things land.
 Audit that produced most of it: [`docs/audit-2026-10-01.md`](docs/audit-2026-10-01.md).

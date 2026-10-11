@@ -4,6 +4,14 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 started, 11 Oct
+
+- Merged PR #37 (MVP polish) into master, and started V1 on the branch `v1`.
+- Added `docs/v1-plan.md`, the living V1 plan, which each step re-plans, and `docs/visual-review-v1.md` for the visual review in every step.
+- Recorded François's V1 decisions in `MVP.md` as D22 to D32.
+- Dropped the rule that removing a feature needs François and Gonçalo jointly (François's call, D31). CLAUDE.md now says François decides and Claude never removes a feature on its own.
+- `TODO.md` is now a record only; open work is in issue #56 and `docs/v1-plan.md`.
+
 ### Full review fixes before merge, 10 Oct
 
 - Fixed a host reload mid-game coming back on the quiz's cover, where one press of "Next question (1)" sent the running game back to the first question. The host now comes back on the question that is up, with its clock, its answer count and the running totals, or on the podium if the game had ended (#51).

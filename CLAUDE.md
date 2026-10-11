@@ -159,7 +159,7 @@ The app carries a lot of features aimed at a public multi-tenant SaaS. For an in
 
 ## If Explore or Search are ever removed for real
 
-**Removing a feature that still exists on master is a joint decision between François and Gonçalo — they are equals, neither overrides the other, and it is never Claude's call.** If a session asks for Explore, Search or any other tab to be removed, note the request and leave the feature in place until both have agreed. Frontend branches are for how things look, not for deciding what the app does.
+**Removing a feature that still exists on master is François's decision, and never Claude's call.** It used to need Gonçalo's agreement as well; François dropped that rule on 2026-10-11 (D31 in `MVP.md`). If a session asks for Explore, Search or any other tab to be removed, propose it, get François's answer, and record it in `MVP.md` before touching anything. Frontend branches are for how things look, not for deciding what the app does.
 
 **Nothing is removed today. Both Explore and Search are live and kept.** This section exists so that if the question comes up again it can be answered with the real cost rather than a guess — it is not a plan to remove them.
 
@@ -173,7 +173,7 @@ is dissolved rather than fixed, because there is only one page left to render.
 
 The removal surface below is unchanged in substance and still the thing to read before
 deleting anything — merging two pages is not deleting a feature, and deleting either
-one remains a joint François/Gonçalo decision.
+one remains François's decision, recorded in `MVP.md`.
 
 If the team ever does decide to delete either, this is the full surface. Do it in this order and do not stop halfway — a half-removal is what leaves reachable-but-broken routes and live endpoints behind a dead UI.
 

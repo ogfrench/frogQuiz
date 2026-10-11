@@ -208,6 +208,17 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 | D19 | Can somebody join a game that has started? It refused everyone once the host pressed Start | **F (2026-10-05): yes, as in Kahoot, with a lock.** A late joiner starts at 0 with the question that is up. The host locks and unlocks from the lobby and from the bar during the game. A finished game still refuses | ☐ | ☑ |
 | D20 | Score curve. A right answer at the buzzer scored about 0 | **F (2026-10-05): Kahoot's.** 1000 inside half a second, falling to 500 at the buzzer. Multiple-answer questions stay all or nothing | ☐ | ☑ |
 | D21 | Who can sign in, and how. "Public" meant the internet (open decision 6 in `docs/mvp-scope.md`) | **F (2026-10-05): an emailed link or six-digit code, frog.co and capgemini.com addresses only, no passwords, as frogViz does. Discover, search and the sitemap need a signed-in account.** A first sign-in picks a username, which makes the account. Password login, registration, reset and change are hidden behind `ENABLE_PASSWORD_LOGIN`, not removed. Anonymous create, host and play are unchanged | ☐ | ☑ |
+| D22 | V1 ships as one PR from the branch `v1`, with a full review at the end of each step and a final one ([`docs/v1-plan.md`](docs/v1-plan.md)) | **F (2026-10-10)** | — | ☑ |
+| D23 | Who can use frogQuiz without signing in (#55) | **F (2026-10-10): creating, uploading and hosting need a team account; players join by PIN with none.** Built behind `anonymous_quizzes_enabled`, default off (hide, don't delete). Old anonymous quizzes can be claimed until they expire. This reverses D21's last sentence | — | ☑ |
+| D24 | Visibility levels and the default (#34) | **F (2026-10-10): Public, Unlisted and Private; new quizzes are Unlisted.** Private is owner only; old links to a quiz made Private give 404; its images stay reachable by their unguessable URL. Supersedes D13's two levels | — | ☑ |
+| D25 | Can a username change (#33) | **F (2026-10-10): yes**, 3 to 20 characters, unique whatever the case; the old `/user/{name}` gives 404. One name, no display name; an optional bio of 160 characters. Reverses C13 (4 Oct) | — | ☑ |
+| D26 | Examples (#39) | **F (2026-10-11): a mix**: about three general-knowledge quizzes and three relevant to the team, each a full 10 to 12 questions, together using every type, fact-checked, approved by F before seeding. Explore gets Examples; every quiz gets "Copy to my quizzes" | — | ☑ |
+| D27 | Play from the editor with unsaved edits (#40) | **F (2026-10-10): save first, then open the game in a new tab** | — | ☑ |
+| D28 | Undo scope (#41) | **F (2026-10-10): structure and fields**; question text keeps CKEditor's own undo; session only, 50 steps | — | ☑ |
+| D29 | Privacy and terms text (#50) | **F (2026-10-11): Claude drafts from the #55 matrix, F approves; the contact is francois.prevot@frog.co.** Settles D8 | — | ☑ |
+| D30 | Large-room target (#45) | **F (2026-10-11): no pass mark**; record the player count where a game first breaks | — | ☑ |
+| D31 | Who decides | **F (2026-10-11): François decides; the joint-decision rule is dropped.** Claude proposes and never removes a feature on its own (CLAUDE.md) | — | ☑ |
+| D32 | API hostname | **F (2026-10-11): `api.frogquiz.xyz`** instead of `134-98-158-173.sslip.io`, so an IP change is a DNS edit | — | ☑ |
 
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
@@ -217,6 +228,9 @@ signature. **D16 and D18 still need Gonçalo's tick**: both are François's call
 2 Oct, and D18 narrows who can download a quiz's results. **D19 to D21 are François's
 calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
 the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
+
+**From 11 Oct (D31) François decides alone**, so D22 to D32 carry no G column, and the
+open G ticks above (D16 to D21) are no longer a gate. They stay as a record.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on
 François's sign-off, including hiding Docs and GitHub. Everything hidden since is
