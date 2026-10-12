@@ -409,6 +409,12 @@ The API was reached at `134-98-158-173.sslip.io`, a name sslip.io derives from t
 so any new IP broke every link. It moves to `api.frogquiz.xyz` (D32). Do it in this order,
 so nothing is ever unreachable:
 
+**Steps 1 and 2 were done on 12 Oct.** The record went in with the Netlify CLI
+(`netlify api createDnsRecord`, zone `frogquiz.xyz`), and the VM's `.env` was backed up to
+`.env.bak-<date>` before `SITE_ADDRESS` changed. Caddy got the certificate on the first
+request. From this laptop the name fails the TLS handshake, because F-Secure blocks
+frogquiz.xyz here; check it from the VM or a phone instead.
+
 1. **DNS (François, in Netlify).** `frogquiz.xyz` is served by Netlify DNS (its
    nameservers are `dns1` to `dns4.p05.nsone.net`, checked 11 Oct). In the Netlify UI:
    Domains, `frogquiz.xyz`, DNS settings, Add new record: type `A`, name `api`, value

@@ -14,6 +14,15 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
   the v0.5 copy.
 - **Reopened #33, #42 and #45:** the v0.5 merge closed them by mistake, because the PR body
   listed later releases with the word "closes". Each one was reopened with a comment.
+- **Added the DNS record for `api.frogquiz.xyz`:** an A record to `134.98.158.173` in Netlify
+  DNS, made with the Netlify CLI. Netlify's nameserver answers with the IP. Caddy on the VM
+  does not serve the name yet (`DEPLOY.md`, API hostname, step 2).
+- **Caddy serves `api.frogquiz.xyz`:** `SITE_ADDRESS` on the VM lists it beside the sslip
+  name, and Caddy got its certificate on the first request. Checked from the VM, a CORS
+  preflight from frogquiz.xyz included. `DEPLOY.md` marks steps 1 and 2 done.
+- **V1 trimmed (D39):** François moved #33, #34, #38 and #41 after V1 and brought #60 and #61
+  in. The examples are five. Hidden actions and hidden routes get a check that can end in a
+  redesign. `MVP.md`, `docs/v1-plan.md` and #56 follow; the four issues carry `post-v1`.
 
 ## v0.5, 12 Oct 2026
 

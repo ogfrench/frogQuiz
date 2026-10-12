@@ -10,20 +10,20 @@ SPDX-License-Identifier: MPL-2.0
 - V1 ships in four releases, each its own PR from the branch `v1` (D35, 11 Oct): **v0.5** is steps 0 to 3 (PR #57), **v0.8** step 4, **v0.9** step 5, **v1.0** step 6. After each merge, `v1` restarts from master. Master before v0.5 is tagged `mvp`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: step 3 done; v0.5 (#57) is being cut** (11 Oct). Step 4 opens the v0.8 PR.
+**Status: v0.5 (#57) shipped on 12 Oct; step 4 (v0.8) is under way.** François trimmed V1 the same day (D39): #33, #34, #38 and #41 moved after V1, and #60 and #61 came in.
 
 ## What V1 means
 
 - **Sign-in:** the team signs in with a frog.co or capgemini.com address, on a phone or a laptop.
 - **Quizzes:** a signed-in user can do all of these:
   - make, edit, copy, play, host and delete quizzes
-  - set Private, Unlisted or Public on each
-  - have a profile
-  - search Explore with filters
+  - start a game straight from the editor
+  - find, play and copy the Examples in Explore
 - **Without an account:** creating, uploading and hosting need a team account. Players join by PIN with no account.
 - **Production:**
-  - the VM is within its limits and backed up
-  - the API answers at `api.frogquiz.xyz`
+  - the VM is within its limits and backed up, with one restore tested
+  - the API answers at `api.frogquiz.xyz` (since 12 Oct)
+  - a health endpoint says when a part is down
 - **Done:** every edge case in #45 has an outcome, and none of them blocks.
 
 **Not in V1:**
@@ -31,7 +31,8 @@ SPDX-License-Identifier: MPL-2.0
 - Azure single sign-on
 - more languages
 - a public launch
-- the features that stay hidden: controllers, QuizTivity, moderation, Pixabay, results history
+- the features that stay hidden: controllers, QuizTivity, moderation, Pixabay. Step 5 lists every hidden route, and François picks which come back (12 Oct).
+- moved after V1 on 12 Oct (D39): #33 profile by username, #34 Private visibility, #38 Explore filters, #41 undo and redo. Their decisions below stay for when they return.
 
 ## Decisions (François, 10 and 11 Oct)
 
@@ -60,8 +61,9 @@ They are also recorded in `MVP.md` §4.0, as D22 to D38.
 | Use | The app is not in use yet (11 Oct): no real users and no real data. |
 | Answered count | It counts only the players still in the game: a player who answered and then left drops out of both numbers (12 Oct, D37). |
 | Mail | Sign-in by emailed link works in production, and mail is trusted: no emergency sign-in (11 Oct). |
-| Backups | None for now (11 Oct). Picked up after V1: #61. |
-| Monitoring | Knowing when the app is down is picked up after V1: #60 (11 Oct). |
+| Backups | In V1 after all, "if easy and possible" (12 Oct, D39): #61, in step 6. |
+| Monitoring | In V1 (12 Oct, D39): #60, in step 4. |
+| Scope (12 Oct, D39) | V1 keeps #40, #39, #42, #44, #50, #60, #61 and a trimmed #45. #33, #34, #38 and #41 move after V1. Examples: three general knowledge, plus "frogQuiz onboarding" and "frog's history" (five in all). Hidden actions and hidden routes both get a check that can end in a redesign. |
 | Server image | François builds the backend image from his laptop at the deploy (11 Oct). CI publishes `:master` only when `frogquiz/**` changes, so a change to the Dockerfile, the lock or a migration alone would not reach the VM. |
 
 ## How the plan adapts
@@ -146,7 +148,7 @@ A question for François is asked at a step boundary, unless it blocks the work.
 
 **Left, and whose:**
 - **François:**
-  - the DNS record for `api.frogquiz.xyz`, then the VM's `SITE_ADDRESS`
+  - ~~the DNS record for `api.frogquiz.xyz`, then the VM's `SITE_ADDRESS`~~ Done 12 Oct by Claude, at François's request (Netlify CLI, then `.env` on the VM).
   - #22 by 25 Oct
   - the Meilisearch v1 steps in `DEPLOY.md`, with the next VM pull
 
@@ -197,20 +199,23 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
 - **The live scoreboard:** it follows the server's totals, so a hide-results question's points are no longer left out.
 - **The answered count:** "3 of 2 answered". The host adds one per answer, and drops a player who disconnects from the total, so a player who answers and then loses signal is counted on one side only. Found by step 1's cheap review.
 
-### Step 4: features
+### Step 4: features, health and the API move (v0.8)
 
-1. **#34 visibility.** A schema change, flagged in the PR.
-2. **#33 profile.** `/user/[username]`, username change, bio. An account change, flagged in the PR.
-3. **#38 Explore filters.** A username change (#33) re-indexes that user's quizzes, or the author filter goes stale.
-4. **#39 examples and Copy.** Copy works on your own quizzes, the Examples and any public quiz (D33, 11 Oct). Also to settle in the build: who may mark a quiz as an example, and that a copy copies its images and counts them against the copier's quota.
+Re-planned 12 Oct after D39. #34, #33, #38 and #41 left the step.
 
-**In parallel:**
-- **#40:** Play from the editor.
-- **#41:** undo and redo. The issue also asks for a "Question deleted. Undo" toast, for images to stay until an undo can no longer bring them back, and for undo in the header on a phone.
+1. **Housekeeping:** the four issues labelled `post-v1`, D39, this file and #56.
+2. **The API move:** `netlify.toml` points at `api.frogquiz.xyz`. DNS and Caddy were done on 12 Oct; the sslip name stays served until `DEPLOY.md` step 4.
+3. **#60 health:** `GET /api/v1/health` (database, Redis, Meilisearch, worker), a worker heartbeat every minute, and compose healthchecks for the api and the worker. The uptime monitor needs an account, so it is François's.
+4. **#40 Play from the editor** (a Sonnet agent in its own worktree): saves first, opens the game in a new tab (D27).
+5. **#39 examples and Copy:**
+   - Examples are the public quizzes of one examples account (`examples@frogquiz.invalid`, which no sign-in can reach), seeded by `python -m frogquiz.examples.seed` from JSON in the repo. No migration.
+   - Copy (`POST /api/v1/quiz/copy/{id}`) works on your own quizzes, the Examples and any public quiz (D33). A copy is unlisted, and its images are copied, not shared, and count against the copier's quota.
+   - Five text-only examples (D39), drafted with a source for every fact, approved by François before seeding.
 
 ### Step 5: review and consistency
 
-- **#42:** go through every hidden menu, with what the issue asks: `docs/ux-review-hidden-menus.md`, one row per menu, and one issue per fix. Includes the lobby popover that still links to the hidden `/remote`.
+- **#42:** go through every hidden menu on the live screens, with what the issue asks: `docs/ux-review-hidden-menus.md`, one row per menu, and one issue per fix. A verdict can be "redesign": the action leaves the menu for visible UI (12 Oct). Includes the lobby popover that still links to the hidden `/remote`.
+- **Hidden routes (12 Oct, François):** a second table in the same doc, one row per hidden route (results history, Kahoot import, the media library, the public user page, video, avatars, `/remote`, the hidden docs pages, the flag-gated features): does the URL still reach it, does it work, what would bringing it back cost, and a recommendation. François picks; the routes he picks are redesigned in this step and leave `DISABLED_ROUTES`. Removal stays his decision, recorded in `MVP.md`.
 - **#44, the consistency pass, as the issue asks (the plan had only the capture):**
   - a one-page style note in `docs/`, with the exceptions (the frog palette, the answer colours, the QR's white ground)
   - a test that fails on the banned patterns on live routes, like the radius test
@@ -223,8 +228,8 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
 
 ### Step 6: robustness and release
 
-- **#45:** the edge-case matrix, and the room-size number (`simulate_players.py`). It also takes #3's leftover checks (passkeys, `/practice`, the results export) and #24's real-thumb tap test. Its acceptance needs a run on the deployed site on François's phone and laptop, so it closes after the deploy, not at the merge.
-- **The move to `api.frogquiz.xyz`** (`DEPLOY.md`): François adds the DNS record in Netlify and sets `SITE_ADDRESS` on the VM; Claude then points `netlify.toml` at it.
+- **#61 backups:** a nightly `pg_dump` of Neon and a tar of the uploads, sent off the VM to an OCI Object Storage bucket François creates (14-day lifecycle, a pre-authenticated write URL). A restore runbook in `DEPLOY.md`, and one real restore into a Neon branch, timed.
+- **#45, trimmed (12 Oct):** game flow, the parts of the stack going down, a new frontend on an old backend, the room-size number (`simulate_players.py`), and one real game on an iPhone and an Android phone with François. The rest is written down as deferred, with the reason. It closes after the deploy, not at the merge.
 - **Final full review**, then the V1-level re-plan.
 - **Checkpoint:** François approves the merge.
 - **Deploy, in this order:**
@@ -235,8 +240,7 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   5. `docker compose up -d`, which also gives the worker its uploads folder
   6. smoke-test the API
   7. publish the frontend
-  8. seed the examples
-  9. a run on a phone and a laptop, then close #45 and #56
+  8. a run on a phone and a laptop, then close #45 and #56
 
 ## Post-V1
 
@@ -332,3 +336,8 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
   - **Built:** the #55 setting, off by default, with a 401 on every anonymous write path and the two ceilings; `GET /api/v1/utils/config` tells the frontend, and `/create` sends a signed-out visitor to sign-in; password registration keeps to the allowed domains (audit). The matrix and the #43 claim cases are in `docs/anonymous-vs-account.md`.
   - **François's answers:** releases PR by PR, v0.5 now (steps 0 to 3), then v0.8, v0.9 and v1.0 (D35); master tagged `mvp`; Copy on any public quiz (D33, settles the D18 and D26 conflict); the white scoreboard cards stay (D34).
   - **Re-plan:** step 4 is v0.8, from `v1` restarted on master after #57 merges. #56 stays open until v1.0.
+- **12 Oct, v0.5 shipped and V1 trimmed (D39):**
+  - **Shipped:** #57 merged as `27c5171`, tagged `v0.5`, deployed to the VM; Netlify published it. `v1` restarted from master.
+  - **The API move, steps 1 and 2:** François asked Claude to do them. The A record went in through the Netlify CLI, and the VM's `SITE_ADDRESS` serves both names; Caddy got the certificate at once. The laptop cannot reach the name because F-Secure blocks frogquiz.xyz there; it answers from the VM, CORS preflight included.
+  - **François's triage:** #33, #34, #38 and #41 after V1; #60 into step 4 and #61 into step 6; #45 trimmed; examples cut to five (three general, frogQuiz onboarding, frog's history); hidden actions and hidden routes both checked, with a redesign as a possible outcome.
+  - **Re-plan:** step 4 is the API move, #60, #40 and #39. Step 5 adds the hidden-route inventory. Step 6 adds #61 and drops the API move, which is done.

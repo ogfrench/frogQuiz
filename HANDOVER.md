@@ -32,8 +32,10 @@ From outside, `/api/v1/utils/config` answers `{"anonymous_quizzes_enabled":false
 signed-out search answers 401. Netlify published the new frontend on its own. François chose
 not to pause it, and nobody uses the app yet. frogquizxyz.netlify.app shows the v0.5 copy.
 The merge closed #35, #43, #52, #53 and #55. It also closed #33, #42 and #45 by mistake, and
-they were reopened with a comment. Still for François: the DNS record for api.frogquiz.xyz,
-#22 (resize the VM by about 25 Oct), and branch protection on master.
+they were reopened with a comment. The API answers at api.frogquiz.xyz since 12 Oct (DNS
+record and `SITE_ADDRESS` both done; `netlify.toml` follows in v0.8). François trimmed V1 the
+same day (D39): see `docs/v1-plan.md`. Still for François: #22 (resize the VM by about
+25 Oct), and branch protection on master.
 
 **Small things left:**
 - At 1280x720 the lobby shows about five names under the PIN, QR and Start. A smaller QR on
