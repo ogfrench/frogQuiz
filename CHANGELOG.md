@@ -4,6 +4,18 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 step 3b: #43, #35 and #55 finished, 12 Oct
+
+- **A failed claim says what happened (#43):** "couldn't claim" for every failure became one message per cause: the quiz passed its 30 days, it was claimed in another tab or account or deleted, the session is signed out, or the server did not answer. Each says what to do next.
+- **A second tab's Claim did nothing at all (#43, case 5):** the first tab's claim took the secret out of the localStorage both tabs share, so the second tab's button returned without a word. It now says the quiz was claimed elsewhere.
+- **Another browser is told where a claim can happen (#43, cases 2 and 3):** signed in, a quiz made without an account in another browser now says only that browser can claim it, and when it is deleted.
+- **The claim was checked on a phone:** `claim.e2e.ts` runs every case a person sees at 390 wide with touch, in the browser that made the quiz and in a second one. `sign-in.e2e.ts` now claims after signing up, and an open editor and a running game are tested through a claim.
+- **#35's last rows are measured:** two first saves make two quizzes; a second launch moves `/live`'s pointer to the newest game; a public quiz made private or deleted mid-game still reaches the podium for whoever hosts it; a second host tab follows the game; an editor open past the 30 days says the quiz expired and keeps the text. `concurrency-35.e2e.ts`, and a backend test that the expiry sweep holds a running game's images.
+- **#55's grid is written and its expiry warning tested:** `docs/anonymous-vs-account.md` has every quiz, image, game, results, secret and account operation in each mode, with its test or decision. `MVP.md` D38 records question 5, expiry in the middle of a session.
+- **The privacy page matches the setting:** it said quizzes made without an account delete themselves after 30 days. It now says making a quiz needs an account, and the 30 days apply where quizzes without one are switched on.
+- **Specs can change a row directly:** `e2e/run.sh` exports the path to `psql`, and `sql()` in `frontend/e2e/helpers.ts` uses it, which is how the expiry tests move a quiz's deadline. `hostFromViewPage` now waits for the page to hydrate before pressing Play.
+- **Signed-out My Quizzes has one strong button:** with the setting off, the header's Create a quiz is hidden, since it only led to the same sign-in as the empty state's button.
+
 ### V1 step 3b, from the audit of 11 Oct
 
 - **The interface no longer promises quizzes without an account when they are off (#55):** with the setting off, which is production, the home page said "No account needed", signed-out My Quizzes said "Quizzes you made in this browser", and Discover's empty state said a quiz could be made without an account. The root layout now reads `/api/v1/utils/config` and the copy follows it. With the setting off, the home page says making and hosting need a team account, and signed-out My Quizzes is a sign-in prompt. Discover's line no longer names a rule.

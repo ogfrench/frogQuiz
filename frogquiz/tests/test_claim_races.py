@@ -171,3 +171,27 @@ def test_the_sweep_still_deletes_what_nobody_claimed(test_client: TestClient, re
     test_client.portal.call(worker.clean_expired_anonymous_quizzes, None)
     assert _owner(quiz_id) == "deleted"
     assert f"image-of-{uuid.UUID(quiz_id).hex}" in released
+
+
+def test_the_sweep_holds_the_images_of_a_game_still_running(
+    test_client: TestClient, monkeypatch, released  # noqa: F811
+):
+    # #35 row 13: a game started before its quiz expired runs to its end, with its images.
+    quiz_id, _ = _anon_quiz(test_client)
+    _sql("UPDATE quiz SET expire_at = now() - interval '1 day' WHERE id = :id", id=uuid.UUID(quiz_id).hex)
+    held = []
+
+    async def live(_quiz):
+        return True
+
+    async def hold(quiz, ids):
+        held.append((uuid.UUID(str(quiz)).hex, list(ids)))
+
+    monkeypatch.setattr(worker, "is_live", live)
+    monkeypatch.setattr(worker, "hold_images", hold)
+    test_client.portal.call(worker.clean_expired_anonymous_quizzes, None)
+    hex_id = uuid.UUID(quiz_id).hex
+    assert _owner(quiz_id) == "deleted"
+    # Membership, not equality: an earlier test may leave another expired quiz for this sweep.
+    assert (hex_id, [f"image-of-{hex_id}"]) in held
+    assert f"image-of-{hex_id}" not in released

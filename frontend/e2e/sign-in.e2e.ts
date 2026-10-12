@@ -192,6 +192,12 @@ test('"keep this quiz" signs you up and brings you back to the quiz', async ({ p
 	await page.getByRole('textbox', { name: 'Username' }).fill(`Keeper${Date.now() % 1e9}`);
 	await page.getByRole('button', { name: 'Create my account' }).click();
 	await page.waitForURL(new RegExp(`/view/${saved.body.id}`));
+	// #43 cases 8 and 9: the username came first, the secret survived sign-in, and the quiz
+	// is claimed by a button press, not by itself.
+	const claim = page.getByRole('button', { name: 'Claim this quiz to your account' });
+	await claim.click();
+	await page.waitForURL(/\/my-quizzes/);
+	await expect(page.getByText(saved.body.title)).toBeVisible();
 });
 
 test('the old registration and password pages lead to sign-in, and their API is off', async ({

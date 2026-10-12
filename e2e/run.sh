@@ -198,6 +198,10 @@ PG_OPTS="-p $PG_PORT -c listen_addresses=127.0.0.1"
 pg pg_ctl -D "$PGDATA" -o "$PG_OPTS" -l "$PGDATA/pg.log" -w start >/dev/null 2>&1 </dev/null \
   || die "Postgres did not start; see $PGDATA/pg.log and $DATA/initdb.log"
 "$PG_BIN/psql" -h 127.0.0.1 -p $PG_PORT -U postgres -qc "create database frogquiz;"
+# For the specs that must change a row directly, such as moving a quiz's expiry (#43,
+# #55): helpers.ts's sql() runs this psql. Node wants a Windows path on Windows.
+export E2E_PSQL="$(cygpath -m "$PG_BIN/psql" 2>/dev/null || printf '%s' "$PG_BIN/psql")"
+export E2E_PG_PORT=$PG_PORT
 
 # ---- Redis, Meilisearch ----------------------------------------------------------
 # A real redis-server where there is one (Linux and macOS usually have it, and it

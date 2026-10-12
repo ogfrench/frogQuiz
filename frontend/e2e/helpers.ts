@@ -9,6 +9,7 @@ import {
 	type Locator,
 	type Page
 } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 
 export const ANON_KEY = 'frogquiz_anon_secrets';
 export const PHONE = { width: 390, height: 844 };
@@ -67,6 +68,29 @@ export async function uploadPng(request: APIRequestContext) {
 	return (await res.json()).id as string;
 }
 
+/**
+ * Runs SQL against the stack's database and returns psql's unaligned output. For what no
+ * API can do, such as moving a quiz's expiry. Only through e2e/run.sh, which sets E2E_PSQL.
+ */
+export function sql(query: string): string {
+	const psql = process.env.E2E_PSQL;
+	if (!psql) throw new Error('E2E_PSQL is not set: run the specs through e2e/run.sh');
+	const port = process.env.E2E_PG_PORT ?? '5433';
+	const args = [
+		'-h',
+		'127.0.0.1',
+		'-p',
+		port,
+		'-U',
+		'postgres',
+		'-d',
+		'frogquiz',
+		'-qAtc',
+		query
+	];
+	return execFileSync(psql, args, { encoding: 'utf8' }).trim();
+}
+
 export async function rememberAnonQuiz(page: Page, id: string, secret: string) {
 	await page.goto('/');
 	await page.evaluate(
@@ -86,6 +110,8 @@ export async function hostFromViewPage(
 	opts: { showOnDevices?: boolean } = {}
 ): Promise<string> {
 	await page.goto(`/view/${quizId}`);
+	// Clicked before hydration, Play does nothing; it showed for a host who does not own the quiz.
+	await page.waitForLoadState('networkidle');
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	await expect(dialog).toBeVisible();

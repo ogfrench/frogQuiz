@@ -692,11 +692,18 @@
         "on_this_browser": "On this browser",
         "on_this_browser_hint": "Made here without an account. Claim them to keep them on your account for good.",
         "claim": "Claim",
-        "claim_failed": "Couldn't claim this quiz. Try again, or sign in again if your session has expired.",
         "delete_failed": "Couldn't delete this quiz. Try again.",
         "empty_signed_in": "No quizzes yet. Create one to get going.",
         "empty_signed_out": "No quizzes saved in this browser yet.",
         "clear_search": "Clear search"
+    },
+    "claim": {
+        "expired": "This quiz passed its 30 days and was deleted, so it can't be claimed.",
+        "gone": "This quiz can't be claimed from here any more: it was claimed in another tab or account, or deleted. Reload to see where it is.",
+        "signed_out": "You're signed out. Sign in again, then claim the quiz.",
+        "offline": "The server didn't answer. Check your connection, then try again.",
+        "failed": "Couldn't claim this quiz. Try again in a moment.",
+        "other_browser": "This quiz was made without an account, in another browser. Only that browser can claim it: open this page there, signed in. If that browser's data was cleared, nobody can claim it, and it is deleted on {{date}}."
     },
     "device_quizzes": {
         "title": "Quizzes on this device",
@@ -728,7 +735,6 @@
         "delete_confirm_named": "\"{{title}}\" will be deleted for good. This cannot be undone.",
         "delete_confirm_title": "Delete this quiz?",
         "delete_failed": "Could not delete this quiz. It may have already expired.",
-        "claim_failed": "Could not claim this quiz. Try again, or sign in again if your session has expired.",
         "start_signed_out_hint": "Hosting and downloading need an account.",
         "log_in_to_host": "Sign in to host",
         "download_signed_out_hint": "Sign in to download this quiz.",

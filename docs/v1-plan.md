@@ -35,7 +35,7 @@ SPDX-License-Identifier: MPL-2.0
 
 ## Decisions (François, 10 and 11 Oct)
 
-They are also recorded in `MVP.md` §4.0, as D22 to D37.
+They are also recorded in `MVP.md` §4.0, as D22 to D38.
 
 | Issue | Decision |
 | --- | --- |

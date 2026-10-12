@@ -228,6 +228,7 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 | D35 | How V1 ships | **F (2026-10-11): in releases, PR by PR.** v0.5 is steps 0 to 3 (PR #57), v0.8 step 4, v0.9 step 5, v1.0 step 6. Each is its own PR from `v1`, restarted from master after the last merge. Master as of 11 Oct (`8e69034`) is tagged `mvp`. Replaces D22's single PR | — | ☑ |
 | D36 | Ceilings on quizzes made without an account (#55), for when D23's setting is on | **F (2026-10-11): 20 new ones per address a day and 1,000 alive at once**, both settings. The 30-day window stays; they are always unlisted. The matrix is [`docs/anonymous-vs-account.md`](docs/anonymous-vs-account.md) | — | ☑ |
 | D37 | The host's "N of M answered" when a player leaves | **F (2026-10-12): it counts only the players still in the game**, so a player who answered and then left drops out of both numbers | — | ☑ |
+| D38 | What happens at expiry in the middle of a session (#55, question 5), for when D23's setting is on | **F (2026-10-11): a game started before the quiz expired runs to its end, with its images. An editor open at expiry keeps its own clock, says the quiz expired, and keeps the text, with Save as a new quiz.** Measured on 12 Oct (`docs/e2e-findings.md` row 13) | — | ☑ |
 
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
@@ -238,7 +239,7 @@ signature. **D16 and D18 still need Gonçalo's tick**: both are François's call
 calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
 the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
 
-**From 11 Oct (D31) François decides alone**, so D22 to D37 carry no G column, and the
+**From 11 Oct (D31) François decides alone**, so D22 to D38 carry no G column, and the
 open G ticks above (D16 to D21) are no longer a gate. They stay as a record.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on

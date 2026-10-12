@@ -15,7 +15,13 @@ SPDX-License-Identifier: MPL-2.0
 	// Signed in, those same quizzes are listed under the account's, with Claim.
 	import { onMount } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
-	import { anonDaysLeft, anonQuizIds, clearAnonSecret, getAnonSecret } from '$lib/anon_quiz';
+	import {
+		anonDaysLeft,
+		anonQuizIds,
+		claimFailure,
+		clearAnonSecret,
+		getAnonSecret
+	} from '$lib/anon_quiz';
 	import CommandpaletteNotice from '$lib/components/popover/commandpalettenotice.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
@@ -142,21 +148,33 @@ SPDX-License-Identifier: MPL-2.0
 
 	const claim_quiz = async (quiz: Row) => {
 		const anon_secret = getAnonSecret(quiz.id);
-		if (!anon_secret) return;
-		claiming = quiz.id;
-		delete row_errors[quiz.id];
-		try {
-			const res = await fetch(`/api/v1/quiz/claim/${quiz.id}`, {
-				method: 'POST',
-				headers: { 'X-Anon-Secret': anon_secret }
-			});
-			if (!res.ok) throw new Error(String(res.status));
-		} catch {
-			claiming = null;
-			row_errors[quiz.id] = $t('my_quizzes.claim_failed');
+		if (!anon_secret) {
+			// Another tab of this browser claimed or deleted it, and took the secret with it.
+			// This returned without a word (#43, case 5).
+			row_errors[quiz.id] = $t('claim.gone');
 			return;
 		}
+		claiming = quiz.id;
+		delete row_errors[quiz.id];
+		let status: number | null = null;
+		try {
+			status = (
+				await fetch(`/api/v1/quiz/claim/${quiz.id}`, {
+					method: 'POST',
+					headers: { 'X-Anon-Secret': anon_secret }
+				})
+			).status;
+		} catch {
+			/* no answer: status stays null */
+		}
 		claiming = null;
+		if (status !== 200) {
+			// #43: say what happened. A 404 is final (claimed elsewhere, deleted or
+			// expired), so the secret is dead weight.
+			if (status === 404) clearAnonSecret(quiz.id);
+			row_errors[quiz.id] = $t(`claim.${claimFailure(status, quiz.expire_at)}`);
+			return;
+		}
 		clearAnonSecret(quiz.id);
 		// The account list is loaded by the server, which knows about the claim and
 		// the fields /get/public leaves out; reloading is simpler than patching them in.

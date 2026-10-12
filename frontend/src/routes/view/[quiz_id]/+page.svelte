@@ -18,7 +18,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { page } from '$app/state';
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
-	import { anonDaysLeft, getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
+	import { anonDaysLeft, claimFailure, getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
 	import { sanitizeTitleHtml, htmlToPlainText } from '$lib/sanitize';
 	import { quizShare } from '$lib/share_meta';
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
@@ -63,9 +63,16 @@ SPDX-License-Identifier: MPL-2.0
 	// page's server render stays identical for every visitor.
 	let owns_on_account = $state(false);
 	const is_owner = $derived(owns_anonymously || owns_on_account);
+	// #43 cases 2 and 3: signed in, looking at a quiz made without an account, in a browser
+	// without its secret. No Claim can work here, so say where it can.
+	let secret_checked = $state(false);
+	const made_in_other_browser = $derived(
+		secret_checked && logged_in && quiz.user_id === null && !owns_anonymously
+	);
 
 	onMount(async () => {
 		owns_anonymously = quiz.user_id === null && getAnonSecret(quiz.id) !== null;
+		secret_checked = true;
 		if (logged_in && quiz.user_id) {
 			try {
 				const res = await fetch('/api/v1/users/me');
@@ -137,32 +144,38 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	let claiming = $state(false);
-	let claim_error = $state(false);
+	let claim_error: string | null = $state(null);
 	let banner_open = $state(logged_in);
 
 	const claim_quiz = async () => {
 		const anon_secret = getAnonSecret(quiz.id);
-		if (!anon_secret) return;
-		claiming = true;
-		claim_error = false;
-		let res: Response;
-		try {
-			res = await fetch(`/api/v1/quiz/claim/${quiz.id}`, {
-				method: 'POST',
-				headers: { 'X-Anon-Secret': anon_secret }
-			});
-		} catch {
-			claiming = false;
-			claim_error = true;
+		if (!anon_secret) {
+			// Another tab of this browser claimed or deleted it, and took the secret with it.
+			claim_error = $t('claim.gone');
 			return;
 		}
+		claiming = true;
+		claim_error = null;
+		let status: number | null = null;
+		try {
+			status = (
+				await fetch(`/api/v1/quiz/claim/${quiz.id}`, {
+					method: 'POST',
+					headers: { 'X-Anon-Secret': anon_secret }
+				})
+			).status;
+		} catch {
+			/* no answer: status stays null */
+		}
 		claiming = false;
-		if (res.ok) {
+		if (status === 200) {
 			clearAnonSecret(quiz.id);
 			window.location.href = '/my-quizzes';
-		} else {
-			claim_error = true;
+			return;
 		}
+		// #43: say what happened. A 404 is final (claimed elsewhere, deleted or expired).
+		if (status === 404) clearAnonSecret(quiz.id);
+		claim_error = $t(`claim.${claimFailure(status, quiz.expire_at)}`);
 	};
 
 	// ABCD and CHECK render as the real game tiles, with the shape that carries answer
@@ -302,9 +315,7 @@ SPDX-License-Identifier: MPL-2.0
 									: $t('view_quiz_page.claim_quiz')}
 							</Button>
 							{#if claim_error}
-								<p class="text-destructive" aria-live="polite">
-									{$t('view_quiz_page.claim_failed')}
-								</p>
+								<p class="text-destructive" aria-live="polite">{claim_error}</p>
 							{/if}
 						{:else}
 							<Button
@@ -317,6 +328,12 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 				</Collapsible.Content>
 			</Collapsible.Root>
+		{:else if made_in_other_browser && expires_at}
+			<p
+				class="border-border text-muted-foreground rounded-xl border px-4 py-3 text-sm text-balance"
+			>
+				{$t('claim.other_browser', { date: expires_at.toLocaleDateString() })}
+			</p>
 		{/if}
 
 		<Card.Root>

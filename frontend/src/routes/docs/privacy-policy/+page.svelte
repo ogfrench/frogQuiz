@@ -48,8 +48,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	<h2>Getting rid of it</h2>
 	<p>
-		Deleting your account in settings takes your quizzes and uploads with it. Quizzes made
-		without an account delete themselves after 30 days. If you would rather ask, email
+		Deleting your account in settings takes your quizzes and uploads with it. Making a quiz
+		needs an account; where quizzes without one are switched on, they delete themselves after 30
+		days. If you would rather ask, email
 		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
 	</p>
 	<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
