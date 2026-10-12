@@ -10,7 +10,8 @@ type ScoredAnswer = { username: string; score: number };
 export interface AdminSnapshot {
 	game: { started?: boolean; current_question?: number } | null;
 	players?: { username: string }[];
-	answer_count?: number;
+	/** Who has answered the question that is up. */
+	answered?: string[];
 	question_open?: boolean;
 	/** Whole seconds left on an open question, by the server's clock. */
 	time_left?: number;
@@ -24,7 +25,7 @@ export interface Resume {
 	shown_question_now: number;
 	timer_res: string;
 	question_results: null;
-	answer_count: number;
+	answered: string[];
 	player_scores: Record<string, number>;
 }
 
@@ -35,7 +36,8 @@ export interface Resume {
  * A reload mid-game came back on the quiz's cover, whose "Next question 1" sent the game back
  * to the start. Now it comes back on the question that is up: with its clock if it is still
  * open, or at zero if it closed, so its answers come up as they would have. The question's
- * answers are left out of the totals, since showing them adds their points.
+ * answers are left out of the totals until its results come up, when the server's own
+ * running totals (`scores`) replace these.
  */
 export function resumeFrom(s: AdminSnapshot): Resume | null {
 	const index = s.game?.current_question ?? -1;
@@ -49,7 +51,7 @@ export function resumeFrom(s: AdminSnapshot): Resume | null {
 		shown_question_now: index,
 		timer_res: left > 0 ? String(left) : '0',
 		question_results: null,
-		answer_count: s.answer_count ?? 0,
+		answered: s.answered ?? [],
 		player_scores: totalsFromResults(
 			earlier,
 			(s.players ?? []).map((p) => p.username)

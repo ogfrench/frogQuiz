@@ -53,7 +53,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="relative min-h-0 w-full flex-1">
 	<div
-		class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-black shadow-2xl z-40"
+		class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-background shadow-2xl z-40"
 	>
 		<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
 	</div>

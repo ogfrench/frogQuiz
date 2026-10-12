@@ -7,13 +7,11 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import VotingResults from './voting_results.svelte';
-	import { onMount } from 'svelte';
 	import type { Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	interface Props {
-		data: any;
 		question: Question;
 		new_data: Array<{
 			username: string;
@@ -24,56 +22,10 @@ SPDX-License-Identifier: MPL-2.0
 		}>;
 	}
 
-	let { data = $bindable(), question, new_data }: Props = $props();
-
-	// let data_by_username = {};
-
-	const group_username_by_score = (_new_d: any[]): object => {
-		let ret_data = {};
-		for (const i of new_data) {
-			ret_data[i.username] = i.score;
-		}
-		return ret_data;
-	};
-	let score_by_username = $derived(group_username_by_score(new_data));
-
-	let player_names = $derived(
-		Object.keys(data).sort((a, b) => {
-			const scoreA = parseFloat(data[a]) || 0;
-			const scoreB = parseFloat(data[b]) || 0;
-			return scoreB - scoreA;
-		})
-	);
-
-	if (JSON.stringify(data) === '{}') {
-		for (const i of new_data) {
-			data[i.username] = 0;
-		}
-	}
-
-	const show_new_score = () => {
-		for (const i of player_names) {
-			if (isNaN(data[i])) {
-				data[i] = 0;
-			}
-			data[i] = (score_by_username[i] ?? 0) + data[i];
-		}
-		for (const i of new_data) {
-			if (!data[i.username]) {
-				data[i.username] = score_by_username[i.username];
-			}
-		}
-	};
-
-	onMount(() => {
-		// This question's points land as soon as the answers are up, because the
-		// scoreboard is the next screen and it reads these totals -- a host who advances
-		// quickly used to arrive at standings that had not been added up yet. Still
-		// canceled on unmount: left running it would add the points after the host had
-		// moved on, on top of the podium's rebuilt totals.
-		const pending = setTimeout(show_new_score, 0);
-		return () => clearTimeout(pending);
-	});
+	// The answers only. It used to add this question's points to the host's totals when
+	// it mounted, so a question with no results screen (hide results) never reached the
+	// live scoreboard. The totals come from the server now (`scores`, admin.svelte).
+	let { question, new_data }: Props = $props();
 </script>
 
 <div class="fq-stage">

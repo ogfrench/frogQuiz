@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# Advisories the audit workflow (.github/workflows/audit.yml) lets through, one per line:
+#   <advisory id>  <package>  revisit:<YYYY-MM-DD>  <why it does not apply, and what removes it>
+# The workflow fails once a revisit date has passed, so an exception is never silently
+# permanent. Decision #53 (MVP.md D22-D32): high and critical findings block, a finding with
+# no fix gets a dated exception. Added 11 Oct 2026 in the V1 audit.
+
+GHSA-3qf3-8w2g-rqmx  python-jose  revisit:2026-12-31  No fixed release. The flaw is HMAC key confusion with asymmetric keys; frogQuiz signs and checks its tokens with HS256 and its own secret only (frogquiz/auth.py), never a public key. Removed by replacing python-jose with PyJWT (post-V1).
+PYSEC-2026-1325      ecdsa        revisit:2026-12-31  No fixed release. Pulled in by python-jose for EC algorithms, which frogQuiz never uses (HS256 only). Goes with python-jose.
+PYSEC-2026-2247      ormar        revisit:2026-12-31  Fixed in 0.23.1, which drops `databases` for SQLAlchemy 2, the layer frogquiz/db is built on. Request bodies are validated by their own pydantic models before an ormar model is built from them. Removed by the ormar migration (post-V1).
+PYSEC-2025-49        setuptools   revisit:2026-12-31  Held at 75.9.1 by ormar 0.20.2. The flaw is in setuptools' package download code (package_index), which the app never runs. Goes with the ormar migration.
+PYSEC-2026-3447      setuptools   revisit:2026-12-31  As above: held by ormar 0.20.2, and only reachable when setuptools installs packages, which the running app never does.

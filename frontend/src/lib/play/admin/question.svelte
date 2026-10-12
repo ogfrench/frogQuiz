@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -9,7 +10,6 @@ SPDX-License-Identifier: MPL-2.0
 	import type { QuizData } from '$lib/quiz_types';
 	import { get_foreground_color } from '$lib/helpers.js';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
-	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
@@ -20,6 +20,8 @@ SPDX-License-Identifier: MPL-2.0
 		selected_question: number;
 		timer_res: string;
 		answer_count: number;
+		/** Players in the game, for "2 of 3 answered". */
+		player_count: number;
 		default_colors: readonly string[];
 	}
 
@@ -28,6 +30,7 @@ SPDX-License-Identifier: MPL-2.0
 		selected_question,
 		timer_res = $bindable(),
 		answer_count,
+		player_count,
 		default_colors
 	}: Props = $props();
 	const answers = $derived(
@@ -42,19 +45,6 @@ SPDX-License-Identifier: MPL-2.0
 	const { t } = getLocalization();
 
 	const question_seconds = $derived(parseInt(quiz_data.questions[selected_question].time));
-
-	let circular_progress = $derived.by(() => {
-		try {
-			return (
-				1 -
-				((100 / parseInt(quiz_data.questions[selected_question].time)) *
-					parseInt(timer_res)) /
-					100
-			);
-		} catch {
-			return 0;
-		}
-	});
 </script>
 
 <!-- The stage wrapper is what the other three host screens (lobby, per-question
@@ -78,22 +68,49 @@ SPDX-License-Identifier: MPL-2.0
 				{$t('play_page.pick_every_correct')}
 			</p>
 		{/if}
-		<div class="flex items-center gap-10">
-			<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
-			<p class="fq-meta text-muted-foreground font-medium tabular-nums" aria-live="polite">
-				{$t('admin_page.answers_submitted', { count: answer_count })}
-			</p>
-		</div>
 	</div>
 	{#if quiz_data.questions[selected_question].image !== null}
-		<div class="flex w-full">
+		<div class="flex w-full justify-center">
 			<MediaComponent
 				src={quiz_data.questions[selected_question].image}
 				muted={false}
-				css_classes="max-h-[20vh] object-cover mx-auto mb-8 w-auto"
+				css_classes="max-h-[30vh] w-auto rounded-xl object-cover"
 			/>
 		</div>
 	{/if}
+	<!-- The time and the count, as one bar above the answers that empties as time runs
+	     out (François, 11 Oct, option C of four). They used to sit in one small row squeezed
+	     between the title and the answers, beside a thin rule under the controls bar that
+	     this replaces. -->
+	<div
+		class="grid w-full max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-[var(--fq-space-group)]"
+	>
+		<p class="fq-meta text-muted-foreground font-medium tabular-nums" aria-live="polite">
+			<b class="text-foreground font-bold">{answer_count}</b>
+			{$t('admin_page.answered_of', { total: player_count })}
+		</p>
+		<div
+			class="bg-muted h-[clamp(0.5rem,0.8vw,0.9rem)] overflow-hidden rounded-full"
+			role="progressbar"
+			aria-label={$t('admin_page.time_remaining')}
+			aria-valuemin={0}
+			aria-valuemax={question_seconds}
+			aria-valuenow={parseInt(timer_res)}
+		>
+			<!-- scaleX, not width: a transform is composited, while width lays the page out
+			     again on every frame (lib/a11y/motion.test.ts). -->
+			<div
+				class="bg-destructive h-full w-full origin-left rounded-full motion-safe:transition-transform motion-safe:duration-1000 motion-safe:ease-linear"
+				style:transform="scaleX({question_seconds > 0
+					? Math.max(0, Math.min(1, parseInt(timer_res) / question_seconds))
+					: 0})"
+			></div>
+		</div>
+		<span
+			class="min-w-[2ch] text-right text-[clamp(2rem,3.4vw,4rem)] leading-none font-extrabold tracking-tight tabular-nums"
+			aria-hidden="true">{timer_res}</span
+		>
+	</div>
 	{#if quiz_data.questions[selected_question].type === QuizQuestionType.ABCD || quiz_data.questions[selected_question].type === QuizQuestionType.VOTING || quiz_data.questions[selected_question].type === QuizQuestionType.CHECK}
 		<div
 			class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-[var(--fq-space-item)] sm:grid-cols-2"

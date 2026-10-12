@@ -127,11 +127,18 @@ test('text that is already stored cannot push a layout sideways', async ({
 		.getByRole('button', { name: /Start game/ })
 		.first()
 		.click();
+	// The title card before the first question sets the title larger than anything else.
+	// It ran 757px off the projector on CI, where the check below used to land on it by
+	// chance: the long word it waited for is on both screens.
+	await expect(page.getByRole('button', { name: /Next question/ }).first()).toBeVisible();
+	await expectNoHorizontalOverflow(page);
 	await page
 		.getByRole('button', { name: /Next question/ })
 		.first()
 		.click();
-	await expect(page.getByText(/Supercalifragilistic/).first()).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByRole('progressbar', { name: 'Time remaining' })).toBeVisible({
+		timeout: 15_000
+	});
 
 	// And the host screen is where the projector broke.
 	await expectNoHorizontalOverflow(page);

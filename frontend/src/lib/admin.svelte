@@ -14,9 +14,11 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '$lib/Spinner.svelte';
 	import Controls from '$lib/play/admin/controls.svelte';
 	import Question from '$lib/play/admin/question.svelte';
+	import TitleCard from '$lib/play/admin/title_card.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
-	import { totalsFromResults } from '$lib/play/admin/totals';
+	import { totalsFromResults, totalsFromServer } from '$lib/play/admin/totals';
+	import { answeredCount } from '$lib/play/admin/answered';
 	import {
 		AUTO_RESULTS_DELAY_MS,
 		gameIsOver,
@@ -24,7 +26,6 @@ SPDX-License-Identifier: MPL-2.0
 		performStep,
 		stepState
 	} from '$lib/play/admin/next_step';
-	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const { t } = getLocalization();
 	const default_colors = ANSWER_COLORS;
@@ -56,7 +57,7 @@ SPDX-License-Identifier: MPL-2.0
 		// The server's index, not one more than ours: after a reload ours is wherever the
 		// snapshot put it, and counting up from it was only right by luck.
 		game_state.selected_question = data.question_index;
-		game_state.answer_count = 0;
+		game_state.answered = [];
 		// Every advance comes through here, so this is where the scoreboard closes. The
 		// Enter/Space shortcut used to skip it without closing it, and from then on every
 		// question's answers were drawn as the scoreboard instead.
@@ -86,13 +87,25 @@ SPDX-License-Identifier: MPL-2.0
 		game_state.timer_res = '0';
 	});
 
+	// The server's running totals, sent just before each question's results. The scoreboard
+	// reads them; the results screen no longer adds a question's points itself.
+	socket.on('scores', (data) => {
+		game_state.player_scores = totalsFromServer(data, [
+			...Object.keys(game_state.player_scores),
+			...game_state.players.map((p) => p.username)
+		]);
+	});
+
 	socket.on('question_results', (data) => {
 		game_state.question_results = data;
 		game_state.timer_res = '0';
 	});
 
-	socket.on('player_answer', (_) => {
-		game_state.answer_count += 1;
+	socket.on('player_answer', (data) => {
+		const name = data?.username;
+		if (name && !game_state.answered.includes(name)) {
+			game_state.answered = [...game_state.answered, name];
+		}
 	});
 
 	// Whether an interval is counting down. Not $state: the effect below reads it without
@@ -159,7 +172,8 @@ SPDX-License-Identifier: MPL-2.0
 {#if game_state.control_visible}
 	<Controls {bg_color} {socket_game_controls} {game_token} {finish} bind:game_state />
 {/if}
-{#if game_state.timer_res !== '0' && game_state.selected_question >= 0}
+<!-- Slides only: a question shows its time as the bar above its answers (question.svelte). -->
+{#if game_state.timer_res !== '0' && game_state.selected_question >= 0 && game_state.quiz_data.questions[game_state.selected_question]?.type === QuizQuestionType.SLIDE}
 	<!-- Just under the controls bar: top-3 plus its h-12, and a hair of air. It was mt-12
 	     when the bar sat flush at the top. -->
 	<span
@@ -168,7 +182,7 @@ SPDX-License-Identifier: MPL-2.0
 			game_state.control_visible ? 'top-[4.25rem]' : 'top-0'
 		]}
 		role="progressbar"
-		aria-label="Time remaining"
+		aria-label={$t('admin_page.time_remaining')}
 		aria-valuemin="0"
 		aria-valuemax={parseInt(game_state.quiz_data.questions[game_state.selected_question].time)}
 		aria-valuenow={parseInt(game_state.timer_res)}
@@ -194,7 +208,8 @@ SPDX-License-Identifier: MPL-2.0
 				quiz_data={game_state.quiz_data}
 				selected_question={game_state.selected_question}
 				timer_res={game_state.timer_res}
-				answer_count={game_state.answer_count}
+				answer_count={answeredCount(game_state.answered, game_state.players)}
+				player_count={game_state.players.length}
 				{default_colors}
 			/>
 		{/if}
@@ -226,7 +241,6 @@ SPDX-License-Identifier: MPL-2.0
 				<Spinner />
 			{:then c}
 				<c.default
-					bind:data={game_state.player_scores}
 					question={game_state.quiz_data.questions[game_state.selected_question]}
 					new_data={game_state.question_results}
 				/>
@@ -234,22 +248,12 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	{/if}
 	{#if game_state.selected_question === -1}
-		<div class="fq-stage justify-center">
-			<h1 class="text-7xl text-center">
-				{@html sanitizeTitleHtml(game_state.quiz_data.title)}
-			</h1>
-			<p class="text-3xl pt-8 text-center">{game_state.quiz_data.description}</p>
-			{#if game_state.quiz_data.cover_image}
-				<div class="flex justify-center align-middle items-center">
-					<div class="h-[30vh] m-auto w-auto mt-12">
-						<img
-							class="max-h-full max-w-full block"
-							src="/api/v1/storage/download/{game_state.quiz_data.cover_image}"
-							alt=""
-						/>
-					</div>
-				</div>
-			{/if}
-		</div>
+		<TitleCard
+			title={game_state.quiz_data.title}
+			description={game_state.quiz_data.description}
+			cover_image={game_state.quiz_data.cover_image}
+			questions={game_state.quiz_data.questions.length}
+			players={game_state.players.length}
+		/>
 	{/if}
 </div>

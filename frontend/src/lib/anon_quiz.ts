@@ -64,3 +64,22 @@ export function anonDaysLeft(
 	if (ms <= 0) return 0;
 	return Math.max(1, Math.round(ms / DAY_MS));
 }
+
+export type ClaimFailure = 'expired' | 'gone' | 'signed_out' | 'offline' | 'failed';
+
+/**
+ * Why a claim failed, for the message (#43). The server answers every refusal with the
+ * same 404, so a claim cannot be used to learn which quizzes exist; the page tells
+ * "expired" from "claimed or deleted elsewhere" by the expiry date it already holds.
+ * `status` is null when no answer came back at all.
+ */
+export function claimFailure(
+	status: number | null,
+	expire_at: string | Date | null | undefined,
+	now = Date.now()
+): ClaimFailure {
+	if (status === null) return 'offline';
+	if (status === 401) return 'signed_out';
+	if (status === 404) return anonDaysLeft(expire_at, now) === 0 ? 'expired' : 'gone';
+	return 'failed';
+}

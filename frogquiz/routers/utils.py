@@ -23,6 +23,20 @@ settings = settings()
 router = APIRouter()
 
 
+class PublicConfig(BaseModel):
+    anonymous_quizzes_enabled: bool
+
+
+@router.get("/config", response_model=PublicConfig)
+async def public_config():
+    """The settings the frontend has to follow, read at run time so a change needs no rebuild.
+
+    Public and harmless: it says what the API will refuse anyway. `/create` reads it to send
+    a signed-out visitor to sign in when quizzes need an account (#55).
+    """
+    return PublicConfig(anonymous_quizzes_enabled=settings.anonymous_quizzes_enabled)
+
+
 @router.get("/qr/{quiz_pin}")
 async def get_qr(quiz_pin: str, dark_mode: bool = False):
     """

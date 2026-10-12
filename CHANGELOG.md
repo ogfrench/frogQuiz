@@ -4,6 +4,130 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+## v0.5, 12 Oct 2026
+
+V1 steps 0 to 3 (PR #57). Deploy the API before publishing the frontend: `DEPLOY.md`.
+
+### The game's first screens, 12 Oct
+
+- **A title card before question 1:** the host's cover was the title and description on a blank screen. The title now rises in heavy type, followed by the description, the number of questions and players, and a "Get ready" bar in the mark's gradient. There is no time estimate, since nothing knows how long a game will run. François picked it from mockups of four options; Kahoot itself goes straight to the first question. `account-game.e2e.ts` checks it.
+- **The lobby stops at the edge of the screen:** past about 30 players the names made the page taller, and a projector never scrolls, so the newest names, the ones people look for, went below the bottom edge. The names now stop where the screen does, a pill says "+N more", and once they overflow the newest come first. Checked with 120 players at 1440, 1280, 834 and 390 (`lobby-many.e2e.ts`).
+
+### V1 step 3b: #43, #35 and #55 finished, 12 Oct
+
+- **A failed claim says what happened (#43):** "couldn't claim" for every failure became one message per cause: the quiz passed its 30 days, it was claimed in another tab or account or deleted, the session is signed out, or the server did not answer. Each says what to do next.
+- **A second tab's Claim did nothing at all (#43, case 5):** the first tab's claim took the secret out of the localStorage both tabs share, so the second tab's button returned without a word. It now says the quiz was claimed elsewhere.
+- **Another browser is told where a claim can happen (#43, cases 2 and 3):** signed in, a quiz made without an account in another browser now says only that browser can claim it, and when it is deleted.
+- **The claim was checked on a phone:** `claim.e2e.ts` runs every case a person sees at 390 wide with touch, in the browser that made the quiz and in a second one. `sign-in.e2e.ts` now claims after signing up, and an open editor and a running game are tested through a claim.
+- **#35's last rows are measured:** two first saves make two quizzes; a second launch moves `/live`'s pointer to the newest game; a public quiz made private or deleted mid-game still reaches the podium for whoever hosts it; a second host tab follows the game; an editor open past the 30 days says the quiz expired and keeps the text. `concurrency-35.e2e.ts`, and a backend test that the expiry sweep holds a running game's images.
+- **#55's grid is written and its expiry warning tested:** `docs/anonymous-vs-account.md` has every quiz, image, game, results, secret and account operation in each mode, with its test or decision. `MVP.md` D38 records question 5, expiry in the middle of a session.
+- **The privacy page matches the setting:** it said quizzes made without an account delete themselves after 30 days. It now says making a quiz needs an account, and the 30 days apply where quizzes without one are switched on.
+- **Specs can change a row directly:** `e2e/run.sh` exports the path to `psql`, and `sql()` in `frontend/e2e/helpers.ts` uses it, which is how the expiry tests move a quiz's deadline. `hostFromViewPage` now waits for the page to hydrate before pressing Play.
+- **Signed-out My Quizzes has one strong button:** with the setting off, the header's Create a quiz is hidden, since it only led to the same sign-in as the empty state's button.
+
+### V1 step 3b, from the audit of 11 Oct
+
+- **The interface no longer promises quizzes without an account when they are off (#55):** with the setting off, which is production, the home page said "No account needed", signed-out My Quizzes said "Quizzes you made in this browser", and Discover's empty state said a quiz could be made without an account. The root layout now reads `/api/v1/utils/config` and the copy follows it. With the setting off, the home page says making and hosting need a team account, and signed-out My Quizzes is a sign-in prompt. Discover's line no longer names a rule.
+- **`/create` keeps its query through sign-in:** `/create?title=...` from the command palette came back from sign-in as a bare `/create`. The config read now gives up after 2 seconds, and no answer counts as off.
+- **The e2e suite now runs the production setting:** `anon-off.e2e.ts` covers the signed-out side with the setting off. The e2e workflow runs it, `account-game` and `sign-in` in a second pass with `ANONYMOUS_QUIZZES_ENABLED=False`, and `e2e/e2e.env` now takes the value from the environment. The "keep this quiz" sign-in test skips in that pass, since it starts from a quiz made without an account.
+- **The daily ceiling's test passed only because of test order:** `test_ratelimit.py` left a count in the ceiling's Redis bucket, and the ceiling's test passed only because `test_server.py` flushed Redis in between. Run straight after it, the test failed. Both tests now delete the bucket. The 401s for save and finish with the setting off are also checked for "Sign in", since an unknown edit id gets a 401 too.
+- **The boot warning without mail no longer says nobody can sign in when an OAuth provider is set:** it now names the providers that still work.
+- **The setting is read once a minute, not on every page:** the root layout caches it per server instance, so a room of phones opening `/play` does not each wait on the API.
+- **`docs/anonymous-vs-account.md`:** a signed-in user hosts any public quiz, not only their own; the tests line names `anon-off.e2e.ts`; claim case 5 says its test checks the API's 404, not the message.
+- **Docs that still said a quiz needs no account:** `MVP.md` §1 and `docs/mvp-scope.md` now say making and hosting need a team account since D23, with the old text kept as the earlier call. `MVP.md` D37 records François's answer on the answered count: a player who answered and then left drops out of both numbers.
+
+### V1 readiness, from the review of 11 Oct
+
+- **The worker could not see the uploads (older than V1):** only the `api` service mounted `./uploads`, so the worker read and deleted an empty folder of its own. On the VM no upload was ever hashed, given a thumbnail or counted against its owner's quota, and every image the worker freed (the sweeps, an edit, the end of a game) lost its row but kept its file. The worker now mounts the same folder, and `tests/test_compose.py` fails if the two drift apart. The e2e stack runs both on one folder, which is why it never showed.
+- **Meilisearch in CI matches production:** the backend suite's compose ran v1.7 and the e2e stack fetched whatever was latest. Both now run v1.54.3, read from `docker-compose.yml`, and the dev compose gets a new search volume for it.
+- **Mail is documented as required:** three places still said the app could run without mail. Signing in is by emailed link or code only, so it cannot.
+- **The move to `api.frogquiz.xyz`:** `DEPLOY.md` now says where the DNS record goes (Netlify DNS), what to check on the VM (`CORS_ORIGINS`, `ROOT_ADDRESS`), and that deploy previews call the production API.
+
+### V1 step 3b: accounts, 11 Oct
+
+- **A claim that lost a race took the quiz anyway (#43):** two claims at once both passed the "still unclaimed" check before either wrote, so the second moved a just-claimed quiz into its own account and counted its images twice. The claim is now one conditional write, and the loser gets the same 404 as any other failed claim.
+- **Two saves in the same instant could both pass the version check (#35, from step 3a's review):** the editor's save read the quiz's version, then wrote, so a save landing in between passed the same check and was overwritten. The check now runs again with the row locked, at the moment of the write, and the second save gets the 409 that offers Keep mine.
+- **Making, editing, uploading and hosting a quiz need an account (#55):** behind the setting `anonymous_quizzes_enabled`, off by default. With it off, each of those gets a 401 that says to sign in; players still join by PIN with no account, and a quiz made while it was on can still be read, claimed or deleted with its secret. CI and the e2e stack turn it on, since the suite hosts without an account.
+- **Two ceilings on quizzes made without an account (#55):** 20 new ones per address a day and 1,000 alive at once, both settings. Past either, a new quiz gets a 429 that says to sign in; editing one that exists is never stopped.
+- **The frontend can read the setting:** `GET /api/v1/utils/config`. `/create` sends a signed-out visitor to sign-in, and back, when the setting is off.
+- **Password registration keeps to the allowed domains (security audit, 11 Oct):** it is switched off, but it accepted any address, so turning it back on would have let anybody in. It now gives the same 403 as the emailed sign-in.
+- **`docs/anonymous-vs-account.md`:** what needs an account and what does not, and each #43 claim case with its outcome and the test behind it.
+- **The production side of the game now has a browser test:** `account-game.e2e.ts` runs a signed-in host and players with no account, from the view page to the podium. Every other full-game spec hosts without an account, so with `anonymous_quizzes_enabled` off, which is production, none of them could run. It passes with the setting on and off.
+- **`ANONYMOUS_QUIZZES_ENABLED` and its two limits are documented** in `.env.example` and `DEPLOY.md`; before, only `docker-compose.yml` had them.
+- **The expiry sweep deleted a quiz claimed while it ran (#43):** it read the expired quizzes, then deleted each by id, so a claim in between lost the quiz from its new owner's account, images included. It now deletes only a quiz that is still unclaimed and expired, in the same statement, and frees images only for what it deleted.
+
+### V1 step 3a: data and concurrency, 11 Oct
+
+- **"Load the other version" was nearly invisible:** the conflict dialog's second button got the outline look through its class, merged over the default button's, so it kept the default's near-white text on a white button. The step's visual capture caught it (axe, every size, both themes). It is now an outline variant proper.
+- **From the step's visual review:** the rich-text fields (title, question) used CKEditor's Helvetica beside Inter in every other field, and now take the page's face. Hiding CKEditor's badge had left its empty frame on a focused field as a 2px blue dot; it is hidden too. The live-game note is at full text strength with plainer copy, the restore offer reads more simply, and on a deleted quiz "Save as a new quiz" is the strong button, since the header's Save can only fail. The rule hiding the badge no longer depends on stylesheet order, and the question delete dialog takes its variant as a prop, like the conflict dialog now does.
+- **Visual capture, the editor's new states:** `visual.e2e.ts` now shoots the conflict dialog, the restore offer, the deleted-quiz banner and the live-game note at every size in both themes. The helper that starts a live game moved to `e2e/sockets.ts` so both specs share it.
+
+- **CLAUDE.md, delegating to cheaper models:** which work goes to haiku, to sonnet, or stays on the main model in this repo, and what must run one at a time. The general version is the `model-delegation` skill in `ogfrench/claude-code-setup`.
+- **Save results, anonymous host (#52):** the server no longer writes a results row for a game hosted without an account, which nobody could ever open. It answers `results_not_saved` with a reason. A host whose account was deleted mid-game still gets an ownerless row, as before. A save for a game that has already gone from Redis now gets the same refusal, where it used to raise in the handler.
+- **A view or a launch undid a save (#35 row 7):** opening a quiz's page or starting a game added one to its count on a copy of the quiz loaded at the start, and wrote the whole row back. A save that landed in between was reverted. A test that lands the save inside that window reproduced it for both. Views and plays are now one-statement increments, which also stops two at once losing a count.
+- **Other writers keep to their columns:** a claim, a rating, a moderator's rating and an Excel import into an existing quiz now write only what they change. The worker's image job no longer writes the quiz row at all: its links are saved on their own, and its copy of the quiz was stale.
+- **The editor's own save keeps to its columns (#35 row 7, from the review):** it wrote every column back too, so a view, a launch, a rating or a claim that landed while it ran was put back. A claim put back made the quiz anonymous again. Ratings are now one-statement changes as well.
+- **Save and close on a stale tab (#35 row 2), API only:** `/editor/finish` now takes `base` like autosave, so a caller holding an older version can no longer write it over a newer one. The editor itself saves through `/editor/save`, which already checked.
+- **Changed in another tab (#35 row 1):** a 409 now asks Keep mine, which saves this tab's version over the other, or Load the other version. Loading keeps this tab's text, and the reloaded editor offers Restore. The 409 carries the version that is current.
+- **A failed save says why and keeps the text (#35 rows 3 and 4):** signed out or signed in as someone else, deleted in another tab, or expired each get their own message, and a deleted or expired quiz can be saved as a new one. Any failed save, of a new quiz too, keeps a copy for the tab's session, and reopening that quiz (or New quiz) in the same tab offers it back. Once a quiz is gone, autosave stops sending. A quiz made without an account that disappears says it may have been moved into an account.
+- **Images stay while a game shows them (#35 rows 9 and 10):** a game runs from a copy of the questions, but fetches each image by its id. Taking an image out of the quiz, deleting the quiz, or the expiry sweep deleted the file at once, and the projector and phones lost it mid-game. Starting a game now marks the quiz live; while it is, those images are held, and the game's end (or the hourly sweep, for a game left to expire) frees them. The six-hourly orphan sweep leaves held images alone, and a release claims its images in one step, so two at once cannot refund the same bytes twice. The editor says when a game of the quiz is running.
+- **The live scoreboard counts hide-results questions:** it added a question's points when its answers screen came up, and a hide-results question has none, so its points only showed on the podium. The host now takes the server's running totals, sent to the host alone before each question's answers.
+- **"N of M answered" can't run past M:** the host added one per answer and took a player off the total when they left, so two who answered and left read "2 of 1". It now counts the players still in the game who have answered.
+- **Security audit (11 Oct), the live-game API:** three `/live` routes took any account's API key, and `/user_count` any key at all, so anyone signed in could read somebody else's running game by its PIN, the right answer included. All of them check the key is the host's now. The findings and what is left are in `docs/security-audit-2026-10-11.md`.
+- **Security audit, free-text answers:** the answers a text question accepts went to every phone with the question. They no longer do; the phone never used them.
+- **Rich-text fields, name and shape (older than V1):** the quiz title and every question lost their accessible names on the first keystroke, when CKEditor put back its own "Rich Text Editor. Editing area: main", so a screen reader could no longer tell them apart. The name is now given at creation. They were also square with a thin focus line, beside rounded fields with a 2px ring, because CKEditor's own rules outranked ours. Every text field now has the same corners, border and focus ring.
+
+### V1 step 1: CI and production safety, 11 Oct
+
+- **Backend dependencies:** 124 known advisories in 25 locked backend packages, among them starlette, python-multipart, aiohttp, PyJWT, Pillow and cryptography. They are fixed by a re-lock: FastAPI 0.135 with starlette 1.7, Pillow 12.3, PyJWT 2.15. The Pipfile now states the first safe version of each package it uses directly.
+- **Pillow:** it was held below 11 by `thumbhash-python`, while the worker decoded every upload with it. The ThumbHash encoder is now vendored in `frogquiz/helpers/thumbhash.py` (MIT, credited in the file), and a golden test proves it gives the same hashes.
+- **Holds:**
+  - ormar stays at 0.20.2, because 0.21 drops the `databases` layer frogQuiz is built on.
+  - gunicorn and xxhash stay on their current major, because nothing requires the bump.
+  - The Meilisearch client stays with its server.
+- **Audit workflow:** `.github/workflows/audit.yml` fails on any of these:
+  - a backend advisory with no dated exception, or an exception past its date
+  - a high or critical frontend advisory
+  - a fixable high or critical finding in the compose images
+  - a committed secret (gitleaks)
+- **Exceptions:** the five advisories left have no fix, or are held by ormar. Each has a dated exception in `.github/audit/pip-audit-ignore.txt`.
+- **e2e in CI:** the end-to-end suite runs on pull requests (`.github/workflows/e2e.yml`).
+- **Logs:** every service in `docker-compose.yml` keeps at most three 10 MB log files.
+- **`DEPLOY.md`:** it records the audit's first results and the steps for moving the API to `api.frogquiz.xyz`, and it no longer says the backend tests skip pull requests.
+- **Visual review:** `frontend/e2e/visual.e2e.ts` captures every screen for it, run with `VISUAL=1`. It adds `@axe-core/playwright` 4.13.0 as a dev dependency.
+- **Host question screen:** the timer and the answer count no longer sit squeezed in one small row between the question and the answers. François chose option C of four (a gallery of live mock-ups): one wide bar above the answers that empties as time runs out, with "2 of 3 answered" at its start and the seconds at its end. It replaces the thin rule under the controls bar, which stays on slides only.
+- **Timer ring on the phones:** it now follows the theme. In dark mode it used to be a white disc.
+- **Timer ring, frozen:** the theme change above left the ring stuck on its first frame while the number kept counting, because a trailing `;` made the browser reject every update. The visual review caught it. The phone journey spec now checks that the ring moves. The ring's frame is the page color instead of black.
+- **Motion spec:** it checks the drain bar's fill, which is what moves, rather than its track.
+- **Visual capture:** the signed-out pass stopped at 834 px, waiting for a menu button that is hidden from 768 px up. It now captures 1440 and the dark theme too.
+- **Secrets scan:** gitleaks found five fixtures in the history: the CI and e2e token-signing placeholders, and MinIO's public playground keys in an upstream test. They are allowed by fingerprint in `.gitleaksignore`. A planted GitHub token in a throwaway clone was caught.
+- **ThumbHash encoder:** it reads pixels with `tobytes()`, since Pillow deprecates `getdata` and removes it in Pillow 14. The hashes are unchanged.
+- **Slide timer:** its label is translated.
+- **Phone timer ring:** it now empties as time runs out, as the host's bar does. It used to fill red, so the phone and the projector counted in opposite directions (François, 11 Oct). The phone journey spec checks the direction.
+- **Meilisearch:** moved from v0.28.0 to v1.54.3. The image scan's first run found 17 high and critical findings in the old image. v1 gets a new volume and rebuilds its index from Postgres on start-up; `DEPLOY.md` has the steps and the way back.
+- **Image scan:** it skips `gosu` in the postgres image. Its only findings were Go's standard library in a binary that runs once at start.
+- **Secrets scan:** gitleaks 8.24 read a hostname list in `DEPLOY.md` as a key. `.gitleaks.toml` allows that one hostname by value, rather than one commit's line, so editing the line or rewriting the history cannot turn the scan red. gitleaks is pinned to 8.24.3, the version the exceptions were checked against, and it no longer tries to comment on the PR.
+- **e2e in CI:** `e2e/run.sh` also finds a pipenv installed with pipx, which no Python can import. The first CI run stopped there before any test.
+- **e2e outside root:** `e2e/run.sh` starts Postgres with its Unix socket off. Debian's build puts the socket where only the postgres user may write, so the GitHub runner, or any non-root account, failed to start it with no message. It now says why it stopped, and CI keeps the logs of a failed run.
+- **e2e in CI:** a failed run also keeps Postgres's own log, the file its error message names.
+- **Backend tests in CI:** they also run when a pull request only changes `Pipfile`, `Pipfile.lock`, a migration, `.env.ci`, `run_tests.sh`, `alembic.ini` or `docker-compose.dev.yml`. A Dependabot lock update used to skip them.
+- **Image scan:** each job fails if its exact image and tag are no longer in `docker-compose.yml`, so a tag bumped there cannot leave the scan on the old one. An image newly added to compose still has to be added to the scan by hand.
+- **Deploy guide:** the Meilisearch rollback also restores the old volume's declaration, which compose needs, and the audit section says what each workflow actually runs on.
+- **e2e:** the lobby QR keyboard test waits for focus to reach the dialog's Close button before pressing Enter. It pressed too early in 2 or 3 runs of 20, on the trigger behind the dialog, which only opened it again.
+- **Host title card:** the title and description shown before the first question wrap a long word instead of running off the projector. A title with no spaces overflowed by 757px. `hostile-text.e2e.ts` checks this screen now; it used to reach it only by chance.
+
+### V1 started, 11 Oct
+
+- Merged PR #37 (MVP polish) into master, and started V1 on the branch `v1`.
+- Added `docs/v1-plan.md`, the living V1 plan, which each step re-plans, and `docs/visual-review-v1.md` for the visual review in every step.
+- Recorded François's V1 decisions in `MVP.md` as D22 to D32.
+- Dropped the rule that removing a feature needs François and Gonçalo jointly (François's call, D31). CLAUDE.md now says François decides and Claude never removes a feature on its own.
+- `TODO.md` is now a record only; open work is in issue #56 and `docs/v1-plan.md`.
+
+## MVP, up to 11 Oct 2026
+
+Master as of 11 Oct, tagged `mvp` (`8e69034`).
+
 ### Claude Code setup, 11 Oct
 
 - Added the shared Claude Code skills under `.claude/skills/` and pointed `.claude/settings.json` at the ogfrench/claude-code-setup plugin marketplace, synced from that repo.

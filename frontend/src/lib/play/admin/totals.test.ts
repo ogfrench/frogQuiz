@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { describe, expect, it } from 'vitest';
-import { totalsFromResults } from './totals';
+import { totalsFromResults, totalsFromServer } from './totals';
 
 describe('totalsFromResults', () => {
 	it('sums every question, including ones whose results were never shown', () => {
@@ -32,5 +32,32 @@ describe('totalsFromResults', () => {
 		expect(
 			totalsFromResults({ '0': null, '1': [{ username: 'ana', score: NaN }] }, [])
 		).toEqual({ ana: 0 });
+	});
+});
+
+describe('totalsFromServer', () => {
+	it('takes the running totals from the server, hide-results questions included', () => {
+		// ana's 800 came from a hide-results question: it never had a results screen, so
+		// the host's own per-question sum left it out while the podium counted it.
+		expect(totalsFromServer({ ana: 1400, ben: 600 }, ['ana', 'ben'])).toEqual({
+			ana: 1400,
+			ben: 600
+		});
+	});
+
+	it('keeps players who have not scored, at 0', () => {
+		expect(totalsFromServer({ ana: 900 }, ['ana', 'ben', 'cy'])).toEqual({
+			ana: 900,
+			ben: 0,
+			cy: 0
+		});
+	});
+
+	it('reads the numbers Redis hands back as strings', () => {
+		expect(totalsFromServer({ ana: '1200', ben: 'not a number' })).toEqual({
+			ana: 1200,
+			ben: 0
+		});
+		expect(totalsFromServer(null, ['ana'])).toEqual({ ana: 0 });
 	});
 });

@@ -69,6 +69,20 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 			.first()
 			.click();
 		const lisbon = phone.getByRole('button', { name: 'Lisbon' });
+		// The countdown ring is painted, and it empties, as the host's bar does. A trailing
+		// `;` in its value once froze it on the first frame while the number under it kept
+		// counting down. The colored arc is the time left: the second angle in its stops.
+		const ring = phone.locator('#progress-circle');
+		const arcLeft = () =>
+			ring.evaluate((el) => {
+				const image = getComputedStyle(el).backgroundImage;
+				const conic = image.slice(image.indexOf('conic-gradient'));
+				return Number([...conic.matchAll(/([\d.]+)deg/g)][1]?.[1]);
+			});
+		await expect(ring).toBeVisible();
+		const first = await arcLeft();
+		expect(first).toBeGreaterThan(180);
+		await expect.poll(arcLeft, { timeout: 5_000 }).toBeLessThan(first);
 		await lisbon.click();
 		// The tiles stay up with their pick held until the timer ends -- "Answer locked
 		// in" is the screen *after* that, not the acknowledgement of the tap. Kahoot does

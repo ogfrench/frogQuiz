@@ -111,6 +111,8 @@ def test_editor_saves_are_limited_per_edit_session(test_client: TestClient, monk
         f"ratelimit:editor_save_session:{busy}",
         "ratelimit:editor_save:testclient",
         "ratelimit:editor_start:testclient",
+        # The save makes a quiz without an account, which counts against the daily ceiling.
+        "ratelimit:anon_quiz_create:testclient",
     ]
     # The busy session has used its whole minute.
     test_client.portal.call(lambda: redis.set(keys[0], 60, ex=60))

@@ -85,7 +85,9 @@ PG_BIN="$(find_pg_bin || true)"
 if [ -n "${E2E_VENV:-}" ]; then
   VENV_RAW="$E2E_VENV"
 else
-  VENV_RAW="$(cd "$ROOT" && python -m pipenv --venv 2>/dev/null || python3 -m pipenv --venv 2>/dev/null)" \
+  # pipenv as a module, or as the command pipx installs, which no interpreter can import.
+  VENV_RAW="$(cd "$ROOT" && { python -m pipenv --venv 2>/dev/null || python3 -m pipenv --venv 2>/dev/null \
+    || pipenv --venv 2>/dev/null; })" \
     || die "no pipenv venv; run 'python -m pipenv sync --dev' first, or set E2E_VENV"
 fi
 VENV="$(cygpath -u "$VENV_RAW" 2>/dev/null || printf '%s' "$VENV_RAW")"
@@ -148,6 +150,9 @@ wait_http() { # url, name
 }
 
 for p in $PG_PORT $REDIS_PORT $MEILI_PORT $MAIL_PORT_LOCAL $API_PORT $WEB_PORT; do
+  # A stack stopped a moment ago (the e2e workflow runs two passes in one job) can hold a
+  # port for a few seconds while its processes exit.
+  for _ in $(seq 1 15); do port_busy "$p" || break; sleep 1; done
   port_busy "$p" && die "port $p is already in use (a previous run with KEEP_UP=1?)"
 done
 
@@ -170,19 +175,33 @@ case "$OS" in
   *)       MEILI_BIN="$TOOLS/meilisearch"
            case "$(uname -m)" in aarch64|arm64) MEILI_ASSET=meilisearch-linux-aarch64 ;; *) MEILI_ASSET=meilisearch-linux-amd64 ;; esac ;;
 esac
-if [ ! -x "$MEILI_BIN" ]; then
-  log "fetching Meilisearch ($MEILI_ASSET, one-off, ~350 MB)"
+# The version production runs, read from docker-compose.yml, so the suite tests what ships.
+# It used to fetch whatever was latest, and keep it.
+MEILI_VERSION="$(sed -n 's#^ *image: getmeili/meilisearch:\(v[0-9.]*\) *$#\1#p' "$ROOT/docker-compose.yml")"
+[ -n "$MEILI_VERSION" ] || die "no getmeili/meilisearch image in docker-compose.yml"
+if [ ! -x "$MEILI_BIN" ] || ! "$MEILI_BIN" --version 2>/dev/null | grep -qx "meilisearch ${MEILI_VERSION#v}"; then
+  log "fetching Meilisearch $MEILI_VERSION ($MEILI_ASSET, ~350 MB)"
   curl -fL --retry 3 -o "$MEILI_BIN" \
-    "https://github.com/meilisearch/meilisearch/releases/latest/download/$MEILI_ASSET"
+    "https://github.com/meilisearch/meilisearch/releases/download/$MEILI_VERSION/$MEILI_ASSET"
   chmod +x "$MEILI_BIN"
 fi
 
 # ---- Postgres --------------------------------------------------------------------
 log "starting Postgres on $PG_PORT"
 pg initdb -D "$PGDATA" -U postgres --auth=trust -E UTF8 --no-locale >"$DATA/initdb.log" 2>&1
+# Everything connects over TCP, so the Unix socket is off: Debian's build puts it in
+# /var/run/postgresql, which only the postgres user may write, and a server started by
+# anyone else (the GitHub runner, a laptop account) died there on its lock file.
+PG_OPTS="-p $PG_PORT -c listen_addresses=127.0.0.1"
+[ "$OS" != "windows" ] && PG_OPTS="$PG_OPTS -c unix_socket_directories=''"
 # pg_ctl leaves the server holding its stdout; without the redirect this hangs.
-pg pg_ctl -D "$PGDATA" -o "-p $PG_PORT -c listen_addresses=127.0.0.1" -l "$PGDATA/pg.log" -w start >/dev/null 2>&1 </dev/null
+pg pg_ctl -D "$PGDATA" -o "$PG_OPTS" -l "$PGDATA/pg.log" -w start >/dev/null 2>&1 </dev/null \
+  || die "Postgres did not start; see $PGDATA/pg.log and $DATA/initdb.log"
 "$PG_BIN/psql" -h 127.0.0.1 -p $PG_PORT -U postgres -qc "create database frogquiz;"
+# For the specs that must change a row directly, such as moving a quiz's expiry (#43,
+# #55): helpers.ts's sql() runs this psql. Node wants a Windows path on Windows.
+export E2E_PSQL="$(cygpath -m "$PG_BIN/psql" 2>/dev/null || printf '%s' "$PG_BIN/psql")"
+export E2E_PG_PORT=$PG_PORT
 
 # ---- Redis, Meilisearch ----------------------------------------------------------
 # A real redis-server where there is one (Linux and macOS usually have it, and it

@@ -38,6 +38,47 @@ SPDX-License-Identifier: MPL-2.0
 	let fullscreen_open = $state(false);
 	const { t } = getLocalization();
 
+	// A projector never scrolls (12 Oct). The names stop where the screen does: chips that
+	// do not fit are hidden and a pill says how many more. Once that happens the newest
+	// come first, since the person who just joined is the one looking for their name, and
+	// the order stays newest-first until everyone fits again and the lobby is smaller than
+	// when it first overflowed, so it cannot flip back and forth on one chip's width.
+	let board: HTMLUListElement | undefined = $state();
+	let hidden = $state(0);
+	let newest_first_from: number | null = $state(null);
+	const shown_players = $derived(
+		newest_first_from !== null ? [...game_state.players].reverse() : game_state.players
+	);
+
+	function fit() {
+		if (!board) return;
+		const items = [...board.children] as HTMLElement[];
+		const over = (limit: number) =>
+			items.filter((li) => li.offsetTop + li.offsetHeight > limit);
+		// The "+N more" pill sits below the board in the flow, so the board shrinks to make
+		// room for it and the observer refits. Never hide the first chip: the board's minimum
+		// height is one row, and a cramped screen still shows somebody.
+		const first = items[0] ? items[0].offsetTop + items[0].offsetHeight : 0;
+		const off = over(Math.max(board.clientHeight, first));
+		for (const li of items) li.style.visibility = off.includes(li) ? 'hidden' : '';
+		hidden = off.length;
+		const count = game_state.players.length;
+		if (hidden > 0 && newest_first_from === null) newest_first_from = count;
+		if (newest_first_from !== null && hidden === 0 && count < newest_first_from)
+			newest_first_from = null;
+	}
+
+	$effect(() => {
+		void shown_players;
+		fit();
+	});
+	$effect(() => {
+		if (!board) return;
+		const observer = new ResizeObserver(fit);
+		observer.observe(board);
+		return () => observer.disconnect();
+	});
+
 	if (cqc_code === 'null') {
 		cqc_code = null;
 	}
@@ -70,7 +111,11 @@ SPDX-License-Identifier: MPL-2.0
 
 <h1 class="sr-only">{$t('admin_page.lobby_title')}</h1>
 
-<div class="fq-stage">
+<!-- h-dvh, not the stage's usual min-height: the names below shrink to what is left of
+     the screen instead of making the page taller. Safe centering: on a screen too short
+     even for the PIN, Start and the count, the overflow goes below, where the page can
+     scroll to it, instead of half above the top where nothing can. -->
+<div class="fq-stage h-dvh [justify-content:safe_center]">
 	<!-- The join details are the whole point of this screen, so they get the
 	     center and the largest type rather than being split across three
 	     unaligned columns. -->
@@ -123,17 +168,22 @@ SPDX-License-Identifier: MPL-2.0
 		{$t('admin_page.start_game')}
 	</Button>
 
-	<div class="flex w-full max-w-5xl flex-col items-center gap-4">
-		<p class="text-xl text-muted-foreground" aria-live="polite">
+	<div class="relative flex min-h-0 w-full max-w-5xl flex-col items-center gap-4">
+		<p class="shrink-0 text-xl text-muted-foreground" aria-live="polite">
 			<!-- i18next picks _one / _other from the count; the old _plural suffix was
 			     i18next v20's and printed the raw key on the projector. -->
 			{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
 		</p>
 
 		{#if game_state.players.length > 0}
-			<ul class="flex flex-wrap items-center justify-center gap-2.5">
-				{#each game_state.players as player (player.username)}
-					<li animate:flip={{ duration: 250 }}>
+			<ul
+				bind:this={board}
+				class="relative flex min-h-[4.5rem] w-full flex-auto flex-wrap content-start items-center justify-center gap-2.5 overflow-hidden p-1"
+			>
+				{#each shown_players as player (player.username)}
+					<!-- Newest first, every join moves every chip one place; sliding them all at
+					     once overlapped half the board while a room was joining. -->
+					<li animate:flip={{ duration: newest_first_from !== null ? 0 : 250 }}>
 						<button
 							type="button"
 							title={$t('words.kick')}
@@ -162,6 +212,13 @@ SPDX-License-Identifier: MPL-2.0
 					</li>
 				{/each}
 			</ul>
+			{#if hidden > 0}
+				<p
+					class="shrink-0 rounded-full border border-border bg-card px-4 py-1.5 text-lg font-semibold whitespace-nowrap shadow-sm"
+				>
+					{$t('admin_page.more_players', { count: hidden })}
+				</p>
+			{/if}
 		{/if}
 	</div>
 </div>

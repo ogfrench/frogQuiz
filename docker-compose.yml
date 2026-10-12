@@ -2,9 +2,18 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+# Docker keeps every container's json log forever by default, on a 47 GB boot disk with
+# nothing rotating it (#22). 3 files of 10 MB per container.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   frontend:
     restart: always
+    logging: *logging
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -21,6 +30,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: &restart always
+    logging: *logging
     depends_on: &depends
       - db
       - redis
@@ -43,12 +53,15 @@ services:
       # 2 when Netlify or a CDN proxies to it, or every visitor shares one
       # rate-limit bucket. See DEPLOY.md for what raising it costs.
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+      # Making and hosting quizzes without an account (#55). Off: the team signs in, and
+      # players still join by PIN with no account. With it on, the two ceilings apply.
+      ANONYMOUS_QUIZZES_ENABLED: ${ANONYMOUS_QUIZZES_ENABLED:-false}
+      ANON_QUIZ_DAILY_LIMIT: ${ANON_QUIZ_DAILY_LIMIT:-20}
+      ANON_QUIZ_TOTAL_LIMIT: ${ANON_QUIZ_TOTAL_LIMIT:-1000}
 
       # --- MAIL CONFIG ---
-      # Optional: leave unset to run without mail, and set SKIP_EMAIL_VERIFICATION
-      # to True so registration doesn't ask for a confirmation it can't send.
-      # Without a relay there is no password recovery either -- the only way back
-      # into a forgotten account is the database.
+      # Required: signing in is by an emailed link or code only (passwords are off), so
+      # without a relay nobody can sign in on a new device. See DEPLOY.md.
       MAIL_SERVER: ${MAIL_SERVER:-}
       MAIL_PORT: ${MAIL_PORT:-587}
       # starttls (587, the usual), ssl (465), or none (local relay only).
@@ -100,12 +113,14 @@ services:
   redis:
     image: valkey/valkey:alpine
     restart: always
+    logging: *logging
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
 
   db:
     image: postgres:14-alpine
     restart: always
+    logging: *logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -122,6 +137,7 @@ services:
       context: .
       dockerfile: Dockerfile.caddy
     restart: always
+    logging: *logging
     environment:
       # A bare domain (quiz.example.com) makes Caddy fetch a Let's Encrypt cert.
       # Keep the default :80 for local runs (http://localhost).
@@ -133,12 +149,16 @@ services:
       - caddy-data:/data
       - caddy-config:/config
   meilisearch:
-    image: getmeili/meilisearch:v0.28.0
+    # v1 cannot open v0.28's files, so it gets a new volume and starts empty; the API's
+    # start-up sync rebuilds the index from Postgres. v1 keeps its data in /meili_data.
+    # Moving back is the old tag and the old volume, which is left alone. See DEPLOY.md.
+    image: getmeili/meilisearch:v1.54.3
     restart: always
+    logging: *logging
     environment:
       MEILI_NO_ANALYTICS: "true"
     volumes:
-      - meilisearch-data:/data.ms
+      - meilisearch-data-v1:/meili_data
   worker:
     image: ghcr.io/ogfrench/frogquiz-backend:master
     build:
@@ -147,10 +167,16 @@ services:
     environment: *env_vars
     depends_on: *depends
     restart: *restart
+    logging: *logging
     command: arq frogquiz.worker.WorkerSettings
+    # The same upload folder as the api. Without it the worker read and deleted an empty
+    # folder of its own: no upload was ever hashed or counted, and freed images stayed on
+    # disk. tests/test_compose.py keeps the two in step.
+    volumes:
+      - ./uploads:/app/data
 
 volumes:
   data:
-  meilisearch-data:
+  meilisearch-data-v1:
   caddy-data:
   caddy-config:

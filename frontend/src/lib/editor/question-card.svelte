@@ -212,7 +212,8 @@ SPDX-License-Identifier: MPL-2.0
 									// under "Several". Keep the first and unmark the rest.
 									if (type === QuizQuestionType.CHECK) {
 										let kept = false;
-										for (const answer of data.questions[index].answers as Answer[]) {
+										for (const answer of data.questions[index]
+											.answers as Answer[]) {
 											if (answer.right && kept) answer.right = false;
 											else if (answer.right) kept = true;
 										}
@@ -436,7 +437,7 @@ SPDX-License-Identifier: MPL-2.0
 						<AlertDialog.Cancel type="button">{$t('words.cancel')}</AlertDialog.Cancel>
 						<AlertDialog.Action
 							type="button"
-							class={buttonVariants({ variant: 'destructive' })}
+							variant="destructive"
 							onclick={() => ondelete(index)}
 						>
 							{$t('words.delete')}

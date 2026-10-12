@@ -109,6 +109,10 @@ async def create_user(user: RouteUser, request: Request) -> User | JSONResponse:
     # the same room was locked out for an hour (E16 in docs/edge-cases-2026-10.md).
     await rate_limit(request, "register", limit=50, window_seconds=3600)
     _passwords_on()
+    # The same rule as the emailed sign-in, for the day passwords come back (security
+    # audit, 11 Oct, finding 8): without it any address could register.
+    if not settings.email_domain_allowed(user.email):
+        raise HTTPException(status_code=403, detail="That address is not on an allowed domain")
     if settings.registration_disabled:
         raise HTTPException(status_code=423)
     # Checked before anything is written. Without it the row is created, the send

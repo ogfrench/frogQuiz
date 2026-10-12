@@ -73,7 +73,7 @@ test('a phone that joins mid-question gets the question, and the host can lock m
 	const lisbon = phone.getByRole('button', { name: 'Lisbon' });
 	await lisbon.click();
 	await expect(lisbon).toBeDisabled();
-	await expect(host.getByText('1 answer submitted')).toBeVisible();
+	await expect(host.getByText('1 of 2 answered')).toBeVisible();
 
 	await host.getByRole('button', { name: 'Lock game' }).click();
 	await expect(host.getByRole('button', { name: 'Unlock game' })).toBeVisible();

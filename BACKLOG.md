@@ -184,8 +184,9 @@ underneath already works without a session:
 The host screen has to keep working with no session for its whole lifetime, not just at
 the moment it loads. One thing to decide while doing it: **the "save results" button at
 the end.** `save_quiz` is a bare socket emit and `GameResults.user` is nullable, so an
-anonymous host's save will succeed — and write a row nobody can ever read, because
-`/api/v1/results/*` is user-scoped. Either hide the control for an anonymous host, or
+anonymous host's save used to succeed — and write a row nobody can ever read, because
+`/api/v1/results/*` is user-scoped. (Since V1, #52, the server refuses it with
+`results_not_saved`.) Either hide the control for an anonymous host, or
 give the save somewhere to go. Silently writing an unreachable row is the wrong third
 option.
 

@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, Request
 from fastapi.responses import StreamingResponse, RedirectResponse
 from pydantic import BaseModel
 
-from frogquiz.auth import get_current_user, get_current_user_optional
+from frogquiz.auth import get_current_user, get_current_user_optional, require_anonymous_quizzes
 from frogquiz.config import settings, storage, arq, UPLOAD_LIMITS
 from frogquiz.image_dimensions import image_dimensions, HEADER_BYTES
 from frogquiz.db.models import User, StorageItem, PublicStorageItem, UpdateStorageItem, PrivateStorageItem, Quiz
@@ -196,6 +196,7 @@ async def upload_file(
     # here made every upload from that flow fail silently in the UI -- there is no
     # per-user quota to check without a user, so anonymous uploads skip it.
     if user is None:
+        require_anonymous_quizzes()
         # With no quota either, this was the one way to fill the disk without an account
         # (C5 in docs/crud-audit-2026-10.md). Thirty in ten minutes is a quiz with an image
         # on every question; clean_orphaned_uploads deletes what never reaches a quiz.

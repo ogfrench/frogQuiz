@@ -128,6 +128,19 @@ def hash_anon_secret(secret: str) -> str:
     return hashlib.sha256(secret.encode()).hexdigest()
 
 
+def require_anonymous_quizzes() -> None:
+    """401 unless quizzes may be made, edited and hosted without an account (#55).
+
+    Called on the write paths only. Reading a quiz with its secret, deleting it and claiming
+    it into an account keep working whatever the setting, so nothing made while it was on
+    is stranded.
+    """
+    if not settings.anonymous_quizzes_enabled:
+        raise HTTPException(
+            status_code=401, detail="Sign in to make, edit or host a quiz. Players join with the game PIN."
+        )
+
+
 def verify_anon_secret(secret: str | None, expected_hash: str | None) -> bool:
     """Constant-time check of a caller-supplied secret against a stored hash.
 

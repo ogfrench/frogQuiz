@@ -185,10 +185,17 @@ Two things go wrong more often than anything else:
   no confirmation is ever sent. That is a reasonable setting for an internal
   deployment; it is not a mail configuration, and password recovery still needs one.
 
-To run without mail at all, leave the block blank and set
-`SKIP_EMAIL_VERIFICATION=True`. Registration then works and recovery does not;
-the API says so with a 503 rather than pretending, and the app logs a warning at
-startup.
+**Mail is required.** Signing in is by an emailed link or code only (passwords are off,
+`ENABLE_PASSWORD_LOGIN` defaults to false), so without a working relay nobody can sign in
+on a new device. A failed send answers 502 after the retries. Players joining by PIN need
+no account and no mail.
+
+**Quizzes without an account are off.** `ANONYMOUS_QUIZZES_ENABLED` defaults to false
+(#55): making, editing, uploading and hosting a quiz need a sign-in, and players still join
+by PIN with none. Leave it unset in production. `GET /api/v1/utils/config` tells the
+frontend. If it is turned on, `ANON_QUIZ_DAILY_LIMIT` (20) and `ANON_QUIZ_TOTAL_LIMIT`
+(1,000) apply; the daily one needs `RATE_LIMIT_ENABLED` and `TRUSTED_PROXY_HOPS=2` behind
+Netlify, or every visitor shares one bucket. `docs/anonymous-vs-account.md` has the matrix.
 
 ### Testing it for real
 
@@ -279,7 +286,7 @@ searching. Steps 1 and 3 are standard and were not rehearsed.
 
 Rehearsed again on 6 Oct on the real thing: `docker-compose.yml` with the published
 `ghcr.io/ogfrench/frogquiz-backend:master` image (the merged code), Postgres 14, valkey and
-Meilisearch 0.28, seeded with two accounts, four quizzes, an uploaded image and an
+Meilisearch 0.28 (since moved to v1, see [Meilisearch v1](#meilisearch-v1)), seeded with two accounts, four quizzes, an uploaded image and an
 anonymous quiz. This section's block ran as written, bar the compose flags and no `sudo`
 on Windows. Backup first (the dump holds the seeded address, the tarball its files), then
 users, quizzes and storage items at 0, `alembic_version` kept, uploads empty. Afterwards the
@@ -313,7 +320,116 @@ The Docker image and `Pipfile.lock` are both on Python 3.13. Bumping means chang
 `Dockerfile`, `Pipfile`, regenerating `Pipfile.lock` and running the test suite —
 `ormar`/`databases`/`sqlalchemy` are the likely breakage.
 
-Backend and frontend lint now run on pull requests. The pytest workflow still does not:
-it decodes a base64 `.env` from the `DOTENV` repository secret, which this fork does not
-have. Add that secret and uncomment the `pull_request` trigger in
-`.github/workflows/pytest.yml` to gate merges on the test suite.
+Backend lint, frontend lint and the backend test suite run on every pull request that
+touches their files. The backend suite counts the lock and the migrations as its files,
+so a Dependabot PR runs it. The audit runs on every pull request. The pytest workflow
+copies `.env.ci`, a throwaway configuration with no credentials in it, so it needs no
+repository secret.
+
+## Security audit (#53)
+
+`.github/workflows/audit.yml` runs on every pull request, on pushes to `master` and on
+Monday mornings. Any one of these fails it:
+
+- **Python:** any advisory in the locked production dependencies, unless it has a dated
+  entry in `.github/audit/pip-audit-ignore.txt`. An entry past its revisit date fails the
+  run too, so an exception never becomes permanent by accident.
+- **Frontend:** a high or critical advisory in the production dependencies.
+- **Images:** a high or critical finding with a fix in a third-party image pinned in
+  `docker-compose.yml`. Dependabot does not track those.
+- **Secrets:** a secret in a pull request's or a push's new commits, or, on the Monday
+  run, anywhere in the history (gitleaks).
+
+**First run, 11 Oct 2026 (V1 audit):**
+
+- **Backend:** 124 advisories in 25 locked packages. The worst were in starlette,
+  python-multipart, aiohttp, PyJWT, Pillow (which decodes every upload) and
+  cryptography. Nothing had been failing on them.
+  - The lock was regenerated with the fixed versions. That moved FastAPI to 0.135 with
+    starlette 1.7.
+  - Pillow was held below 11 by `thumbhash-python`, so its encoder is now vendored in
+    `frogquiz/helpers/thumbhash.py`. A golden test checks it gives the same hashes.
+  - Five advisories remain, each with a dated exception (2026-12-31):
+    - python-jose and ecdsa, which have no fix and do not apply to HS256 tokens
+    - ormar, held at 0.20.2 because 0.21 drops `databases`
+    - two in setuptools, held there by ormar
+  - Both holds go away with two post-V1 changes: replacing python-jose with PyJWT, and
+    migrating ormar to SQLAlchemy 2.
+- **Frontend:** `pnpm audit --prod --audit-level high` found nothing.
+- **Images (first run in CI, on PR #57):**
+  - `getmeili/meilisearch:v0.28.0`: 17 high and critical findings in its Alpine 3.14
+    base (curl, OpenSSL 1.1, zlib). Meilisearch moved to v1.54.3, which scans clean. See
+    [Meilisearch v1](#meilisearch-v1) for the deploy.
+  - `postgres:14-alpine`: 25 findings, all in Go's standard library inside `gosu`. The
+    image's own packages scan clean. gosu runs once at start to drop root and exec
+    postgres, and parses no input, so the scan skips that one file.
+  - `valkey/valkey:alpine`: clean.
+- **Secrets:** gitleaks 8.28 over all 256 commits found five hits, and none is a
+  credential to anything: the token-signing placeholders in `.env.ci` and `e2e/e2e.env`,
+  and MinIO's public playground keys in a test inherited from ClassQuiz. They are allowed
+  by fingerprint in `.gitleaksignore`, so a new secret in the same files still fails.
+  A GitHub token planted in a throwaway local clone was caught. This was checked locally
+  rather than with a throwaway branch on GitHub, so no fake secret was ever pushed.
+  - CI's first run used gitleaks 8.24.3, the action's default, whose generic rule also
+    flagged a hostname list in this file's `api.frogquiz.xyz` steps. `.gitleaks.toml`
+    allows that one hostname by value, which holds however the line is later edited.
+    The workflow now pins 8.24.3, which finds nothing else in the whole history. An
+    unpinned version could turn the check red with no change here.
+- **GitHub's own scanning:** the repository is public, so GitHub's secret scanning and
+  push protection can also be switched on, under Settings → Code security. That is a
+  settings change for the owner.
+
+## Meilisearch v1
+
+V1 moves the search server from v0.28.0 to v1.54.3, because the old image failed the
+audit (above). The Python client, 0.37.1, already worked with v1: the e2e suite has run
+against Meilisearch 1.54 since the first Linux runs. v1 cannot read v0.28's data, so it
+gets a new volume, `meilisearch-data-v1`, and starts empty. Nothing is lost: the index
+is a copy of the public quizzes in Postgres, and the API rebuilds it on start-up when
+the counts differ. A search that finds no index rebuilds it too.
+
+On the VM, with the V1 deploy or before it:
+
+1. `git pull && docker compose pull && docker compose up -d`
+2. `docker compose restart api`, so the rebuild runs once Meilisearch is up. The API
+   does not wait for it, and a start that finds it down only logs a warning.
+3. Search Explore for a known public quiz. `docker compose logs api | grep -i meili`
+   shows the rebuild as a warning, "MeiliSearch and Database got out of sync".
+4. Once search works, remove the old volume: `docker volume ls | grep meilisearch`,
+   then `docker volume rm <project>_meilisearch-data`.
+
+To go back, in `docker-compose.yml` put back `getmeili/meilisearch:v0.28.0`, the mount
+`meilisearch-data:/data.ms`, and `meilisearch-data:` under the top-level `volumes:`
+(compose refuses a mount of an undeclared volume). Until step 4, the old volume is still
+there.
+
+## API hostname: `api.frogquiz.xyz`
+
+The API was reached at `134-98-158-173.sslip.io`, a name sslip.io derives from the VM's IP,
+so any new IP broke every link. It moves to `api.frogquiz.xyz` (D32). Do it in this order,
+so nothing is ever unreachable:
+
+1. **DNS (François, in Netlify).** `frogquiz.xyz` is served by Netlify DNS (its
+   nameservers are `dns1` to `dns4.p05.nsone.net`, checked 11 Oct). In the Netlify UI:
+   Domains, `frogquiz.xyz`, DNS settings, Add new record: type `A`, name `api`, value
+   `134.98.158.173` (the VM's public IP), TTL default. Then
+   `dig +short api.frogquiz.xyz` (or `nslookup api.frogquiz.xyz`) prints the IP.
+2. **Caddy serves both names (François, on the VM).** In `/opt/frogquiz/.env` set
+   `SITE_ADDRESS=api.frogquiz.xyz, 134-98-158-173.sslip.io`, then
+   `docker compose up -d proxy`. `COMPOSE_FILE` in the same `.env` already selects the
+   Neon override, so no `-f` flags. Caddy fetches a certificate for each name on its
+   first request. `curl -sI https://api.frogquiz.xyz/openapi.json` returns 200.
+   While there, check two values that the browser depends on and that the move does not
+   change: `CORS_ORIGINS` lists `https://frogquiz.xyz` and `https://www.frogquiz.xyz`
+   (live games open their socket straight to the API, and it refuses any other origin),
+   and `ROOT_ADDRESS` is `https://frogquiz.xyz` (the address in every sign-in email).
+3. **Point the frontend at it (Claude, on the `v1` branch, once step 2 answers).** In
+   `netlify.toml`, the host in `VITE_API_ORIGIN`, `API_URL` and the two `[[redirects]]`
+   targets. Check the Netlify UI does not override them (Site configuration,
+   Environment variables). It ships with the V1 deploy.
+4. **Later:** drop the sslip.io name from `SITE_ADDRESS` once no shared link uses it.
+
+Deploy previews build with the same `netlify.toml`, so they call the production API too.
+Their sockets are refused (their origin is not in `CORS_ORIGINS`), and a sign-in link from
+one goes to `ROOT_ADDRESS`, not to the preview. Use the local stack for anything that needs
+a live game.

@@ -18,6 +18,28 @@ convention and were fixed the same day. The edge-case pass of the same evening (
 passing, dropped connections, a back swipe, a capital letter) is E1 to E27, in
 [`edge-cases-2026-10.md`](edge-cases-2026-10.md).
 
+## Concurrency, #35 (measured 11 Oct, step 3a)
+
+The same quiz open in two places, launched twice, or changed under a running game. Each
+row is what was measured on the local stack, not predicted; a row nobody has run yet says
+so and where it is planned. Rows 5, 6, 11, 12 and 13 were measured on 12 Oct.
+
+| # | Scenario | Measured | Test |
+|---|---|---|---|
+| 1 | Two tabs, both autosave | The second gets a 409, now with the current version. The editor asks Keep mine (saves over it) or Load the other version (reloads, keeps this tab's text, offers Restore). Both measured. | `editor-conflict.e2e.ts` |
+| 2 | A stale tab saves and closes | `/editor/finish` took no `base` and wrote the older copy over the newer. It takes `base` now and answers 409. The editor itself saves through `/save`, so this was an API-only hole. | `test_editor_versions.py` |
+| 3 | Deleted in another tab, then typed in | A 404 showed as "Could not save: 404". Now it says the quiz was deleted, keeps the text, and offers Save as a new quiz, which was measured creating one. | `editor-conflict.e2e.ts` |
+| 4 | Signed out elsewhere while editing | It showed "403: This edit session belongs to another user". Now it says the browser is signed out or signed in as someone else, and the text stays. | `editor-conflict.e2e.ts` |
+| 5 | New quiz, first save in two tabs | Two quizzes, as designed: each tab has its own edit session, both saves answer 200 with different ids, and a second save in one tab updates only its own quiz. Measured through the editor's calls, since the page will not save a new quiz before it has a question. | `concurrency-35.e2e.ts` › row 5 |
+| 6 | One quiz launched twice | `plays` lost a count to a read-and-write; it is one statement now (`views` measured the same way, 3 of 3). The lobby pointer follows the newest launch: asked by quiz id, `/live` names the second game, and answers 404 until that game's host screen opens. The first game still answers by its PIN and plays to the podium for its players. | `test_counter_writes.py`; `concurrency-35.e2e.ts` › row 6 |
+| 7 | A view or a launch lands during a save | **Reproduced:** the save's title went back to the old one, for both. Fixed, and the reverse (a save undoing a view, or a claim) too. | `test_counter_writes.py` |
+| 8 | Edited while a game of it runs | The game keeps its snapshot; the editor now says a game is running. | `crud-lifecycle.e2e.ts` (edits mid-game) |
+| 9 | An image taken out while a game runs | The image job deletes a removed image within seconds when no game runs (the existing lifecycle test). With a game running it now holds it: still on disk after the job, freed when the game ends. Measured with the host ending it from the lobby; the podium ends it through the same release, and the release itself (once, never lost, never swept as an orphan) has unit tests in `test_live_images.py`. | `crud-lifecycle.e2e.ts` › a live game keeps its images |
+| 10 | The quiz deleted while a game runs | Same: the images stay until the game ends. | same |
+| 11 | Made unlisted or deleted while someone else hosts | The game goes on: another account hosting a public quiz reaches the podium, the player gets 1st place, and Download results is there, whether the owner made the quiz not public or deleted it mid-game. | `concurrency-35.e2e.ts` › row 11, both cases |
+| 12 | Two host screens on one game | Both follow the game. The second tab opens on the step the game is at, with the same PIN and controls, shows the question after the answer, and reaches the podium with Download results. The player is not affected. | `concurrency-35.e2e.ts` › row 12 |
+| 13 | An anonymous quiz expires while edited or hosted | The editor's next save says the quiz expired and was deleted, keeps the text, and offers Save as a new quiz. The expiry sweep deletes the quiz and holds a running game's images instead of freeing them. Run with the setting on; production has it off, so no anonymous quiz exists to expire there. | `claim.e2e.ts` › an editor open past the 30 days; `test_claim_races.py::test_the_sweep_holds_the_images_of_a_game_still_running` |
+
 ## How each was fixed
 
 | # | Fix |

@@ -5,6 +5,23 @@
 type ScoredAnswer = { username: string; score: number };
 
 /**
+ * Each player's total from the server's running tally (the `scores` event), with every
+ * player in `known` at 0 or more. The server adds an answer's points as it records it,
+ * hide-results questions included, which the host's own per-question sum missed.
+ */
+export function totalsFromServer(
+	scores: Record<string, number | string> | null | undefined,
+	known: Iterable<string> = []
+): Record<string, number> {
+	const totals: Record<string, number> = {};
+	for (const name of known) totals[name] = 0;
+	for (const [name, points] of Object.entries(scores ?? {})) {
+		totals[name] = Number(points) || 0;
+	}
+	return totals;
+}
+
+/**
  * Each player's total, rebuilt from the server's final results.
  *
  * The host screen used to keep its own running tally, adding a question's points one

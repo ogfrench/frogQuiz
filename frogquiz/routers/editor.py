@@ -11,6 +11,9 @@ from typing import Optional
 import asyncpg.exceptions
 import bleach
 from fastapi import APIRouter, HTTPException, Depends, Header, Request, Response
+from fastapi.responses import JSONResponse
+
+from frogquiz.helpers.live_images import is_live
 from pydantic import BaseModel
 import html
 
@@ -22,8 +25,14 @@ from frogquiz.config import (
     ALLOWED_TAGS_FOR_QUIZ,
     arq,
 )
+from frogquiz.db import database
 from frogquiz.db.models import Quiz, QuizInput, User, QuizQuestionType, StorageItem
-from frogquiz.auth import get_current_user_optional, hash_anon_secret, verify_anon_secret
+from frogquiz.auth import (
+    get_current_user_optional,
+    hash_anon_secret,
+    require_anonymous_quizzes,
+    verify_anon_secret,
+)
 from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 import os
 from datetime import datetime, timedelta
@@ -49,6 +58,8 @@ ANON_QUIZ_EXPIRE_DAYS = 30
 
 class InitEditorResponse(BaseModel):
     token: str
+    # A game of this quiz is running: it keeps the version it started with (#35).
+    live: bool = False
 
 
 class EditSessionData(BaseModel):
@@ -95,6 +106,8 @@ async def init_editor(
     # Per address, sized for an office: everybody behind one NAT shares this bucket (E16 in
     # docs/edge-cases-2026-10.md).
     await rate_limit(request, "editor_start", limit=120, window_seconds=60)
+    if user is None:
+        require_anonymous_quizzes()
     if not edit and quiz_id is not None:
         raise HTTPException(status_code=400, detail="You can't choose the id for your quiz")
     if edit and quiz_id is None:
@@ -119,7 +132,7 @@ async def init_editor(
         EditSessionData(quiz_id=quiz_id, edit=edit, user_id=user.id if user is not None else None).model_dump_json(),
         ex=3600,
     )
-    return InitEditorResponse(token=edit_id)
+    return InitEditorResponse(token=edit_id, live=edit and await is_live(quiz_id))
 
 
 async def _end_session(edit_id: str):
@@ -134,12 +147,17 @@ async def finish_edit(
     quiz_input: QuizInput,
     user: User | None = Depends(get_current_user_optional),
     x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+    base: datetime | None = None,
 ):
-    """Save and close the edit session."""
+    """Save and close the edit session.
+
+    Takes `base` as /save does. Without it a tab left open behind a newer save wrote its
+    older copy over that save on close (#35 row 2).
+    """
     # Per address, sized for an office: everybody behind one NAT shares this bucket (E16 in
     # docs/edge-cases-2026-10.md).
     await rate_limit(request, "editor_finish", limit=120, window_seconds=60)
-    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=False)
+    return await _persist(request, response, edit_id, quiz_input, user, x_anon_secret, keep_session=False, base=base)
 
 
 @router.post("/save")
@@ -163,10 +181,34 @@ async def save_edit(
     # docs/edge-cases-2026-10.md). The address limit stays, generous, against scripts.
     await rate_limit_key(f"editor_save_session:{edit_id}", limit=60, window_seconds=60)
     await rate_limit(request, "editor_save", limit=600, window_seconds=60)
-    return await _persist(response, edit_id, quiz_input, user, x_anon_secret, keep_session=True, base=base)
+    return await _persist(request, response, edit_id, quiz_input, user, x_anon_secret, keep_session=True, base=base)
+
+
+async def _anonymous_quiz_ceilings(request: Request) -> None:
+    """429 when a new quiz without an account would pass either ceiling (#55).
+
+    Checked on the save that creates the quiz, which is the only place one is made. The
+    total is read, then the quiz is written, so a burst of saves at once can pass it by a
+    few: it is a ceiling against a script, not an exact count.
+    """
+    alive = await database.fetch_val(
+        "SELECT count(*) FROM quiz WHERE user_id IS NULL AND (expire_at IS NULL OR expire_at >= :now)",
+        {"now": datetime.now()},
+    )
+    if alive >= settings.anon_quiz_total_limit:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many quizzes without an account right now. Sign in to keep going.",
+        )
+    try:
+        await rate_limit(request, "anon_quiz_create", limit=settings.anon_quiz_daily_limit, window_seconds=86400)
+    except HTTPException as limited:
+        limited.detail = "You have reached today's limit for quizzes without an account. Sign in to keep going."
+        raise
 
 
 async def _persist(
+    request: Request,
     response: Response,
     edit_id: str,
     quiz_input: QuizInput,
@@ -187,6 +229,8 @@ async def _persist(
         raise HTTPException(status_code=403, detail="This edit session belongs to another user")
     is_anonymous = session_data.user_id is None
     if is_anonymous:
+        # A session opened while the setting was on is still in Redis for up to an hour.
+        require_anonymous_quizzes()
         # Anonymous quizzes are never public/searchable -- there's no
         # account behind them to hold accountable for indexed content.
         quiz_input.public = False
@@ -263,9 +307,14 @@ async def _persist(
         # `base` is the version the editor last saw. Every save sends the whole quiz, so a
         # tab left open behind a newer save wrote its older copy over it (E8).
         if base is not None and old_quiz_data.updated_at != base:
-            raise HTTPException(
+            # With the version that is current, so the editor can offer "Keep mine": sent
+            # again with this as its `base`, the same quiz goes through (#35).
+            return JSONResponse(
                 status_code=409,
-                detail="this quiz was changed in another tab or device. Reload to get that version",
+                content={
+                    "detail": "this quiz was changed in another tab or device. Reload to get that version",
+                    "updated_at": old_quiz_data.updated_at.isoformat(),
+                },
             )
         # arq pickles its arguments here, so updating this object below does not reach
         # the job: it still diffs the images against the quiz as it was.
@@ -286,7 +335,41 @@ async def _persist(
                     await storage.delete([image])
                 except DeletionFailedError:
                     pass
-        await quiz.update()
+        async with database.transaction():
+            # The version, checked again with the row locked. The check above and the write
+            # below were two steps, so a save landing between them passed the same check
+            # and was overwritten by this one. Two saves at once now take turns, and the
+            # second gets the 409. (The image job queued above then diffs against whichever
+            # save won, which is what it would see anyway.)
+            current = await database.fetch_val(
+                "SELECT updated_at FROM quiz WHERE id = :id FOR UPDATE", {"id": quiz.id.hex}
+            )
+            if current is None:
+                raise HTTPException(status_code=404, detail="Quiz not found")
+            if base is not None and current != base:
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "detail": "this quiz was changed in another tab or device. Reload to get that version",
+                        "updated_at": current.isoformat(),
+                    },
+                )
+            # Only what an edit sets. Written whole, the row loaded above put back a view,
+            # a launch, a rating or a claim that landed while this save ran (#35 row 7) --
+            # a claim put back would have made the quiz anonymous again.
+            await quiz.update(
+                _columns=[
+                    "title",
+                    "public",
+                    "description",
+                    "updated_at",
+                    "questions",
+                    "cover_image",
+                    "background_color",
+                    "background_image",
+                    "mod_rating",
+                ]
+            )
         if not is_anonymous:
             # get_meili_data looks up the owning user, which anonymous quizzes don't have --
             # and they're never indexed anyway. This used to run before the fields above
@@ -305,6 +388,7 @@ async def _persist(
         anon_secret_hash = None
         expire_at = None
         if is_anonymous:
+            await _anonymous_quiz_ceilings(request)
             raw_anon_secret = secrets.token_hex(32)
             anon_secret_hash = hash_anon_secret(raw_anon_secret)
             expire_at = datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS)

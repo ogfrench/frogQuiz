@@ -74,6 +74,11 @@ SPDX-License-Identifier: MPL-2.0
 		// BalloonEditor.builtinPlugins = [Strikethrough]
 		Editor.create(html_el, {
 			licenseKey: 'GPL',
+			// The accessible name, given at creation. It used to be set on the element
+			// afterwards, and the editing view put its own "Rich Text Editor. Editing area:
+			// main" back on the first edit, so after typing a word the title and every
+			// question were nameless again to a screen reader (found 11 Oct).
+			label: label || undefined,
 			// plugins: [Strikethrough],
 			// A `config: { enterMode, shiftEnterMode }` block sat here: CKEditor 4 options.
 			// CKEditor 5 has neither constant, so both were undefined and it was ignored.
@@ -90,9 +95,6 @@ SPDX-License-Identifier: MPL-2.0
 		})
 			.then((newEditor) => {
 				editor = newEditor;
-				if (label) {
-					newEditor.ui.getEditableElement()?.setAttribute('aria-label', label);
-				}
 				editor.setData(text);
 				editor.model.document.on('change:data', () => {
 					triggerChange();
@@ -113,7 +115,11 @@ SPDX-License-Identifier: MPL-2.0
 ></div>
 
 <style>
-	:global(.ck-powered-by) {
+	/* The badge's own balloon too: with only the badge hidden, its empty frame stayed on
+	   the field as a 2px blue dot (the step 3a visual review). One class more than
+	   ckeditor's `_visible` rule, so this wins whatever order the stylesheets load in. */
+	:global(.ck-powered-by),
+	:global(.ck.ck-balloon-panel.ck-powered-by-balloon.ck-balloon-panel_visible) {
 		display: none;
 	}
 
@@ -126,9 +132,16 @@ SPDX-License-Identifier: MPL-2.0
 	   title showed as a label over blank space, with "A title is required" above it and
 	   nowhere visible to type. Give the editable the same affordance as every other
 	   field on the page. */
+	/* ckeditor's own selectors plus `_inline`, so these outrank its square corners and its
+	   thin focus border whatever order the stylesheets load in. They lost, and the title
+	   and every question were square with a 1px focus line, next to fields with curved
+	   corners and a 2px ring (François asked why, 11 Oct). One shape, one border, one ring
+	   for every text field, whatever draws it. */
 	:global(.ck.ck-content),
-	:global(.ck.ck-editor__editable) {
+	:global(.ck.ck-editor__editable.ck-editor__editable_inline:not(.ck-editor__nested-editable)) {
 		color: inherit;
+		/* The page's face, not ckeditor's Helvetica stack beside Inter in the next field. */
+		font-family: inherit;
 		min-height: 2.75rem;
 		padding: 0.5rem 0.75rem;
 		border: 1px solid var(--input);
@@ -137,13 +150,20 @@ SPDX-License-Identifier: MPL-2.0
 
 		/* ckeditor paints a focused editable with its own blue (--ck-color-focus-border),
 		   and --ck-focus-ring is resolved at :root, so both need setting here. Same token
-		   as the ring below. */
+		   as the ring below. Its rounded-corners rule reads --ck-border-radius. */
 		--ck-color-focus-border: var(--ring);
-		--ck-focus-ring: 1px solid var(--ring);
+		--ck-focus-ring: 1px solid var(--input);
+		--ck-border-radius: var(--radius-md);
+		--ck-inner-shadow: 0 0 0 transparent;
 	}
 
-	:global(.ck.ck-editor__editable.ck-focused) {
+	:global(
+		.ck.ck-editor__editable.ck-editor__editable_inline.ck-focused:not(
+				.ck-editor__nested-editable
+			)
+	) {
 		outline: none;
+		border: 1px solid var(--input);
 		box-shadow: 0 0 0 2px var(--ring);
 	}
 

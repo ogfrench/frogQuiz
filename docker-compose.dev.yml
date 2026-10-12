@@ -29,9 +29,12 @@ services:
       timeout: 3s
       retries: 30
   meilisearch:
-    image: getmeili/meilisearch:v1.7
+    # The version docker-compose.yml runs in production, so CI tests what ships. A new
+    # volume, because this version cannot open the old one's files; the API rebuilds the
+    # index from Postgres on start.
+    image: getmeili/meilisearch:v1.54.3
     volumes:
-      - search:/meili_data
+      - search-v1-54:/meili_data
     ports:
       - 7700:7700
     environment:
@@ -53,4 +56,4 @@ services:
       - 6379:6379
 volumes:
   db:
-  search:
+  search-v1-54:

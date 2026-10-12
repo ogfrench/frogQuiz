@@ -25,11 +25,17 @@ from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, U
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError, BaseModel
 
-from frogquiz.auth import get_current_user, get_current_user_optional, verify_anon_secret
+from frogquiz.auth import (
+    get_current_user,
+    get_current_user_optional,
+    require_anonymous_quizzes,
+    verify_anon_secret,
+)
 from frogquiz.config import redis, settings, meilisearch
 from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
+from frogquiz.helpers.live_images import hold_images, is_live, mark_live
 from frogquiz.helpers.ratelimit import rate_limit
 from frogquiz.kahoot_importer.import_quiz import import_quiz
 import urllib.parse
@@ -37,6 +43,25 @@ import urllib.parse
 
 def _quiz_expired(quiz: Quiz) -> bool:
     return quiz.expire_at is not None and quiz.expire_at < datetime.now()
+
+
+_COUNTERS = {
+    "views": "UPDATE quiz SET views = views + 1 WHERE id = :id",
+    "plays": "UPDATE quiz SET plays = plays + 1 WHERE id = :id",
+}
+
+
+async def _count(quiz: Quiz, column: str) -> None:
+    """Add one to `views` or `plays`, in one statement that touches nothing else.
+
+    Both used to add one to the copy loaded at the start of the request and write the
+    whole row back. A save that landed in between was reverted, `updated_at` included,
+    and the editor's next save then got a 409 it had not earned (#35 row 7). The view
+    runs on every visit to a quiz page, so it took only a viewer, not a second editor.
+    Two at once also lost a count.
+    """
+    await database.execute(_COUNTERS[column], {"id": quiz.id.hex})
+    setattr(quiz, column, getattr(quiz, column) + 1)
 
 
 async def _find_own_quiz(quiz_id: uuid.UUID, user: User | None, anon_secret: str | None) -> Quiz | None:
@@ -117,8 +142,7 @@ async def get_public_quiz(quiz_id: uuid.UUID):
     if quiz is None or _quiz_expired(quiz):
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
     else:
-        quiz.views += 1
-        await quiz.update()
+        await _count(quiz, "views")
         return PublicQuizResponse(**quiz.model_dump())
 
 
@@ -144,6 +168,7 @@ async def start_quiz(
     except ValueError:
         raise HTTPException(status_code=400, detail="badly formed quiz id")
     if user is None:
+        require_anonymous_quizzes()
         await rate_limit(request, "quiz_start_anon", limit=20, window_seconds=60)
     quiz = await _find_own_quiz(quiz_id, user, x_anon_secret)
     if quiz is None and user is not None:
@@ -165,8 +190,7 @@ async def start_quiz(
             status_code=400,
             content={"detail": f"This quiz is a draft. Finish question {numbers} in the editor first."},
         )
-    quiz.plays += 1
-    await quiz.update()
+    await _count(quiz, "plays")
     game_pin = randint(100000, 999999)
     if custom_field == "":
         custom_field = None
@@ -207,6 +231,8 @@ async def start_quiz(
         code = generate_code(6)
         await redis.set(f"game:cqc:code:{code}", game_pin, ex=3600)
     await redis.set(f"game:{str(game.game_pin)}", game.model_dump_json(), ex=18000)
+    # While this game runs, its quiz's images are held rather than released (#35).
+    await mark_live(quiz.id, game.game_pin)
 
     if user is not None:
         await redis.set(f"game_pin:{user.id}:{quiz_id}", game_pin, ex=18000)
@@ -236,10 +262,22 @@ async def claim_quiz(
     quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
     if quiz is None or _quiz_expired(quiz) or not verify_anon_secret(x_anon_secret, quiz.anon_secret):
         raise HTTPException(status_code=404, detail="quiz not found")
+    # One conditional write, taken only while the quiz is still unclaimed, unexpired and
+    # holds the secret just checked. Two claims at once both passed the read above, and the
+    # second wrote over the first: the quiz went to whoever came last, and its images were
+    # counted twice (#43). The expiry sweep deletes on the opposite condition, so a claim and
+    # the sweep never both win. Only these three columns, so a save in between stays (#35).
+    won = await database.fetch_one(
+        "UPDATE quiz SET user_id = :user, anon_secret = NULL, expire_at = NULL"
+        " WHERE id = :id AND user_id IS NULL AND anon_secret = :secret"
+        " AND (expire_at IS NULL OR expire_at >= :now) RETURNING id",
+        {"user": user.id.hex, "id": quiz.id.hex, "secret": quiz.anon_secret, "now": datetime.now()},
+    )
+    if won is None:
+        raise HTTPException(status_code=404, detail="quiz not found")
     quiz.user_id = user.id
     quiz.anon_secret = None
     quiz.expire_at = None
-    await quiz.update()
     # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
     # ownerless, they counted against nobody's quota and outlived the account. Only the
     # ones already hashed are counted here; calculate_hash counts the rest when it runs,
@@ -355,9 +393,14 @@ async def delete_quiz(
     # Captured before the delete, released after: while the quiz row exists every one of
     # its images still counts as referenced, and the reference count is the whole point.
     image_ids = extract_image_ids_from_quiz(quiz)
+    live = await is_live(quiz.id)
     meilisearch.index(settings.meilisearch_index).delete_document(str(quiz.id))
     deleted = await quiz.delete()
-    await release_quiz_images(image_ids)
+    if live:
+        # A game of it is still showing these; its end releases them (#35 row 10).
+        await hold_images(quiz.id, image_ids)
+    else:
+        await release_quiz_images(image_ids)
     return deleted
 
 

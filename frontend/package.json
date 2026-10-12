@@ -1,6 +1,6 @@
 {
 	"name": "frontend",
-	"version": "0.0.1",
+	"version": "0.5.0",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "svelte-kit sync && NODE_ENV=production vite build",
@@ -17,6 +17,7 @@
 		"translations-scan": "i18next-scanner --config i18next-scanner.config.engine.cjs src/**/*.svelte"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "4.13.0",
 		"@eslint/js": "^9.38.0",
 		"@felte/reporter-tippy": "^1.1.10",
 		"@felte/validator-yup": "^1.1.4",

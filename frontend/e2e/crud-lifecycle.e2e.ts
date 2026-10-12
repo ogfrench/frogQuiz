@@ -14,6 +14,7 @@ import path from 'node:path';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { signedInContext } from './accounts';
 import { PNG, mc, saveQuiz, uploadPng } from './helpers';
+import { closeAll, liveGame } from './sockets';
 
 const DATA = path.resolve(process.cwd(), '../e2e/.data');
 const onDisk = (id: string) => fs.existsSync(path.join(DATA, 'storage', id.replaceAll('-', '')));
@@ -265,4 +266,66 @@ test('the worker processes an anonymous upload without an error', async ({ reque
 		})
 		.toBeGreaterThan(1);
 	expect(log().find((l) => l.includes(`${job}:calculate_hash failed`))).toBeUndefined();
+});
+
+// #35 rows 9 and 10. A game runs from a snapshot of the questions, but each image is
+// fetched by its id when its question comes up. Taking it out of the quiz, or deleting
+// the quiz, deleted the file at once, and the projector and the phones lost it mid-game.
+// The files are held now while a game of the quiz runs, and freed when it ends.
+const linkedTo = async (request: APIRequestContext, image: string) => {
+	const items = (await (await request.get('/api/v1/storage/list')).json()) as {
+		id: string;
+		quizzes: { id: string }[];
+	}[];
+	return items.find((i) => i.id === image)?.quizzes.map((q) => q.id) ?? [];
+};
+
+test.describe('a live game keeps its images', () => {
+	test.afterEach(() => closeAll());
+
+	test('an image taken out of the quiz stays until the game ends', async ({
+		browser,
+		request
+	}) => {
+		const { context } = await signedInContext(browser, request);
+		const as = context.request;
+		const image = await countedUpload(as);
+		const title = `Live ${Date.now()}`;
+		const id = await quizWithImage(as, title, image);
+		const endGame = await liveGame(as, id);
+
+		await edit(as, id, quiz(title));
+		// The worker has run once the image is no longer linked to the quiz.
+		await expect
+			.poll(() => linkedTo(as, image), { message: 'the worker unlinks the image' })
+			.not.toContain(id);
+		expect(onDisk(image), 'deleted while the game could still show it').toBe(true);
+
+		await endGame();
+		await expect
+			.poll(() => onDisk(image), { message: 'freed once the game ended' })
+			.toBe(false);
+		await expect.poll(() => used(as), { message: 'quota released' }).toBe(0);
+		await context.close();
+	});
+
+	test('a quiz deleted mid-game keeps its images until the game ends', async ({
+		browser,
+		request
+	}) => {
+		const { context } = await signedInContext(browser, request);
+		const as = context.request;
+		const image = await countedUpload(as);
+		const id = await quizWithImage(as, `Deleted live ${Date.now()}`, image);
+		const endGame = await liveGame(as, id);
+
+		expect((await as.delete(`/api/v1/quiz/delete/${id}`)).status()).toBe(200);
+		expect(onDisk(image), 'deleted while the game could still show it').toBe(true);
+
+		await endGame();
+		await expect
+			.poll(() => onDisk(image), { message: 'freed once the game ended' })
+			.toBe(false);
+		await context.close();
+	});
 });

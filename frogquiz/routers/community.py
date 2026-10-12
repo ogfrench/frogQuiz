@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from frogquiz.auth import get_current_user
 from frogquiz.config import settings
+from frogquiz.db import database
 from frogquiz.db.models import User, Quiz, Rating
 
 # Signed in only, like search: these list a person's public quizzes (5 Oct).
@@ -75,12 +76,13 @@ async def rate_quiz(data: RateQuizInput, quiz_id: uuid.UUID, user: User = Depend
         positive = False
     if rating is not None and rating.positive == positive:
         raise HTTPException(status_code=409, detail="Rating already submitted")
-    elif rating is not None and rating.positive != positive:
+    likes = dislikes = 0
+    if rating is not None and rating.positive != positive:
         await rating.delete()
         if rating.positive:
-            quiz.likes -= 1
+            likes -= 1
         else:
-            quiz.dislikes -= 1
+            dislikes -= 1
     rating = Rating(
         id=uuid.uuid4(),
         user=user,
@@ -90,7 +92,13 @@ async def rate_quiz(data: RateQuizInput, quiz_id: uuid.UUID, user: User = Depend
     )
     await rating.save()
     if positive:
-        quiz.likes += 1
+        likes += 1
     else:
-        quiz.dislikes += 1
-    await quiz.update()
+        dislikes += 1
+    # One statement on the two counts. Written whole, the row loaded above put back any
+    # save that landed in between, and two ratings at once lost one (#35 row 7).
+    await database.execute(
+        "UPDATE quiz SET likes = GREATEST(0, likes + :likes), dislikes = GREATEST(0, dislikes + :dislikes)"
+        " WHERE id = :id",
+        {"likes": likes, "dislikes": dislikes, "id": quiz.id.hex},
+    )

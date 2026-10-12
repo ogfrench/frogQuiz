@@ -71,11 +71,12 @@ test('the question timer is composited, not laid out', async ({ browser, request
 	test.setTimeout(3 * 60_000);
 	const { host, hostCtx, ctx } = await toPodium(browser, request, {});
 
-	// This bar redraws every second of every question, full width of a projector.
-	// Animating `width` would make the browser lay the page out for each frame.
+	// This bar redraws every second of every question, most of the width of a projector.
+	// Animating `width` would make the browser lay the page out for each frame. The
+	// progressbar is the track; what moves is the fill inside it.
 	const bar = host.getByRole('progressbar', { name: 'Time remaining' });
 	const style = await bar.evaluate((el) => {
-		const s = getComputedStyle(el);
+		const s = getComputedStyle(el.firstElementChild!);
 		return { property: s.transitionProperty, transform: s.transform };
 	});
 	// Tailwind's `transition-transform` expands to the four transform properties, so this

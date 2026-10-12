@@ -401,7 +401,8 @@ no per-answer time and no per-player sheet.
 
 Nothing else is stored. `SAVE_RESULTS_ENABLED` is false, `/results` and the Analytics modal
 are hidden, so in practice the `GameResults` table is never written (D4,
-`docs/feature-inventory.md`). The server half still works: `save_quiz` writes the row, and
+`docs/feature-inventory.md`). The server half still works: `save_quiz` writes the row for a signed-in host (an anonymous
+host is refused since #52), and
 `account.e2e.ts` tests it, so turning results back on is the flag plus a page to read them.
 The game's Redis keys live two hours from the last change. If the host closes the tab without
 downloading, the data is gone. The Save button is also hidden for anonymous hosts because the

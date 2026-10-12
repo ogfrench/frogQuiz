@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+
+# The end-to-end suite, which until V1 ran only on whoever's machine ran it: e2e/run.sh
+# starts the whole stack (a throwaway Postgres cluster, Redis or fakeredis, Meilisearch,
+# the API, the worker and Vite) and drives Playwright's Chromium against it. The runner
+# image ships the Postgres binaries; run.sh fetches Meilisearch and falls back to fakeredis.
+# About 20 minutes, so it runs on pull requests and on demand, not on every push.
+name: E2E
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "frogquiz/**"
+      - "migrations/**"
+      - "e2e/**"
+      # run.sh reads the Meilisearch version from it.
+      - "docker-compose.yml"
+      - "Pipfile.lock"
+      - ".github/workflows/e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install pipenv
+        run: pipx install pipenv
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: "pipenv"
+      - name: Backend dependencies
+        run: pipenv sync --dev
+
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          version: 10.24.0
+      - name: Frontend dependencies
+        working-directory: ./frontend
+        run: pnpm install
+      - name: Chromium for Playwright
+        working-directory: ./frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run the suite
+        env:
+          E2E_BROWSER: chromium
+        run: bash e2e/run.sh
+
+      # Production runs with quizzes without an account off (#55). The pass above has it on,
+      # which most specs need to host without signing in. These cover the off side. stop.sh
+      # first: on Linux, stopping pnpm can leave its vite child holding the port.
+      - name: Run the specs for the production setting
+        env:
+          E2E_BROWSER: chromium
+          ANONYMOUS_QUIZZES_ENABLED: "False"
+        run: |
+          bash e2e/stop.sh || true
+          bash e2e/run.sh e2e/anon-off.e2e.ts e2e/account-game.e2e.ts e2e/sign-in.e2e.ts
+
+      - name: Keep the report and logs of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-report
+          path: |
+            e2e/.data/report
+            e2e/.data/playwright
+            e2e/.data/*.log
+            e2e/.data/pg/pg.log
+          retention-days: 14
+          # e2e/.data is a dot directory, which upload-artifact skips unless told.
+          include-hidden-files: true

@@ -1,5 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
@@ -9,28 +10,43 @@ SPDX-License-Identifier: MPL-2.0
 		progress: number;
 		text: string;
 		color: string;
+		/** Any CSS length. Every caller uses 120px; the projector passed a larger one until
+		 * its timer became the drain bar. */
+		size?: string;
 	}
 
-	let { progress, text, color }: Props = $props();
-	let angle = $derived(360 * progress);
+	let { progress, text, color, size = '120px' }: Props = $props();
+	// `progress` is the share of the time spent. The colored arc is the time left, so the
+	// ring empties as the host's drain bar does (François, 11 Oct). It used to fill red
+	// instead, and the phone and the projector counted in opposite directions.
+	let angle = $derived(360 * (1 - progress));
 
-	// Adapt the logic according to the approach
-	let background = $derived(`radial-gradient(white 50%, transparent 51%),
-	    conic-gradient(transparent 0deg ${angle}deg, gainsboro ${angle}deg 360deg),
-	    conic-gradient(${color} 0deg, ${color} 90deg, ${color} 180deg, ${color});`);
-
-	let cssVarStyles = $derived(`--background:${background}`);
+	// Theme tokens rather than white, gainsboro and black: in dark mode the hardcoded white
+	// disc sat on the phone like a sticker. The disc is the page ground, the time spent is
+	// the muted token, and the number is the foreground.
+	// No trailing `;`: `style:` sets the first value through the attribute, which shrugs
+	// it off, and every later one through setProperty, which rejects the whole value. The
+	// ring then froze on its first frame while the number kept counting.
+	let background = $derived(`radial-gradient(var(--background) 58%, transparent 59%),
+	    conic-gradient(${color} 0deg ${angle}deg, var(--muted) ${angle}deg 360deg)`);
 </script>
 
-<div id="progress-circle" style={cssVarStyles} class="rounded-full transition-all text-4xl text-black">
+<div
+	id="progress-circle"
+	style:--background-ring={background}
+	style:--size={size}
+	class="text-foreground rounded-full font-semibold tabular-nums transition-all"
+>
 	{text}
 </div>
 
 <style>
 	#progress-circle {
-		background: var(--background);
-		width: 120px;
-		height: 120px;
+		background: var(--background-ring);
+		width: var(--size);
+		height: var(--size);
+		/* The number scales with the ring: a third of its width. */
+		font-size: calc(var(--size) / 3);
 		transition: all 500ms ease-in;
 		will-change: transform;
 		display: flex;

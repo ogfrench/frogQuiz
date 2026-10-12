@@ -3,10 +3,16 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-// Open to everyone. Signed out, the quiz is saved without an account and this browser
-// keeps its ownership secret. This used to need `?anon=true`, and without it sent you
-// to the login page -- so My Quizzes' Create button walled off exactly the people the
-// signed-out My Quizzes page is for. Old `?anon=true` links still work; it is ignored.
-export async function load() {
+import { redirect } from '@sveltejs/kit';
+import { createGate } from '$lib/create_gate';
+
+// Signed in, this is the editor for a new quiz. Signed out, it depends on the API's
+// `anonymous_quizzes_enabled` (#55, off by default), which the root layout reads: on, the
+// quiz is saved without an account and this browser keeps its secret; off, sign in first
+// and come back here. Old `?anon=true` links still work; it is ignored.
+export async function load({ parent, url }) {
+	const { email, anonymousQuizzes } = await parent();
+	const target = createGate(Boolean(email), anonymousQuizzes, url.search);
+	if (target) redirect(303, target);
 	return {};
 }
