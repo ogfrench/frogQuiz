@@ -301,6 +301,10 @@ own auth path, and a registration/recovery flow that was just made to work end t
 The account-free path people actually wanted already exists — `/create?anon=true` covers
 create, host, share a PIN and play without signing up.
 
+**Superseded on 11 Oct by D23 (#55):** making, uploading and hosting now need a team
+account, behind `anonymous_quizzes_enabled`, off in production. Players still join with
+none. What follows records the earlier call, which the setting turned on restores.
+
 So the boundary sits at **permanence**, not usage:
 
 - **No account** to create a quiz, host it, share the PIN, or play.
@@ -348,8 +352,9 @@ not seen it yet.
   unique whatever the case, fixed for good as C13 decided), and that is registration.
 - **Who can see what.** Discover, `/api/v1/search/`, the sitemap and the community listings
   need a signed-in account. With sign-in limited to the team's domains, that makes "public"
-  mean "the team", which closes open decision 6 below. Anonymous create, host and play are
-  unchanged, and so are unlisted links.
+  mean "the team", which closes open decision 6 below. Anonymous create, host and play were
+  unchanged by this, and so were unlisted links. Since D23 (11 Oct) creating and hosting
+  need an account unless `anonymous_quizzes_enabled` is on; playing never does.
 - **What was hidden, not removed.** Password login, registration, reset, resend-confirmation
   and change, behind `ENABLE_PASSWORD_LOGIN` (off). The old pages redirect to sign-in; the
   change-password card is behind `PASSWORDS` in `routes/account/settings/+page.svelte`; the

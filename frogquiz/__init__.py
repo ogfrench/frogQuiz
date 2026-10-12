@@ -64,18 +64,28 @@ async def startup() -> None:
     # until someone can't get back into their account.
     if not settings.mail_configured:
         logging.getLogger("frogquiz").warning(
-            "No mail server configured (MAIL_SERVER/MAIL_ADDRESS). %s",
-            (
-                "Nobody can sign in: sign-in is by an emailed link or code."
-                if not settings.enable_password_login
-                else "Password recovery is unavailable%s."
-                % (
-                    ""
-                    if settings.skip_email_verification
-                    else ", and registration will fail because SKIP_EMAIL_VERIFICATION is False"
-                )
-            ),
+            "No mail server configured (MAIL_SERVER/MAIL_ADDRESS). %s", no_mail_warning(settings)
         )
+
+
+def no_mail_warning(s) -> str:
+    """What still works without mail: the emailed link and code cannot be sent."""
+    if s.enable_password_login:
+        return "Password recovery is unavailable%s." % (
+            "" if s.skip_email_verification else ", and registration will fail because SKIP_EMAIL_VERIFICATION is False"
+        )
+    providers = [
+        name
+        for name, on in (
+            ("Google", s.google_client_id),
+            ("GitHub", s.github_client_id),
+            ("OpenID", s.custom_openid_provider),
+        )
+        if on
+    ]
+    if providers:
+        return "Only %s sign-in works: the emailed link and code cannot be sent." % ", ".join(providers)
+    return "Nobody can sign in: sign-in is by an emailed link or code."
 
 
 @app.on_event("shutdown")

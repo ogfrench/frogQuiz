@@ -4,6 +4,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 step 3b, from the audit of 11 Oct
+
+- **The interface no longer promises quizzes without an account when they are off (#55):** with the setting off, which is production, the home page said "No account needed", signed-out My Quizzes said "Quizzes you made in this browser", and Discover's empty state said a quiz could be made without an account. The root layout now reads `/api/v1/utils/config` and the copy follows it. With the setting off, the home page says making and hosting need a team account, and signed-out My Quizzes is a sign-in prompt. Discover's line no longer names a rule.
+- **`/create` keeps its query through sign-in:** `/create?title=...` from the command palette came back from sign-in as a bare `/create`. The config read now gives up after 2 seconds, and no answer counts as off.
+- **The e2e suite now runs the production setting:** `anon-off.e2e.ts` covers the signed-out side with the setting off. The e2e workflow runs it, `account-game` and `sign-in` in a second pass with `ANONYMOUS_QUIZZES_ENABLED=False`, and `e2e/e2e.env` now takes the value from the environment. The "keep this quiz" sign-in test skips in that pass, since it starts from a quiz made without an account.
+- **The daily ceiling's test passed only because of test order:** `test_ratelimit.py` left a count in the ceiling's Redis bucket, and the ceiling's test passed only because `test_server.py` flushed Redis in between. Run straight after it, the test failed. Both tests now delete the bucket. The 401s for save and finish with the setting off are also checked for "Sign in", since an unknown edit id gets a 401 too.
+- **The boot warning without mail no longer says nobody can sign in when an OAuth provider is set:** it now names the providers that still work.
+- **The setting is read once a minute, not on every page:** the root layout caches it per server instance, so a room of phones opening `/play` does not each wait on the API.
+- **`docs/anonymous-vs-account.md`:** a signed-in user hosts any public quiz, not only their own; the tests line names `anon-off.e2e.ts`; claim case 5 says its test checks the API's 404, not the message.
+- **Docs that still said a quiz needs no account:** `MVP.md` §1 and `docs/mvp-scope.md` now say making and hosting need a team account since D23, with the old text kept as the earlier call. `MVP.md` D37 records François's answer on the answered count: a player who answered and then left drops out of both numbers.
+
 ### V1 readiness, from the review of 11 Oct
 
 - **The worker could not see the uploads (older than V1):** only the `api` service mounted `./uploads`, so the worker read and deleted an empty folder of its own. On the VM no upload was ever hashed, given a thumbnail or counted against its owner's quota, and every image the worker freed (the sweeps, an edit, the end of a game) lost its row but kept its file. The worker now mounts the same folder, and `tests/test_compose.py` fails if the two drift apart. The e2e stack runs both on one folder, which is why it never showed.

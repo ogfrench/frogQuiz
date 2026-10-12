@@ -79,8 +79,8 @@ SPDX-License-Identifier: MPL-2.0
 		{:else if data.hits.length === 0}
 			<div class="mt-10 text-center">
 				<p class="text-lg font-medium">{$t('search_page.nothing_here')}</p>
-				<!-- The old empty state was hardcoded English pointing at /import, which
-				     needs an account. Anyone can make a quiz without one. -->
+				<!-- The old empty state was hardcoded English pointing at /import. The line
+				     names no account rule: that depends on a setting (#55). -->
 				<p class="text-muted-foreground mt-2 text-sm">
 					{$t('explore_page.nothing_here_detail')}
 				</p>

@@ -31,11 +31,15 @@ file is the plan for getting from here to something we can share, and it superse
 > **Create → Edit → Start → Play → Finish → Return**, reachable from three surfaces —
 > **Discover | My Quizzes | Join** — that look the same whether you are signed in or not.
 > Signing in adds **My Account** and makes quizzes permanent.
+>
+> **Since 11 Oct (D23, #55), making, uploading and hosting need a team account**, behind
+> the setting `anonymous_quizzes_enabled`, off in production. Players still join by PIN
+> with none. The signed-out column and the section below describe the setting turned on.
 
 | Surface | Signed out | Signed in |
 | --- | --- | --- |
 | **Discover** (`/explore`) | Browse and search public quizzes | Same |
-| **My Quizzes** | Quizzes this browser created: create, edit, start, delete, see expiry | Quizzes on the account: same actions, plus claim anything this browser made |
+| **My Quizzes** | Setting off (production): a sign-in prompt. On: quizzes this browser created, to create, edit, start, delete, see expiry | Quizzes on the account: same actions, plus claim anything this browser made |
 | **Join** (`/play`) | PIN → nickname → play | Same |
 | **My Account** | — (Sign in / Register instead) | Profile, password, sessions, delete account, sign out |
 
@@ -223,6 +227,7 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 | D34 | The host scoreboard and results cards are white on the dark projector | **F (2026-10-11): keep the white cards.** They read over any quiz background colour or image; recorded as an exception in step 5's style note | — | ☑ |
 | D35 | How V1 ships | **F (2026-10-11): in releases, PR by PR.** v0.5 is steps 0 to 3 (PR #57), v0.8 step 4, v0.9 step 5, v1.0 step 6. Each is its own PR from `v1`, restarted from master after the last merge. Master as of 11 Oct (`8e69034`) is tagged `mvp`. Replaces D22's single PR | — | ☑ |
 | D36 | Ceilings on quizzes made without an account (#55), for when D23's setting is on | **F (2026-10-11): 20 new ones per address a day and 1,000 alive at once**, both settings. The 30-day window stays; they are always unlisted. The matrix is [`docs/anonymous-vs-account.md`](docs/anonymous-vs-account.md) | — | ☑ |
+| D37 | The host's "N of M answered" when a player leaves | **F (2026-10-12): it counts only the players still in the game**, so a player who answered and then left drops out of both numbers | — | ☑ |
 
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
@@ -233,7 +238,7 @@ signature. **D16 and D18 still need Gonçalo's tick**: both are François's call
 calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
 the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
 
-**From 11 Oct (D31) François decides alone**, so D22 to D36 carry no G column, and the
+**From 11 Oct (D31) François decides alone**, so D22 to D37 carry no G column, and the
 open G ticks above (D16 to D21) are no longer a gate. They stay as a record.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on

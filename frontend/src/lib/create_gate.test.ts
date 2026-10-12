@@ -17,4 +17,9 @@ describe('createGate', () => {
 		expect(createGate(false, false)).toBe('/account/login?returnTo=%2Fcreate');
 		expect(createGate(false, null)).toBe('/account/login?returnTo=%2Fcreate');
 	});
+	it('keeps the query, so a title from the command palette survives sign-in', () => {
+		expect(createGate(false, false, '?title=Rivers & lakes')).toBe(
+			'/account/login?returnTo=%2Fcreate%3Ftitle%3DRivers%20%26%20lakes'
+		);
+	});
 });

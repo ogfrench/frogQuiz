@@ -169,6 +169,9 @@ test('Discover sends a signed-out visitor to sign in, and the link brings them b
 });
 
 test('"keep this quiz" signs you up and brings you back to the quiz', async ({ page, request }) => {
+	// It starts from a quiz made without an account, which only exists with #55's setting on.
+	const config = await (await request.get('/api/v1/utils/config')).json();
+	test.skip(!config.anonymous_quizzes_enabled, 'needs ANONYMOUS_QUIZZES_ENABLED on');
 	const saved = await saveQuiz(request, {
 		title: `Keep me ${Date.now()}`,
 		description: 'e2e',

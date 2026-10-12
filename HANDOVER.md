@@ -238,7 +238,7 @@ walkthrough; its counts are stale, so use these:
 | Backend, full | `./run_tests.sh` (Podman or Docker for Postgres, Redis, Meilisearch) | 287 passed, 1 skipped, on a fresh database with Redis flushed |
 | e2e, full | `bash e2e/run.sh` | All green. 46 spec files. Known bugs are `test.fail(...)` markers; a test that turns red means its bug is fixed, so delete the marker |
 | e2e, one spec | `bash e2e/run.sh e2e/account-game.e2e.ts` | |
-| Setting off | restart the API with `ANONYMOUS_QUIZZES_ENABLED=False`. `e2e/e2e.env` sets it True; edit it locally and do not commit that | `/create` 303 to sign-in, `/editor/start` 401 |
+| Setting off | `ANONYMOUS_QUIZZES_ENABLED=False bash e2e/run.sh e2e/anon-off.e2e.ts e2e/account-game.e2e.ts e2e/sign-in.e2e.ts`. `e2e/e2e.env` defaults it to True | `/create` 303 to sign-in, `/editor/start` 401 |
 | Stack left up | `KEEP_UP=1 bash e2e/run.sh --list`, then `bash e2e/stop.sh` | App 3000, API 8010 |
 
 The cloud session ran the backend suite against the e2e stack's own infrastructure with a
@@ -276,10 +276,10 @@ in the repo. Do not source `e2e/e2e.env` for the backend suite: it flips
 | What changed, in plain terms | `CHANGELOG.md` (`## Unreleased`) |
 | Open issues | #56 roadmap; #55, #53, #52, #50, #45, #44, #43, #42, #41, #40, #39, #38, #35, #34, #33; #22 (VM, by about 25 Oct); #60 and #61 and #4 after V1. #3 is already closed. |
 
-### One default still to confirm with François
+### The answered count: confirmed
 
 The answered count counts only players still in the game: a player who answered and then left
-drops out of both numbers.
+drops out of both numbers. François confirmed it on 12 Oct (D37).
 
 ## Picking this up on the laptop (10 Oct)
 

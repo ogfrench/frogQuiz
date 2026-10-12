@@ -48,6 +48,9 @@ SPDX-License-Identifier: MPL-2.0
 	const { t } = getLocalization();
 
 	const signed_in = $derived(Boolean(data.email));
+	// #55: with quizzes without an account off (production), signed out this page is a
+	// sign-in prompt. Quizzes this browser made while it was on still list, with their caution.
+	const anonymous_on = $derived(data.anonymousQuizzes === true);
 
 	// Anything the list needs; account rows come from /quiz/list, browser rows from
 	// /quiz/get/public, and both carry these.
@@ -295,13 +298,19 @@ SPDX-License-Identifier: MPL-2.0
 				<p class="text-muted-foreground mt-1 text-sm">
 					{signed_in
 						? $t('my_quizzes.subtitle_signed_in')
-						: $t('my_quizzes.subtitle_signed_out')}
+						: anonymous_on
+							? $t('my_quizzes.subtitle_signed_out')
+							: $t('my_quizzes.subtitle_sign_in')}
 				</p>
 			</div>
-			<Button href="/create" size="lg">
-				<Plus />
-				{$t('dashboard.create_quiz')}
-			</Button>
+			<!-- Signed out with the setting off, Create only leads to sign-in, which the empty
+			     state already offers: one strong button, not two. -->
+			{#if signed_in || anonymous_on}
+				<Button href="/create" size="lg">
+					<Plus />
+					{$t('dashboard.create_quiz')}
+				</Button>
+			{/if}
 		</header>
 
 		{#if signed_in}
@@ -389,6 +398,17 @@ SPDX-License-Identifier: MPL-2.0
 			{#if browser_quizzes === null}
 				<div class="text-muted-foreground mt-16 flex justify-center">
 					<LoaderCircle class="size-8 animate-spin" aria-label="Loading" />
+				</div>
+			{:else if browser_quizzes.length === 0 && !anonymous_on}
+				<div
+					class="border-border mt-10 flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center"
+				>
+					<p class="text-muted-foreground max-w-sm text-balance">
+						{$t('my_quizzes.empty_sign_in')}
+					</p>
+					<Button href="/account/login?returnTo=%2Fmy-quizzes">
+						{$t('words.login')}
+					</Button>
 				</div>
 			{:else if browser_quizzes.length === 0}
 				<div

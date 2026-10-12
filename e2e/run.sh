@@ -150,6 +150,9 @@ wait_http() { # url, name
 }
 
 for p in $PG_PORT $REDIS_PORT $MEILI_PORT $MAIL_PORT_LOCAL $API_PORT $WEB_PORT; do
+  # A stack stopped a moment ago (the e2e workflow runs two passes in one job) can hold a
+  # port for a few seconds while its processes exit.
+  for _ in $(seq 1 15); do port_busy "$p" || break; sleep 1; done
   port_busy "$p" && die "port $p is already in use (a previous run with KEEP_UP=1?)"
 done
 

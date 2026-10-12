@@ -35,7 +35,7 @@ SPDX-License-Identifier: MPL-2.0
 
 ## Decisions (François, 10 and 11 Oct)
 
-They are also recorded in `MVP.md` §4.0, as D22 to D36.
+They are also recorded in `MVP.md` §4.0, as D22 to D37.
 
 | Issue | Decision |
 | --- | --- |
@@ -58,6 +58,7 @@ They are also recorded in `MVP.md` §4.0, as D22 to D36.
 | Scoreboard | The host's scoreboard and results cards stay white on the dark projector (11 Oct, D34). |
 | Hotfix | None (11 Oct). The audit's `/live` fixes reach master with V1, not ahead of it on their own branch. |
 | Use | The app is not in use yet (11 Oct): no real users and no real data. |
+| Answered count | It counts only the players still in the game: a player who answered and then left drops out of both numbers (12 Oct, D37). |
 | Mail | Sign-in by emailed link works in production, and mail is trusted: no emergency sign-in (11 Oct). |
 | Backups | None for now (11 Oct). Picked up after V1: #61. |
 | Monitoring | Knowing when the app is down is picked up after V1: #60 (11 Oct). |
@@ -318,7 +319,7 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
     - The question card's inner padding is uneven at 390 and 834.
     - The conflict dialog's wording.
   - **François (11 Oct):** no hotfix; the `/live` fixes reach master with V1.
-  - **A default, not yet confirmed by François:** the answered count counts only the players still in the game.
+  - **A default, confirmed by François on 12 Oct (D37):** the answered count counts only the players still in the game.
   - **Re-plan:** 3b as planned, plus the editor's version check. Steps 4 to 6 unchanged.
   - **Lesson:** a variant passed as a class merges over the component's own default variant, and whatever the second one does not set survives. Pass variants as props.
 - **11 Oct, the V1 review (François asked what was missed):**

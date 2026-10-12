@@ -26,7 +26,7 @@ because most specs host without an account.
 | Save or finish a quiz | 401, also for an editor opened while the setting was on | Yes; a new quiz is refused with 429 past either ceiling | Yes |
 | Edit an existing quiz | 401 | With the quiz's secret, until it expires; the ceilings never apply | Own quizzes |
 | Upload an image | 401 | Yes, within the anonymous size limits (`docs/uploads.md`) | Yes, within the account quota |
-| Host a game (`/quiz/start`) | 401 | With the quiz's secret | Own quizzes |
+| Host a game (`/quiz/start`) | 401 | With the quiz's secret | Own quizzes and any public one |
 | Read a quiz back with its secret | Yes, until it expires | Yes, until it expires | — |
 | Claim a quiz into an account | — (needs an account) | — (needs an account) | Yes, with the secret, until it expires |
 | Delete a quiz | With its secret | With its secret | Own quizzes |
@@ -46,8 +46,10 @@ because most specs host without an account.
 They stop creating, never editing: a quiz that exists can always be saved again.
 
 **Tests:** `frogquiz/tests/test_anonymous_flag.py` (every 401, the config endpoint, both
-ceilings, a signed-in user with the setting off) and `frontend/src/lib/create_gate.test.ts`
-(the `/create` redirect).
+ceilings, a signed-in user with the setting off), `frontend/src/lib/create_gate.test.ts`
+(where the gate sends a visitor), and `frontend/e2e/anon-off.e2e.ts` (the `/create` redirect
+through the real loader, and the signed-out copy, on a stack with the setting off; the e2e
+workflow runs it in a second pass).
 
 ## Claim cases (#43)
 
@@ -65,7 +67,7 @@ to claim. So the cases below with no new test have a written outcome instead (11
 | 2 | Another browser | No claim button: the secret is only in the browser that made the quiz | `my-quizzes/+page.svelte` returns before the request with no secret |
 | 3 | Site data cleared | Same as 2. A request with a wrong secret is a 404 and changes nothing | `test_anonymous_quiz.py::test_claim_wrong_secret` |
 | 4 | Claimed by A, then tried by B | 404, A keeps it | `test_anonymous_quiz.py::test_claimed_quiz_no_longer_usable_with_old_secret` |
-| 5 | Two tabs, the second claims after the first | 404; the tab shows "couldn't claim" | `account.e2e.ts`, "claiming twice" is 404 |
+| 5 | Two tabs, the second claims after the first | 404; the tab shows "couldn't claim" | `account.e2e.ts`, "claiming twice" is 404. It asserts the API's 404, not the message in the tab |
 | 6 | After 30 days | 404, and the sweep deletes it | `test_claim_races.py`: a claim on a quiz that expired while it ran takes nothing; the sweep still deletes what nobody claimed |
 | 7 | A mail scanner opens the sign-in link | No effect on any quiz: claiming is a button pressed after sign-in, never a link. The sign-in link is not single-use, so a scanner does not use it up (finding 4 of the security audit, post-V1) | Written outcome |
 | 8 | Signing in between making and claiming | The secret survives sign-in in the same browser, so the button appears once signed in. Nothing is claimed by itself | Written outcome |

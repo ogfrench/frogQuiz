@@ -60,6 +60,17 @@ jobs:
           E2E_BROWSER: chromium
         run: bash e2e/run.sh
 
+      # Production runs with quizzes without an account off (#55). The pass above has it on,
+      # which most specs need to host without signing in. These cover the off side. stop.sh
+      # first: on Linux, stopping pnpm can leave its vite child holding the port.
+      - name: Run the specs for the production setting
+        env:
+          E2E_BROWSER: chromium
+          ANONYMOUS_QUIZZES_ENABLED: "False"
+        run: |
+          bash e2e/stop.sh || true
+          bash e2e/run.sh e2e/anon-off.e2e.ts e2e/account-game.e2e.ts e2e/sign-in.e2e.ts
+
       - name: Keep the report and logs of a failed run
         if: failure()
         uses: actions/upload-artifact@v6

@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { page } from '$app/state';
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
 
+	let { data } = $props();
 	const { t } = getLocalization();
 
 	// Open Graph requires absolute URLs. The Vite asset import resolves to a
@@ -97,8 +98,8 @@ SPDX-License-Identifier: MPL-2.0
 
 			<!-- Hosting is the other half of the product, not a footnote: these were three
 			     muted text links under the PIN box, which put making a quiz below logging in
-			     in the hierarchy even though no account is needed for it. Two secondary
-			     buttons instead, the same weight as Log in in the navbar. -->
+			     in the hierarchy. Two secondary buttons instead, the same weight as Log in in
+			     the navbar. -->
 			<div class="mt-7 flex items-center gap-3" aria-hidden="true">
 				<span class="bg-border h-px flex-1"></span>
 				<span class="text-muted-foreground text-xs font-medium tracking-wider uppercase">
@@ -117,7 +118,10 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 
 			<p class="text-muted-foreground mt-4 text-center text-xs text-balance">
-				{$t('index_page.create_hint')}
+				<!-- #55: the 30-day promise holds only while quizzes without an account are on. -->
+				{data.anonymousQuizzes
+					? $t('index_page.create_hint')
+					: $t('index_page.create_hint_account')}
 			</p>
 		</div>
 	</div>

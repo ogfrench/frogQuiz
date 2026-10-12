@@ -9,7 +9,8 @@
         "host_cta": "Go to your quizzes",
         "create_anon": "Create a quiz without an account",
         "create_cta": "Create a quiz",
-        "create_hint": "No account needed. Quizzes made without one stay in this browser and are deleted after 30 days."
+        "create_hint": "No account needed. Quizzes made without one stay in this browser and are deleted after 30 days.",
+        "create_hint_account": "Making and hosting a quiz needs a team account. Players only need the PIN."
     },
     "overview_page": {
         "created_at": "Created at",
@@ -494,7 +495,7 @@
         "made_by": "Made by",
         "imported_by": "Imported by",
         "search_failed": "Search is unavailable right now. Try again in a moment.",
-        "nothing_here_detail": "No quiz matches that. You can make one without an account.",
+        "nothing_here_detail": "No quiz matches that. Try another word, or make one.",
         "create_one": "Create a quiz"
     },
     "search_page": {
@@ -684,6 +685,8 @@
         "title": "My Quizzes",
         "subtitle_signed_in": "Quizzes saved to your account.",
         "subtitle_signed_out": "Quizzes you made in this browser.",
+        "subtitle_sign_in": "Sign in to see your quizzes and make new ones.",
+        "empty_sign_in": "Making a quiz needs a team account.",
         "signed_out_notice": "These quizzes are linked to this browser. If you clear your browser data or switch device you'll lose access to them, and they're deleted after 30 days.",
         "create_account": "Create a free account to keep them",
         "on_this_browser": "On this browser",
