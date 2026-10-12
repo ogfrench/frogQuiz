@@ -157,9 +157,10 @@ test("the host's press during the answers opens the standings at once", async ({
 
 	// A second press goes on, and the next question's answers start from the answers again.
 	await page.getByRole('button', { name: /Next question/ }).click();
+	// Answer only once the question is open: sent before, the server drops them (it did on CI).
+	await expect(page.getByRole('heading', { name: 'Capital of Spain?' })).toBeVisible();
 	answerRound(players, 1, 2);
 	await expect(card(page)).toBeVisible({ timeout: 20_000 });
-	await expect(page.getByRole('heading', { name: 'Capital of Spain?' })).toBeVisible();
 	await expect(card(page)).toHaveAttribute('data-standings', 'false');
 	await expect(standingsHeading(page)).toHaveCount(0);
 });

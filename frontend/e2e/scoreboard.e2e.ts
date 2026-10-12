@@ -119,12 +119,14 @@ test('one press per question: answers, then the scoreboard, by themselves; none 
 	await answersShown(host, 'Where do tadpoles live?');
 	await expect(scoreboard(host)).toBeVisible({ timeout: 6000 });
 	// Five rows, the rest counted, and the movement called out: Eve overtook Bo.
-	await expect(host.getByRole('listitem')).toHaveCount(5);
+	// The standings' rows: the answers share the card now (round_results.svelte).
+	await expect(host.getByTestId('standings').getByRole('listitem')).toHaveCount(5);
 	await expect(host.getByText(/and 1 more player/)).toBeVisible();
 	// Screen-reader text, not an aria-label: a label on a plain span is never read. Who
 	// moved, not how many: since Kahoot's curve (5 Oct) scores sit between 500 and 1000, so
 	// Cy's one late answer can pass Bo too, depending on how fast the phones tapped.
-	const row = (name: string) => host.getByRole('listitem').filter({ hasText: name });
+	const row = (name: string) =>
+		host.getByTestId('standings').getByRole('listitem').filter({ hasText: name });
 	await expect(row('Eve').getByText(/^up \d/)).toHaveCount(1);
 	await expect(row('Bo').getByText(/^down \d/)).toHaveCount(1);
 
