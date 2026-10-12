@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### After the v0.8 release, 12 Oct
+
+- **Deployed v0.8:** #62 merged as `aac0751` and tagged `v0.8`. The VM pulled it with `docker compose up -d` (the api and the worker came up healthy; Redis was not recreated), seeded the five examples, and answers ok on `/api/v1/health`. Netlify published it and calls `api.frogquiz.xyz`.
+
 ## v0.8, 12 Oct 2026
 
 V1 step 4: Play in the editor (#40), the examples and Copy (#39), the health check (#60), and the API on `api.frogquiz.xyz`.
