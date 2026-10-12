@@ -170,7 +170,8 @@ async def import_quiz(file: UploadFile = File(), user: User = Depends(get_curren
         await storage.upload(file_name=file_id.hex, file_data=img_data, mime_type=mime_type)
         await file_obj.save()
         await arq.enqueue_job("calculate_hash", file_id.hex)
-        image = file_id.hex
+        # The dashed form, as the upload route returns it: the orphan sweep compares strings.
+        image = str(file_id)
         image_urls[index] = image
     quiz_dict["created_at"] = datetime.fromisoformat(quiz_dict["created_at"])
     quiz_dict["updated_at"] = datetime.fromisoformat(quiz_dict["updated_at"])
