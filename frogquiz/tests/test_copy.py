@@ -13,12 +13,13 @@ import copy
 import json
 import os
 import uuid
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
 from frogquiz.config import settings as get_settings
-from frogquiz.db.models import Quiz, User
+from frogquiz.db.models import Quiz, StorageItem, User
 from frogquiz.examples import EXAMPLES_EMAIL, EXAMPLES_USERNAME
 from frogquiz.examples.seed import example_id, seed
 from frogquiz.tests import test_client, example_quiz  # noqa: F401
@@ -103,7 +104,7 @@ def test_a_public_quiz_copies_to_anyone_signed_in_but_not_signed_out(test_client
 
 
 def test_copied_images_are_the_copiers_and_outlive_the_original(test_client: TestClient, people):  # noqa: F811
-    from frogquiz.worker.storage import calculate_hash
+    from frogquiz.worker.storage import calculate_hash, clean_orphaned_uploads
 
     ana, ben = people
     image = _upload(test_client, ana)
@@ -124,6 +125,15 @@ def test_copied_images_are_the_copiers_and_outlive_the_original(test_client: Tes
     assert after - before == len(PNG)
 
     assert test_client.delete(f"/api/v1/quiz/delete/{original}", cookies=ana).status_code == 200
+    assert _on_disk(copied)
+
+    # The orphan sweep reads the quiz JSON by string: the copy's image must read as in use.
+    async def age_and_sweep():
+        await StorageItem.objects.filter(id=uuid.UUID(copied)).update(uploaded_at=datetime.now() - timedelta(days=2))
+        await clean_orphaned_uploads({})
+        return await StorageItem.objects.get(id=uuid.UUID(copied))
+
+    assert test_client.portal.call(age_and_sweep).deleted_at is None
     assert _on_disk(copied)
 
 

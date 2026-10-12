@@ -33,6 +33,9 @@ def example_id(slug: str) -> uuid.UUID:
 async def seed(folder: Path = FOLDER) -> list[uuid.UUID]:
     owner = await examples_owner()
     if owner is None:
+        # Sign-up compares usernames whatever their case, the unique index does not.
+        if await User.objects.filter(User.username.iexact(EXAMPLES_USERNAME)).exists():
+            raise ValueError(f"the username {EXAMPLES_USERNAME} belongs to someone else")
         owner = User(
             id=uuid.uuid4(),
             email=EXAMPLES_EMAIL,

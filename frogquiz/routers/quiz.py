@@ -393,7 +393,9 @@ async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(g
             return None
         if image not in copies:
             copies[image] = await _copy_image(image, user)
-        return copies[image].id.hex if copies[image] else None
+        # The dashed form, as the upload route returns it: the orphan sweep and quiz_update
+        # compare strings, and a hex id read as an image no quiz uses.
+        return str(copies[image].id) if copies[image] else None
 
     questions = []
     for question in source.questions:
