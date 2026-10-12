@@ -3,7 +3,15 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { describe, expect, it } from 'vitest';
-import { MIN_QUERY_LENGTH, normaliseHit, normaliseHits, searchMode, searchRequest } from './query';
+import {
+	MIN_QUERY_LENGTH,
+	normaliseExamples,
+	normaliseHit,
+	normaliseHits,
+	searchMode,
+	searchRequest,
+	withoutAuthor
+} from './query';
 
 describe('searchMode', () => {
 	it('browses when there is no query at all', () => {
@@ -114,5 +122,44 @@ describe('normaliseHits', () => {
 			{ id: '1', title: '<em>a</em>' },
 			{ id: '2', title: 'b' }
 		]);
+	});
+});
+
+describe('normaliseExamples', () => {
+	it('is empty rather than throwing on a failed response', () => {
+		const none = { username: null, quizzes: [] };
+		expect(normaliseExamples(null)).toEqual(none);
+		expect(normaliseExamples({ detail: 'Not authenticated' })).toEqual(none);
+		expect(normaliseExamples({ username: 'frogQuiz', quizzes: 'nope' })).toEqual(none);
+	});
+
+	it('keeps the account name and the quizzes, and drops anything that is not a quiz', () => {
+		const quiz = { id: 'a', title: 'Science basics', description: null, questions: 8 };
+		expect(normaliseExamples({ username: 'frogQuiz', quizzes: [quiz, null, 'x'] })).toEqual({
+			username: 'frogQuiz',
+			quizzes: [quiz]
+		});
+	});
+
+	// No username means the account was never seeded; with no quizzes either there is no
+	// section to draw, and nothing to filter out of Newest.
+	it('has no username when the API says there is none', () => {
+		expect(normaliseExamples({ username: null, quizzes: [] }).username).toBeNull();
+	});
+});
+
+describe('withoutAuthor', () => {
+	const hits = [
+		{ id: '1', user: 'frogQuiz' },
+		{ id: '2', user: 'frog1a2b' },
+		{ id: '3', user: 'frogQuiz' }
+	];
+
+	it('leaves out the examples account, so its quizzes are not listed twice', () => {
+		expect(withoutAuthor(hits, 'frogQuiz').map((h) => h.id)).toEqual(['2']);
+	});
+
+	it('leaves the list alone when there is no examples account', () => {
+		expect(withoutAuthor(hits, null)).toEqual(hits);
 	});
 });

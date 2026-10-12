@@ -40,8 +40,11 @@ done
 
 find_pg_bin() {
   if command -v pg_ctl >/dev/null 2>&1; then dirname "$(command -v pg_ctl)"; return; fi
-  local c
-  for c in /c/Program\ Files/PostgreSQL/*/bin /usr/lib/postgresql/*/bin \
+  # The same places run.sh looks, the portable unzip under %LOCALAPPDATA% included: a
+  # Postgres run.sh found and this did not was left running, and blocked the next run.
+  local c lad=/nonexistent
+  [ -n "${LOCALAPPDATA:-}" ] && lad="$(cygpath -u "$LOCALAPPDATA" 2>/dev/null || printf '%s' "$LOCALAPPDATA")"
+  for c in /c/Program\ Files/PostgreSQL/*/bin "$lad"/pgsql*/pgsql/bin /usr/lib/postgresql/*/bin \
            /usr/local/opt/postgresql*/bin /opt/homebrew/opt/postgresql*/bin /usr/pgsql-*/bin; do
     [ -x "$c/pg_ctl" ] && { printf '%s' "$c"; return; }
   done

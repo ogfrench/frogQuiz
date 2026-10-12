@@ -71,3 +71,42 @@ export const normaliseHits = (payload: unknown): Record<string, unknown>[] => {
 	if (!Array.isArray(hits)) return [];
 	return hits.filter((h) => h && typeof h === 'object').map(normaliseHit);
 };
+
+/** One ready-made quiz, as GET /api/v1/quiz/examples lists it. */
+export interface ExampleQuiz {
+	id: string;
+	title: string;
+	description: string | null;
+	questions: number;
+}
+
+export interface Examples {
+	/** The account that owns them, so Newest can leave its quizzes out. Null: none seeded. */
+	username: string | null;
+	quizzes: ExampleQuiz[];
+}
+
+export const noExamples: Examples = { username: null, quizzes: [] };
+
+/**
+ * The examples response, or "no examples" for anything else. Explore is the one page every
+ * signed-in person opens, and the examples are a nicety on it: a 401, a 500 or an old API
+ * without the route must leave the page as it was, not throw.
+ */
+export const normaliseExamples = (payload: unknown): Examples => {
+	const body = payload as { username?: unknown; quizzes?: unknown } | null;
+	if (!body || !Array.isArray(body.quizzes)) return noExamples;
+	return {
+		username: typeof body.username === 'string' ? body.username : null,
+		quizzes: body.quizzes.filter((q) => q && typeof q === 'object') as ExampleQuiz[]
+	};
+};
+
+/**
+ * Hits without those of one account. The examples are listed above Newest, and they are
+ * public quizzes like any other, so without this each would show up twice.
+ */
+export const withoutAuthor = <T extends { user?: unknown }>(
+	hits: T[],
+	username: string | null
+): T[] => (username === null ? hits : hits.filter((hit) => hit.user !== username));

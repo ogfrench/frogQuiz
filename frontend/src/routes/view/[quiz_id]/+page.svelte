@@ -16,9 +16,11 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '$lib/Spinner.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
 	import { anonDaysLeft, claimFailure, getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
+	import { copyQuiz } from '$lib/copy_quiz';
 	import { sanitizeTitleHtml, htmlToPlainText } from '$lib/sanitize';
 	import { quizShare } from '$lib/share_meta';
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
@@ -32,6 +34,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import CircleDot from '@lucide/svelte/icons/circle-dot';
 	import Clock from '@lucide/svelte/icons/clock';
+	import Copy from '@lucide/svelte/icons/copy';
 	import ListChecks from '@lucide/svelte/icons/list-checks';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import Download from '@lucide/svelte/icons/download';
@@ -101,6 +104,12 @@ SPDX-License-Identifier: MPL-2.0
 	// quiz gave a signed-in visitor a button that answered "quiz not found".
 	const can_start = $derived(owns_anonymously || (logged_in && (quiz.public || owns_on_account)));
 
+	// Copy to my quizzes (#39) is the same rule less the anonymous owner: the copy lands in
+	// an account, and a browser with only a secret has none. The server enforces it too
+	// (POST /quiz/copy answers 404 for somebody else's unlisted quiz); this is the button
+	// not being offered where it could only fail.
+	const can_copy = $derived(logged_in && (quiz.public || owns_on_account));
+
 	// A draft is a quiz with at least one unfinished question -- the same rule the
 	// server uses (frogquiz/helpers/completeness.py) to refuse POST /quiz/start.
 	// There is no draft column; this is computed the same way on every render.
@@ -141,6 +150,22 @@ SPDX-License-Identifier: MPL-2.0
 			// Stays open on purpose: a dialog that closed on failure would read as success.
 			delete_error = true;
 		}
+	};
+
+	let copying = $state(false);
+	let copy_error: string | null = $state(null);
+
+	const copy_to_my_quizzes = async () => {
+		copying = true;
+		copy_error = null;
+		const result = await copyQuiz(quiz.id);
+		if (result.ok === true) {
+			// Left disabled while the editor loads, so a second press cannot make a second copy.
+			await goto(`/edit?quiz_id=${result.id}`);
+			return;
+		}
+		copying = false;
+		copy_error = $t(`copy.${result.reason}`);
 	};
 
 	let claiming = $state(false);
@@ -412,6 +437,22 @@ SPDX-License-Identifier: MPL-2.0
 					<Repeat />
 					{$t('words.practice')}
 				</Button>
+				{#if can_copy}
+					<Button
+						variant="outline"
+						size="lg"
+						disabled={copying}
+						aria-describedby={copy_error ? 'copy-error' : undefined}
+						onclick={copy_to_my_quizzes}
+					>
+						{#if copying}
+							<LoaderCircle class="animate-spin" aria-hidden="true" />
+						{:else}
+							<Copy />
+						{/if}
+						{copying ? $t('copy.copying') : $t('copy.button')}
+					</Button>
+				{/if}
 				<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`
 				     above already hides it from a non-owner on screen. Still disabled while
 				     signed out, because the endpoint needs a session -- an anonymous owner
@@ -491,6 +532,11 @@ SPDX-License-Identifier: MPL-2.0
 					</AlertDialog.Root>
 				{/if}
 			</Card.Footer>
+			{#if copy_error}
+				<p id="copy-error" class="text-destructive -mt-2 px-6 text-sm" role="alert">
+					{copy_error}
+				</p>
+			{/if}
 			<!-- Said in text rather than a tooltip: a disabled button can't be hovered or
 			     focused on a phone, so a tooltip on it is never seen. -->
 			{#if is_draft}

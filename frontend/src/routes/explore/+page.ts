@@ -4,7 +4,15 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import type { PageLoad } from './$types';
-import { normaliseHits, searchMode, searchRequest } from '$lib/search/query';
+import {
+	noExamples,
+	normaliseExamples,
+	normaliseHits,
+	searchMode,
+	searchRequest,
+	withoutAuthor,
+	type Examples
+} from '$lib/search/query';
 
 /**
  * One page, two modes, decided by `?q=`. Explore browsed and Search searched; they hit
@@ -19,21 +27,37 @@ export const load = (async ({ fetch, url }) => {
 	const body = searchRequest(q);
 
 	if (body === null) {
-		return { q, mode, hits: [], failed: false };
+		return { q, mode, hits: [], failed: false, examples: noExamples };
 	}
 
-	const response = await fetch('/api/v1/search/', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body)
-	});
+	// The examples (#39) sit above Newest, so they belong to browsing only; a search is
+	// just its results. Asked for alongside the search rather than after it.
+	const [response, examples] = await Promise.all([
+		fetch('/api/v1/search/', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body)
+		}),
+		mode === 'browse' ? loadExamples(fetch) : noExamples
+	]);
 
 	// Explore used to `await response.json()` unconditionally and hand whatever came
 	// back to the page, so a 500 from Meilisearch reached the template as an error
 	// object and threw on `.hits`. A failed search is an empty page with a message.
 	if (!response.ok) {
-		return { q, mode, hits: [], failed: true };
+		return { q, mode, hits: [], failed: true, examples };
 	}
 
-	return { q, mode, hits: normaliseHits(await response.json()), failed: false };
+	const hits = withoutAuthor(normaliseHits(await response.json()), examples.username);
+	return { q, mode, hits, failed: false, examples };
 }) satisfies PageLoad;
+
+/** No examples, quietly, when the API is down, refuses, or has none: Newest still shows. */
+async function loadExamples(fetch: typeof globalThis.fetch): Promise<Examples> {
+	try {
+		const res = await fetch('/api/v1/quiz/examples');
+		return res.ok ? normaliseExamples(await res.json()) : noExamples;
+	} catch {
+		return noExamples;
+	}
+}
