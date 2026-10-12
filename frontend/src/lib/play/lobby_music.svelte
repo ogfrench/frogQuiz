@@ -13,7 +13,7 @@ SPDX-License-Identifier: MPL-2.0
 	import VolumeX from '@lucide/svelte/icons/volume-x';
 	import Play from '@lucide/svelte/icons/play';
 	import { music } from '$lib/play/music_pref.svelte';
-	import Track from '$lib/assets/music/lobby/lobby.mp3';
+	import Track from '$lib/assets/music/kit/lobby.wav';
 
 	const { t } = getLocalization();
 

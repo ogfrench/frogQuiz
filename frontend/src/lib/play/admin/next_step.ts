@@ -10,10 +10,11 @@ import { QuizQuestionType, type Question } from '$lib/quiz_types';
  * the shortcut used to skip the scoreboard and never close it, which left every later
  * results screen showing the scoreboard instead of the answers.
  *
- * A round runs: question -> answers (by themselves once time is up) -> scoreboard (by
- * itself, three seconds later) -> next question, which is the only press. The last
- * question has no scoreboard, because the standings would give the podium away: its
- * answers go straight to "Get final results".
+ * A round runs: question -> answers (by themselves once time is up) -> standings (by
+ * themselves, five seconds later) -> next question, which is the only press. The answers
+ * and the standings are one card (round_results.svelte): "scoreboard" is the step that
+ * opens the standings in it. The last question has no standings, because they would give
+ * the podium away: its answers go straight to "Get final results".
  */
 export type NextStep =
 	| 'none'
@@ -58,6 +59,24 @@ export interface StepGame {
  */
 export const AUTO_RESULTS_DELAY_MS = 2000;
 
+/**
+ * How long the answers have the card to themselves before it grows the standings. Long
+ * enough for the room to read the split and argue about it; the host's press skips it.
+ * The automatic flow and that press both run the 'scoreboard' step, so they cannot differ
+ * in what they do, only in when.
+ */
+export const STANDINGS_DELAY_MS = 5000;
+
+/**
+ * What comes up by itself after `step` becomes the next one, and how long it waits. Null
+ * is a step that only the host takes.
+ */
+export const autoStepDelay = (step: NextStep): number | null => {
+	if (step === 'show_results') return AUTO_RESULTS_DELAY_MS;
+	if (step === 'scoreboard') return STANDINGS_DELAY_MS;
+	return null;
+};
+
 export const stepState = (g: Omit<StepGame, 'shown_question_now'>): NextStepState => ({
 	selected_question: g.selected_question,
 	timer_res: g.timer_res,
@@ -72,6 +91,21 @@ export const gameIsOver = (final_results: unknown[]): boolean =>
 
 export const isLastQuestion = (s: Pick<NextStepState, 'selected_question' | 'questions'>) =>
 	s.selected_question + 1 === s.questions.length;
+
+/**
+ * Whether the round card is showing the standings under the answers: the step has been
+ * taken, and this is a round that has standings at all. Read by the card, so a state that
+ * should never show them (the last question, a poll, a hidden or an unanswered one)
+ * cannot, whatever `scoreboard_open` was left at.
+ */
+export function standingsShown(s: NextStepState): boolean {
+	if (!s.scoreboard_open) return false;
+	if (s.question_results === null || s.question_results === undefined) return false;
+	if (isLastQuestion(s)) return false;
+	const question = s.questions[s.selected_question];
+	if (!question) return false;
+	return question.type !== QuizQuestionType.VOTING && question.hide_results !== true;
+}
 
 export function nextStep(s: NextStepState): NextStep {
 	if (gameIsOver(s.final_results)) return 'none';

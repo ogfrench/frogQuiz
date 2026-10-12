@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { scale } from 'svelte/transition';
 	import { backOut } from 'svelte/easing';
 	import { DUR, dur } from '$lib/motion';
+	import { sfx } from '$lib/play/sfx';
 	import Check from '@lucide/svelte/icons/check';
 	import X from '@lucide/svelte/icons/x';
 	import Minus from '@lucide/svelte/icons/minus';
@@ -59,6 +60,12 @@ SPDX-License-Identifier: MPL-2.0
 	const my_result = $derived(question_results.find((r) => r.username === username));
 	const answered = $derived(my_result !== undefined);
 	const right = $derived(my_result?.right === true);
+
+	// One sound for the result, as it appears: right, wrong, or nothing for a player who did
+	// not answer (they already know).
+	$effect(() => {
+		if (answered) sfx(right ? 'correct' : 'incorrect');
+	});
 	const place = $derived(Object.keys(sorted_scores).indexOf(username) + 1);
 	const players = $derived(Object.keys(sorted_scores).length);
 </script>

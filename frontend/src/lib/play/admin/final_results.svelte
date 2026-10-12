@@ -11,6 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { fly, fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { DUR, dur, reduced } from '$lib/motion';
+	import { sfx } from '$lib/play/sfx';
 	import confetti from 'canvas-confetti';
 	import Crown from '@lucide/svelte/icons/crown';
 	import Medal from '@lucide/svelte/icons/medal';
@@ -39,9 +40,10 @@ SPDX-License-Identifier: MPL-2.0
 	// Somebody watching this has just played for five minutes; the podium is the payoff,
 	// and it was over in two seconds. Kahoot reveals third, then second, then first with
 	// a beat between each, and that beat is the whole effect -- a room reacts to each
-	// name. 1.4s apart, so the three reveals run about four seconds in total.
-	const REVEAL_GAP_MS = 1400;
-	const FIRST_REVEAL_MS = 600;
+	// name. 0.9s apart, so the three reveals run under three seconds in total (they ran four,
+	// and the room was waiting).
+	const REVEAL_GAP_MS = 900;
+	const FIRST_REVEAL_MS = 400;
 	const winner_lands = FIRST_REVEAL_MS + 2 * REVEAL_GAP_MS + DUR.stage;
 
 	// Nobody should be made ill by a results screen. With reduced motion the whole
@@ -108,6 +110,12 @@ SPDX-License-Identifier: MPL-2.0
 	let winner_shown = $state(reduced());
 	onMount(() => {
 		const timers = [
+			// A hit as each place lands, growing: third, second, then first.
+			...(reduced()
+				? []
+				: ([3, 2, 1] as const).map((place) =>
+						setTimeout(() => sfx(`place${place}`), FIRST_REVEAL_MS + (3 - place) * REVEAL_GAP_MS)
+					)),
 			setTimeout(() => (winner_shown = true), reduced() ? 0 : winner_lands)
 		];
 		if (!reduced()) {
@@ -241,7 +249,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if runners_up.length}
 			<div
 				class="w-full max-w-md"
-				in:fade|global={{ duration: dur(DUR.surface), delay: reduced() ? 0 : winner_lands + 900 }}
+				in:fade|global={{ duration: dur(DUR.surface), delay: reduced() ? 0 : winner_lands }}
 			>
 				<Collapsible.Root bind:open={show_all} class="flex flex-col items-center gap-3">
 					<div class="w-full overflow-hidden rounded-xl border border-border bg-card">

@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import { sfx } from '$lib/play/sfx';
 	import type { OrderQuizAnswer, Question, RangeQuizAnswer } from '$lib/quiz_types';
 	import { answerColor } from '$lib/play/answer_colors';
 	import Check from '@lucide/svelte/icons/check';
@@ -110,6 +111,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const selectAnswer = (answer: string) => {
 		selected_answer = answer;
+		sfx('locked');
 		socket.emit('submit_answer', {
 			question_index: question_index,
 			answer: answer
@@ -118,6 +120,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const select_complex_answer = (data) => {
 		selected_answer = 'a';
+		sfx('locked');
 		const new_array = [];
 		for (let i = 0; i < data.length; i++) {
 			new_array.push({ answer: data[i].answer });

@@ -14,6 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
+	import { me } from '$lib/account_frog.svelte';
 	import Menu from '@lucide/svelte/icons/menu';
 	import { page } from '$app/state';
 	import { building } from '$app/environment';
@@ -72,7 +73,10 @@ SPDX-License-Identifier: MPL-2.0
 		if (!$signedIn || username !== null) return;
 		fetch('/api/v1/users/me')
 			.then((r) => (r.ok ? r.json() : null))
-			.then((u) => (username = u?.username ?? ''))
+			.then((u) => {
+				me.frog = u?.frog ?? null;
+				username = u?.username ?? '';
+			})
 			.catch(() => (username = ''));
 	});
 

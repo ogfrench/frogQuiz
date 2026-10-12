@@ -21,11 +21,14 @@ SPDX-License-Identifier: MPL-2.0
 	import { answeredCount } from '$lib/play/admin/answered';
 	import {
 		AUTO_RESULTS_DELAY_MS,
+		STANDINGS_DELAY_MS,
 		gameIsOver,
 		nextStep,
 		performStep,
+		standingsShown,
 		stepState
 	} from '$lib/play/admin/next_step';
+	import RoundResults from '$lib/play/admin/round_results.svelte';
 
 	const { t } = getLocalization();
 	const default_colors = ANSWER_COLORS;
@@ -164,7 +167,7 @@ SPDX-License-Identifier: MPL-2.0
 	// not an animation.
 	$effect(() => {
 		if (step !== 'scoreboard') return;
-		const timeout = setTimeout(() => (game_state.scoreboard_open = true), 3000);
+		const timeout = setTimeout(() => (game_state.scoreboard_open = true), STANDINGS_DELAY_MS);
 		return () => clearTimeout(timeout);
 	});
 </script>
@@ -230,21 +233,15 @@ SPDX-License-Identifier: MPL-2.0
 					question={game_state.quiz_data.questions[game_state.selected_question]}
 				/>
 			{/await}
-		{:else if game_state.scoreboard_open}
-			{#await import('$lib/play/admin/scoreboard.svelte')}
-				<Spinner />
-			{:then c}
-				<c.default data={game_state.player_scores} new_data={game_state.question_results} />
-			{/await}
 		{:else}
-			{#await import('$lib/play/admin/results.svelte')}
-				<Spinner />
-			{:then c}
-				<c.default
-					question={game_state.quiz_data.questions[game_state.selected_question]}
-					new_data={game_state.question_results}
-				/>
-			{/await}
+			<!-- The answers, and the standings once they are due, in one card that stays
+			     mounted from the first to the last. -->
+			<RoundResults
+				question={game_state.quiz_data.questions[game_state.selected_question]}
+				new_data={game_state.question_results}
+				totals={game_state.player_scores}
+				show_standings={standingsShown(stepState(game_state))}
+			/>
 		{/if}
 	{/if}
 	{#if game_state.selected_question === -1}

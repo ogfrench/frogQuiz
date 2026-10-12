@@ -451,6 +451,14 @@
         "remembered": "Remember it after all?"
     },
     "settings_page": {
+        "frog_title": "Your frog",
+        "frog_surprise": "Surprise me",
+        "frog_colours": "Frog colour",
+        "frog_colour": "Colour {n}",
+        "frog_use": "Use frog {n}",
+        "frog_saved": "Frog changed.",
+        "frog_undo": "Undo",
+        "frog_failed": "Could not save your frog. Try again.",
         "old_password": "Old password",
         "new_password": "New password",
         "repeat_password": "Repeat password",
