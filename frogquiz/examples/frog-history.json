@@ -20,7 +20,7 @@
       ]
     },
     {
-      "question": "The name frog is usually explained as an acronym for founder Hartmut Esslinger's home country. Which country?",
+      "question": "The name frog comes from an acronym for founder Hartmut Esslinger's home country. Which country?",
       "time": "20",
       "type": "ABCD",
       "image": null,
@@ -158,7 +158,7 @@
       "answers": [
         {"answer": "Milan", "right": true, "color": null},
         {"answer": "Reykjavik", "right": false, "color": null},
-        {"answer": "Munich", "right": true, "color": null},
+        {"answer": "Utrecht", "right": true, "color": null},
         {"answer": "Anchorage", "right": false, "color": null}
       ]
     }
