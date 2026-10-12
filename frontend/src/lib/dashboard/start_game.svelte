@@ -106,9 +106,20 @@ SPDX-License-Identifier: MPL-2.0
 		}
 
 		if (res.status === 200) {
-			const data = await res.json();
+			let data;
+			try {
+				data = await res.json();
+			} catch {
+				// A 200 that is not JSON (a proxy's error page): failed like any other.
+				loading = false;
+				close_tab();
+				error = $t('start_game.start_failed');
+				return;
+			}
 			const path = `/admin?token=${data.game_id}&pin=${data.game_pin}&connect=1&cqc_code=${data.cqc_code}`;
-			if (tab) {
+			// Closed while the server answered (by the person, or a blocker that hands back a
+			// closed window): the game opens here instead of nowhere.
+			if (tab && !tab.closed) {
 				tab.location.href = `${window.location.origin}${path}`;
 				// This tab stays where it is, so the dialog goes and the next game starts clean.
 				on_open_change(false);

@@ -9,6 +9,34 @@ SPDX-License-Identifier: MPL-2.0
 The newest section comes first. The older ones are kept below for the decisions and commands
 they record.
 
+## v0.8 ready, v0.9 next week (12 Oct)
+
+**v0.8 is built on `v1` and waits for François's go** (the PR is "v0.8: V1 step 4"). It
+has #40 (Play beside Save, new tab), #39 (five approved example quizzes in Discover, Copy to
+my quizzes) and #60 (`/api/v1/health`, a worker heartbeat, compose healthchecks), and points the
+frontend at `api.frogquiz.xyz`. The DNS record, Caddy's second name and the Netlify UI's
+`API_URL` and `VITE_API_ORIGIN` were changed on 12 Oct; they take effect at the next Netlify
+deploy. Full e2e on a fresh stack: 256 passed, 9 skipped, 0 failed. The deploy steps are in
+the PR: `docker compose up -d`, then the seed, then a health check.
+
+**Next week, in order** (each issue has a status comment with the same order):
+
+1. Merge and deploy v0.8, tag it, restart `v1`.
+2. v0.9: #42 (hidden menus on the live screens, plus an inventory of hidden routes from which
+   François picks what comes back), then #44 (style note, a guard test, fixes by area), and #50
+   (stale docs, then the privacy and terms text for François to approve).
+3. v1.0: #61 (needs François's OCI bucket first), #45 trimmed, the final review, the deploy.
+
+**Learned on 12 Oct:** the Agent tool's worktree isolation refuses on this laptop (make the
+worktree by hand, see CLAUDE.md); two stacks at once make timeouts that look like bugs; the
+Netlify UI's variables, not `netlify.toml`, are what server-side rendering reads; image ids in
+quiz JSON must be the dashed form, or the orphan sweep deletes them (the hidden `.cqa` import
+still writes the other form, noted in #42); `e2e/pytest.sh` runs the backend suite without
+Docker. The `token-efficiency` skill (claude-code-setup PR #5) holds the working habits.
+
+**Still for François:** the uptime monitor account, #22 (VM resize by about 25 Oct), branch
+protection on master, the OCI bucket for #61, deleting `C:\c`.
+
 ## v0.5 shipped (12 Oct)
 
 The 11 Oct section below was worked through on the laptop, and v0.5 shipped from it. The

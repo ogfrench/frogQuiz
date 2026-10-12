@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 - V1 ships in four releases, each its own PR from the branch `v1` (D35, 11 Oct): **v0.5** is steps 0 to 3 (PR #57), **v0.8** step 4, **v0.9** step 5, **v1.0** step 6. After each merge, `v1` restarts from master. Master before v0.5 is tagged `mvp`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: v0.5 (#57) shipped on 12 Oct; step 4 (v0.8) is under way.** François trimmed V1 the same day (D39): #33, #34, #38 and #41 moved after V1, and #60 and #61 came in.
+**Status: v0.5 (#57) shipped on 12 Oct; step 4 (v0.8) is built and waits for François's go. Step 5 (v0.9) starts the week of 19 Oct.** François trimmed V1 the same day (D39): #33, #34, #38 and #41 moved after V1, and #60 and #61 came in.
 
 ## What V1 means
 
@@ -199,7 +199,7 @@ Split in two on 11 Oct, each with its own step-end review: **3a** is data and co
 - **The live scoreboard:** it follows the server's totals, so a hide-results question's points are no longer left out.
 - **The answered count:** "3 of 2 answered". The host adds one per answer, and drops a player who disconnects from the total, so a player who answers and then loses signal is counted on one side only. Found by step 1's cheap review.
 
-### Step 4: features, health and the API move (v0.8)
+### Step 4: features, health and the API move (v0.8, built 12 Oct)
 
 Re-planned 12 Oct after D39. #34, #33, #38 and #41 left the step.
 
@@ -341,3 +341,8 @@ Re-planned 12 Oct after D39. #34, #33, #38 and #41 left the step.
   - **The API move, steps 1 and 2:** François asked Claude to do them. The A record went in through the Netlify CLI, and the VM's `SITE_ADDRESS` serves both names; Caddy got the certificate at once. The laptop cannot reach the name because F-Secure blocks frogquiz.xyz there; it answers from the VM, CORS preflight included.
   - **François's triage:** #33, #34, #38 and #41 after V1; #60 into step 4 and #61 into step 6; #45 trimmed; examples cut to five (three general, frogQuiz onboarding, frog's history); hidden actions and hidden routes both checked, with a redesign as a possible outcome.
   - **Re-plan:** step 4 is the API move, #60, #40 and #39. Step 5 adds the hidden-route inventory. Step 6 adds #61 and drops the API move, which is done.
+- **12 Oct, step 4 built:**
+  - **Done:** the API move, #60, #40 and #39, with the five examples approved by François (the frog quiz states the acronym plainly and has Utrecht for Munich). Full e2e: 256 passed, 9 skipped, 0 failed.
+  - **Reviews found and fixed:** the health check refused HEAD, which uptime monitors use; Copy wrote image ids in the hex form, which the orphan sweep would have deleted after a day; the start dialog could leave a blank tab on a malformed answer or open the game into a closed tab.
+  - **Found, not fixed:** the hidden `.cqa` import has the same hex-id bug (noted in #42); Newest shows 15 rather than 20 once the five examples are filtered out of it.
+  - **Re-plan:** François stopped at v0.8 for the week. Steps 5 and 6 stand as written; each issue carries its status and order.

@@ -4,8 +4,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+## v0.8, 12 Oct 2026
+
+V1 step 4: Play in the editor (#40), the examples and Copy (#39), the health check (#60), and the API on `api.frogquiz.xyz`.
+
 ### V1 step 4 (v0.8), 12 Oct
 
+- **The start dialog no longer strands a tab (#40):** a start that answers 200 with something other than JSON closes the new tab and says the start failed, and a tab closed while the server answered (by the person, or a popup blocker) makes the game open in the editor's tab instead of nowhere. Found by the commit review.
 - **`GET /api/v1/health` says which part is down (#60):** the database, Redis, Meilisearch and the worker, one word each, with no sign-in. The database or Redis down is a 503; search or the worker down is a 200 marked "degraded". A passing database check is reused for an hour, so the checks do not keep Neon's free compute awake.
 - **The worker beats once a minute (#60):** a cron job writes the time to Redis, and the health endpoint reads its age, so a worker that stopped shows up. Its cleanup sweeps used to stop with it, silently.
 - **Compose healthchecks for the api and the worker (#60):** `docker compose ps` shows them healthy or not, and both start only once Redis (and, locally, Postgres) answers its own check, in `docker-compose.neon.yml` too.
@@ -13,7 +18,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - **Copy to my quizzes, on the server (#39, D33):** `POST /api/v1/quiz/copy/{id}` copies your own quiz or any public one into your account, unlisted, titled "(copy)". Someone else's unlisted quiz is a 404, like no quiz. Images are copied as new files charged to the copier, so a copy keeps them when the original is deleted, and a copy past the storage limit is refused.
 - **Five example quizzes (#39, D26, D39):** world geography, science basics, food around the world, how frogQuiz works, and frog's history, 12 questions each, every fact sourced in `frogquiz/examples/SOURCES.md`. They belong to an account nobody can sign in to (`examples@frogquiz.invalid`), are loaded by `python -m frogquiz.examples.seed`, and are listed by `GET /api/v1/quiz/examples`. No migration. François approved the text on 12 Oct, after two changes to the frog quiz (the acronym is stated plainly, and Utrecht replaced Munich among the studios).
 - **Discover shows the examples, and every quiz you can see offers Copy (#39):** an Examples section above Newest, each card with its question count, and the examples left out of Newest so none shows twice. "Copy to my quizzes" sits after Practice on a quiz's page and as an icon on each row of My Quizzes; the copy opens in the editor. A full storage says so. `examples.e2e.ts` loads the examples with the seed and checks each of these at 390 too.
-- **Play beside Save in the editor (#40, D27):** it saves first, then opens the game in a new tab, so the editor stays where it was. Hidden until the quiz has been saved once, and off for a draft with the reason given. Below 640 px, Save and Play show their icons only. A start that fails, or no network, closes the new tab and says so; the start dialog used to spin for ever when offline. `editor-play.e2e.ts` covers each case.
+- **Play beside Save in the editor (#40, D27):** it saves first, then opens the game in a new tab, so the editor stays where it was. Hidden until the quiz has been saved once, and off for a draft with the reason given. Below 640 px, Save and Play show their icons only. A start that fails, or no network, closes the new tab and says so; the start dialog used to spin for ever when offline. `editor-play.e2e.ts` covers saving first, the new tab, the draft and a failed save or start; the offline and popup-blocked paths are read in review, not tested.
 - **`e2e/stop.sh` finds the same Postgres `run.sh` does:** it missed one unzipped under `%LOCALAPPDATA%` and left it running, which blocked the next run.
 - **The health check answers HEAD (#60):** uptime monitors probe with it, and a 405 would have read as down. Found by the commit review, as were a usage check and the port offset in `e2e/pytest.sh`.
 - **The local tooling remembers this laptop:** `e2e/run.sh` finds a Postgres unzipped under `%LOCALAPPDATA%`, and `e2e/pytest.sh` runs the backend suite on the e2e stack's services when Docker is not running. `CLAUDE.md` says so, and how to give an agent its own worktree when the Agent tool's isolation refuses.
