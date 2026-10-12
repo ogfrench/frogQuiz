@@ -9,6 +9,16 @@ SPDX-License-Identifier: MPL-2.0
 The newest section comes first. The older ones are kept below for the decisions and commands
 they record.
 
+## Game polish, PR #63 (12 Oct, evening)
+
+François used v0.8 and asked for changes; they are in PR #63 and wait for his go to merge and
+deploy: our own sound kit (C5) for every moment, the answers and the standings as one card that
+animates, the start dialog as one sentence plus "Game options", a faster podium with a hit per
+place, and a frog on the account (nullable `users.frog`, migration `e4a1f9c2d7b0`, flagged in
+the PR). The sound recipe and how to regenerate it are in `frontend/src/lib/assets/music/README.md`.
+Left over: the hidden `.cqa` import still writes image ids without dashes (noted in #42), and
+the listening pages and sheets are in the session's scratch folder only. v0.9 is unchanged.
+
 ## v0.8 shipped, v0.9 next week (12 Oct)
 
 **Shipped 12 Oct:** PR #62 merged as `aac0751`, tagged `v0.8`. The VM runs it (api and worker
