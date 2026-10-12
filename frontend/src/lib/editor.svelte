@@ -21,6 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Button } from '$lib/components/ui/button';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Save from '@lucide/svelte/icons/save';
+	import Play from '@lucide/svelte/icons/play';
 	import Plus from '@lucide/svelte/icons/plus';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import CloudCheck from '@lucide/svelte/icons/cloud-check';
@@ -30,6 +31,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { dropUnsaved, keepUnsaved, unsavedFor } from '$lib/editor/unsaved_backup';
+	import StartGame from '$lib/dashboard/start_game.svelte';
 
 	const { t } = getLocalization();
 
@@ -433,6 +435,37 @@ SPDX-License-Identifier: MPL-2.0
 		if (gone && current_id !== null) dropUnsaved(gone);
 	};
 
+	// Play (#40, D27): save first, then open the game in a new tab. The quiz whose start
+	// dialog is open, null while it is shut (start_game.svelte's contract).
+	let play_id: string | null = $state(null);
+	let playing = false;
+	// Why Play is off, for the button to point at. The header's own sentence is what it
+	// points at once that is on screen; it only shows after the first Save, and a quiz
+	// reopened as a draft has not had one this session, so until then a copy for screen
+	// readers stands in. Never both: the same words twice are two matches for a reader.
+	const status_says_why = $derived(!save_error && editorValidation.shown && !playable);
+	const play_hint = $derived(
+		!savable
+			? $t(`editor.${unsavable_reason}`)
+			: incomplete_count > 0
+				? $t('editor.draft_needs_attention', { count: incomplete_count })
+				: yupErrorMessage
+	);
+	const play = async () => {
+		if (!current_id || playing) return;
+		playing = true;
+		try {
+			await flush();
+			// Typing while that save was in flight leaves the page ahead of the stored copy.
+			if (unsaved) await flush();
+		} finally {
+			playing = false;
+		}
+		// The game must not run a version the author cannot see on screen.
+		if (!current_id || save_error || failure || conflict || unsaved) return;
+		play_id = current_id;
+	};
+
 	const saveQuiz = async (e: Event) => {
 		e.preventDefault();
 		// The first Save is when the editor starts pointing at what is missing.
@@ -546,6 +579,7 @@ SPDX-License-Identifier: MPL-2.0
 						     unfinished question is already flagged. -->
 							<p
 								class="text-destructive ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 text-sm font-medium max-sm:order-last max-sm:ml-0 max-sm:basis-full max-sm:justify-start"
+								id="play-hint"
 								role="status"
 							>
 								<TriangleAlert class="size-4 shrink-0" />
@@ -597,9 +631,28 @@ SPDX-License-Identifier: MPL-2.0
 								? 'ml-3'
 								: 'ml-auto'}
 						/>
-						<Button type="submit" disabled={saving}>
+						<!-- Only once the quiz has an id for the game to start from. Below sm both
+						     buttons are their icon alone: the row has the title, the status and the
+						     theme switch to carry as well, and two worded buttons pushed it past 390. -->
+						{#if current_id}
+							<Button
+								type="button"
+								variant="outline"
+								disabled={!playable}
+								aria-describedby={playable ? undefined : 'play-hint'}
+								class="max-sm:size-9 max-sm:px-0"
+								onclick={play}
+							>
+								<Play />
+								<span class="max-sm:sr-only">{$t('words.play')}</span>
+							</Button>
+							{#if !playable && !status_says_why}
+								<span id="play-hint" class="sr-only">{play_hint}</span>
+							{/if}
+						{/if}
+						<Button type="submit" disabled={saving} class="max-sm:size-9 max-sm:px-0">
 							<Save />
-							{$t('words.save')}
+							<span class="max-sm:sr-only">{$t('words.save')}</span>
 						</Button>
 					</header>
 					<!-- #35: why a save failed, when it is something to act on. The text is never
@@ -829,6 +882,7 @@ SPDX-License-Identifier: MPL-2.0
 		bind:selected_question
 		at={add_at}
 	/>
+	<StartGame bind:quiz_id={play_id} newTab />
 {:catch error}
 	<div class="flex min-h-dvh items-center justify-center px-6">
 		<div class="w-full max-w-sm text-center">
