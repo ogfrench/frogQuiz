@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 	// question's answers, and each mount made its own AudioContext and decoded the 1.4 MB
 	// track again. A context the host's first press unlocked also stays unlocked.
 	let shared_ctx: AudioContext | undefined;
-	let shared_track: Promise<AudioBuffer> | undefined;
+	let shared_tracks: Promise<AudioBuffer[]> | undefined;
 </script>
 
 <script lang="ts">
@@ -19,9 +19,10 @@ SPDX-License-Identifier: MPL-2.0
 	import Volume2 from '@lucide/svelte/icons/volume-2';
 	import VolumeX from '@lucide/svelte/icons/volume-x';
 	import Play from '@lucide/svelte/icons/play';
-	import Track from '$lib/assets/music/question/tick-loop.wav';
-	import { tick_rate } from './tick_rate';
+	import Track from '$lib/assets/music/kit/question.wav';
+	import FastTrack from '$lib/assets/music/kit/question-fast.wav';
 	import { music } from '$lib/play/music_pref.svelte';
+	import { sfx } from '$lib/play/sfx';
 
 	const { t } = getLocalization();
 
@@ -41,7 +42,11 @@ SPDX-License-Identifier: MPL-2.0
 	let ctx: AudioContext | undefined;
 	let gain: GainNode | undefined;
 	let source: AudioBufferSourceNode | undefined;
-	let buffer: AudioBuffer | undefined;
+	// The source's own fade, under `gain` (the volume): the switch to the fast loop and the
+	// end of the question each fade one source out without touching the volume.
+	let fade: GainNode | undefined;
+	let buffers: AudioBuffer[] | undefined;
+	let fast = false;
 	let raf = 0;
 	// Cleared on unmount: a begin() still awaiting fetch, decode or resume must not start a
 	// source for a question that has already ended.
@@ -57,41 +62,79 @@ SPDX-License-Identifier: MPL-2.0
 		last_stamp = performance.now();
 	});
 
+	// The clock reaching zero, the one moment this component sees that nothing else does.
+	$effect(() => {
+		if (remaining === 0 && total > 0) sfx('timesup');
+	});
 	const playing = $derived(music.on && remaining > 0 && total > 0);
 
+	// The last seconds play the same loop rendered at 1.5x the tempo (kit C, 180 BPM). Played
+	// faster, the loop itself would also go up a fifth in pitch, which music cannot take the
+	// way the old tick could.
+	const LAST_SECONDS = 5;
 	const frame = () => {
 		if (!source || !ctx) return;
 		const since = (performance.now() - last_stamp) / 1000;
 		const left = Math.max(last_remaining - Math.min(since, 1), 0);
-		source.playbackRate.setTargetAtTime(tick_rate(1 - left / total), ctx.currentTime, 0.04);
+		if (!fast && left <= LAST_SECONDS) {
+			fast = true;
+			stop_source();
+			play(1);
+		}
 		raf = requestAnimationFrame(frame);
+	};
+	const play = (which: number) => {
+		if (!ctx || !gain || !buffers) return;
+		fade = ctx.createGain();
+		source = ctx.createBufferSource();
+		source.buffer = buffers[which];
+		source.loop = true;
+		source.connect(fade).connect(gain);
+		source.start();
+	};
+	// A hard cut mid-note sounds like a glitch; a short fade does not.
+	const stop_source = () => {
+		const s = source;
+		const f = fade;
+		source = undefined;
+		if (!s || !f || !ctx) return;
+		f.gain.setTargetAtTime(0, ctx.currentTime, 0.06);
+		setTimeout(() => {
+			try {
+				s.stop();
+			} catch {
+				/* already stopped */
+			}
+		}, 400);
 	};
 
 	const begin = async () => {
 		try {
 			const context = (ctx ??= shared_ctx ??= new AudioContext());
-			if (!buffer) {
-				shared_track ??= fetch(Track)
-					.then((r) => r.arrayBuffer())
-					.then((b) => context.decodeAudioData(b));
+			if (!buffers) {
+				shared_tracks ??= Promise.all(
+					[Track, FastTrack].map((url) =>
+						fetch(url)
+							.then((r) => r.arrayBuffer())
+							.then((b) => context.decodeAudioData(b))
+					)
+				);
 				try {
-					buffer = await shared_track;
+					buffers = await shared_tracks;
 				} catch (e) {
 					// Not cached as a failure: the next question tries again.
-					shared_track = undefined;
+					shared_tracks = undefined;
 					throw e;
 				}
 			}
 			await ctx.resume();
 			if (ctx.state !== 'running') throw new Error('suspended');
 			if (!alive || !playing || source) return;
-			gain = ctx.createGain();
+			gain ??= ctx.createGain();
 			gain.gain.value = music.volume / 100;
-			source = ctx.createBufferSource();
-			source.buffer = buffer;
-			source.loop = true;
-			source.connect(gain).connect(ctx.destination);
-			source.start();
+			gain.connect(ctx.destination);
+			fast = false;
+			play(0);
 			blocked = false;
 			frame();
 		} catch {
@@ -101,21 +144,9 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 
-	// A hard cut mid-tick sounds like a glitch; a short fade is the end of the question.
 	const end = () => {
 		cancelAnimationFrame(raf);
-		const s = source;
-		const g = gain;
-		source = undefined;
-		if (!s || !g || !ctx) return;
-		g.gain.setTargetAtTime(0, ctx.currentTime, 0.06);
-		setTimeout(() => {
-			try {
-				s.stop();
-			} catch {
-				/* already stopped */
-			}
-		}, 400);
+		stop_source();
 	};
 
 	$effect(() => {

@@ -17,7 +17,14 @@
 // the tile in shapes mode too and proves nothing here.
 
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
-import { hostFromViewPage, joinAsPlayer, mc, rememberAnonQuiz, saveQuiz } from './helpers';
+import {
+	hostFromViewPage,
+	joinAsPlayer,
+	mc,
+	openGameOptions,
+	rememberAnonQuiz,
+	saveQuiz
+} from './helpers';
 
 const QUESTION = 'Capital of Portugal?';
 const QUIZ = {
@@ -109,6 +116,7 @@ test('the switch is off when the modal opens, and off again the next time', asyn
 	});
 
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await openGameOptions(dialog);
 	await expect(toggle).toHaveAttribute('aria-checked', 'false');
 	await toggle.click();
 	await expect(toggle).toHaveAttribute('aria-checked', 'true');
@@ -116,6 +124,9 @@ test('the switch is off when the modal opens, and off again the next time', asyn
 	await page.keyboard.press('Escape');
 	await expect(dialog).toBeHidden();
 
+	// The fold is closed again too, so the switch is not even in the page until it is opened.
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await expect(toggle).toHaveCount(0);
+	await openGameOptions(dialog);
 	await expect(toggle).toHaveAttribute('aria-checked', 'false');
 });

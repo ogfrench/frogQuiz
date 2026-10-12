@@ -67,6 +67,10 @@ class User(ormar.Model):
     )
     totp_secret: str = ormar.String(max_length=32, min_length=32, nullable=True, default=None)
     storage_used: int = ormar.BigInteger(nullable=False, default=0, minimum=0)
+    # The frog the person picked for their account, as "<colour>-<pose>" from the file
+    # names in frontend/src/lib/assets/frogs. None: the frontend picks one from the
+    # username. Account pages only; in a game a player's frog comes from their seat.
+    frog: str | None = ormar.String(max_length=5, nullable=True, default=None)
 
     ormar_config = ormar.OrmarConfig(
         tablename="users",

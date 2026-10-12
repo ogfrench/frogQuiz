@@ -6,7 +6,15 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { QuizQuestionType } from '$lib/quiz_types';
-import { AUTO_RESULTS_DELAY_MS, nextStep, performStep, type NextStepState } from './next_step';
+import {
+	AUTO_RESULTS_DELAY_MS,
+	STANDINGS_DELAY_MS,
+	autoStepDelay,
+	nextStep,
+	performStep,
+	standingsShown,
+	type NextStepState
+} from './next_step';
 
 const ABCD = { type: QuizQuestionType.ABCD };
 const RESULTS = { answers: [] };
@@ -23,6 +31,13 @@ const at = (
 	final_results: [null],
 	questions,
 	...over
+});
+
+// The host's state carries the quiz, not a bare question list.
+const game = ({ questions, ...rest }: NextStepState, shown_question_now: number) => ({
+	...rest,
+	quiz_data: { questions },
+	shown_question_now
 });
 
 describe('a round in the middle of the quiz', () => {
@@ -43,6 +58,69 @@ describe('a round in the middle of the quiz', () => {
 	it('goes answers, then scoreboard, then the next question', () => {
 		expect(nextStep(at(0, quiz))).toBe('scoreboard');
 		expect(nextStep(at(0, quiz, { scoreboard_open: true }))).toBe('next_question');
+	});
+});
+
+// François, 12 Oct: the answers and the standings are one card. The answers show first, the
+// same card grows the standings after STANDINGS_DELAY_MS, and the host's press does the
+// same thing sooner. "Scoreboard" is still the step's name: it is the standings opening.
+describe('the standings, in the same card as the answers', () => {
+	const quiz = [ABCD, ABCD, ABCD];
+	it('come up by themselves five seconds after the answers', () => {
+		expect(STANDINGS_DELAY_MS).toBe(5000);
+		expect(autoStepDelay('scoreboard')).toBe(STANDINGS_DELAY_MS);
+	});
+	it('are the only other thing that comes up by itself, after the answers', () => {
+		expect(autoStepDelay('show_results')).toBe(AUTO_RESULTS_DELAY_MS);
+		for (const step of [
+			'none',
+			'next_question',
+			'stop_time',
+			'final_results',
+			'skip_results'
+		] as const) {
+			expect(autoStepDelay(step), step).toBeNull();
+		}
+	});
+	it('are not showing while the answers are', () => {
+		expect(standingsShown(at(0, quiz))).toBe(false);
+	});
+	it("show at once on the host's press, with no wait", () => {
+		vi.useFakeTimers();
+		const c = {
+			set_question_number: vi.fn(),
+			get_question_results: vi.fn(),
+			show_solutions: vi.fn(),
+			get_final_results: vi.fn()
+		};
+		const s = game(at(0, quiz), 0);
+		expect(nextStep(at(0, quiz))).toBe('scoreboard');
+		performStep('scoreboard', c, s, 'game');
+		expect(s.scoreboard_open).toBe(true);
+		expect(vi.getTimerCount()).toBe(0);
+		expect(standingsShown({ ...at(0, quiz), scoreboard_open: s.scoreboard_open })).toBe(true);
+		vi.useRealTimers();
+	});
+	it('are followed by the next question, which is the next press', () => {
+		const open = at(0, quiz, { scoreboard_open: true });
+		expect(standingsShown(open)).toBe(true);
+		expect(nextStep(open)).toBe('next_question');
+	});
+	it('never show on the last question: the podium is the surprise', () => {
+		expect(standingsShown(at(2, quiz, { scoreboard_open: true }))).toBe(false);
+		expect(nextStep(at(2, quiz))).toBe('final_results');
+	});
+	it('never show for a poll, a hide-results question or a round nobody answered', () => {
+		const poll = [{ type: QuizQuestionType.VOTING }, ABCD];
+		expect(standingsShown(at(0, poll, { scoreboard_open: true }))).toBe(false);
+		const hidden = [{ ...ABCD, hide_results: true }, ABCD];
+		expect(standingsShown(at(0, hidden, { scoreboard_open: true }))).toBe(false);
+		expect(standingsShown(at(0, quiz, { scoreboard_open: true, question_results: undefined }))).toBe(
+			false
+		);
+		expect(standingsShown(at(0, quiz, { scoreboard_open: true, question_results: null }))).toBe(
+			false
+		);
 	});
 });
 
@@ -87,13 +165,6 @@ describe('rounds with nothing to rank', () => {
 	it('a hide-results question never offers a scoreboard once its answers are in', () => {
 		expect(nextStep(at(0, [{ ...ABCD, hide_results: true }, ABCD]))).toBe('next_question');
 	});
-});
-
-// The host's state carries the quiz, not a bare question list.
-const game = ({ questions, ...rest }: NextStepState, shown_question_now: number) => ({
-	...rest,
-	quiz_data: { questions },
-	shown_question_now
 });
 
 describe('doing the step', () => {

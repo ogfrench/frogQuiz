@@ -19,6 +19,8 @@ SPDX-License-Identifier: MPL-2.0
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
+	import FrogPicker from '$lib/account/frog_picker.svelte';
+	import { me } from '$lib/account_frog.svelte';
 
 	const { t } = getLocalization();
 
@@ -33,6 +35,7 @@ SPDX-License-Identifier: MPL-2.0
 		verified: boolean;
 		created_at: string;
 		auth_type: string;
+		frog: string | null;
 	}
 
 	interface ChangePasswordData {
@@ -127,7 +130,10 @@ SPDX-License-Identifier: MPL-2.0
 			}
 		});
 		if (response.status === 200) {
-			return await response.json();
+			const account: UserAccount = await response.json();
+			// The navbar's circle shows the same frog as this page's.
+			me.frog = account.frog;
+			return account;
 		} else {
 			// Same returnTo as getSessions() below, so whichever of the two 401s
 			// first -- this one fires first in practice -- sends the visitor back
@@ -249,8 +255,11 @@ SPDX-License-Identifier: MPL-2.0
 						</Button>
 					</form>
 
+					<FrogPicker username={user.username} />
+
 					<!-- Change avatar (/account/settings/avatar) and Public profile (/user/[id])
-					     are hidden for the MVP (MVP.md D15); both routes 404. -->
+					     are hidden for the MVP (MVP.md D15); both routes 404. The frog above is
+					     what replaced the avatar editor. -->
 				</Card.Content>
 			</Card.Root>
 

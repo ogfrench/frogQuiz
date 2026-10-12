@@ -103,6 +103,17 @@ export async function rememberAnonQuiz(page: Page, id: string, secret: string) {
 	);
 }
 
+/**
+ * Opens the start dialog's "Game options" fold. It is closed every time the dialog opens
+ * (and its switches are not in the page until it is open), so a test that turns one on
+ * has to open it first.
+ */
+export async function openGameOptions(dialog: Locator) {
+	const trigger = dialog.getByRole('button', { name: 'Game options' });
+	if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
+	await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+}
+
 /** From the quiz view page, through the start modal, into the host lobby. Returns the PIN. */
 export async function hostFromViewPage(
 	page: Page,
@@ -118,6 +129,7 @@ export async function hostFromViewPage(
 	if (opts.showOnDevices) {
 		// Kahoot's "Show questions & answers on participants' devices" (MVP.md D16). Off
 		// by default, so a test that wants it has to say so.
+		await openGameOptions(dialog);
 		const toggle = dialog.getByRole('switch', {
 			name: "Show questions and answers on players' devices"
 		});

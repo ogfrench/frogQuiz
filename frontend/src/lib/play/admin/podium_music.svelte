@@ -11,7 +11,9 @@ SPDX-License-Identifier: MPL-2.0
 	import Volume2 from '@lucide/svelte/icons/volume-2';
 	import VolumeX from '@lucide/svelte/icons/volume-x';
 	import Play from '@lucide/svelte/icons/play';
-	import Track from '$lib/assets/music/podium/podium-loop.mp3';
+	import Drumroll from '$lib/assets/music/kit/drumroll.wav';
+	import Fanfare from '$lib/assets/music/kit/fanfare.wav';
+	import Calm from '$lib/assets/music/kit/calm.wav';
 	import { music } from '$lib/play/music_pref.svelte';
 
 	const { t } = getLocalization();
@@ -25,21 +27,24 @@ SPDX-License-Identifier: MPL-2.0
 
 	let blocked = $state(false);
 
+	// Whichever part is sounding: the drumroll while the places land, the fanfare on the
+	// winner, then the calm loop under the list for as long as the host talks over it.
 	let audio: HTMLAudioElement | undefined;
 	let started = false;
 
-	// The whole prelude, looped: it fades in, ends on a faded final chord and a second of
-	// silence, so the repeat swells back in rather than landing on a seam. The podium has no
-	// timer, and the host talks over it for as long as they like.
-	const start = async () => {
+	// The drumroll ends where the fanfare starts, so it starts its own length (2.6 s) before
+	// the winner lands.
+	const DRUMROLL_MS = 2600;
+
+	const play = async (src: string, loop = false) => {
 		if (!music.on) return;
-		if (!audio) {
-			audio = new Audio(Track);
-			audio.loop = true;
-		}
-		audio.volume = music.volume / 100;
+		audio?.pause();
+		const a = new Audio(src);
+		audio = a;
+		a.loop = loop;
+		a.volume = music.volume / 100;
 		try {
-			await audio.play();
+			await a.play();
 			started = true;
 			blocked = false;
 		} catch (e) {
@@ -49,10 +54,23 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 
+	const fanfare = async () => {
+		await play(Fanfare);
+		const a = audio;
+		a?.addEventListener('ended', () => {
+			if (audio === a) play(Calm, true);
+		});
+	};
+
+	// Switched on, or unblocked, after the build: the loop, not a fanfare out of the blue.
+	const start = () => play(Calm, true);
+
 	onMount(() => {
-		const timer = setTimeout(start, delay_ms);
+		const timers = [setTimeout(fanfare, delay_ms)];
+		// With reduced motion the winner is there at once: no build-up to play.
+		if (delay_ms >= DRUMROLL_MS) timers.push(setTimeout(() => play(Drumroll), delay_ms - DRUMROLL_MS));
 		return () => {
-			clearTimeout(timer);
+			timers.forEach(clearTimeout);
 			if (!audio) return;
 			// A cut mid-chord sounds like a bug; ten short steps down is leaving the room.
 			const a = audio;

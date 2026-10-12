@@ -8,6 +8,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 	import Wordmark from '$lib/components/Wordmark.svelte';
+	import { sfx } from '$lib/play/sfx';
+	import { onMount } from 'svelte';
 
 	interface Props {
 		title: string;
@@ -19,6 +21,11 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { title, description, cover_image = null, questions, players }: Props = $props();
 	const { t } = getLocalization();
+
+	// Three blips and a go, as the card fills its "Get ready" bar.
+	onMount(() => {
+		sfx('getready');
+	});
 </script>
 
 <!-- The title card before question 1 (François, 12 Oct, over a countdown and a crowd of

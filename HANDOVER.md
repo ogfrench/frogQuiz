@@ -9,9 +9,24 @@ SPDX-License-Identifier: MPL-2.0
 The newest section comes first. The older ones are kept below for the decisions and commands
 they record.
 
-## v0.8 ready, v0.9 next week (12 Oct)
+## Game polish, PR #63 (12 Oct, evening)
 
-**v0.8 is built on `v1` and waits for François's go** (the PR is "v0.8: V1 step 4"). It
+François used v0.8 and asked for changes; they are in PR #63 and wait for his go to merge and
+deploy: our own sound kit (C5) for every moment, the answers and the standings as one card that
+animates, the start dialog as one sentence plus "Game options", a faster podium with a hit per
+place, and a frog on the account (nullable `users.frog`, migration `e4a1f9c2d7b0`, flagged in
+the PR). The sound recipe and how to regenerate it are in `frontend/src/lib/assets/music/README.md`.
+Left over: the hidden `.cqa` import still writes image ids without dashes (noted in #42), and
+the listening pages and sheets are in the session's scratch folder only. v0.9 is unchanged.
+
+## v0.8 shipped, v0.9 next week (12 Oct)
+
+**Shipped 12 Oct:** PR #62 merged as `aac0751`, tagged `v0.8`. The VM runs it (api and worker
+healthy, Redis kept, so nobody was signed out), the five examples are seeded, and
+`https://api.frogquiz.xyz/api/v1/health` answers ok for every part, GET and HEAD. Netlify
+published it; its bundle calls `api.frogquiz.xyz` only. `v1` was moved up to master.
+
+**What v0.8 is** (PR "v0.8: V1 step 4"). It
 has #40 (Play beside Save, new tab), #39 (five approved example quizzes in Discover, Copy to
 my quizzes) and #60 (`/api/v1/health`, a worker heartbeat, compose healthchecks), and points the
 frontend at `api.frogquiz.xyz`. The DNS record, Caddy's second name and the Netlify UI's
@@ -21,11 +36,10 @@ the PR: `docker compose up -d`, then the seed, then a health check.
 
 **Next week, in order** (each issue has a status comment with the same order):
 
-1. Merge and deploy v0.8, tag it, restart `v1`.
-2. v0.9: #42 (hidden menus on the live screens, plus an inventory of hidden routes from which
+1. v0.9: #42 (hidden menus on the live screens, plus an inventory of hidden routes from which
    François picks what comes back), then #44 (style note, a guard test, fixes by area), and #50
    (stale docs, then the privacy and terms text for François to approve).
-3. v1.0: #61 (needs François's OCI bucket first), #45 trimmed, the final review, the deploy.
+2. v1.0: #61 (needs François's OCI bucket first), #45 trimmed, the final review, the deploy.
 
 **Learned on 12 Oct:** the Agent tool's worktree isolation refuses on this laptop (make the
 worktree by hand, see CLAUDE.md); two stacks at once make timeouts that look like bugs; the

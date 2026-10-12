@@ -315,6 +315,22 @@ async def get_me(user: User = Depends(get_current_user)):
     return user
 
 
+class FrogChoice(BaseModel):
+    # "<colour>-<pose>", as in the frog files' names. Only the shape is checked: a name
+    # with no file behind it falls back to the username's frog on the page.
+    frog: Annotated[str, pydantic.StringConstraints(pattern=r"^\d-\d{2}$")] | None
+
+
+@router.put("/me/frog")
+async def set_frog(choice: FrogChoice, user: User = Depends(get_current_user)):
+    """The frog on the person's account pages; None goes back to the username's frog."""
+    await User.objects.filter(id=user.id).update(frog=choice.frog)
+    # The signed-in account is cached by email, username and id, so /me would keep
+    # answering with the old frog until the cache expired.
+    await clear_cache_for_account(user)
+    return {"frog": choice.frog}
+
+
 class ForgotPassword(BaseModel):
     email: str
 
