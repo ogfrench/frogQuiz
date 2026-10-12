@@ -53,6 +53,13 @@ test('a signed-in host runs a game with players who have no account', async ({
 	for (const name of NAMES) await expect(page.getByText(name, { exact: true })).toBeVisible();
 
 	await page.getByRole('button', { name: 'Start game' }).click();
+	// The title card before question 1 (12 Oct): the facts of the game, and no guess at
+	// how long it will take.
+	await expect(page.getByText('2 questions', { exact: true })).toBeVisible();
+	await expect(page.getByText('2 players', { exact: true })).toBeVisible();
+	await expect(page.getByText('Get ready')).toBeVisible();
+	await expect(page.getByText(/minute/i)).toHaveCount(0);
+	await expectNoHorizontalOverflow(page);
 	await page.getByRole('button', { name: /Next question/ }).click();
 	await ana.getByRole('button', { name: 'Lisbon' }).click();
 	await bruno.getByRole('button', { name: 'Porto' }).click();

@@ -14,6 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '$lib/Spinner.svelte';
 	import Controls from '$lib/play/admin/controls.svelte';
 	import Question from '$lib/play/admin/question.svelte';
+	import TitleCard from '$lib/play/admin/title_card.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state.ts';
 	import { totalsFromResults, totalsFromServer } from '$lib/play/admin/totals';
@@ -25,7 +26,6 @@ SPDX-License-Identifier: MPL-2.0
 		performStep,
 		stepState
 	} from '$lib/play/admin/next_step';
-	import { sanitizeTitleHtml } from '$lib/sanitize';
 
 	const { t } = getLocalization();
 	const default_colors = ANSWER_COLORS;
@@ -248,26 +248,12 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	{/if}
 	{#if game_state.selected_question === -1}
-		<div class="fq-stage justify-center">
-			<!-- wrap-anywhere, as on the question screen: a title or description saved with no
-			     spaces ran 764px off the projector here (11 Oct). -->
-			<h1 class="text-7xl text-center wrap-anywhere">
-				{@html sanitizeTitleHtml(game_state.quiz_data.title)}
-			</h1>
-			<p class="text-3xl pt-8 text-center wrap-anywhere">
-				{game_state.quiz_data.description}
-			</p>
-			{#if game_state.quiz_data.cover_image}
-				<div class="flex justify-center align-middle items-center">
-					<div class="h-[30vh] m-auto w-auto mt-12">
-						<img
-							class="max-h-full max-w-full block"
-							src="/api/v1/storage/download/{game_state.quiz_data.cover_image}"
-							alt=""
-						/>
-					</div>
-				</div>
-			{/if}
-		</div>
+		<TitleCard
+			title={game_state.quiz_data.title}
+			description={game_state.quiz_data.description}
+			cover_image={game_state.quiz_data.cover_image}
+			questions={game_state.quiz_data.questions.length}
+			players={game_state.players.length}
+		/>
 	{/if}
 </div>

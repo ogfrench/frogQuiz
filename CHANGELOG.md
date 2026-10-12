@@ -4,6 +4,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### The game's first screens, 12 Oct
+
+- **A title card before question 1:** the host's cover was the title and description on a blank screen. The title now rises in heavy type, followed by the description, the number of questions and players, and a "Get ready" bar in the mark's gradient. There is no time estimate, since nothing knows how long a game will run. François picked it from mockups of four options; Kahoot itself goes straight to the first question. `account-game.e2e.ts` checks it.
+- **The lobby stops at the edge of the screen:** past about 30 players the names made the page taller, and a projector never scrolls, so the newest names, the ones people look for, went below the bottom edge. The names now stop where the screen does, a pill says "+N more", and once they overflow the newest come first. Checked with 120 players at 1440, 1280, 834 and 390 (`lobby-many.e2e.ts`).
+
 ### V1 step 3b: #43, #35 and #55 finished, 12 Oct
 
 - **A failed claim says what happened (#43):** "couldn't claim" for every failure became one message per cause: the quiz passed its 30 days, it was claimed in another tab or account or deleted, the session is signed out, or the server did not answer. Each says what to do next.
