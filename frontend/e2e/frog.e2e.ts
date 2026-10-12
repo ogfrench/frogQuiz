@@ -17,26 +17,38 @@ test('a frog comes with the username, can be picked, and is kept', async ({ brow
 	const { page, context } = await signedInContext(browser, request);
 	await page.goto('/account/settings');
 
+	// The picker is closed until asked for.
+	await expect(page.getByRole('button', { name: 'Surprise me' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Edit picture' }).click();
+
 	const first = await frogOf(page);
 	expect(first).toContain('frog-');
 
-	// Tap another frog in the strip: it saves at once, says so, and the avatar changes.
+	// A tap only tries a frog: the big picture follows, nothing is kept until Save.
 	await page.locator('button[aria-label^="Use frog"][aria-pressed="false"]').nth(3).click();
-	await expect(page.getByRole('status')).toContainText('Frog changed.');
-	const picked = await frogOf(page);
-	expect(picked).not.toBe(first);
+	const tried = await frogOf(page);
+	expect(tried).not.toBe(first);
+	await page.getByRole('button', { name: 'Cancel' }).click();
+	expect(await frogOf(page)).toBe(first);
+	await page.reload();
+	expect(await frogOf(page)).toBe(first);
 
-	// Kept on the account: a reload shows the pick, and /me says so.
+	// Save keeps it, and the picker closes.
+	await page.getByRole('button', { name: 'Edit picture' }).click();
+	await page.locator('button[aria-label^="Use frog"][aria-pressed="false"]').nth(3).click();
+	const picked = await frogOf(page);
+	await page.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('status')).toContainText('Frog changed.');
+	await expect(page.getByRole('button', { name: 'Surprise me' })).toHaveCount(0);
 	await page.reload();
 	expect(await frogOf(page)).toBe(picked);
 	const me = await (await page.request.get('/api/v1/users/me')).json();
 	expect(me.frog).toMatch(/^\d-\d{2}$/);
 
-	// Undo goes back to the username's frog.
+	// Surprise me tries another one.
+	await page.getByRole('button', { name: 'Edit picture' }).click();
 	await page.getByRole('button', { name: 'Surprise me' }).click();
-	await expect(page.getByRole('status')).toContainText('Frog changed.');
-	await page.getByRole('button', { name: 'Undo' }).click();
-	await expect.poll(() => frogOf(page)).toBe(picked);
+	expect(await frogOf(page)).not.toBe(picked);
 
 	// The colour row changes the strip, and the page still fits a phone.
 	await page.setViewportSize(PHONE);

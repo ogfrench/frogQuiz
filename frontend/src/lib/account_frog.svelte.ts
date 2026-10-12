@@ -33,10 +33,15 @@ export function randomFrog(except?: string | null): string {
 }
 
 /** The signed-in person, as the pages that show their frog share it. */
-export const me = $state<{ frog: string | null }>({ frog: null });
+/** `preview` is a frog being tried on My Account and not yet saved. */
+export const me = $state<{ frog: string | null; preview: string | null }>({
+	frog: null,
+	preview: null
+});
 
 /** The frog to show for this person: the one they picked, else their username's. */
 export function frogFor(username: string | null | undefined): string | undefined {
-	if (me.frog && frogUrl(me.frog)) return me.frog;
+	const mine = me.preview ?? me.frog;
+	if (mine && frogUrl(mine)) return mine;
 	return username ? defaultFrog(username) : undefined;
 }
