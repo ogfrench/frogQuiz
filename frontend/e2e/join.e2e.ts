@@ -11,6 +11,7 @@ import {
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
+	openGameOptions,
 	PHONE,
 	rememberAnonQuiz,
 	saveQuiz
@@ -173,6 +174,7 @@ test('the host can add a join question, and players are asked it', async ({
 	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	// It was a bare "Custom field" switch, with a Title Case English placeholder, then
 	// "Ask players for one more detail", which did not say players see it.
+	await openGameOptions(dialog);
 	const ask = dialog.getByRole('switch', { name: 'Add a join question' });
 	await expect(ask).toHaveAccessibleDescription(/join screen/);
 	await ask.click();

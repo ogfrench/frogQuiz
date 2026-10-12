@@ -12,6 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Spinner from '$lib/Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { getAnonSecret } from '$lib/anon_quiz';
@@ -40,6 +41,9 @@ SPDX-License-Identifier: MPL-2.0
 	// projector and a video call, which is why it is the host's choice per game and not a
 	// product decision (MVP.md D16).
 	let show_on_devices = $state(false);
+	// The three switches live under "Game options", folded away: nearly every game starts
+	// with the defaults, so the one big button is all most hosts ever reach for.
+	let options_open = $state(false);
 	let error = $state<string | null>(null);
 	// Set when the failure looks like "you are not signed in" rather than a real
 	// error, so the message can offer a way back rather than just saying no.
@@ -186,68 +190,37 @@ SPDX-License-Identifier: MPL-2.0
 		custom_field = '';
 		randomized_answers = false;
 		show_on_devices = false;
+		options_open = false;
 	};
 </script>
 
+<!-- The label and hint run flush left at the row's full width, the switch sits on the
+     right and lines up with the label's first line (not centered, which floated it beside
+     the third line of a wrapped hint on a phone). No leading-none on the labels: two-line
+     ones touched at 390. Light text on a dark ground reads heavier at the same numeric
+     weight, so the dark weights are lighter: 380 puts about as much ink on the screen as
+     500 does in light (a pixel count on 390px screenshots), where the old 500 put 27% more. -->
 <Dialog.Root {open} onOpenChange={on_open_change}>
 	<Dialog.Content class="gap-5">
 		<Dialog.Header>
 			<Dialog.Title>{$t('start_game.start_game')}</Dialog.Title>
+			<Dialog.Description>{$t('start_game.players_join')}</Dialog.Description>
 		</Dialog.Header>
 
-		<!-- The switch is the only thing that opens this, so the collapsible is driven
-		     rather than self-controlled; onOpenChange keeps the two in step if bits-ui
-		     ever closes it itself (escape, a forced remount). -->
-		<Collapsible.Root open={custom_field_enabled} onOpenChange={on_custom_field_toggle}>
-			<!-- Was "Custom field" with nothing to say what it does, and an English,
-			     Title Case "Phone Number or Email" placeholder outside the locale file. -->
-			<div class="grid gap-1.5">
-				<div class="flex items-center gap-3">
-					<Switch
-						id="custom-field-enabled"
-						checked={custom_field_enabled}
-						onCheckedChange={on_custom_field_toggle}
-						aria-describedby="custom-field-hint"
-					/>
-					<Label for="custom-field-enabled">{$t('start_game.custom_field')}</Label>
-				</div>
-				<p id="custom-field-hint" class="text-muted-foreground pl-14 text-sm">
-					{$t('start_game.custom_field_hint')}
-				</p>
-			</div>
-			<Collapsible.Content>
-				<div class="grid min-w-0 gap-2 pt-3 pl-14">
-					<Label for="custom-field" class="sr-only">
-						{$t('start_game.custom_field_name')}
-					</Label>
-					<Input
-						id="custom-field"
-						bind:value={custom_field}
-						maxlength={MAX_CUSTOM_FIELD_LENGTH}
-						placeholder={$t('start_game.custom_field_placeholder')}
-					/>
-				</div>
-			</Collapsible.Content>
-		</Collapsible.Root>
-
-		<div class="flex items-center gap-3">
-			<Switch id="randomize-answers" bind:checked={randomized_answers} />
-			<Label for="randomize-answers">{$t('start_game.randomize_answers')}</Label>
-		</div>
-
-		<div class="grid gap-1.5">
-			<div class="flex items-center gap-3">
-				<Switch
-					id="show-on-devices"
-					bind:checked={show_on_devices}
-					aria-describedby="show-on-devices-hint"
-				/>
-				<Label for="show-on-devices">{$t('start_game.show_on_devices')}</Label>
-			</div>
-			<p id="show-on-devices-hint" class="text-muted-foreground pl-14 text-sm">
-				{$t('start_game.show_on_devices_hint')}
-			</p>
-		</div>
+		<Button
+			size="lg"
+			class="w-full"
+			onclick={() => {
+				start_game(quiz_id);
+			}}
+			disabled={loading}
+		>
+			{#if loading}
+				<Spinner my_20={false} />
+			{:else}
+				{$t('start_game.start_game')}
+			{/if}
+		</Button>
 
 		{#if error}
 			<div class="text-destructive text-sm" role="alert">
@@ -264,19 +237,96 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{/if}
 
-		<Dialog.Footer>
-			<Button
-				onclick={() => {
-					start_game(quiz_id);
-				}}
-				disabled={loading}
+		<Collapsible.Root bind:open={options_open} class="border-border min-w-0 border-t pt-1.5">
+			<Collapsible.Trigger
+				type="button"
+				class="focus-visible:ring-ring/50 flex min-h-9 w-full items-center justify-between gap-2 rounded-md text-left text-sm font-medium outline-none focus-visible:ring-3 dark:font-[380]"
 			>
-				{#if loading}
-					<Spinner my_20={false} />
-				{:else}
-					{$t('start_game.start_game')}
-				{/if}
-			</Button>
-		</Dialog.Footer>
+				{$t('start_game.game_options')}
+				<ChevronDown
+					class="text-muted-foreground size-4 shrink-0 transition-transform duration-(--fq-dur-control) {options_open
+						? 'rotate-180'
+						: ''}"
+					aria-hidden="true"
+				/>
+			</Collapsible.Trigger>
+			<Collapsible.Content>
+				<div class="divide-border divide-y pt-2">
+					<!-- The switch is the only thing that opens the box under it, so the
+					     collapsible is driven rather than self-controlled; onOpenChange keeps
+					     the two in step if bits-ui ever closes it itself (escape, a forced
+					     remount). -->
+					<Collapsible.Root
+						open={custom_field_enabled}
+						onOpenChange={on_custom_field_toggle}
+						class="py-3.5 first:pt-1.5"
+					>
+						<!-- Was "Custom field" with nothing to say what it does, and an English,
+						     Title Case "Phone Number or Email" placeholder outside the locale file. -->
+						<div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1">
+							<Label
+								for="custom-field-enabled"
+								class="col-start-1 row-start-1 leading-snug dark:font-[380]"
+							>
+								{$t('start_game.custom_field')}
+							</Label>
+							<Switch
+								id="custom-field-enabled"
+								class="col-start-2 row-span-2 row-start-1"
+								checked={custom_field_enabled}
+								onCheckedChange={on_custom_field_toggle}
+								aria-describedby="custom-field-hint"
+							/>
+							<p id="custom-field-hint" class="text-muted-foreground col-start-1 row-start-2 text-sm">
+								{$t('start_game.custom_field_hint')}
+							</p>
+						</div>
+						<Collapsible.Content>
+							<div class="grid min-w-0 gap-2 pt-3">
+								<Label for="custom-field" class="sr-only">
+									{$t('start_game.custom_field_name')}
+								</Label>
+								<Input
+									id="custom-field"
+									bind:value={custom_field}
+									maxlength={MAX_CUSTOM_FIELD_LENGTH}
+									placeholder={$t('start_game.custom_field_placeholder')}
+								/>
+							</div>
+						</Collapsible.Content>
+					</Collapsible.Root>
+
+					<div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 py-3.5">
+						<Label for="randomize-answers" class="leading-snug dark:font-[380]">
+							{$t('start_game.randomize_answers')}
+						</Label>
+						<Switch id="randomize-answers" bind:checked={randomized_answers} />
+					</div>
+
+					<div
+						class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 py-3.5 last:pb-1.5"
+					>
+						<Label
+							for="show-on-devices"
+							class="col-start-1 row-start-1 leading-snug dark:font-[380]"
+						>
+							{$t('start_game.show_on_devices')}
+						</Label>
+						<Switch
+							id="show-on-devices"
+							class="col-start-2 row-span-2 row-start-1"
+							bind:checked={show_on_devices}
+							aria-describedby="show-on-devices-hint"
+						/>
+						<p
+							id="show-on-devices-hint"
+							class="text-muted-foreground col-start-1 row-start-2 text-sm"
+						>
+							{$t('start_game.show_on_devices_hint')}
+						</p>
+					</div>
+				</div>
+			</Collapsible.Content>
+		</Collapsible.Root>
 	</Dialog.Content>
 </Dialog.Root>
