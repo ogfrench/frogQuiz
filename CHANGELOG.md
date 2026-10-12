@@ -4,6 +4,17 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### After the v0.5 release, 12 Oct
+
+- **Deployed v0.5 to the VM and Netlify:** the VM runs `27c5171` after `git pull`,
+  `docker compose pull && docker compose up -d`, and `docker compose restart api`. All six
+  containers are up, and Meilisearch v1 rebuilt its index. From outside,
+  `/api/v1/utils/config` answers `{"anonymous_quizzes_enabled":false}` and signed-out search
+  answers 401. Netlify published the frontend on its own, and frogquizxyz.netlify.app shows
+  the v0.5 copy.
+- **Reopened #33, #42 and #45:** the v0.5 merge closed them by mistake, because the PR body
+  listed later releases with the word "closes". Each one was reopened with a comment.
+
 ## v0.5, 12 Oct 2026
 
 V1 steps 0 to 3 (PR #57). Deploy the API before publishing the frontend: `DEPLOY.md`.
