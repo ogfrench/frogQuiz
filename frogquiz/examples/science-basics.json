@@ -1,0 +1,166 @@
+{
+  "title": "Science basics",
+  "description": "Twelve questions on planets, plants, the human body and everyday chemistry. Two of them have more than one right answer, and you need all of them to score.",
+  "public": true,
+  "cover_image": null,
+  "background_color": null,
+  "background_image": null,
+  "questions": [
+    {
+      "question": "Which is the largest planet in our solar system?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Jupiter", "right": true, "color": null},
+        {"answer": "Saturn", "right": false, "color": null},
+        {"answer": "Neptune", "right": false, "color": null},
+        {"answer": "Earth", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which gas do plants take in from the air to make food by photosynthesis?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Oxygen", "right": false, "color": null},
+        {"answer": "Nitrogen", "right": false, "color": null},
+        {"answer": "Carbon dioxide", "right": true, "color": null},
+        {"answer": "Hydrogen", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "At sea level, water boils at how many degrees Celsius?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "50", "right": false, "color": null},
+        {"answer": "90", "right": false, "color": null},
+        {"answer": "100", "right": true, "color": null},
+        {"answer": "120", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "What is the chemical symbol for gold?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Ag", "right": false, "color": null},
+        {"answer": "Pb", "right": false, "color": null},
+        {"answer": "Gd", "right": false, "color": null},
+        {"answer": "Au", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "How many bones does an adult human body have?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "106", "right": false, "color": null},
+        {"answer": "206", "right": true, "color": null},
+        {"answer": "306", "right": false, "color": null},
+        {"answer": "406", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which gas makes up most of Earth's atmosphere?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Nitrogen", "right": true, "color": null},
+        {"answer": "Oxygen", "right": false, "color": null},
+        {"answer": "Carbon dioxide", "right": false, "color": null},
+        {"answer": "Argon", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "How many legs does an adult insect have?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "4", "right": false, "color": null},
+        {"answer": "6", "right": true, "color": null},
+        {"answer": "8", "right": false, "color": null},
+        {"answer": "10", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these animals are mammals? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Shark", "right": false, "color": null},
+        {"answer": "Dolphin", "right": true, "color": null},
+        {"answer": "Penguin", "right": false, "color": null},
+        {"answer": "Bat", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these are planets in our solar system? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Mars", "right": true, "color": null},
+        {"answer": "Sirius", "right": false, "color": null},
+        {"answer": "Neptune", "right": true, "color": null},
+        {"answer": "Europa", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which force keeps the planets in orbit around the Sun?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Friction", "right": false, "color": null},
+        {"answer": "Magnetism", "right": false, "color": null},
+        {"answer": "Wind", "right": false, "color": null},
+        {"answer": "Gravity", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these natural materials is the hardest?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Diamond", "right": true, "color": null},
+        {"answer": "Quartz", "right": false, "color": null},
+        {"answer": "Granite", "right": false, "color": null},
+        {"answer": "Iron", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which blood cells carry oxygen around the body?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "White blood cells", "right": false, "color": null},
+        {"answer": "Red blood cells", "right": true, "color": null},
+        {"answer": "Platelets", "right": false, "color": null},
+        {"answer": "Nerve cells", "right": false, "color": null}
+      ]
+    }
+  ]
+}

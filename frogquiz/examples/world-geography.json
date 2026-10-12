@@ -1,0 +1,166 @@
+{
+  "title": "World geography",
+  "description": "Twelve questions on capitals, rivers, deserts and coastlines. Two of them have more than one right answer, and you need all of them to score.",
+  "public": true,
+  "cover_image": null,
+  "background_color": null,
+  "background_image": null,
+  "questions": [
+    {
+      "question": "What is the capital city of Australia?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Sydney", "right": false, "color": null},
+        {"answer": "Canberra", "right": true, "color": null},
+        {"answer": "Melbourne", "right": false, "color": null},
+        {"answer": "Perth", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which is the longest river in Africa?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Congo", "right": false, "color": null},
+        {"answer": "Niger", "right": false, "color": null},
+        {"answer": "Zambezi", "right": false, "color": null},
+        {"answer": "Nile", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "Which is the largest ocean on Earth?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Atlantic", "right": false, "color": null},
+        {"answer": "Indian", "right": false, "color": null},
+        {"answer": "Pacific", "right": true, "color": null},
+        {"answer": "Arctic", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "In which country is Mount Kilimanjaro, the highest mountain in Africa?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Tanzania", "right": true, "color": null},
+        {"answer": "Kenya", "right": false, "color": null},
+        {"answer": "Uganda", "right": false, "color": null},
+        {"answer": "Ethiopia", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which country has the largest area in the world?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Canada", "right": false, "color": null},
+        {"answer": "Russia", "right": true, "color": null},
+        {"answer": "China", "right": false, "color": null},
+        {"answer": "United States", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these countries are landlocked, with no coastline? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Switzerland", "right": true, "color": null},
+        {"answer": "Peru", "right": false, "color": null},
+        {"answer": "Bolivia", "right": true, "color": null},
+        {"answer": "Portugal", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "What is the capital city of Canada?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Toronto", "right": false, "color": null},
+        {"answer": "Vancouver", "right": false, "color": null},
+        {"answer": "Montreal", "right": false, "color": null},
+        {"answer": "Ottawa", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "Which river flows through the centre of Paris?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Seine", "right": true, "color": null},
+        {"answer": "Rhine", "right": false, "color": null},
+        {"answer": "Loire", "right": false, "color": null},
+        {"answer": "Danube", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these countries have a coast on the Mediterranean Sea? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Portugal", "right": false, "color": null},
+        {"answer": "Italy", "right": true, "color": null},
+        {"answer": "Germany", "right": false, "color": null},
+        {"answer": "Egypt", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "What is the largest island in the world?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Madagascar", "right": false, "color": null},
+        {"answer": "Greenland", "right": true, "color": null},
+        {"answer": "Borneo", "right": false, "color": null},
+        {"answer": "Iceland", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which is the largest hot desert in the world?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Gobi", "right": false, "color": null},
+        {"answer": "Kalahari", "right": false, "color": null},
+        {"answer": "Sahara", "right": true, "color": null},
+        {"answer": "Arabian", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "The Andes, the longest mountain range on land, run along the western side of which continent?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "North America", "right": false, "color": null},
+        {"answer": "Africa", "right": false, "color": null},
+        {"answer": "Europe", "right": false, "color": null},
+        {"answer": "South America", "right": true, "color": null}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "title": "frog's history",
+  "description": "Twelve questions on frog design: how it started in Germany, its years with Apple, and where it is today. Every fact comes from public sources.",
+  "public": true,
+  "cover_image": null,
+  "background_color": null,
+  "background_image": null,
+  "questions": [
+    {
+      "question": "frog is today part of which company?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Deloitte", "right": false, "color": null},
+        {"answer": "Capgemini", "right": true, "color": null},
+        {"answer": "IBM", "right": false, "color": null},
+        {"answer": "Accenture", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "The name frog is usually explained as an acronym for founder Hartmut Esslinger's home country. Which country?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Germany", "right": true, "color": null},
+        {"answer": "France", "right": false, "color": null},
+        {"answer": "Italy", "right": false, "color": null},
+        {"answer": "Japan", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "In which year did Hartmut Esslinger found the design firm that became frog?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "1959", "right": false, "color": null},
+        {"answer": "1969", "right": true, "color": null},
+        {"answer": "1979", "right": false, "color": null},
+        {"answer": "1989", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "What was the firm called before it became frog design?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "esslinger design", "right": true, "color": null},
+        {"answer": "Black Forest Design", "right": false, "color": null},
+        {"answer": "Wega Design", "right": false, "color": null},
+        {"answer": "Snow White Design", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "In which year did the firm change its name to frog design?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "1975", "right": false, "color": null},
+        {"answer": "1979", "right": false, "color": null},
+        {"answer": "1982", "right": true, "color": null},
+        {"answer": "1989", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which Apple co-founder partnered with Hartmut Esslinger to shape Apple's look in the 1980s?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Steve Wozniak", "right": false, "color": null},
+        {"answer": "Steve Jobs", "right": true, "color": null},
+        {"answer": "Ronald Wayne", "right": false, "color": null},
+        {"answer": "Tim Cook", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Apple started using frog's Snow White design language in which year?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "1984", "right": true, "color": null},
+        {"answer": "1979", "right": false, "color": null},
+        {"answer": "1991", "right": false, "color": null},
+        {"answer": "1998", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these Apple products used frog's Snow White design language? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Apple IIc", "right": true, "color": null},
+        {"answer": "iMac", "right": false, "color": null},
+        {"answer": "Macintosh II", "right": true, "color": null},
+        {"answer": "iPad", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Esslinger's early clients included the German brand Wega. Which Japanese company later bought Wega?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Panasonic", "right": false, "color": null},
+        {"answer": "Toshiba", "right": false, "color": null},
+        {"answer": "Sharp", "right": false, "color": null},
+        {"answer": "Sony", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "Steve Jobs founded a company after leaving Apple, and frog designed its first computer, a cube-shaped workstation. Which company?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Atari", "right": false, "color": null},
+        {"answer": "Compaq", "right": false, "color": null},
+        {"answer": "NeXT", "right": true, "color": null},
+        {"answer": "Commodore", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "frog's guiding belief is that form follows what?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Emotion", "right": true, "color": null},
+        {"answer": "Function", "right": false, "color": null},
+        {"answer": "Fashion", "right": false, "color": null},
+        {"answer": "Fortune", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these cities have a frog studio today? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Milan", "right": true, "color": null},
+        {"answer": "Reykjavik", "right": false, "color": null},
+        {"answer": "Munich", "right": true, "color": null},
+        {"answer": "Anchorage", "right": false, "color": null}
+      ]
+    }
+  ]
+}

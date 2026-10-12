@@ -1,0 +1,166 @@
+{
+  "title": "How frogQuiz works",
+  "description": "Twelve questions on making, hosting and joining a game in frogQuiz: who needs an account, what a draft is, how scoring works and what the host can do.",
+  "public": true,
+  "cover_image": null,
+  "background_color": null,
+  "background_image": null,
+  "questions": [
+    {
+      "question": "What do players need to join a game?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "A team account and a nickname", "right": false, "color": null},
+        {"answer": "A game PIN and a nickname", "right": true, "color": null},
+        {"answer": "A game PIN and a team account", "right": false, "color": null},
+        {"answer": "The host's email address", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "By default, what do players see on their phones during a question?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "The full question with every answer's text", "right": false, "color": null},
+        {"answer": "A text box where they type an answer", "right": false, "color": null},
+        {"answer": "Coloured shapes that match the big screen", "right": true, "color": null},
+        {"answer": "Only a countdown timer", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these work for signing in with your work email? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "The link in the email we send", "right": true, "color": null},
+        {"answer": "A password you chose at sign-up", "right": false, "color": null},
+        {"answer": "The six-digit code in the same email", "right": true, "color": null},
+        {"answer": "A QR code on the sign-in page", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which email addresses can sign in to frogQuiz?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Any personal address, such as Gmail or Outlook", "right": false, "color": null},
+        {"answer": "Any work address from any company", "right": false, "color": null},
+        {"answer": "Only addresses ending in @frog.co", "right": false, "color": null},
+        {"answer": "@frog.co and @capgemini.com addresses", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "What must a question have before the quiz can be played? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "A picture", "right": false, "color": null},
+        {"answer": "Some question text", "right": true, "color": null},
+        {"answer": "At least two answers", "right": true, "color": null},
+        {"answer": "One answer marked as correct", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "A quiz has one unfinished question. What happens when you try to host it?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "The game will not start until it is finished", "right": true, "color": null},
+        {"answer": "The unfinished question is skipped during play", "right": false, "color": null},
+        {"answer": "Players see a blank question on their phones", "right": false, "color": null},
+        {"answer": "The whole quiz is deleted after a few days", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "What is the difference between a Public and an Unlisted quiz?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "There is no difference", "right": false, "color": null},
+        {"answer": "Unlisted quizzes are deleted after a day", "right": false, "color": null},
+        {"answer": "Public shows in Discover, Unlisted needs the link", "right": true, "color": null},
+        {"answer": "Public quizzes can be edited by anyone on the team", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "To host a live game for the room, which button do you press on a quiz?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Edit", "right": false, "color": null},
+        {"answer": "Download", "right": false, "color": null},
+        {"answer": "Play", "right": true, "color": null},
+        {"answer": "Practice", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these can the host do in the lobby, before the first question? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Start the game", "right": true, "color": null},
+        {"answer": "Show the results", "right": false, "color": null},
+        {"answer": "Lock the game so nobody new can join", "right": true, "color": null},
+        {"answer": "Cancel the game", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "A game has already started. Can a new player still join?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "No, nobody can join once the game has started", "right": false, "color": null},
+        {"answer": "Yes, unless the host has locked the game", "right": true, "color": null},
+        {"answer": "Yes, but only with a team account", "right": false, "color": null},
+        {"answer": "Only during the first question", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Two players both answer correctly on a 20-second question. One takes 2 seconds, the other takes 15. Who scores more?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "The player who took 2 seconds", "right": true, "color": null},
+        {"answer": "The player who took 15 seconds", "right": false, "color": null},
+        {"answer": "They score the same", "right": false, "color": null},
+        {"answer": "The player who joined the game first", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "On a question with several correct answers, when does a player score points?",
+      "time": "30",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "When they pick at least one of the correct answers", "right": false, "color": null},
+        {"answer": "When they pick more than half of the options", "right": false, "color": null},
+        {"answer": "They get a share of the points for each correct pick", "right": false, "color": null},
+        {"answer": "Only if every correct answer is picked, and no others", "right": true, "color": null}
+      ]
+    }
+  ]
+}
