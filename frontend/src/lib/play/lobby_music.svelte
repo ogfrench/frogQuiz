@@ -41,8 +41,11 @@ SPDX-License-Identifier: MPL-2.0
 			audio.loop = true;
 		}
 		audio.volume = music.volume / 100;
+		const a = audio;
 		try {
-			await audio.play();
+			await a.play();
+			// The screen went while the file was still loading: this is nobody's now.
+			if (audio !== a) a.pause();
 			blocked = false;
 		} catch (e) {
 			// A mute that lands while play() is pending rejects it with AbortError: that is not a block.

@@ -28,6 +28,29 @@ const files = import.meta.glob('../assets/music/kit/sfx/*.wav', {
 }) as Record<string, string>;
 
 let ctx: AudioContext | undefined;
+// What is sounding now. The game's sounds come one at a time: a new one, or leaving the screen,
+// fades the last out, so a long one (the scoreboard runs almost ten seconds) never plays over
+// the next screen's music.
+const active = new Set<{ source: AudioBufferSourceNode; gain: GainNode }>();
+
+const quiet = (context: AudioContext) => {
+	for (const { source, gain } of active) {
+		gain.gain.setTargetAtTime(0, context.currentTime, 0.05);
+		setTimeout(() => {
+			try {
+				source.stop();
+			} catch {
+				/* already stopped */
+			}
+		}, 300);
+	}
+	active.clear();
+};
+
+/** Fades out whatever sound is still going: called as a screen goes. */
+export function stopSfx() {
+	if (ctx) quiet(ctx);
+}
 const buffers = new Map<Sfx, Promise<AudioBuffer>>();
 
 const load = (name: Sfx, context: AudioContext) => {
@@ -52,11 +75,15 @@ export async function sfx(name: Sfx) {
 		const buffer = await load(name, context);
 		await context.resume();
 		if (context.state !== 'running') return;
+		quiet(context);
 		const gain = context.createGain();
 		gain.gain.value = music.volume / 100;
 		const source = context.createBufferSource();
 		source.buffer = buffer;
 		source.connect(gain).connect(context.destination);
+		const entry = { source, gain };
+		active.add(entry);
+		source.onended = () => active.delete(entry);
 		source.start();
 	} catch {
 		/* silence */

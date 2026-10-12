@@ -45,6 +45,11 @@ SPDX-License-Identifier: MPL-2.0
 		a.volume = music.volume / 100;
 		try {
 			await a.play();
+			// The screen went, or a later part took over, while the file was still loading.
+			if (audio !== a) {
+				a.pause();
+				return;
+			}
 			started = true;
 			blocked = false;
 		} catch (e) {

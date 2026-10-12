@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 	import Wordmark from '$lib/components/Wordmark.svelte';
-	import { sfx } from '$lib/play/sfx';
+	import { sfx, stopSfx } from '$lib/play/sfx';
 	import { onMount } from 'svelte';
 
 	interface Props {
@@ -25,6 +25,7 @@ SPDX-License-Identifier: MPL-2.0
 	// Three blips and a go, as the card fills its "Get ready" bar.
 	onMount(() => {
 		sfx('getready');
+		return stopSfx;
 	});
 </script>
 
