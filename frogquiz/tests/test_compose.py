@@ -40,10 +40,14 @@ def test_the_api_and_the_worker_report_their_health():
     # #60: nothing said when either one stopped. The worker's check reads the key the
     # worker writes, so a rename on one side only would mark a live worker unhealthy.
     from frogquiz.config import WORKER_HEARTBEAT_KEY
+    from frogquiz.routers.health import WORKER_STALE_AFTER_SECONDS
 
     services = _services()
-    assert "/api/v1/health" in " ".join(services["api"]["healthcheck"]["test"])
-    assert f"'{WORKER_HEARTBEAT_KEY}'" in " ".join(services["worker"]["healthcheck"]["test"])
+    assert "'http://localhost/api/v1/health'" in " ".join(services["api"]["healthcheck"]["test"])
+    worker = " ".join(services["worker"]["healthcheck"]["test"])
+    assert f"'{WORKER_HEARTBEAT_KEY}'" in worker
+    # The container and the endpoint call the same beat stale.
+    assert f"< {WORKER_STALE_AFTER_SECONDS} " in worker
 
 
 class _ComposeLoader(yaml.SafeLoader):

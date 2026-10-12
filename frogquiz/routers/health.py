@@ -70,7 +70,9 @@ async def _worker_beat_age() -> float | None:
         return None
 
 
-@router.get("")
+# HEAD too: uptime monitors such as UptimeRobot probe with it by default, and a 405 would
+# read as down forever.
+@router.api_route("", methods=["GET", "HEAD"])
 async def health():
     database_up, redis_up, search_up = await asyncio.gather(
         _database_is_up(),

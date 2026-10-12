@@ -115,6 +115,11 @@ def test_a_passing_database_check_is_reused_so_neon_can_sleep(test_client, beat,
     assert health_router._database_ok_at is None
 
 
+def test_an_uptime_monitor_can_probe_with_head(test_client, beat):  # noqa: F811
+    beat(5)
+    assert test_client.head(PATH).status_code == 200
+
+
 def test_it_needs_no_sign_in_and_says_nothing_else(test_client, beat):  # noqa: F811
     beat(5)
     res = test_client.get(PATH)
