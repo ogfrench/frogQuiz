@@ -17,7 +17,9 @@ SPDX-License-Identifier: MPL-2.0
 	import { getAnonSecret } from '$lib/anon_quiz';
 
 	const { t } = getLocalization();
-	let { quiz_id = $bindable() } = $props();
+	// `newTab` is the editor's Play: the game opens beside the editor, so the author keeps
+	// their place. The view page and My Quizzes leave it off and the game replaces them.
+	let { quiz_id = $bindable(), newTab = false } = $props();
 	let loading = $state(false);
 	let custom_field = $state('');
 	// The custom field is an extra question every player is asked on the join screen,
@@ -70,6 +72,15 @@ SPDX-License-Identifier: MPL-2.0
 		const anon_secret = getAnonSecret(id);
 		const headers: Record<string, string> = anon_secret ? { 'X-Anon-Secret': anon_secret } : {};
 
+		// A window opened after the fetch comes back is no longer part of the click, and a
+		// popup blocker refuses it. So the blank tab is opened now, while this still is the
+		// click, and pointed at the game once the server has answered. Blocked anyway
+		// (null), the game replaces this tab as it does everywhere else. The opener is
+		// dropped at once: the game tab has no business reaching back into the editor.
+		const tab = newTab ? window.open('', '_blank') : null;
+		if (tab) tab.opener = null;
+		const close_tab = () => tab?.close();
+
 		// custom_field is whatever the host typed and used to be interpolated straight
 		// into the query string. An `&` in it started a new parameter and truncated the
 		// value; a `#` made everything after it a fragment, so the server never saw it.
@@ -80,25 +91,52 @@ SPDX-License-Identifier: MPL-2.0
 			cqcs_enabled: 'False',
 			randomize_answers: randomized_answers ? 'True' : 'False'
 		});
-		const res = await fetch(`/api/v1/quiz/start/${encodeURIComponent(id)}?${params}`, {
-			method: 'POST',
-			headers
-		});
+		let res: Response;
+		try {
+			res = await fetch(`/api/v1/quiz/start/${encodeURIComponent(id)}?${params}`, {
+				method: 'POST',
+				headers
+			});
+		} catch {
+			// Offline. The spinner used to spin on for ever here, and a blank tab would too.
+			loading = false;
+			close_tab();
+			error = $t('start_game.start_failed');
+			return;
+		}
 
 		if (res.status === 200) {
-			const data = await res.json();
-			window.location.assign(
-				`/admin?token=${data.game_id}&pin=${data.game_pin}&connect=1&cqc_code=${data.cqc_code}`
-			);
+			let data;
+			try {
+				data = await res.json();
+			} catch {
+				// A 200 that is not JSON (a proxy's error page): failed like any other.
+				loading = false;
+				close_tab();
+				error = $t('start_game.start_failed');
+				return;
+			}
+			const path = `/admin?token=${data.game_id}&pin=${data.game_pin}&connect=1&cqc_code=${data.cqc_code}`;
+			// Closed while the server answered (by the person, or a blocker that hands back a
+			// closed window): the game opens here instead of nowhere.
+			if (tab && !tab.closed) {
+				tab.location.href = `${window.location.origin}${path}`;
+				// This tab stays where it is, so the dialog goes and the next game starts clean.
+				on_open_change(false);
+			} else {
+				window.location.assign(path);
+			}
 			return;
 		}
 
 		loading = false;
+		close_tab();
 
 		// This used to bounce to /account/login on *any* non-200 whenever there was no
 		// anonymous secret -- so a 500, a rate limit, or a quiz deleted in another tab
 		// all threw a signed-in host out of the page as though their session had
-		// expired. Only an explicit 401/403 means that.
+		// expired. Only an explicit 401/403 means that. From the editor the blank tab is
+		// already closed above, and this tab goes to the login: its work was saved first.
 		if (res.status === 401 || res.status === 403) {
 			window.location.assign('/account/login?returnTo=/my-quizzes');
 			return;

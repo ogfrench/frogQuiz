@@ -1,0 +1,166 @@
+{
+  "title": "Food around the world",
+  "description": "Twelve questions on dishes, ingredients and where they come from. Two of them have more than one right answer, and you need all of them to score.",
+  "public": true,
+  "cover_image": null,
+  "background_color": null,
+  "background_image": null,
+  "questions": [
+    {
+      "question": "Sushi is a traditional dish from which country?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "China", "right": false, "color": null},
+        {"answer": "Japan", "right": true, "color": null},
+        {"answer": "Thailand", "right": false, "color": null},
+        {"answer": "Vietnam", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Paella, a rice dish with saffron, comes from which country?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Mexico", "right": false, "color": null},
+        {"answer": "Italy", "right": false, "color": null},
+        {"answer": "Portugal", "right": false, "color": null},
+        {"answer": "Spain", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "What is the main ingredient of guacamole?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Spinach", "right": false, "color": null},
+        {"answer": "Cucumber", "right": false, "color": null},
+        {"answer": "Avocado", "right": true, "color": null},
+        {"answer": "Courgette", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "In which Italian city did modern pizza develop?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Naples", "right": true, "color": null},
+        {"answer": "Rome", "right": false, "color": null},
+        {"answer": "Florence", "right": false, "color": null},
+        {"answer": "Venice", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Kimchi, a spicy side dish of fermented cabbage, is a staple of which country's cooking?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Japan", "right": false, "color": null},
+        {"answer": "Korea", "right": true, "color": null},
+        {"answer": "Thailand", "right": false, "color": null},
+        {"answer": "China", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which ingredient is hummus mainly made from?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Lentils", "right": false, "color": null},
+        {"answer": "Black beans", "right": false, "color": null},
+        {"answer": "Chickpeas", "right": true, "color": null},
+        {"answer": "Peanuts", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "What is tofu made from?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Rice", "right": false, "color": null},
+        {"answer": "Wheat", "right": false, "color": null},
+        {"answer": "Soybeans", "right": true, "color": null},
+        {"answer": "Potatoes", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which spice gives curry powder its yellow colour?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Cinnamon", "right": false, "color": null},
+        {"answer": "Paprika", "right": false, "color": null},
+        {"answer": "Black pepper", "right": false, "color": null},
+        {"answer": "Turmeric", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "Which country grows the most coffee in the world?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Colombia", "right": false, "color": null},
+        {"answer": "Brazil", "right": true, "color": null},
+        {"answer": "Vietnam", "right": false, "color": null},
+        {"answer": "Ethiopia", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these dishes come from Italy? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Lasagne", "right": true, "color": null},
+        {"answer": "Pad thai", "right": false, "color": null},
+        {"answer": "Risotto", "right": true, "color": null},
+        {"answer": "Paella", "right": false, "color": null}
+      ]
+    },
+    {
+      "question": "Which of these go on a classic Margherita pizza? Pick every correct answer.",
+      "time": "30",
+      "type": "CHECK",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Mozzarella", "right": true, "color": null},
+        {"answer": "Pineapple", "right": false, "color": null},
+        {"answer": "Basil", "right": true, "color": null},
+        {"answer": "Tomato", "right": true, "color": null}
+      ]
+    },
+    {
+      "question": "Feta is a white brined cheese, traditionally made from sheep's milk. Which country is it from?",
+      "time": "20",
+      "type": "ABCD",
+      "image": null,
+      "hide_results": false,
+      "answers": [
+        {"answer": "Switzerland", "right": false, "color": null},
+        {"answer": "Netherlands", "right": false, "color": null},
+        {"answer": "Greece", "right": true, "color": null},
+        {"answer": "Mexico", "right": false, "color": null}
+      ]
+    }
+  ]
+}

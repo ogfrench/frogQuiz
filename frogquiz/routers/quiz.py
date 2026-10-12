@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
+import io
 import json
 import random
 import uuid
@@ -31,8 +32,9 @@ from frogquiz.auth import (
     require_anonymous_quizzes,
     verify_anon_secret,
 )
-from frogquiz.config import redis, settings, meilisearch
-from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
+from frogquiz.config import arq, redis, settings, meilisearch, storage
+from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType, StorageItem
+from frogquiz.examples import examples_owner
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
 from frogquiz.helpers.live_images import hold_images, is_live, mark_live
@@ -302,6 +304,124 @@ async def claim_quiz(
             counted += row["size"]
     await adjust_storage_used(user.id, counted)
     return quiz
+
+
+class ExampleQuiz(BaseModel):
+    id: uuid.UUID
+    title: str
+    description: str | None
+    questions: int
+
+
+class ExamplesResponse(BaseModel):
+    # Explore lists these apart, and leaves this account's quizzes out of Newest.
+    username: str | None
+    quizzes: list[ExampleQuiz]
+
+
+@router.get("/examples", response_model=ExamplesResponse)
+async def list_examples(_: User = Depends(get_current_user)):
+    """The ready-made quizzes Explore shows above Newest (#39). Signed in, like Explore."""
+    owner = await examples_owner()
+    if owner is None:
+        return ExamplesResponse(username=None, quizzes=[])
+    quizzes = await Quiz.objects.filter(user_id=owner.id, public=True).order_by(Quiz.title.asc()).all()
+    return ExamplesResponse(
+        username=owner.username,
+        quizzes=[
+            ExampleQuiz(id=q.id, title=q.title, description=q.description, questions=len(q.questions))
+            for q in quizzes
+        ],
+    )
+
+
+async def _copy_image(image: str, user: User) -> StorageItem | None:
+    """A new upload owned by `user` with the same bytes, or None when there is nothing to copy."""
+    item_id = check_image_string(str(image))[1]
+    # ponytail: upstream's old `uuid--uuid` keys are dropped from a copy rather than copied.
+    # Production was wiped clean before the sign-in change, so none exist there.
+    source = await StorageItem.objects.get_or_none(id=item_id, deleted_at=None) if item_id else None
+    if source is None:
+        return None
+    data = io.BytesIO()
+    async for chunk in storage.download(source.storage_path or source.id.hex):
+        if chunk is None:
+            return None
+        data.write(chunk)
+    data.seek(0)
+    copy = StorageItem(
+        id=uuid.uuid4(),
+        uploaded_at=datetime.now(),
+        mime_type=source.mime_type,
+        hash=None,
+        user=user,
+        size=0,
+        alt_text=source.alt_text,
+        filename=source.filename,
+    )
+    await storage.upload(file_name=copy.id.hex, file_data=data, mime_type=source.mime_type)
+    await copy.save()
+    # Measures the file and charges it to the copier, as for any upload.
+    await arq.enqueue_job("calculate_hash", copy.id.hex)
+    return copy
+
+
+@router.post("/copy/{quiz_id}")
+async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(get_current_user)):
+    """Copy a quiz into the caller's account (#39, D33).
+
+    Your own quiz, or any public one, which includes the examples. An unlisted quiz of
+    someone else's is a 404, the same answer as no quiz at all. The copy is unlisted.
+    Its images are copied rather than shared: a shared file counted against the first
+    owner's quota and vanished from the copy when that owner deleted their account.
+    """
+    await rate_limit(request, "quiz_copy", limit=20, window_seconds=60)
+    source = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id) or await Quiz.objects.get_or_none(
+        id=quiz_id, public=True
+    )
+    if source is None or _quiz_expired(source):
+        raise HTTPException(status_code=404, detail="quiz not found")
+    image_ids = {check_image_string(str(i))[1] for i in extract_image_ids_from_quiz(source)} - {None}
+    sizes = await StorageItem.objects.filter(id__in=list(image_ids), deleted_at=None).all() if image_ids else []
+    if user.storage_used + sum(i.size for i in sizes) > settings.free_storage_limit:
+        raise HTTPException(status_code=409, detail="Storage limit reached")
+
+    copies: dict[str, StorageItem | None] = {}
+
+    async def copied(image: str | None) -> str | None:
+        if image is None:
+            return None
+        if image not in copies:
+            copies[image] = await _copy_image(image, user)
+        # The dashed form, as the upload route returns it: the orphan sweep and quiz_update
+        # compare strings, and a hex id read as an image no quiz uses.
+        return str(copies[image].id) if copies[image] else None
+
+    questions = []
+    for question in source.questions:
+        question = dict(question)
+        question["image"] = await copied(question.get("image"))
+        questions.append(question)
+    now = datetime.now()
+    suffix = " (copy)"
+    quiz = Quiz(
+        id=uuid.uuid4(),
+        public=False,
+        title=source.title + suffix if len(source.title) + len(suffix) <= 100 else source.title,
+        description=source.description,
+        created_at=now,
+        updated_at=now,
+        user_id=user.id,
+        questions=questions,
+        cover_image=await copied(source.cover_image),
+        background_color=source.background_color,
+        background_image=await copied(source.background_image),
+    )
+    await quiz.save()
+    for item in {c.id: c for c in copies.values() if c}.values():
+        await quiz.storageitems.add(item)
+    await redis.delete("global_quiz_count")
+    return {"id": quiz.id}
 
 
 class CheckIfCaptchaEnabledResponse(BaseModel):

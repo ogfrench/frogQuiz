@@ -225,6 +225,10 @@ pool = redis_lib.ConnectionPool().from_url(str(settings().redis))
 
 redis: redis_base_lib.client.Redis = redis_lib.Redis(connection_pool=pool)
 arq: ArqRedis = ArqRedis(pool_or_conn=pool)
+# The worker writes the time here once a minute (frogquiz/worker/health.py), and
+# /api/v1/health reads its age, so a stopped worker shows up (#60). The worker's compose
+# healthcheck reads the same key; tests/test_compose.py keeps the two names in step.
+WORKER_HEARTBEAT_KEY = "worker:heartbeat"
 storage: Storage = Storage(
     backend=settings().storage_backend,
     storage_path=settings().storage_path,

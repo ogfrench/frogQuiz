@@ -30,6 +30,8 @@ SPDX-License-Identifier: MPL-2.0
 	// resets it to whatever the URL says.
 	let term = $derived(data.q);
 
+	const has_examples = $derived(data.examples.quizzes.length > 0);
+
 	// Explicit submit rather than searching as you type: every keystroke would be a
 	// Meilisearch request, and the URL is the state here.
 	const submit = (event: Event) => {
@@ -41,6 +43,14 @@ SPDX-License-Identifier: MPL-2.0
 		});
 	};
 </script>
+
+{#snippet hitGrid(spacing: string)}
+	<div class="{spacing} grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+		{#each data.hits as quiz (quiz.id)}
+			<SearchCard {quiz} />
+		{/each}
+	</div>
+{/snippet}
 
 <svelte:head>
 	<title>frogQuiz - {$t('words.discover')}</title>
@@ -68,6 +78,23 @@ SPDX-License-Identifier: MPL-2.0
 			</Button>
 		</form>
 
+		<!-- Browsing only; the load leaves it empty for a search. Shown whatever became of
+		     the search itself: they are separate requests, and a failed Newest should not
+		     take the ready-made quizzes down with it. -->
+		{#if has_examples}
+			<section class="mt-8" aria-labelledby="examples-heading">
+				<h2 id="examples-heading" class="text-lg font-semibold tracking-tight">
+					{$t('explore_page.examples')}
+				</h2>
+				<p class="text-muted-foreground mt-1 text-sm">{$t('explore_page.examples_hint')}</p>
+				<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					{#each data.examples.quizzes as quiz (quiz.id)}
+						<SearchCard {quiz} questions={quiz.questions} />
+					{/each}
+				</div>
+			</section>
+		{/if}
+
 		{#if data.failed}
 			<p class="text-destructive mt-10 text-center text-sm" role="alert">
 				{$t('explore_page.search_failed')}
@@ -77,21 +104,28 @@ SPDX-License-Identifier: MPL-2.0
 				{$t('search_page.at_least_3_characters')}
 			</p>
 		{:else if data.hits.length === 0}
-			<div class="mt-10 text-center">
-				<p class="text-lg font-medium">{$t('search_page.nothing_here')}</p>
-				<!-- The old empty state was hardcoded English pointing at /import. The line
-				     names no account rule: that depends on a setting (#55). -->
-				<p class="text-muted-foreground mt-2 text-sm">
-					{$t('explore_page.nothing_here_detail')}
-				</p>
-				<Button href="/create" class="mt-4">{$t('explore_page.create_one')}</Button>
-			</div>
+			<!-- With examples above, a list that is empty because they were taken out of it is
+			     not an empty page. -->
+			{#if !has_examples}
+				<div class="mt-10 text-center">
+					<p class="text-lg font-medium">{$t('search_page.nothing_here')}</p>
+					<!-- The old empty state was hardcoded English pointing at /import. The line
+					     names no account rule: that depends on a setting (#55). -->
+					<p class="text-muted-foreground mt-2 text-sm">
+						{$t('explore_page.nothing_here_detail')}
+					</p>
+					<Button href="/create" class="mt-4">{$t('explore_page.create_one')}</Button>
+				</div>
+			{/if}
+		{:else if has_examples}
+			<section class="mt-10" aria-labelledby="newest-heading">
+				<h2 id="newest-heading" class="text-lg font-semibold tracking-tight">
+					{$t('explore_page.newest')}
+				</h2>
+				{@render hitGrid('mt-4')}
+			</section>
 		{:else}
-			<div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{#each data.hits as quiz (quiz.id)}
-					<SearchCard {quiz} />
-				{/each}
-			</div>
+			{@render hitGrid('mt-8')}
 		{/if}
 	</div>
 </div>

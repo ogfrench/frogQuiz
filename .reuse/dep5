@@ -33,3 +33,9 @@ Comment: Marc-Antoine Charpentier, Te Deum H. 146, Prelude, in a synthesised ren
  Changed by frogQuiz contributors: leading silence trimmed (3.57 s to 92.8 s of the
  original), 1 s fade in, 1 s fade out, 1.5 s of silence appended, lowered by 4.7 dB to match the lobby track,
  re-encoded as mp3. The ffmpeg commands are in the music README.
+
+Files: frogquiz/examples/*.json
+Copyright: 2026 frogQuiz contributors
+License: MPL-2.0
+Comment: The example quizzes (#39). Text written for frogQuiz; every fact's source is in
+ frogquiz/examples/SOURCES.md. No images, so no third-party media.

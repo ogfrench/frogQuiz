@@ -14,6 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	// created in: close it and the quiz is unreachable until the 30-day sweep removes it.
 	// Signed in, those same quizzes are listed under the account's, with Claim.
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { getLocalization } from '$lib/i18n';
 	import {
 		anonDaysLeft,
@@ -22,6 +23,7 @@ SPDX-License-Identifier: MPL-2.0
 		clearAnonSecret,
 		getAnonSecret
 	} from '$lib/anon_quiz';
+	import { copyQuiz } from '$lib/copy_quiz';
 	import CommandpaletteNotice from '$lib/components/popover/commandpalettenotice.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
@@ -35,6 +37,7 @@ SPDX-License-Identifier: MPL-2.0
 	import type { QuizData } from '$lib/quiz_types';
 	import type { PageData } from './$types';
 	import Clock from '@lucide/svelte/icons/clock';
+	import Copy from '@lucide/svelte/icons/copy';
 	import Download from '@lucide/svelte/icons/download';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Pencil from '@lucide/svelte/icons/pencil';
@@ -68,6 +71,7 @@ SPDX-License-Identifier: MPL-2.0
 	// Per-row failures, shown on the row they belong to rather than as a page alert.
 	let row_errors: Record<string, string> = $state({});
 	let claiming: string | null = $state(null);
+	let copying: string | null = $state(null);
 
 	let start_game: string | null = $state(null);
 	let download_id: string | null = $state(null);
@@ -144,6 +148,21 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		clearAnonSecret(id);
 		remove(id);
+	};
+
+	// #39: the copy is a new unlisted quiz in this account, and the editor is where a copy
+	// is wanted next, so that is where it goes. A failure is said on the row, like a claim's.
+	const copy_quiz = async (quiz: Row) => {
+		copying = quiz.id;
+		delete row_errors[quiz.id];
+		const result = await copyQuiz(quiz.id);
+		if (result.ok === true) {
+			// `copying` stays set until the page goes: no second press while the editor loads.
+			await goto(`/edit?quiz_id=${result.id}`);
+			return;
+		}
+		copying = null;
+		row_errors[quiz.id] = $t(`copy.${result.reason}`);
 	};
 
 	const claim_quiz = async (quiz: Row) => {
@@ -282,6 +301,20 @@ SPDX-License-Identifier: MPL-2.0
 				<Pencil />
 			</Button>
 			{#if source === 'account'}
+				<Button
+					variant="ghost"
+					size="icon"
+					title={$t('copy.button')}
+					aria-label={$t('copy.button')}
+					disabled={copying !== null}
+					onclick={() => copy_quiz(quiz)}
+				>
+					{#if copying === quiz.id}
+						<LoaderCircle class="animate-spin" aria-hidden="true" />
+					{:else}
+						<Copy />
+					{/if}
+				</Button>
 				<!-- Analytics hidden with Results for the MVP (D4). -->
 				<Button
 					variant="ghost"

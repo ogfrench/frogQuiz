@@ -13,7 +13,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 
-	let { quiz } = $props();
+	// `questions` is set for an example, whose card says how long the quiz is instead of who
+	// made it: every example is the same account's, so "Made by frogQuiz" said nothing.
+	let { quiz, questions }: { quiz: any; questions?: number } = $props();
 </script>
 
 <!--
@@ -54,12 +56,16 @@ SPDX-License-Identifier: MPL-2.0
 		</Card.Header>
 		<Card.Footer class="text-muted-foreground text-sm">
 			<span class="min-w-0 truncate">
-				{#if quiz.imported_from_kahoot === true}
-					{$t('explore_page.imported_by')}
+				{#if questions !== undefined}
+					{$t('words.question_count', { count: questions })}
 				{:else}
-					{$t('explore_page.made_by')}
+					{#if quiz.imported_from_kahoot === true}
+						{$t('explore_page.imported_by')}
+					{:else}
+						{$t('explore_page.made_by')}
+					{/if}
+					{quiz.user}
 				{/if}
-				{quiz.user}
 			</span>
 		</Card.Footer>
 	</Card.Root>

@@ -9,11 +9,38 @@ SPDX-License-Identifier: MPL-2.0
 The newest section comes first. The older ones are kept below for the decisions and commands
 they record.
 
-## Where v0.5 stands (12 Oct, laptop)
+## v0.8 ready, v0.9 next week (12 Oct)
 
-The 11 Oct section below was worked through on the laptop. Everything is pushed to `v1`. The
-PR, #57, is retitled "v0.5: V1 steps 0 to 3", its body is the release description, and it
-closes #35, #43, #52, #53 and #55. The roadmap issue, #56, now says V1 ships in four releases.
+**v0.8 is built on `v1` and waits for François's go** (the PR is "v0.8: V1 step 4"). It
+has #40 (Play beside Save, new tab), #39 (five approved example quizzes in Discover, Copy to
+my quizzes) and #60 (`/api/v1/health`, a worker heartbeat, compose healthchecks), and points the
+frontend at `api.frogquiz.xyz`. The DNS record, Caddy's second name and the Netlify UI's
+`API_URL` and `VITE_API_ORIGIN` were changed on 12 Oct; they take effect at the next Netlify
+deploy. Full e2e on a fresh stack: 256 passed, 9 skipped, 0 failed. The deploy steps are in
+the PR: `docker compose up -d`, then the seed, then a health check.
+
+**Next week, in order** (each issue has a status comment with the same order):
+
+1. Merge and deploy v0.8, tag it, restart `v1`.
+2. v0.9: #42 (hidden menus on the live screens, plus an inventory of hidden routes from which
+   François picks what comes back), then #44 (style note, a guard test, fixes by area), and #50
+   (stale docs, then the privacy and terms text for François to approve).
+3. v1.0: #61 (needs François's OCI bucket first), #45 trimmed, the final review, the deploy.
+
+**Learned on 12 Oct:** the Agent tool's worktree isolation refuses on this laptop (make the
+worktree by hand, see CLAUDE.md); two stacks at once make timeouts that look like bugs; the
+Netlify UI's variables, not `netlify.toml`, are what server-side rendering reads; image ids in
+quiz JSON must be the dashed form, or the orphan sweep deletes them (the hidden `.cqa` import
+still writes the other form, noted in #42); `e2e/pytest.sh` runs the backend suite without
+Docker. The `token-efficiency` skill (claude-code-setup PR #5) holds the working habits.
+
+**Still for François:** the uptime monitor account, #22 (VM resize by about 25 Oct), branch
+protection on master, the OCI bucket for #61, deleting `C:\c`.
+
+## v0.5 shipped (12 Oct)
+
+The 11 Oct section below was worked through on the laptop, and v0.5 shipped from it. The
+roadmap issue, #56, says V1 ships in four releases; `v1` now starts v0.8.
 
 **Done since 11 Oct:** items A to J of "What we missed" (the copy follows the setting, a second
 e2e pass with the setting off, every #43 claim case with a message for each failure and checked
@@ -24,10 +51,19 @@ screen with "+N more" (mockups: claude.ai artifact `FtuyMZ3oxxq6ZqacYR5iEa`); CH
 `ccr-370df3e4-c44t1l` deleted on GitHub. The VM has `TRUSTED_PROXY_HOPS=2`, rate limiting on
 by default, `ANONYMOUS_QUIZZES_ENABLED` unset and every `MAIL_*` key.
 
-**Waiting on François's go, in this order:** pause Netlify's auto-publish; merge #57 with a
-merge commit; build and push the server image, then `docker compose pull && docker compose up
--d` on the VM; publish the frontend; tag `mvp` on `8e69034` and `v0.5` on the merge commit;
-restart `v1` from master for v0.8.
+**Shipped:** PR #57, "v0.5: V1 steps 0 to 3", merged on 12 Oct as merge commit `27c5171`. Tags
+are `mvp` on `8e69034` and `v0.5` on `27c5171`. The `v1` branch was restarted from master for
+v0.8. The VM at `/opt/frogquiz` runs `27c5171` after `git pull`, `docker compose pull && docker
+compose up -d`, and `docker compose restart api`. All six containers are up. Meilisearch v1
+rebuilt its index, which the API log reports as "MeiliSearch and Database got out of sync".
+From outside, `/api/v1/utils/config` answers `{"anonymous_quizzes_enabled":false}` and
+signed-out search answers 401. Netlify published the new frontend on its own. François chose
+not to pause it, and nobody uses the app yet. frogquizxyz.netlify.app shows the v0.5 copy.
+The merge closed #35, #43, #52, #53 and #55. It also closed #33, #42 and #45 by mistake, and
+they were reopened with a comment. The API answers at api.frogquiz.xyz since 12 Oct (DNS
+record and `SITE_ADDRESS` both done; `netlify.toml` follows in v0.8). François trimmed V1 the
+same day (D39): see `docs/v1-plan.md`. Still for François: #22 (resize the VM by about
+25 Oct), and branch protection on master.
 
 **Small things left:**
 - At 1280x720 the lobby shows about five names under the PIN, QR and Start. A smaller QR on
@@ -35,6 +71,12 @@ restart `v1` from master for v0.8.
 - Two frontend unit tests (robots.txt, the vendored resend file) and one thumbhash backend
   case fail on Windows only, from line endings and float rounding. CI passes them.
 - `C:\c\Users\...` on the laptop is a stray folder from a screenshot path; delete it by hand.
+- Remove the old Meilisearch volume (`<project>_meilisearch-data`, v0.28) on the VM once a
+  signed-in search works. It is the way back until then. DEPLOY.md's "Meilisearch v1" step 4
+  says to remove it once search is confirmed working.
+- Lesson from v0.5: in a PR body, write later releases as "takes #N", never "closes #N". The
+  v0.5 body used "closes" for issues from later releases, and the merge closed #33, #42 and
+  #45 by mistake.
 
 ## Picking this up on the laptop (11 Oct, evening)
 

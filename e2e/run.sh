@@ -60,14 +60,17 @@ log "platform: $OS"
 
 # ---- toolchain discovery ---------------------------------------------------------
 # Postgres ships its binaries somewhere different on every platform and none of them is
-# reliably on PATH: Windows puts them under Program Files, Debian hides them in
+# reliably on PATH: Windows puts them under Program Files (or under %LOCALAPPDATA% when
+# unzipped from EDB's portable archive, as on the laptop), Debian hides them in
 # /usr/lib/postgresql/<major>/bin so several majors can coexist, Homebrew keeps them in
 # its own prefix.
 find_pg_bin() {
   if command -v pg_ctl >/dev/null 2>&1; then dirname "$(command -v pg_ctl)"; return; fi
-  local candidate
+  local candidate lad=/nonexistent
+  [ -n "${LOCALAPPDATA:-}" ] && lad="$(cygpath -u "$LOCALAPPDATA" 2>/dev/null || printf '%s' "$LOCALAPPDATA")"
   for candidate in \
     /c/Program\ Files/PostgreSQL/*/bin \
+    "$lad"/pgsql*/pgsql/bin \
     /usr/lib/postgresql/*/bin \
     /usr/local/opt/postgresql*/bin \
     /opt/homebrew/opt/postgresql*/bin \
@@ -202,6 +205,10 @@ pg pg_ctl -D "$PGDATA" -o "$PG_OPTS" -l "$PGDATA/pg.log" -w start >/dev/null 2>&
 # #55): helpers.ts's sql() runs this psql. Node wants a Windows path on Windows.
 export E2E_PSQL="$(cygpath -m "$PG_BIN/psql" 2>/dev/null || printf '%s' "$PG_BIN/psql")"
 export E2E_PG_PORT=$PG_PORT
+# The same for the one spec that loads the example quizzes (examples.e2e.ts): it runs
+# `python -m frogquiz.examples.seed` with the stack's own environment, which is exported by
+# the time Playwright starts.
+export E2E_PY="$(cygpath -m "$PY" 2>/dev/null || printf '%s' "$PY")"
 
 # ---- Redis, Meilisearch ----------------------------------------------------------
 # A real redis-server where there is one (Linux and macOS usually have it, and it

@@ -500,7 +500,10 @@
         "imported_by": "Imported by",
         "search_failed": "Search is unavailable right now. Try again in a moment.",
         "nothing_here_detail": "No quiz matches that. Try another word, or make one.",
-        "create_one": "Create a quiz"
+        "create_one": "Create a quiz",
+        "examples": "Examples",
+        "examples_hint": "Ready-made quizzes. Play one as it is, or copy it and make it your own.",
+        "newest": "Newest"
     },
     "search_page": {
         "at_least_3_characters": "Enter at least 3 characters...",
@@ -708,6 +711,12 @@
         "offline": "The server didn't answer. Check your connection, then try again.",
         "failed": "Couldn't claim this quiz. Try again in a moment.",
         "other_browser": "This quiz was made without an account, in another browser. Only that browser can claim it: open this page there, signed in. If that browser's data was cleared, nobody can claim it, and it is deleted on {{date}}."
+    },
+    "copy": {
+        "button": "Copy to my quizzes",
+        "copying": "Copying…",
+        "failed": "Couldn't copy this quiz. Try again in a moment.",
+        "storage_full": "Not enough storage left to copy this quiz and its images. Delete something you no longer use, then try again."
     },
     "device_quizzes": {
         "title": "Quizzes on this device",
