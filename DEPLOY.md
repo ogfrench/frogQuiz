@@ -433,9 +433,40 @@ frogquiz.xyz here; check it from the VM or a phone instead.
    `netlify.toml`, the host in `VITE_API_ORIGIN`, `API_URL` and the two `[[redirects]]`
    targets. Check the Netlify UI does not override them (Site configuration,
    Environment variables). It ships with the V1 deploy.
+   **Done 12 Oct on `v1`.** The UI did override them: it held both `API_URL` and
+   `VITE_API_ORIGIN` at the sslip name, for every context. The UI values are what the
+   server-side code (Netlify functions) reads at run time, so `netlify.toml` alone would
+   have left SSR on the old name. Both were changed to `https://api.frogquiz.xyz` with
+   `netlify api updateEnvVar`; they take effect at the next deploy.
 4. **Later:** drop the sslip.io name from `SITE_ADDRESS` once no shared link uses it.
 
 Deploy previews build with the same `netlify.toml`, so they call the production API too.
 Their sockets are refused (their origin is not in `CORS_ORIGINS`), and a sign-in link from
 one goes to `ROOT_ADDRESS`, not to the preview. Use the local stack for anything that needs
 a live game.
+
+## Health and uptime (#60)
+
+`GET /api/v1/health` needs no sign-in and answers one word per part:
+
+```json
+{"status": "ok", "database": "ok", "redis": "ok", "search": "ok", "worker": "ok"}
+```
+
+- **503** when the database or Redis is down: a game cannot run.
+- **200 with `"status": "degraded"`** when search or the worker is down, or the worker's
+  heartbeat is over three minutes old (`"worker": "stale"`). Games still run; search and
+  the cleanup sweeps do not.
+- **The database check is reused for an hour once it passes.** Neon's free compute sleeps
+  after five idle minutes and every hour awake counts, so asking it on every call (the
+  compose healthcheck calls every 30 seconds) would keep it awake around the clock. A
+  failing check is asked again on every call. So a database outage can take up to an hour
+  to show here; any page that needs the database shows it at once.
+
+`docker compose ps` shows the api and the worker as `healthy` or `unhealthy`. The api's
+check calls the endpoint; the worker's reads its heartbeat in Redis. Nothing restarts an
+unhealthy container on its own: the check is for seeing it.
+
+**Uptime monitor (François, needs an account):** a free UptimeRobot or Better Stack
+monitor on `https://api.frogquiz.xyz/api/v1/health` (alert on any status other than 200)
+and on `https://frogquiz.xyz`, every 5 minutes or more, alerting by email.

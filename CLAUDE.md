@@ -145,6 +145,10 @@ lies to you. Two things bite:
 Compare against a baseline on clean infrastructure before concluding you broke
 something.
 
+**Without Docker (the laptop):** start the stack (`KEEP_UP=1 bash e2e/run.sh --list`), then
+`bash e2e/pytest.sh fresh frogquiz/tests/test_x.py`. It uses the stack's Postgres, Redis and
+Meilisearch with a database and indexes of its own; `fresh` recreates them first.
+
 ## Feature triage (internal-tool lens)
 
 The app carries a lot of features aimed at a public multi-tenant SaaS. For an internal Kahoot clone, default posture:
@@ -231,7 +235,7 @@ The general rule (hand a task to the cheapest model whose mistake would be caugh
 
 What runs one at a time here, whichever model:
 
-- **One e2e stack per working tree.** A second one, even on other ports, runs `svelte-kit sync` in the same `frontend/` and reloads the first one's pages mid-test. An agent that needs its own stack gets its own worktree, or waits.
+- **One e2e stack per working tree.** A second one, even on other ports, runs `svelte-kit sync` in the same `frontend/` and reloads the first one's pages mid-test. An agent that needs its own stack gets its own worktree, or waits. The Agent tool's `isolation: "worktree"` refuses on this laptop (it cannot verify the checkout's git metadata), so make one by hand: `git worktree add -b <branch> ../frogQuiz-<name> v1`, and give the agent its path and `E2E_PORT_OFFSET=200`. Two stacks at once slow the laptop enough that timeouts look like bugs; rerun alone before believing one.
 - **Rate limits are keyed by address,** and every local client is `127.0.0.1`. An agent probing the API while specs run can hand them 429s.
 - **The backend suite's database** (`frogquiz_pytest`) and Redis index: two runs at once need different names.
 - **No edits under `frontend/` while specs run.** Vite reloads the open pages.

@@ -36,6 +36,40 @@ def test_the_worker_runs_with_the_api_settings():
     assert services["worker"]["environment"] == services["api"]["environment"]
 
 
+def test_the_api_and_the_worker_report_their_health():
+    # #60: nothing said when either one stopped. The worker's check reads the key the
+    # worker writes, so a rename on one side only would mark a live worker unhealthy.
+    from frogquiz.config import WORKER_HEARTBEAT_KEY
+
+    services = _services()
+    assert "/api/v1/health" in " ".join(services["api"]["healthcheck"]["test"])
+    assert f"'{WORKER_HEARTBEAT_KEY}'" in " ".join(services["worker"]["healthcheck"]["test"])
+
+
+class _ComposeLoader(yaml.SafeLoader):
+    """Reads compose's `!override` tag, which safe_load refuses."""
+
+
+def _override(loader, node):
+    if isinstance(node, yaml.MappingNode):
+        return loader.construct_mapping(node, deep=True)
+    return loader.construct_sequence(node, deep=True)
+
+
+_ComposeLoader.add_constructor("!override", _override)
+
+
+def test_the_api_and_the_worker_wait_for_healthy_dependencies():
+    # In both files: production runs docker-compose.neon.yml on top, whose `!override`
+    # replaces the base file's list rather than merging into it.
+    neon = yaml.load((COMPOSE.parent / "docker-compose.neon.yml").read_text(), Loader=_ComposeLoader)["services"]
+    for services in (_services(), neon):
+        for name in ("api", "worker"):
+            depends = services[name]["depends_on"]
+            assert isinstance(depends, dict), f"{name} waits for containers, not for health"
+            assert all(d["condition"] == "service_healthy" for d in depends.values()), name
+
+
 def test_ci_runs_the_search_production_runs():
     # The backend suite's compose ran Meilisearch v1.7 while production ran v1.54.3.
     dev = yaml.safe_load((COMPOSE.parent / "docker-compose.dev.yml").read_text())["services"]

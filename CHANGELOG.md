@@ -4,6 +4,14 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+### V1 step 4 (v0.8), 12 Oct
+
+- **`GET /api/v1/health` says which part is down (#60):** the database, Redis, Meilisearch and the worker, one word each, with no sign-in. The database or Redis down is a 503; search or the worker down is a 200 marked "degraded". A passing database check is reused for an hour, so the checks do not keep Neon's free compute awake.
+- **The worker beats once a minute (#60):** a cron job writes the time to Redis, and the health endpoint reads its age, so a worker that stopped shows up. Its cleanup sweeps used to stop with it, silently.
+- **Compose healthchecks for the api and the worker (#60):** `docker compose ps` shows them healthy or not, and both start only once Redis (and, locally, Postgres) answers its own check, in `docker-compose.neon.yml` too.
+- **The frontend calls `api.frogquiz.xyz`:** `netlify.toml` points there, and so do the Netlify UI's `API_URL` and `VITE_API_ORIGIN`, which the server-side code reads at run time and which still held the sslip name. Both names keep working on the VM.
+- **The local tooling remembers this laptop:** `e2e/run.sh` finds a Postgres unzipped under `%LOCALAPPDATA%`, and `e2e/pytest.sh` runs the backend suite on the e2e stack's services when Docker is not running. `CLAUDE.md` says so, and how to give an agent its own worktree when the Agent tool's isolation refuses.
+
 ### After the v0.5 release, 12 Oct
 
 - **Deployed v0.5 to the VM and Netlify:** the VM runs `27c5171` after `git pull`,

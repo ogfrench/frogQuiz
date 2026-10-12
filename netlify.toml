@@ -15,21 +15,22 @@ NODE_VERSION = "24"
 # Public backend origin. Baked into the client bundle for socket.io (which cannot
 # go through Netlify's proxy) and used by the SSR code as its API base URL.
 # Not a secret -- it is visible in the shipped JavaScript either way.
-VITE_API_ORIGIN = "https://134-98-158-173.sslip.io"
-API_URL = "https://134-98-158-173.sslip.io"
+VITE_API_ORIGIN = "https://api.frogquiz.xyz"
+API_URL = "https://api.frogquiz.xyz"
 
 # REST traffic is proxied so cookies stay first-party.
-# Backend lives on the Oracle Always Free VM; sslip.io gives it a hostname
-# so Caddy can hold a Let's Encrypt certificate without buying a domain.
+# Backend lives on the Oracle VM at api.frogquiz.xyz, an A record in Netlify DNS (D32),
+# so a new VM IP is a DNS edit rather than a change here. Caddy still also answers on the
+# old sslip.io name until DEPLOY.md's "API hostname" step 4.
 [[redirects]]
 from = "/api/*"
-to = "https://134-98-158-173.sslip.io/api/:splat"
+to = "https://api.frogquiz.xyz/api/:splat"
 status = 200
 force = true
 
 [[redirects]]
 from = "/openapi.json"
-to = "https://134-98-158-173.sslip.io/openapi.json"
+to = "https://api.frogquiz.xyz/openapi.json"
 status = 200
 force = true
 

@@ -60,7 +60,8 @@ log "platform: $OS"
 
 # ---- toolchain discovery ---------------------------------------------------------
 # Postgres ships its binaries somewhere different on every platform and none of them is
-# reliably on PATH: Windows puts them under Program Files, Debian hides them in
+# reliably on PATH: Windows puts them under Program Files (or under %LOCALAPPDATA% when
+# unzipped from EDB's portable archive, as on the laptop), Debian hides them in
 # /usr/lib/postgresql/<major>/bin so several majors can coexist, Homebrew keeps them in
 # its own prefix.
 find_pg_bin() {
@@ -68,6 +69,7 @@ find_pg_bin() {
   local candidate
   for candidate in \
     /c/Program\ Files/PostgreSQL/*/bin \
+    ${LOCALAPPDATA:+$(cygpath -u "$LOCALAPPDATA" 2>/dev/null)/pgsql*/pgsql/bin} \
     /usr/lib/postgresql/*/bin \
     /usr/local/opt/postgresql*/bin \
     /opt/homebrew/opt/postgresql*/bin \
