@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { onMount } from 'svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { DUR, dur, reduced, stagger } from '$lib/motion';
-	import { sfx } from '$lib/play/sfx';
+	import { sfx, stopSfx } from '$lib/play/sfx';
 	import VotingResults from './voting_results.svelte';
 	import type { Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
@@ -78,6 +78,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	onMount(() => {
 		sfx('reveal');
+		// Leaving the card (the next question) ends its sounds.
+		return stopSfx;
 	});
 
 	const has_answers = $derived(
