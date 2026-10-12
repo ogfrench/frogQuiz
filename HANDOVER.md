@@ -9,6 +9,33 @@ SPDX-License-Identifier: MPL-2.0
 The newest section comes first. The older ones are kept below for the decisions and commands
 they record.
 
+## Where v0.5 stands (12 Oct, laptop)
+
+The 11 Oct section below was worked through on the laptop. Everything is pushed to `v1`. The
+PR, #57, is retitled "v0.5: V1 steps 0 to 3", its body is the release description, and it
+closes #35, #43, #52, #53 and #55. The roadmap issue, #56, now says V1 ships in four releases.
+
+**Done since 11 Oct:** items A to J of "What we missed" (the copy follows the setting, a second
+e2e pass with the setting off, every #43 claim case with a message for each failure and checked
+on a phone, #35's last rows measured, #55's CRUD grid, the review's findings); D37 and D38;
+François's pick of a title card before question 1 and a lobby that stops at the edge of the
+screen with "+N more" (mockups: claude.ai artifact `FtuyMZ3oxxq6ZqacYR5iEa`); CHANGELOG cut to
+`v0.5`, `frontend/package.json` at 0.5.0; the merged branches `MVP-game-polish` and
+`ccr-370df3e4-c44t1l` deleted on GitHub. The VM has `TRUSTED_PROXY_HOPS=2`, rate limiting on
+by default, `ANONYMOUS_QUIZZES_ENABLED` unset and every `MAIL_*` key.
+
+**Waiting on François's go, in this order:** pause Netlify's auto-publish; merge #57 with a
+merge commit; build and push the server image, then `docker compose pull && docker compose up
+-d` on the VM; publish the frontend; tag `mvp` on `8e69034` and `v0.5` on the merge commit;
+restart `v1` from master for v0.8.
+
+**Small things left:**
+- At 1280x720 the lobby shows about five names under the PIN, QR and Start. A smaller QR on
+  short screens would give a second row.
+- Two frontend unit tests (robots.txt, the vendored resend file) and one thumbhash backend
+  case fail on Windows only, from line endings and float rounding. CI passes them.
+- `C:\c\Users\...` on the laptop is a stray folder from a screenshot path; delete it by hand.
+
 ## Picking this up on the laptop (11 Oct, evening)
 
 The cloud session stopped here, at François's request. Nothing is uncommitted: `v1` is pushed at

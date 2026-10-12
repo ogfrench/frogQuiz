@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+## v0.5, 12 Oct 2026
+
+V1 steps 0 to 3 (PR #57). Deploy the API before publishing the frontend: `DEPLOY.md`.
+
 ### The game's first screens, 12 Oct
 
 - **A title card before question 1:** the host's cover was the title and description on a blank screen. The title now rises in heavy type, followed by the description, the number of questions and players, and a "Get ready" bar in the mark's gradient. There is no time estimate, since nothing knows how long a game will run. François picked it from mockups of four options; Kahoot itself goes straight to the first question. `account-game.e2e.ts` checks it.
@@ -119,6 +123,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Recorded François's V1 decisions in `MVP.md` as D22 to D32.
 - Dropped the rule that removing a feature needs François and Gonçalo jointly (François's call, D31). CLAUDE.md now says François decides and Claude never removes a feature on its own.
 - `TODO.md` is now a record only; open work is in issue #56 and `docs/v1-plan.md`.
+
+## MVP, up to 11 Oct 2026
+
+Master as of 11 Oct, tagged `mvp` (`8e69034`).
 
 ### Claude Code setup, 11 Oct
 
