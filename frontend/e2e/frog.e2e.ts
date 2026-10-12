@@ -13,6 +13,7 @@ const mine = (page: Page) => page.locator('main img[src*="frog-"]').first();
 const frogOf = async (page: Page) => (await mine(page).getAttribute('src'))!;
 
 test('a frog comes with the username, can be picked, and is kept', async ({ browser, request }) => {
+	test.setTimeout(120_000);
 	const { page, context } = await signedInContext(browser, request);
 	await page.goto('/account/settings');
 
@@ -36,18 +37,14 @@ test('a frog comes with the username, can be picked, and is kept', async ({ brow
 	await expect(page.getByRole('status')).toContainText('Frog changed.');
 	await page.getByRole('button', { name: 'Undo' }).click();
 	await expect.poll(() => frogOf(page)).toBe(picked);
-	await context.close();
-});
 
-test('the colour row changes the strip, and the page fits a phone', async ({ browser, request }) => {
-	const { page, context } = await signedInContext(browser, request);
+	// The colour row changes the strip, and the page still fits a phone.
 	await page.setViewportSize(PHONE);
-	await page.goto('/account/settings');
-	const first = page.locator('button[aria-label="Use frog 1"] img');
+	const poseOne = page.locator('button[aria-label="Use frog 1"] img');
 	await page.getByRole('button', { name: 'Colour 1' }).click();
-	const one = await first.getAttribute('src');
+	const one = await poseOne.getAttribute('src');
 	await page.getByRole('button', { name: 'Colour 2' }).click();
-	expect(await first.getAttribute('src')).not.toBe(one);
+	expect(await poseOne.getAttribute('src')).not.toBe(one);
 	await expectNoHorizontalOverflow(page);
 	await context.close();
 });

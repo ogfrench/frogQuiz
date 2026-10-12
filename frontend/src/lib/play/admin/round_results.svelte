@@ -105,6 +105,7 @@ SPDX-License-Identifier: MPL-2.0
 			     showed an empty card. `zoom` is what shrinks the answers when the standings
 			     arrive: one number to animate, and everything inside scales with it. -->
 			<section
+				data-testid="round-answers"
 				class="flex flex-col gap-[var(--fq-space-group)] p-6 transition-[zoom] duration-500 ease-out motion-reduce:transition-none sm:p-8"
 				style:zoom={show_standings ? 0.72 : 1}
 			>

@@ -208,7 +208,9 @@ for (const [width, height_] of [
 		await expect(card(page)).toBeVisible({ timeout: 25_000 });
 		const noScroll = () =>
 			page.evaluate(() => ({
-				h: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+				// The host page already scrolls 1 px at every size (a visually hidden skip link at
+				// its foot); what must not scroll is the card.
+				h: Math.max(0, document.documentElement.scrollHeight - document.documentElement.clientHeight - 1),
 				w: document.documentElement.scrollWidth - document.documentElement.clientWidth
 			}));
 		expect(await noScroll(), 'the answers scroll').toEqual({ h: 0, w: 0 });
