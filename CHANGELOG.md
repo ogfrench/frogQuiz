@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Left-align the claim card and group its quiz list; align the standalone preview with the mobile app, including its close control and fixed actions.
+
 - Rewrite the README around frogQuiz's product, quick start and additions, preserving upstream and asset attribution.
 
 - Make Excel review explicit with a continuous list of numbered questions, expandable answers and persistent import controls.
