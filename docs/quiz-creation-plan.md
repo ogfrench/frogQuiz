@@ -81,7 +81,13 @@ Prepare one reviewable PR. Merging and deployment are separate steps.
   clean test-suite exit. CI must verify the complete frontend suite.
 - Playwright successfully registered 14 claim/import journey tests. They have not run;
   the local browser fails to start. Database integration tests are also awaiting CI.
-- GitHub reads work, but branch creation and commit uploads return 403. The connector
-  reports no GitHub app installations or installed accounts. Repository authorization
-  needs to be completed/refreshed before pushing and starting CI.
+- GitHub installation is complete. The combined branch is pushed in draft PR #67.
+- The first CI run passed all 288 frontend tests, lint, type checks, audit, and CodeQL.
+  Backend tests reported 330 passed and one incorrect expectation in the new access
+  test: missing credentials return 401. That expectation is corrected, with wrong
+  secrets separately asserted as 404. Three inherited Python lint errors are fixed.
+- Database and browser checks must rerun after those fixes. Creation screenshots now
+  run before the full browser suite so they can be reviewed sooner.
+- The Netlify preview build failed. Production frontend compilation is now included
+  in CI to provide a reproducible failure trace.
 - No merge, deployment, or production database mutation has been performed.

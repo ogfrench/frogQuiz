@@ -98,7 +98,8 @@ def test_guest_import_can_be_claimed_and_kept_on_the_account(test_client, import
         assert guest.json()["expire_at"] is not None
         assert guest.json()["public"] is False
         assert guest.json()["questions"][1]["type"] == "CHECK"
-        assert test_client.get(f"/api/v1/quiz/get/{quiz_id}").status_code == 404
+        assert test_client.get(f"/api/v1/quiz/get/{quiz_id}").status_code == 401
+        assert test_client.get(f"/api/v1/quiz/get/{quiz_id}", headers={"X-Anon-Secret": "wrong"}).status_code == 404
         claim = test_client.post(f"/api/v1/quiz/claim/{quiz_id}", headers=headers, cookies=importer["cookies"])
         assert claim.status_code == 200, claim.text
         owned = test_client.get(f"/api/v1/quiz/get/{quiz_id}", cookies=importer["cookies"])

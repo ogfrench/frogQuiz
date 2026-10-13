@@ -55,10 +55,10 @@ jobs:
         working-directory: ./frontend
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run the suite
+      - name: Capture creation screens
         env:
           E2E_BROWSER: chromium
-        run: bash e2e/run.sh
+        run: bash e2e/run.sh e2e/zz-create-dialog-shots.e2e.ts
 
       - name: Keep creation screen captures
         if: always()
@@ -69,6 +69,13 @@ jobs:
           retention-days: 14
           include-hidden-files: true
           if-no-files-found: ignore
+
+      - name: Run the suite
+        env:
+          E2E_BROWSER: chromium
+        run: |
+          bash e2e/stop.sh || true
+          bash e2e/run.sh --grep-invert "create dialog|guest creation screens"
 
       # Also exercise installations with anonymous quizzes disabled. The pass above has it on,
       # which most specs need to host without signing in. These cover the off side. stop.sh

@@ -1,7 +1,10 @@
-// Temporary: screenshots of the create dialog with the API mocked.
-import { test } from '@playwright/test';
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
+// SPDX-License-Identifier: MPL-2.0
+
+// Signed-in dialog variants use preview fixtures; guest journeys use the real API.
+import { expect, test } from '@playwright/test';
 import path from 'node:path';
-import { apiLogin, registerUser } from './accounts';
+import { apiLogin, askForSignIn, registerUser } from './accounts';
 
 const OUT = path.resolve(process.cwd(), '../e2e/.data/shots');
 const sizes = [
@@ -107,4 +110,59 @@ for (const theme of ['light', 'dark']) {
 			await context.close();
 		});
 	}
+}
+
+for (const size of [sizes[0], sizes[2]]) {
+	test(`guest creation screens ${size.name}`, async ({ browser, request }) => {
+		const user = await registerUser(request);
+		const context = await browser.newContext({
+			viewport: { width: size.width, height: size.height }
+		});
+		await context.addInitScript(() => localStorage.setItem('theme', 'light'));
+		const page = await context.newPage();
+		const shot = (name: string) =>
+			page.screenshot({ path: `${OUT}/guest-${size.name}-${name}.png`, fullPage: true });
+		await page.goto('/my-quizzes');
+		await page.waitForLoadState('networkidle');
+		await shot('1-my-quizzes');
+		await page
+			.getByRole('link', { name: /create a quiz/i })
+			.first()
+			.click();
+		const dialog = page.getByRole('dialog');
+		await expect(dialog).toBeVisible();
+		await shot('2-choose');
+		await dialog.getByRole('button', { name: 'Import from Excel', exact: true }).click();
+		await shot('3-upload');
+		const template = await request.get('/api/v1/quiz/excel-template');
+		expect(template.status()).toBe(200);
+		await dialog.locator('input[type=file]').setInputFiles({
+			name: 'frogquiz-excel-template.xlsx',
+			mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			buffer: await template.body()
+		});
+		await expect(dialog.getByText('2 questions, ready to import')).toBeVisible();
+		await shot('4-preview');
+		await dialog.getByRole('button', { name: 'Create quiz', exact: true }).click();
+		await page.waitForURL(/\/edit\?quiz_id=/);
+		await page.waitForLoadState('networkidle');
+		await shot('5-editor');
+		await page.goto('/my-quizzes');
+		await expect(page.getByText('Capital cities of Europe', { exact: true })).toBeVisible();
+		await shot('6-browser-library');
+		await page.goto('/account/login');
+		const { code } = await askForSignIn(page, user.email);
+		await page.getByRole('textbox', { name: 'Six-digit code' }).fill(code);
+		await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+		await page.waitForURL(/\/my-quizzes/);
+		const prompt = page.getByRole('alertdialog');
+		await expect(prompt).toContainText('Capital cities of Europe');
+		await shot('7-claim-prompt');
+		await prompt.getByRole('button', { name: 'Keep all', exact: true }).click();
+		await expect(prompt).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+		await expect(page.getByText('Capital cities of Europe', { exact: true })).toBeVisible();
+		await shot('8-account-library');
+		await context.close();
+	});
 }

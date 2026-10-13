@@ -52,6 +52,7 @@ router = APIRouter()
 
 allowed_image_extensions = [".gif", ".jpg", ".jpeg", ".png", ".svg", ".webp", ".jfif"]
 
+
 class InitEditorResponse(BaseModel):
     token: str
     # A game of this quiz is running: it keeps the version it started with (#35).

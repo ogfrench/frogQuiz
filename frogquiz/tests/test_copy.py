@@ -182,7 +182,9 @@ def test_the_seed_runs_twice_without_duplicates_and_explore_lists_it(
     assert _copy(test_client, str(example_id("an-example")), ana).status_code == 200
 
 
-def test_anonymous_template_copy_requires_the_setting(test_client: TestClient, example_folder, monkeypatch):  # noqa: F811
+def test_anonymous_template_copy_requires_the_setting(
+    test_client: TestClient, example_folder, monkeypatch  # noqa: F811
+):
     test_client.portal.call(seed, example_folder)
     monkeypatch.setattr(get_settings(), "anonymous_quizzes_enabled", False)
     response = _copy(test_client, str(example_id("an-example")))

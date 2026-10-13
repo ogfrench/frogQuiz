@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -60,3 +61,11 @@ jobs:
         run: |
           pnpm exec svelte-kit sync
           pnpm run check
+
+      - name: Production frontend build
+        working-directory: ./frontend
+        env:
+          NETLIFY: "true"
+          API_URL: "https://api.frogquiz.xyz"
+          VITE_API_ORIGIN: "https://api.frogquiz.xyz"
+        run: pnpm run build
