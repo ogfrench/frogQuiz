@@ -4,7 +4,9 @@
 // Signed-in dialog variants use preview fixtures; guest journeys use the real API.
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
 import { apiLogin, askForSignIn, registerUser } from './accounts';
+import { expectNoHorizontalOverflow, titleBox } from './helpers';
 
 const OUT = path.resolve(process.cwd(), '../e2e/.data/shots');
 const sizes = [
@@ -63,6 +65,37 @@ const broken = {
 	]
 };
 
+for (const size of sizes) {
+	test(`guest creation screens with 50 questions ${size.name}`, async ({ browser }) => {
+		const context = await browser.newContext({ viewport: { width: size.width, height: size.height } });
+		const page = await context.newPage();
+		await page.goto('/my-quizzes');
+		await page.waitForLoadState('networkidle');
+		await page.getByRole('link', { name: /create a quiz/i }).first().click();
+		const dialog = page.getByRole('dialog');
+		await dialog.getByRole('button', { name: /import from excel/i }).click();
+		await dialog.locator('input[type=file]').setInputFiles({
+			name: 'quiz-creation-50-questions.xlsx',
+			mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			buffer: await readFile(path.resolve(process.cwd(), '../docs/quiz-creation-50-questions.xlsx'))
+		});
+		await expect(dialog.getByText('50 questions, ready to import')).toBeVisible();
+		const list = dialog.locator('ol');
+		await expect(list.locator(':scope > li')).toHaveCount(50);
+		const dimensions = await list.evaluate((el) => ({ height: el.clientHeight, scroll: el.scrollHeight }));
+		expect(dimensions.height).toBeLessThanOrEqual(288);
+		expect(dimensions.scroll).toBeGreaterThan(dimensions.height);
+		await expect(dialog.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
+		await expectNoHorizontalOverflow(page);
+		await page.screenshot({ path: `${OUT}/guest-${size.name}-50-questions-top.png`, animations: 'disabled' });
+		await list.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+		await expect(list.locator(':scope > li').last()).toBeInViewport();
+		await expect(dialog.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
+		await page.screenshot({ path: `${OUT}/guest-${size.name}-50-questions-bottom.png`, animations: 'disabled' });
+		await context.close();
+	});
+}
+
 for (const theme of ['light', 'dark']) {
 	for (const s of sizes) {
 		test(`create dialog ${theme} ${s.name}`, async ({ browser, request }) => {
@@ -86,7 +119,7 @@ for (const theme of ['light', 'dark']) {
 			const dialog = page.getByRole('dialog');
 			await dialog.waitFor();
 			const shot = (n: string) =>
-				page.screenshot({ path: `${OUT}/${theme}-${s.name}-${n}.png` });
+				page.screenshot({ path: `${OUT}/${theme}-${s.name}-${n}.png`, animations: 'disabled' });
 			await shot('1-choose');
 			await dialog.getByRole('button', { name: /import from excel/i }).click();
 			await shot('2-upload');
@@ -120,8 +153,14 @@ for (const size of [sizes[0], sizes[2]]) {
 		});
 		await context.addInitScript(() => localStorage.setItem('theme', 'light'));
 		const page = await context.newPage();
-		const shot = (name: string) =>
-			page.screenshot({ path: `${OUT}/guest-${size.name}-${name}.png`, fullPage: true });
+		const shot = async (name: string) => {
+			await expectNoHorizontalOverflow(page);
+			await page.screenshot({
+				path: `${OUT}/guest-${size.name}-${name}.png`,
+				fullPage: true,
+				animations: 'disabled'
+			});
+		};
 		await page.goto('/my-quizzes');
 		await page.waitForLoadState('networkidle');
 		await shot('1-my-quizzes');
@@ -136,6 +175,7 @@ for (const size of [sizes[0], sizes[2]]) {
 		await shot('3-upload');
 		const template = await request.get('/api/v1/quiz/excel-template');
 		expect(template.status()).toBe(200);
+		await writeFile(path.join(OUT, 'frogquiz-excel-template.xlsx'), await template.body());
 		await dialog.locator('input[type=file]').setInputFiles({
 			name: 'frogquiz-excel-template.xlsx',
 			mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -145,7 +185,9 @@ for (const size of [sizes[0], sizes[2]]) {
 		await shot('4-preview');
 		await dialog.getByRole('button', { name: 'Create quiz', exact: true }).click();
 		await page.waitForURL(/\/edit\?quiz_id=/);
-		await page.waitForLoadState('networkidle');
+		await expect(titleBox(page)).toBeVisible();
+		await expect(titleBox(page)).toHaveText('Capital cities of Europe');
+		await expect(page.locator('[data-question-card]')).toHaveCount(2);
 		await shot('5-editor');
 		await page.goto('/my-quizzes');
 		await expect(page.getByText('Capital cities of Europe', { exact: true })).toBeVisible();
@@ -166,3 +208,4 @@ for (const size of [sizes[0], sizes[2]]) {
 		await context.close();
 	});
 }
+

@@ -25,8 +25,9 @@ on:
 permissions:
   contents: read
 
+# Preserve each commit's evidence while the next commit captures updated screens.
 concurrency:
-  group: e2e-${{ github.ref }}
+  group: e2e-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -58,7 +59,10 @@ jobs:
       - name: Capture creation screens
         env:
           E2E_BROWSER: chromium
-        run: bash e2e/run.sh e2e/zz-create-dialog-shots.e2e.ts
+        run: |
+          bash e2e/run.sh e2e/zz-create-dialog-shots.e2e.ts e2e/zz-preview-flow.e2e.ts e2e/claim.e2e.ts --grep "create dialog|guest creation screens|interactive preview|partial failure|connection failure|expired session"
+          cp docs/quiz-creation-preview.html e2e/.data/shots/flow-preview.html
+          cp docs/quiz-creation-50-questions.xlsx e2e/.data/shots/
 
       - name: Keep creation screen captures
         if: always()
@@ -75,7 +79,7 @@ jobs:
           E2E_BROWSER: chromium
         run: |
           bash e2e/stop.sh || true
-          bash e2e/run.sh --grep-invert "create dialog|guest creation screens"
+          bash e2e/run.sh --grep-invert "create dialog|guest creation screens|interactive preview"
 
       # Also exercise installations with anonymous quizzes disabled. The pass above has it on,
       # which most specs need to host without signing in. These cover the off side. stop.sh
@@ -101,3 +105,4 @@ jobs:
           retention-days: 14
           # e2e/.data is a dot directory, which upload-artifact skips unless told.
           include-hidden-files: true
+

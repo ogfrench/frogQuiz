@@ -4,6 +4,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Preserved in-flight browser verification across branch updates so newer captures do not cancel the earlier evidence.
+- Added actual 50-question Excel previews and desktop, tablet, and phone captures to verify bounded scrolling with the Create quiz action visible.
+- Corrected creation captures to wait for the loaded editor, finish dialog animations, and check phone overflow.
+- Added browser claim recovery coverage for connection loss and a revoked sign-in session, preserving remaining secrets through retries.
+- Added a downloadable interactive flow demonstration that reads actual Excel files and labels saving, hosting, and claiming as simulated; bundled the preview and template with CI screenshots.
 - Fixed production builds of static documentation pages: the shared creation dialog now reads URL query parameters only in the browser.
 - Captured desktop and phone creation screens before the full browser suite, including real guest Excel import and sign-in claiming. Added the production frontend build to CI to diagnose preview build failures.
 - Corrected three formatting errors inherited from the anonymous branch and aligned the guest import access test with the existing 401 response for missing credentials (a wrong secret still returns 404).

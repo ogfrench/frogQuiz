@@ -100,3 +100,42 @@ Prepare one reviewable PR. Merging and deployment are separate steps.
   selector omitted the hint in the button name. Corrected that selector in both
   screenshot and guest import journey tests before rerunning.
 - No merge, deployment, or production database mutation has been performed.
+
+
+
+## Codex continuation, 13 October 2026
+
+- Applied the exact five-file handoff patch and pushed it as `5552534`.
+- CI at that commit passed 331 backend tests (one skipped), all 30 workbook tests,
+  all 288 frontend tests, lint, type checking (0 errors, 36 existing warnings),
+  production compilation with the Netlify adapter, audit, and CodeQL. The existing
+  PR's automatic Netlify preview build also reported success.
+- Creation capture passed at that commit and produced actual desktop and phone
+  template preview, sign-in claim prompt, and saved account-library screens.
+  Its editor capture ran before the lazy-loaded editor was ready; it was a loading
+  screen, not acceptable editor evidence. Added loaded-title/question-card waits
+  and disabled finite animations during capture before recapturing.
+- Exercised the production claim helper directly with partial 429, 401, 503, and
+  connection failures. It retained the failed and unattempted secrets, stopped
+  the batch, and successfully claimed the remaining quizzes on retry.
+- Added browser cases for connection interruption and real session revocation
+  between two claims, followed by sign-in using the mail sink and ownership checks
+  in a fresh account context without guest secrets. CI results must be recorded
+  separately from the existence of these tests.
+- Created `docs/quiz-creation-preview.html`, a standalone local demonstration.
+  It reads the actual uploaded workbook without external scripts; persistence,
+  hosting, and account actions are visibly simulated in memory. Its embedded
+  template comes from the application's actual template function. Logic smoke
+  checks passed for real workbook contents, editing, both hosted questions,
+  partial claim retry, invalid files, and the file-size bound. Browser validation
+  is included in the screenshot CI step. Local Chromium could not launch under
+  this workspace's process restrictions.
+- The full app browser suite and anonymous-disabled pass remain pending until
+  their workflow finishes. Do not treat screen capture as full journey verification.
+- No merge or manually initiated deployment was performed.
+
+- Follow-up user request: demonstrated the maximum 50-question workbook. Generated
+  and parsed an actual 50-question .xlsx with no errors; added actual API preview
+  captures at 390, 834, and 1440, checking all 50 rows, a bounded 288-pixel list,
+  top/bottom scroll positions, and the Create quiz action staying in the viewport.
+  The standalone preview also includes this workbook as an explicit example download.
