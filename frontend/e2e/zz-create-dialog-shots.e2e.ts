@@ -82,7 +82,8 @@ for (const theme of ['light', 'dark']) {
 				.click();
 			const dialog = page.getByRole('dialog');
 			await dialog.waitFor();
-			const shot = (n: string) => page.screenshot({ path: `${OUT}/${theme}-${s.name}-${n}.png` });
+			const shot = (n: string) =>
+				page.screenshot({ path: `${OUT}/${theme}-${s.name}-${n}.png` });
 			await shot('1-choose');
 			await dialog.getByRole('button', { name: /import from excel/i }).click();
 			await shot('2-upload');

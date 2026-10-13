@@ -80,7 +80,9 @@ describe('claiming from this browser', () => {
 		expect(await loadAnonQuiz('expired', reply(404))).toBeNull();
 		expect(getAnonSecret('expired')).toBeNull();
 		setAnonSecret('claimed', 's3');
-		expect(await loadAnonQuiz('claimed', reply(200, { id: 'claimed', user_id: 'u' }))).toBeNull();
+		expect(
+			await loadAnonQuiz('claimed', reply(200, { id: 'claimed', user_id: 'u' }))
+		).toBeNull();
 		expect(getAnonSecret('claimed')).toBeNull();
 		setAnonSecret('down', 's4');
 		expect(await loadAnonQuiz('down', reply(503))).toBeNull();

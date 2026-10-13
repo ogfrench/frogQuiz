@@ -78,7 +78,9 @@ export async function loadAnonQuiz<
 	const secret = getAnonSecret(id);
 	if (!secret) return null;
 	try {
-		const res = await doFetch(`/api/v1/quiz/get/${id}`, { headers: { 'X-Anon-Secret': secret } });
+		const res = await doFetch(`/api/v1/quiz/get/${id}`, {
+			headers: { 'X-Anon-Secret': secret }
+		});
 		if (res.status === 404) {
 			clearAnonSecret(id);
 			return null;
