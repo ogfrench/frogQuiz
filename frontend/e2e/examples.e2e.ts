@@ -136,11 +136,9 @@ test('a signed-out visitor can use an example as an anonymous quiz', async ({ br
 	await page.goto('/explore');
 	const examples = page.getByRole('region', { name: 'Examples' });
 	await expect(examples).toBeVisible();
-	await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
-	await expect(page.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
-		'href',
-		'/account/login?returnTo=%2Fexplore'
-	);
+	const signIn = page.getByRole('main').getByRole('link', { name: 'Sign in' });
+	await expect(signIn).toBeVisible();
+	await expect(signIn).toHaveAttribute('href', '/account/login?returnTo=%2Fexplore');
 	await expect(page.getByRole('searchbox')).toHaveCount(0);
 	await examples.getByRole('link', { name: title }).click();
 	await expect(page).toHaveURL(/\/view\//);

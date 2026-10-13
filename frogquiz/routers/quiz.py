@@ -410,8 +410,8 @@ async def copy_quiz(
         expire_at = None
         image_ids = {check_image_string(str(i))[1] for i in extract_image_ids_from_quiz(source)} - {None}
         sizes = await StorageItem.objects.filter(id__in=list(image_ids), deleted_at=None).all() if image_ids else []
-    if user is not None and user.storage_used + sum(i.size for i in sizes) > settings.free_storage_limit:
-        raise HTTPException(status_code=409, detail="Storage limit reached")
+        if user.storage_used + sum(i.size for i in sizes) > settings.free_storage_limit:
+            raise HTTPException(status_code=409, detail="Storage limit reached")
 
     copies: dict[str, StorageItem | None] = {}
 

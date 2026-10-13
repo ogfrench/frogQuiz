@@ -155,13 +155,15 @@ test('a taken username is refused whatever its case, and another one works', asy
 	await page.waitForURL(/\/my-quizzes/);
 });
 
-test('Discover sends a signed-out visitor to sign in, and the link brings them back', async ({
+test('Discover asks a signed-out visitor to sign in to search, and the link brings them back', async ({
 	page,
 	request
 }) => {
 	expect((await request.post('/api/v1/search/', { data: { q: '' } })).status()).toBe(401);
 	const { email } = await registerUser(request);
 	await page.goto('/explore?q=frog');
+	await expect(page.getByRole('searchbox')).toHaveCount(0);
+	await page.getByRole('main').getByRole('link', { name: 'Sign in' }).click();
 	await expect(page).toHaveURL(/\/account\/login\?returnTo=%2Fexplore%3Fq%3Dfrog/);
 	const { link } = await askForSignIn(page, email);
 	await page.goto(link);
