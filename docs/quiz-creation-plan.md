@@ -139,3 +139,17 @@ Prepare one reviewable PR. Merging and deployment are separate steps.
   captures at 390, 834, and 1440, checking all 50 rows, a bounded 288-pixel list,
   top/bottom scroll positions, and the Create quiz action staying in the viewport.
   The standalone preview also includes this workbook as an explicit example download.
+
+## PR readiness follow-up
+
+- Commit `c14f340` passed every CI workflow, including creation captures, the full
+  browser suite, and the anonymous-disabled configuration. The claim prompt focus
+  and Create-dialog navigation regressions are fixed.
+- Final design uses a continuous, taller review list with numbered expandable
+  questions, a visible scrollbar, an end-of-list indicator and jump controls.
+  The Create action remains outside the scroll area on phone, tablet and desktop.
+- README now leads with the product and quick start, following frogConvert's tone.
+  Credits identify ClassQuiz's foundation and frogQuiz's additions separately,
+  retaining author, code-license and avatar attribution notices.
+- These final edits require CI on the resulting commit before PR readiness is
+  reported. No merge or manual deployment is authorized.

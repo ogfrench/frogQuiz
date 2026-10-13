@@ -5,170 +5,116 @@ SPDX-FileCopyrightText: 2026 François & Gonçalo
 SPDX-License-Identifier: MPL-2.0
 -->
 
-<div align='center'>
-    <h2 align='center'>frogQuiz</h2>
-    <img src='logo.png' alt='frogQuiz Logo' height='100px' width='100px'>
-    <p align='center'>
-        Host a live quiz in your browser. Everyone joins from their phone with a game PIN.
-        <br/>
-        <a href='https://frogquiz.xyz/'><strong>Visit the website »</strong></a>
-        <br />
-        <br />
-        <a href='https://frogquiz.xyz/docs'>Docs</a>
-        ·
-        <a href='https://frogquiz.xyz/account/register'>Register</a>
-        ·
-        <a href='DEPLOY.md'>Deploying</a>
-        ·
-        <a href='https://github.com/mawoka-myblock/ClassQuiz'>Upstream project</a>
-    </p>
-</div>
+# [frogQuiz](https://frogquiz.xyz)
 
-## About frogQuiz
+**Live quizzes for teams. Create a quiz, share the PIN, and get everyone playing.**
 
-One person hosts a quiz on a shared screen, everyone else joins on their phone
-with a PIN and a nickname, and the room answers under a timer. It is built for
-internal team use and ships in English only (see
-[docs/mvp-scope.md](docs/mvp-scope.md#languages) for why, and for how to add a
-language back).
+One person hosts on a shared screen. Everyone else joins from their phone with a PIN
+and a nickname. Answer against the clock, watch the leaderboard, and see who comes
+out on top. No app to install.
 
-It is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz) by
-Marlon W (Mawoka), which was built as a public multi-tenant product for schools.
-A good deal of that surface is switched off here, because an internal tool does
-not need it. What was cut, and how to turn any of it back on, is in
-[docs/mvp-scope.md](docs/mvp-scope.md). See [Credits](#credits) below.
+Build a quiz from scratch or import up to 50 questions from Excel. Guests can create,
+edit, and host quizzes without an account. Sign in to keep your quizzes permanently
+and explore the frog and Capgemini collection.
 
-## Try it
+## Quick start
 
-The frontend is at [frogquiz.xyz](https://frogquiz.xyz).
-It is hosted on Netlify, and it talks to a backend running on a separate
-container host, because socket.io cannot go through Netlify's proxy.
+- **Play or host**: [frogquiz.xyz](https://frogquiz.xyz).
+- **Create a quiz**: open **My Quizzes → Create a quiz**, then choose **Start from scratch** or **Import from Excel**.
+- **Import a workbook**: download the template in the import dialog, add your questions, and review the preview before creating the quiz.
+- **Keep your quizzes**: sign in, then choose **Keep all** or claim individual quizzes in **My Quizzes**.
+- **Self-host**: [DEPLOY.md](DEPLOY.md) covers Docker, a single-host setup, and a Netlify frontend with a separate backend.
 
-## Running it yourself
+Guest quizzes last 30 days and belong to the browser that created them. Clearing
+browser data can remove your access. Signing in offers to save them to your account;
+it does not claim them automatically on a shared computer.
 
-Everything you need is in **[DEPLOY.md](DEPLOY.md)**, which covers the two
-supported shapes:
+## What you can do
 
-- **Option A**: the whole stack on one host, behind the bundled Caddy.
-- **Option B**: frontend on Netlify, backend on a container host.
+- **Create and edit** questions, answers, timers, and quiz details.
+- **Import Excel** with a downloadable template, row-level validation, and a preview of every question and its correct answers.
+- **Host live games** with PIN-based joining, timed answers, scores, and a podium.
+- **Manage your library** in My Quizzes, including temporary browser quizzes and permanent account quizzes.
+- **Explore team quizzes** from frog and Capgemini when signed in.
 
-It also documents the free hosting path (Oracle Cloud Always Free), using
-[Neon](https://neon.tech) instead of the local Postgres container, and the
-Python version the backend needs.
-
-Quick start for a local stack:
-
-```bash
-cp .env.example .env       # then fill in SECRET_KEY, POSTGRES_PASSWORD, mail settings
-docker compose up -d
-```
+The interface is in English. See [MVP scope](docs/mvp-scope.md) for supported features
+and the boundaries of this edition. Features described here follow this branch;
+the hosted site may be on an earlier release.
 
 ## Development
 
-Bring up the backing services, then run the two halves separately:
+Copy `.env.example` to `.env` and fill in the settings described in [DEPLOY.md](DEPLOY.md).
+Start the backing services, then run the backend and frontend in separate terminals:
 
 ```bash
-# Postgres, Redis and Meilisearch for local development
+# Postgres, Redis, and Meilisearch
 docker compose -f docker-compose.dev.yml up -d
 
-# backend
+# Backend
 pipenv sync --dev
 pipenv run alembic upgrade head
 pipenv run uvicorn frogquiz:app --reload
 
-# frontend
-cd frontend && pnpm install && pnpm run dev
+# Frontend, in another terminal
+cd frontend
+pnpm install
+pnpm run dev
 ```
 
 ### Tests
 
-The backend suite needs the development services above. `run_tests.sh` starts
-them, runs the tests and tears them down again:
-
 ```bash
+# Backend: starts and stops isolated test services
 CONTAINER_BIN=docker ./run_tests.sh a
-```
 
-It defaults to `podman`; set `CONTAINER_BIN=docker` if that is what you have.
-CI runs exactly this command against [.env.ci](.env.ci), a throwaway config
-holding no credentials.
-
-The frontend suite needs nothing running:
-
-```bash
+# Frontend unit tests
 cd frontend && pnpm run test
+
+# Browser journeys, from the repository root
+bash e2e/run.sh
 ```
 
-### Search index
+CI checks backend and frontend tests, lint, type checking, the production build,
+and browser journeys. Test services use a separate configuration from production.
 
-Meilisearch is populated from Postgres. After a fresh deployment, or if the
-index name changes, rebuild it once:
+## Docs
 
-```bash
-docker compose exec api python import_to_meili.py
-```
+| | |
+|---|---|
+| [DEPLOY.md](DEPLOY.md) | Hosting, configuration, and search-index setup |
+| [docs/anonymous-vs-account.md](docs/anonymous-vs-account.md) | Guest access, accounts, expiry, and ownership |
+| [docs/mvp-scope.md](docs/mvp-scope.md) | Features and product scope |
+| [docs/redesign-status.md](docs/redesign-status.md) | UI work and remaining surfaces |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributing |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
 
-## Repository layout
+## Built with
 
-This is a monorepo:
+**SvelteKit, Svelte, Tailwind CSS, and shadcn-svelte** on the frontend.
+**FastAPI, python-socketio, ormar, and arq** on the backend.
+**Postgres, Redis, and Meilisearch** for storage, queues, and search.
 
-| Path                                                 | What lives there                                                                |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [`frogquiz/`](frogquiz/)                             | The FastAPI backend, socket.io server and arq worker                            |
-| [`frontend/`](frontend/)                             | The SvelteKit frontend                                                          |
-| [`migrations/`](migrations/)                         | Alembic database migrations                                                     |
-| `Pipfile`                                            | The backend project, at the repository root                                     |
-| [`docs/mvp-scope.md`](docs/mvp-scope.md)             | What the MVP includes, what was cut, and how to restore it                      |
-| [`docs/redesign-status.md`](docs/redesign-status.md) | Which surfaces have been redesigned, which have not, and why                    |
-| [`CLAUDE.md`](CLAUDE.md)                             | Conventions: changelog discipline, license headers, feature triage, UI baseline |
-
-### Tech stack
-
-**Backend**: [FastAPI](https://fastapi.tiangolo.com/) (web framework),
-[ormar](https://github.com/collerek/ormar/) (ORM),
-[python-socketio](https://python-socketio.readthedocs.io/en/latest/) (realtime
-communication between server and client), [arq](https://arq-docs.helpmanual.io/)
-(background jobs).
-
-**Frontend**: [SvelteKit](https://kit.svelte.dev/) (web framework),
-[TailwindCSS](https://tailwindcss.com/) (CSS framework) and
-[shadcn-svelte](https://shadcn-svelte.com/) (component layer).
-
-**Services you host yourself**
-
-- [Postgres](https://www.postgresql.org/) (database)
-- [Redis](https://redis.io/) (cache and job queue)
-- [Meilisearch](https://www.meilisearch.com/) (search server)
-- [Caddy](https://caddyserver.com/) (reverse proxy)
-- S3-compatible object storage, or local disk
-
-**Closed-source third parties** (optional)
-
-- [hCaptcha](https://www.hcaptcha.com/) (captcha)
+The backend lives in [`frogquiz/`](frogquiz/), the frontend in
+[`frontend/`](frontend/), and database migrations in [`migrations/`](migrations/).
 
 ## Credits
 
-frogQuiz is a fork of [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz),
-written by Marlon W (Mawoka), who deserves the credit for essentially all of
-the software here. The upstream project has its own hosted instance at
-[classquiz.de](https://classquiz.de) and its own
-[docs](https://classquiz.de/docs).
+frogQuiz builds on [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz) by
+Marlon W (Mawoka) and its contributors, which provides the original quiz application
+and realtime game foundation.
 
-The frog avatars are
-[Adventure Frog](https://intellikat.itch.io/frog-adventure-character-spritesheet)
-by [intellikat](https://intellikat.itch.io/), licensed under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): cropped, given tongues
-from the sheet's own pieces, and recoloured. Not endorsed by the artist. What
-was changed, and the script that does it, is in
-[`frontend/src/lib/assets/frogs/README.md`](frontend/src/lib/assets/frogs/README.md).
+**Work developed in frogQuiz** includes the redesigned interface and team-focused
+experience, temporary guest ownership and account claiming, the Excel validation
+and preview flow, and the supporting deployment documentation and browser tests.
+See [CHANGELOG.md](CHANGELOG.md) for the development history.
+
+The frog avatars use [Adventure Frog](https://intellikat.itch.io/frog-adventure-character-spritesheet)
+by [intellikat](https://intellikat.itch.io/), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+They have been cropped, recoloured, and given tongues assembled from the sheet's
+pieces. The artist does not endorse frogQuiz. Details are in the
+[avatar README](frontend/src/lib/assets/frogs/README.md).
 
 ## License
 
-This repository is licensed under the
-[Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/). Please
-review the license to understand your rights and obligations. In particular,
-the MPL requires that modifications to covered files stay open source.
-
-The exception is the frog avatar images in `frontend/src/lib/assets/frogs/`,
-which keep their own license, CC BY 4.0 (see Credits above and
-`.reuse/dep5`).
+Code is licensed under the **Mozilla Public License 2.0** ([MPL-2.0](https://www.mozilla.org/en-US/MPL/2.0/)).
+Frog avatar assets retain their **CC BY 4.0** license; see [`.reuse/dep5`](.reuse/dep5).

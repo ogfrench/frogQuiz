@@ -42,13 +42,10 @@ SPDX-License-Identifier: MPL-2.0
 	let creating = $state(false);
 	let dragging = $state(false);
 	let previewRequest = 0;
-	let questionPage = $state(0);
 	let questionList = $state<HTMLOListElement | null>(null);
-	const pageSize = 5;
-	const pageQuestions = $derived(preview?.questions.slice(questionPage * pageSize, (questionPage + 1) * pageSize) ?? []);
-	function turnPage(offset: number) {
-		questionPage += offset;
-		questionList?.scrollTo(0, 0);
+	let atEnd = $state(false);
+	function updateScroll() {
+		if (questionList) atEnd = questionList.scrollTop + questionList.clientHeight >= questionList.scrollHeight - 4;
 	}
 
 	const clean = $derived(preview !== null && preview.errors.length === 0);
@@ -85,7 +82,7 @@ SPDX-License-Identifier: MPL-2.0
 		if (!createDialog.open || request !== previewRequest) return;
 		if (result.ok === true) {
 			preview = result.preview;
-			questionPage = 0;
+			atEnd = false;
 			step = 'preview';
 		} else {
 			problem = $t(`create_dialog.error_${result.reason}`);
@@ -270,14 +267,14 @@ SPDX-License-Identifier: MPL-2.0
 
 			{#if preview.questions.length > 0}
 				<p class="text-muted-foreground text-sm">{$t('create_dialog.review_hint')}</p>
-				<ol bind:this={questionList} start={questionPage * pageSize + 1}
-					class="border-border divide-border min-h-0 min-w-0 divide-y overflow-y-auto rounded-xl border max-sm:flex-1 sm:max-h-[45dvh]"
-					style="scrollbar-gutter: stable; scrollbar-width: thin;">
-					{#each pageQuestions as q, index (q.row)}
+				<ol bind:this={questionList} onscroll={updateScroll}
+					class="border-border divide-border min-h-0 min-w-0 divide-y overflow-y-scroll rounded-xl border max-sm:flex-1 sm:max-h-[55dvh]"
+					style="scrollbar-gutter: stable; scrollbar-color: #909098 transparent;">
+					{#each preview.questions as q, index (q.row)}
 						<li class="min-w-0">
 							<details class="group">
 								<summary class="hover:bg-muted/50 focus-visible:ring-ring flex cursor-pointer list-none items-start gap-3 p-3 outline-none focus-visible:ring-2 [&::-webkit-details-marker]:hidden">
-									<span class="bg-muted text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold tabular-nums">{questionPage * pageSize + index + 1}</span>
+									<span class="bg-muted text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold tabular-nums">{index + 1}</span>
 									<span class="min-w-0 flex-1">
 										<span class="block text-sm font-medium break-words">{q.question}</span>
 										<span class="text-muted-foreground mt-1 block text-xs">{$t('create_dialog.answers_count', { count: q.answers.length })} · {$t('create_dialog.seconds', { count: q.time })}</span>
@@ -299,11 +296,12 @@ SPDX-License-Identifier: MPL-2.0
 						</li>
 					{/each}
 				</ol>
-				<div class="flex shrink-0 items-center justify-between gap-2">
-					<Button variant="outline" size="sm" disabled={questionPage === 0} onclick={() => turnPage(-1)}>{$t('create_dialog.previous')}</Button>
-					<p class="text-muted-foreground text-center text-xs tabular-nums" role="status">{$t('create_dialog.page_range', { first: questionPage * pageSize + 1, last: Math.min((questionPage + 1) * pageSize, preview.questions.length), total: preview.questions.length })}</p>
-					<Button variant="outline" size="sm" disabled={(questionPage + 1) * pageSize >= preview.questions.length} onclick={() => turnPage(1)}>{$t('create_dialog.next')}</Button>
-				</div>
+				{#if preview.questions.length > 5}
+					<div class="flex shrink-0 items-center justify-between gap-2">
+						<p class="text-muted-foreground text-xs" role="status">{$t(atEnd ? 'create_dialog.end_list' : 'create_dialog.scroll_hint', { count: preview.questions.length })}</p>
+						<Button variant="ghost" size="sm" onclick={() => questionList?.scrollTo({ top: atEnd ? 0 : questionList.scrollHeight, behavior: 'smooth' })}>{$t(atEnd ? 'create_dialog.first_question' : 'create_dialog.last_question')}</Button>
+					</div>
+				{/if}
 			{/if}
 
 			{#if problem}

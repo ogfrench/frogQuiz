@@ -4,7 +4,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
-- Make Excel review explicit with five numbered questions per page, expandable answers and persistent import controls.
+- Rewrite the README around frogQuiz's product, quick start and additions, preserving upstream and asset attribution.
+
+- Make Excel review explicit with a continuous list of numbered questions, expandable answers and persistent import controls.
 - Focus Not now when offering to claim browser quizzes after sign-in; update Create navigation coverage for the choice dialog.
 
 - Preserved in-flight browser verification across branch updates so newer captures do not cancel the earlier evidence.

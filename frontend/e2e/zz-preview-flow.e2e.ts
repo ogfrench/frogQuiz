@@ -87,11 +87,9 @@ test('interactive preview reads all 50 questions while keeping Create quiz visib
 	});
 	await expect(page.getByText('50 questions, ready to import')).toBeVisible();
 	const list = page.getByLabel('Imported questions preview');
-	await expect(list.locator('.question')).toHaveCount(5);
-	await expect(page.getByRole('status')).toHaveText('1–5 of 50');
+	await expect(list.locator('.question')).toHaveCount(50);
 	await expect(page.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
-	for (let n = 0; n < 9; n++) await page.getByRole('button', { name: 'Next', exact: true }).click();
-	await expect(page.getByRole('status')).toHaveText('46–50 of 50');
+	await page.getByRole('button', { name: 'Jump to last', exact: true }).click();
 	await list.locator('.question').last().scrollIntoViewIfNeeded();
 	await expect(list.locator('.question').last()).toBeInViewport();
 	await expect(page.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
