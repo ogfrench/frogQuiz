@@ -92,7 +92,9 @@ test('interactive preview reads all 50 questions while keeping Create quiz visib
 	await expect(page.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
 	for (let n = 0; n < 9; n++) await page.getByRole('button', { name: 'Next', exact: true }).click();
 	await expect(page.getByRole('status')).toHaveText('46–50 of 50');
+	await list.locator('.question').last().scrollIntoViewIfNeeded();
 	await expect(list.locator('.question').last()).toBeInViewport();
+	await expect(page.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
 	await page.screenshot({ path: `${OUT}/demo-390-50-questions.png`, animations: 'disabled' });
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
