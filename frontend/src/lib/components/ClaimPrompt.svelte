@@ -73,18 +73,18 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <AlertDialog.Root bind:open>
-	<AlertDialog.Content class="max-w-md" onOpenAutoFocus={(event) => { event.preventDefault(); cancelButton?.focus(); }}>
-		<AlertDialog.Header>
-			<AlertDialog.Title
+	<AlertDialog.Content class="max-w-md gap-5 text-left" onOpenAutoFocus={(event) => { event.preventDefault(); cancelButton?.focus(); }}>
+		<AlertDialog.Header class="place-items-start gap-2 text-left">
+			<AlertDialog.Title class="pr-2 text-left text-xl leading-snug"
 				>{$t('claim_prompt.title', { count: quizzes.length })}</AlertDialog.Title
 			>
-			<AlertDialog.Description>
+			<AlertDialog.Description class="text-left leading-relaxed">
 				{$t('claim_prompt.body', { username })}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
-		<ul class="text-foreground max-h-48 list-disc overflow-y-auto pl-5 text-sm">
+		<ul class="border-border bg-muted/30 text-foreground max-h-48 divide-y overflow-y-auto rounded-xl border text-sm">
 			{#each quizzes as quiz (quiz.id)}
-				<li class="break-words">{quiz.title}</li>
+				<li class="px-4 py-3 text-left font-medium break-words">{quiz.title}</li>
 			{/each}
 		</ul>
 		{#if summary}
