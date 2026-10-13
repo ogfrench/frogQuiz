@@ -29,6 +29,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Check from '@lucide/svelte/icons/check';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 
 	const { t } = getLocalization();
@@ -41,6 +42,14 @@ SPDX-License-Identifier: MPL-2.0
 	let creating = $state(false);
 	let dragging = $state(false);
 	let previewRequest = 0;
+	let questionPage = $state(0);
+	let questionList = $state<HTMLOListElement | null>(null);
+	const pageSize = 5;
+	const pageQuestions = $derived(preview?.questions.slice(questionPage * pageSize, (questionPage + 1) * pageSize) ?? []);
+	function turnPage(offset: number) {
+		questionPage += offset;
+		questionList?.scrollTo(0, 0);
+	}
 
 	const clean = $derived(preview !== null && preview.errors.length === 0);
 	// The shared layout also renders static docs, whose build has no query string.
@@ -76,6 +85,7 @@ SPDX-License-Identifier: MPL-2.0
 		if (!createDialog.open || request !== previewRequest) return;
 		if (result.ok === true) {
 			preview = result.preview;
+			questionPage = 0;
 			step = 'preview';
 		} else {
 			problem = $t(`create_dialog.error_${result.reason}`);
@@ -122,7 +132,7 @@ SPDX-License-Identifier: MPL-2.0
 	}
 >
 	<Dialog.Content
-		class="max-sm:inset-0 max-sm:top-0 max-sm:left-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:max-w-full max-sm:translate-x-0 max-sm:translate-y-0 max-sm:content-start max-sm:overflow-y-auto max-sm:rounded-none sm:max-h-[90dvh] sm:max-w-xl sm:overflow-y-auto"
+		class={cn(step === 'preview' && '!flex !flex-col !gap-4 !overflow-hidden sm:!max-w-2xl', "max-sm:inset-0 max-sm:top-0 max-sm:left-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:max-w-full max-sm:translate-x-0 max-sm:translate-y-0 max-sm:content-start max-sm:overflow-y-auto max-sm:rounded-none sm:max-h-[90dvh] sm:max-w-xl sm:overflow-y-auto")}
 	>
 		{#if step === 'choose'}
 			<Dialog.Header>
@@ -208,7 +218,7 @@ SPDX-License-Identifier: MPL-2.0
 				</p>
 			{/if}
 
-			<Dialog.Footer class="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+			<Dialog.Footer class="shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-between">
 				<Button
 					variant="ghost"
 					onclick={() => (step = 'choose')}
@@ -259,48 +269,41 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 
 			{#if preview.questions.length > 0}
-				<ol
-					class="border-border divide-border flex max-h-72 min-w-0 flex-col divide-y overflow-y-auto rounded-xl border"
-				>
-					{#each preview.questions as q (q.row)}
-						<li class="flex min-w-0 flex-col gap-1.5 p-3">
-							<div class="flex min-w-0 items-baseline gap-2">
-								<span
-									class="text-muted-foreground w-6 shrink-0 text-sm tabular-nums"
-									>{q.row}</span
-								>
-								<span class="min-w-0 text-sm font-medium break-words"
-									>{q.question}</span
-								>
-							</div>
-							<p class="text-muted-foreground pl-8 text-xs">
-								{$t(`create_dialog.type_${q.type}`)} ·
-								{$t('create_dialog.answers_count', { count: q.answers.length })} ·
-								{$t('create_dialog.seconds', { count: q.time })}
-							</p>
-							<ul class="flex min-w-0 flex-col gap-0.5 pl-8 text-sm">
-								{#each q.answers as a, i (i)}
-									<li class="flex min-w-0 items-start gap-1.5">
-										{#if a.right}
-											<Check
-												class="mt-0.5 size-4 shrink-0"
-												aria-label="Correct"
-											/>
-										{:else}
-											<span class="size-4 shrink-0" aria-hidden="true"></span>
-										{/if}
-										<span
-											class={cn(
-												'min-w-0 break-words',
-												!a.right && 'text-muted-foreground'
-											)}>{a.text}</span
-										>
-									</li>
-								{/each}
-							</ul>
+				<p class="text-muted-foreground text-sm">{$t('create_dialog.review_hint')}</p>
+				<ol bind:this={questionList} start={questionPage * pageSize + 1}
+					class="border-border divide-border min-h-0 min-w-0 divide-y overflow-y-auto rounded-xl border max-sm:flex-1 sm:max-h-[45dvh]"
+					style="scrollbar-gutter: stable; scrollbar-width: thin;">
+					{#each pageQuestions as q, index (q.row)}
+						<li class="min-w-0">
+							<details class="group">
+								<summary class="hover:bg-muted/50 focus-visible:ring-ring flex cursor-pointer list-none items-start gap-3 p-3 outline-none focus-visible:ring-2 [&::-webkit-details-marker]:hidden">
+									<span class="bg-muted text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold tabular-nums">{questionPage * pageSize + index + 1}</span>
+									<span class="min-w-0 flex-1">
+										<span class="block text-sm font-medium break-words">{q.question}</span>
+										<span class="text-muted-foreground mt-1 block text-xs">{$t('create_dialog.answers_count', { count: q.answers.length })} · {$t('create_dialog.seconds', { count: q.time })}</span>
+									</span>
+									<ChevronDown class="text-muted-foreground mt-1 size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+								</summary>
+								<div class="bg-muted/30 px-3 pb-4 pt-2 sm:pl-13">
+									<p class="text-muted-foreground mb-2 text-xs">{$t(`create_dialog.type_${q.type}`)} · {$t('create_dialog.source_row', { row: q.row })}</p>
+									<ul class="flex min-w-0 flex-col gap-2 text-sm">
+										{#each q.answers as a, i (i)}
+											<li class="flex min-w-0 items-start gap-2">
+												{#if a.right}<Check class="mt-0.5 size-4 shrink-0" aria-label="Correct" />{:else}<span class="size-4 shrink-0" aria-hidden="true"></span>{/if}
+												<span class={cn('min-w-0 break-words', !a.right && 'text-muted-foreground')}>{a.text}</span>
+											</li>
+										{/each}
+									</ul>
+								</div>
+							</details>
 						</li>
 					{/each}
 				</ol>
+				<div class="flex shrink-0 items-center justify-between gap-2">
+					<Button variant="outline" size="sm" disabled={questionPage === 0} onclick={() => turnPage(-1)}>{$t('create_dialog.previous')}</Button>
+					<p class="text-muted-foreground text-center text-xs tabular-nums" role="status">{$t('create_dialog.page_range', { first: questionPage * pageSize + 1, last: Math.min((questionPage + 1) * pageSize, preview.questions.length), total: preview.questions.length })}</p>
+					<Button variant="outline" size="sm" disabled={(questionPage + 1) * pageSize >= preview.questions.length} onclick={() => turnPage(1)}>{$t('create_dialog.next')}</Button>
+				</div>
 			{/if}
 
 			{#if problem}
@@ -310,7 +313,7 @@ SPDX-License-Identifier: MPL-2.0
 				</p>
 			{/if}
 
-			<Dialog.Footer class="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+			<Dialog.Footer class="shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-between">
 				<Button variant={clean ? 'ghost' : 'default'} onclick={again} disabled={creating}>
 					{$t('create_dialog.choose_another')}
 				</Button>
@@ -328,3 +331,4 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>
+

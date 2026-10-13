@@ -703,7 +703,12 @@
         "error_signed_out": "Your session ended. Sign in again to import.",
         "error_rate_limited": "Too many uploads in a minute. Wait a moment and try again.",
         "error_failed": "Couldn't confirm the import. Check My Quizzes before trying again.",
-        "error_browser_storage": "This browser cannot remember your quiz. Enable browser storage or sign in before importing."
+        "error_browser_storage": "This browser cannot remember your quiz. Enable browser storage or sign in before importing.",
+        "review_hint": "Review your questions. Select a question to see its answers.",
+        "source_row": "Excel row {{row}}",
+        "previous": "Previous",
+        "next": "Next",
+        "page_range": "{{first}}–{{last}} of {{total}}"
     },
     "security_settings": {
         "backup_code": "Backup-Code",

@@ -24,6 +24,7 @@ SPDX-License-Identifier: MPL-2.0
 	let keeping = $state(false);
 	let summary: string | null = $state(null);
 	let checked = false;
+	let cancelButton = $state<HTMLButtonElement | null>(null);
 
 	$effect(() => {
 		// Waits for a page with the navbar: never over a game or the editor.
@@ -72,7 +73,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <AlertDialog.Root bind:open>
-	<AlertDialog.Content class="max-w-md">
+	<AlertDialog.Content class="max-w-md" onOpenAutoFocus={(event) => { event.preventDefault(); cancelButton?.focus(); }}>
 		<AlertDialog.Header>
 			<AlertDialog.Title
 				>{$t('claim_prompt.title', { count: quizzes.length })}</AlertDialog.Title
@@ -93,7 +94,7 @@ SPDX-License-Identifier: MPL-2.0
 			{#if summary}
 				<Button onclick={() => window.location.reload()}>{$t('claim_prompt.done')}</Button>
 			{:else}
-				<AlertDialog.Cancel disabled={keeping}
+				<AlertDialog.Cancel bind:ref={cancelButton} disabled={keeping}
 					>{$t('claim_prompt.not_now')}</AlertDialog.Cancel
 				>
 				<!-- A plain Button, not AlertDialog.Action, so the dialog stays open to report. -->
@@ -107,3 +108,4 @@ SPDX-License-Identifier: MPL-2.0
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
+

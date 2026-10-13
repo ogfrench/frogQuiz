@@ -44,6 +44,9 @@ test('signed out: the navbar marks My Quizzes, and Create needs no account', asy
 
 	// The page's own button, not the navbar's: both read "Create a quiz" now.
 	await page.getByRole('main').getByRole('link', { name: 'Create a quiz' }).first().click();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole('link', { name: /start from scratch/i }).click();
 	await expect(page).toHaveURL(/\/create$/);
 });
 
@@ -117,3 +120,4 @@ test('counts and credits read as sentences, and the empty list promises nothing 
 	).toBeVisible();
 	await user.context.close();
 });
+
