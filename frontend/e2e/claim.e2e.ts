@@ -10,7 +10,7 @@
 // Quizzes without an account exist only with the setting on, so this skips with it off.
 
 import { expect, test, type APIRequestContext, type Browser } from '@playwright/test';
-import { apiLogin, registerUser, signedInContext } from './accounts';
+import { apiLogin, askForSignIn, registerUser, signedInContext } from './accounts';
 import {
 	ANON_KEY,
 	advanceToFinalResults,
@@ -81,6 +81,60 @@ test('on a phone, the browser that made a quiz claims it from My Quizzes', async
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	await expect(page.getByText(title)).toBeVisible();
 	await expectNoHorizontalOverflow(page);
+	await context.close();
+});
+
+/** On a phone holding these quizzes' secrets, signs in by typing the code, as the hint asks. */
+async function signInHolding(
+	browser: Browser,
+	request: APIRequestContext,
+	quizzes: { id: string; secret: string }[]
+) {
+	const user = await registerUser(request);
+	const context = await browser.newContext({ viewport: PHONE, isMobile: true, hasTouch: true });
+	const page = await context.newPage();
+	for (const quiz of quizzes) await rememberAnonQuiz(page, quiz.id, quiz.secret);
+	await page.goto('/account/login');
+	const { code } = await askForSignIn(page, user.email);
+	await expect(page.getByText(/Type the code here/)).toBeVisible();
+	await page.getByRole('textbox', { name: 'Six-digit code' }).fill(code);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await page.waitForURL(/\/my-quizzes/);
+	return { context, page, user };
+}
+
+test('right after sign-in the quizzes this browser made are offered, and Keep all keeps them', async ({
+	browser,
+	request
+}) => {
+	const titles = [`Prompt A ${Date.now()}`, `Prompt B ${Date.now()}`];
+	const quizzes = [await anonQuiz(request, titles[0]), await anonQuiz(request, titles[1])];
+	const { context, page, user } = await signInHolding(browser, request, quizzes);
+	const dialog = page.getByRole('alertdialog');
+	await expect(dialog).toContainText('Keep these 2 quizzes on your account?');
+	await expect(dialog).toContainText(user.username);
+	for (const title of titles) await expect(dialog).toContainText(title);
+	// A shared laptop: the safe answer has the focus.
+	await expect(dialog.getByRole('button', { name: 'Not now' })).toBeFocused();
+	await expectNoHorizontalOverflow(page);
+	await dialog.getByRole('button', { name: 'Keep all' }).tap();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	for (const title of titles) await expect(page.getByText(title)).toBeVisible();
+	await context.close();
+});
+
+test('Not now leaves the quizzes in the browser and asks again only after the next sign-in', async ({
+	browser,
+	request
+}) => {
+	const quiz = await anonQuiz(request, `Not now ${Date.now()}`);
+	const { context, page } = await signInHolding(browser, request, [quiz]);
+	const dialog = page.getByRole('alertdialog');
+	await dialog.getByRole('button', { name: 'Not now' }).tap();
+	await expect(dialog).toHaveCount(0);
+	await page.reload();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toBeVisible();
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 	await context.close();
 });
 

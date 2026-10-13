@@ -233,6 +233,8 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 | D39 | What V1 still takes, after v0.5 | **F (2026-10-12): #40, #39, #42, #44, #50, #60, #61 ("if easy and possible") and #45 trimmed** to game flow, parts of the stack going down, the room-size number and one real iPhone and Android game. **#33, #34, #38 and #41 move after V1**; D24, D25 and D28 stay for when they return. Examples: three general knowledge, plus "frogQuiz onboarding" and "frog's history" (five, narrowing D26's six). #42 and #44 cover the live screens, and the hidden things get a check that can end in a redesign: hidden actions in #42, and an inventory of hidden routes from which F picks what comes back | — | ☑ |
 | D40 | Default for anonymous quizzes (#55) | **F (2026-10-13): on by default** in code and Compose; the 20/day and 1,000-live ceilings remain, and operators can set the flag false. Reverses D23's production default, not its limits or privacy rules | — | ☑ |
 | D41 | Examples for signed-out visitors (#39, #55) | **F (2026-10-13): Discover shows curated Examples without sign-in; a guest can use one to create a private 30-day anonymous copy.** Search, profiles and sitemap remain sign-in-only. Narrows D21 and extends D26/D33 | — | ☑ |
+| D42 | Keeping quizzes made without an account (#43) | **F (2026-10-13): right after sign-in, one prompt lists the quizzes this browser made and offers Keep all or Not now (focused).** Nothing is claimed without the press, as #43 case 8 had it. Not now lasts until the next sign-in. Claims are limited 20 a minute per account, 120 per address. My Quizzes gets Keep all | — | ☑ |
+| D43 | What a guest can do (#55) | **F (2026-10-13): host any public quiz, the examples included, and download a quiz this browser made.** Hosting someone else's unlisted quiz still needs its owner, and the spreadsheet stays the owner's (D18), the browser holding a quiz's secret counting as its owner. With `anonymous_quizzes_enabled` off, guest hosting is off too | — | ☑ |
 
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
@@ -243,7 +245,7 @@ signature. **D16 and D18 still need Gonçalo's tick**: both are François's call
 calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
 the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
 
-**From 11 Oct (D31) François decides alone**, so D22 to D41 carry no G column, and the
+**From 11 Oct (D31) François decides alone**, so D22 to D43 carry no G column, and the
 open G ticks above (D16 to D21) are no longer a gate. They stay as a record.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on

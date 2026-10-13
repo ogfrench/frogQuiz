@@ -5,6 +5,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 ## Unreleased
 
 - Enabled anonymous quizzes by default and let signed-out visitors browse Examples and use them to create editable 30-day quizzes.
+- Added a prompt right after sign-in that offers to keep the quizzes this browser made (Keep all, or Not now), and Keep all on My Quizzes (D42).
+- Limited claims to 20 a minute per account instead of per address, so an office claiming at once no longer shares one limit.
+- Renamed "Create an account to keep this quiz" to "Sign in to keep this quiz", and added a hint on the code step that the link may open in another browser.
+- Let anyone host a public quiz without an account, and let the browser that made a quiz download its spreadsheet (D43).
+- Stopped My Quizzes counting a view on every quiz this browser holds each time it loads.
 - **The hidden `.cqa` import keeps its images:** it wrote image ids without dashes, which the orphan sweep reads as unused, so an imported quiz's images would have been deleted a day later. The same fix as Copy's in #63.
 
 ### Game polish, 12 Oct

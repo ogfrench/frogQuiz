@@ -23,6 +23,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { browser } from '$app/environment';
 	import CommandPalette from '$lib/components/commandpalette.svelte';
 	import AmbientBackground from '$lib/components/AmbientBackground.svelte';
+	import ClaimPrompt from '$lib/components/ClaimPrompt.svelte';
+	import CreateQuizDialog from '$lib/components/CreateQuizDialog.svelte';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -84,6 +86,8 @@ SPDX-License-Identifier: MPL-2.0
 	{/if}
 </div>
 <CommandPalette />
+<CreateQuizDialog />
+<ClaimPrompt active={chrome && !(page.route.id ?? '').startsWith('/account')} />
 
 <style lang="scss">
 	// The page ground now comes from the shadcn `--background` token, applied to

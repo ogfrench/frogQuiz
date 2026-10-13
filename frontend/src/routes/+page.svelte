@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { openCreateDialog } from '$lib/create_dialog.svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { page } from '$app/state';
@@ -109,7 +110,13 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 
 			<div class="mt-5 grid gap-2 sm:grid-cols-2">
-				<Button href="/create" variant="outline" size="lg" class="h-11">
+				<Button
+					href="/create"
+					variant="outline"
+					size="lg"
+					class="h-11"
+					onclick={openCreateDialog}
+				>
 					{$t('index_page.create_cta')}
 				</Button>
 				<Button href="/my-quizzes" variant="outline" size="lg" class="h-11">

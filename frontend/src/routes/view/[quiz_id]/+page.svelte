@@ -109,10 +109,14 @@ SPDX-License-Identifier: MPL-2.0
 	const visitor_order = (answers: { answer: string }[]) =>
 		[...answers].sort((a, b) => a.answer.localeCompare(b.answer));
 
-	// What the server actually allows (routers/quiz.py, start_quiz): its own creator, or
-	// anyone signed in if the quiz is public. Offering Play on somebody else's unlisted
-	// quiz gave a signed-in visitor a button that answered "quiz not found".
-	const can_start = $derived(owns_anonymously || (logged_in && (quiz.public || owns_on_account)));
+	// What the server allows (routers/quiz.py, start_quiz): the owner, by account or by this
+	// browser's secret, or anyone for a public quiz; signed out, only while quizzes without
+	// an account are on (D43). Someone else's unlisted quiz still answers "quiz not found".
+	const can_start = $derived(
+		owns_anonymously ||
+			owns_on_account ||
+			(quiz.public && (logged_in || anonymous_quizzes_enabled))
+	);
 
 	// Copy to my quizzes (#39) is the same rule less the anonymous owner: the copy lands in
 	// an account, and a browser with only a secret has none. The server enforces it too
@@ -364,7 +368,7 @@ SPDX-License-Identifier: MPL-2.0
 							{/if}
 						{:else}
 							<Button
-								href="/account/register?returnTo=/view/{quiz.id}"
+								href="/account/login?returnTo={encodeURIComponent(`/view/${quiz.id}`)}"
 								class="w-full sm:w-fit"
 							>
 								{$t('view_quiz_page.anon_sign_up')}
@@ -466,7 +470,8 @@ SPDX-License-Identifier: MPL-2.0
 						{/if}
 						{copying ? $t('copy.copying') : $t('copy.use_template')}
 					</Button>
-				{:else if can_copy}
+				{/if}
+				{#if can_copy}
 					<Button
 						variant="outline"
 						size="lg"
@@ -483,17 +488,10 @@ SPDX-License-Identifier: MPL-2.0
 					</Button>
 				{/if}
 				<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`
-				     above already hides it from a non-owner on screen. Still disabled while
-				     signed out, because the endpoint needs a session -- an anonymous owner
-				     holds the quiz in this browser, not in an account. -->
+				     above already hides it from a non-owner on screen. The owner may be this
+				     browser, by its secret (D43). -->
 				{#if is_owner}
-					<Button
-						variant="outline"
-						size="lg"
-						disabled={!logged_in}
-						onclick={() => (download_id = quiz.id)}
-						aria-describedby={logged_in ? undefined : 'signed-out-hint'}
-					>
+					<Button variant="outline" size="lg" onclick={() => (download_id = quiz.id)}>
 						<Download />
 						{$t('words.download')}
 					</Button>
@@ -573,15 +571,11 @@ SPDX-License-Identifier: MPL-2.0
 					{is_owner ? $t('draft.hint_owner') : $t('draft.hint')}
 				</p>
 			{/if}
-			{#if !logged_in}
+			{#if !can_start && !is_draft}
 				<p id="signed-out-hint" class="text-muted-foreground -mt-2 px-6 text-sm">
-					{can_start
-						? $t('view_quiz_page.download_signed_out_hint')
-						: $t('view_quiz_page.start_signed_out_hint')}
-				</p>
-			{:else if !can_start && !is_draft}
-				<p id="signed-out-hint" class="text-muted-foreground -mt-2 px-6 text-sm">
-					{$t('view_quiz_page.unlisted_not_yours')}
+					{quiz.public
+						? $t('view_quiz_page.start_signed_out_hint')
+						: $t('view_quiz_page.unlisted_not_yours')}
 				</p>
 			{/if}
 		</Card.Root>

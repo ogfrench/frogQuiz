@@ -187,7 +187,7 @@ test('"keep this quiz" signs you up and brings you back to the quiz', async ({ p
 	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
 	await page.goto(`/view/${saved.body.id}`);
 	await page.getByRole('button', { name: /isn't saved to an account/ }).click();
-	await page.getByRole('link', { name: 'Create an account to keep this quiz' }).click();
+	await page.getByRole('link', { name: 'Sign in to keep this quiz' }).click();
 	await expect(page).toHaveURL(/\/account\/login\?returnTo=/);
 	const { link } = await askForSignIn(page, address());
 	await page.goto(link);

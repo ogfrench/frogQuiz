@@ -14,9 +14,9 @@ from typing import Any
 import bleach
 import xlsxwriter
 from aiohttp import ClientSession
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, Header, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
-from frogquiz.auth import get_current_user
+from frogquiz.auth import get_current_user, get_current_user_optional
 from frogquiz.config import storage, settings, arq
 from frogquiz.db.models import Quiz, User, StorageItem, QuizQuestionType, QuizQuestion
 import gzip
@@ -190,7 +190,11 @@ async def import_quiz(file: UploadFile = File(), user: User = Depends(get_curren
 
 
 @router.get("/excel/{quiz_id}")
-async def export_quiz_as_excel(quiz_id: uuid.UUID, user: User = Depends(get_current_user)):
+async def export_quiz_as_excel(
+    quiz_id: uuid.UUID,
+    user: User | None = Depends(get_current_user_optional),
+    x_anon_secret: str | None = Header(default=None, alias="X-Anon-Secret"),
+):
     """The owner only. The spreadsheet contains the answer key.
 
     This used to be any signed-in user, which is what the view page offered. It sat badly
@@ -203,9 +207,15 @@ async def export_quiz_as_excel(quiz_id: uuid.UUID, user: User = Depends(get_curr
     nothing about whether the id exists.
 
     Sharing a quiz with the team is still Discover, Play and the view page. What is gone is
-    reading the answer key of a quiz you do not own.
+    reading the answer key of a quiz you do not own. The browser that made a quiz without an
+    account owns it by its secret, and downloads it like any owner (D43).
     """
-    quiz: Quiz | None = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+    # Imported here: the quiz router is the one that owns the rule, and imports a lot.
+    from frogquiz.routers.quiz import _find_own_quiz
+
+    if user is None and x_anon_secret is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    quiz: Quiz | None = await _find_own_quiz(quiz_id, user, x_anon_secret)
     if quiz is None:
         raise HTTPException(status_code=404, detail="Quiz not found")
     storage = io.BytesIO()

@@ -9,3 +9,6 @@ Dockerfile* text eol=lf
 Caddyfile* text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+# Unit tests read these byte for byte (a hash, and line-by-line rules).
+frontend/static/robots.txt text eol=lf
+frontend/src/lib/vendor/*.ts text eol=lf

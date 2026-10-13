@@ -12,6 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { openCreateDialog } from '$lib/create_dialog.svelte';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
 	import { me } from '$lib/account_frog.svelte';
@@ -145,7 +146,13 @@ SPDX-License-Identifier: MPL-2.0
 				<a class={nav_class('/account/login')} href={login_href}>{$t('words.login')}</a>
 			{/if}
 			<!-- Outline, not filled: the page under the navbar owns the one loud button. -->
-			<Button href="/create" variant="outline" size="sm" class="ml-1">
+			<Button
+				href="/create"
+				variant="outline"
+				size="sm"
+				class="ml-1"
+				onclick={openCreateDialog}
+			>
 				{$t('index_page.create_cta')}
 			</Button>
 		</div>
@@ -221,7 +228,15 @@ SPDX-License-Identifier: MPL-2.0
 							<span class="text-muted-foreground text-sm">{$t('navbar.theme')}</span>
 							<ThemeToggle />
 						</div>
-						<Button href="/create" size="lg" class="w-full">
+						<Button
+							href="/create"
+							size="lg"
+							class="w-full"
+							onclick={(e) => {
+								menuOpen = false;
+								openCreateDialog(e);
+							}}
+						>
 							{$t('index_page.create_cta')}
 						</Button>
 					</div>

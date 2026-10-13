@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import SearchCard from '$lib/search-card.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { openCreateDialog } from '$lib/create_dialog.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import Search from '@lucide/svelte/icons/search';
 	import type { PageData } from './$types';
@@ -130,7 +131,7 @@ SPDX-License-Identifier: MPL-2.0
 					<p class="text-muted-foreground mt-2 text-sm">
 						{$t('explore_page.nothing_here_detail')}
 					</p>
-					<Button href="/create" class="mt-4">{$t('explore_page.create_one')}</Button>
+					<Button href="/create" class="mt-4" onclick={openCreateDialog}>{$t('explore_page.create_one')}</Button>
 				</div>
 			{/if}
 		{:else if data.logged_in && has_examples}

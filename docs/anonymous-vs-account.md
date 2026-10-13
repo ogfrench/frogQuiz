@@ -27,7 +27,8 @@ sign-in for guest writes; the old behavior remains available behind the setting.
 | Save or finish a quiz | 401, also for an editor opened while the setting was on | Yes; a new quiz is refused with 429 past either ceiling | Yes |
 | Edit an existing quiz | 401 | With the quiz's secret, until it expires; the ceilings never apply | Own quizzes |
 | Upload an image | 401 | Yes, within the anonymous size limits (`docs/uploads.md`) | Yes, within the account quota |
-| Host a game (`/quiz/start`) | 401 | With the quiz's secret | Own quizzes and any public one |
+| Host a game (`/quiz/start`) | 401 | Own quizzes with their secret, and any public quiz (D43) | Own quizzes and any public one |
+| Download a quiz's spreadsheet | With its secret | With its secret (D43) | Own quizzes |
 | Read a quiz back with its secret | Yes, until it expires | Yes, until it expires | — |
 | Claim a quiz into an account | — (needs an account) | — (needs an account) | Yes, with the secret, until it expires |
 | Delete a quiz | With its secret | With its secret | Own quizzes |
@@ -77,7 +78,7 @@ elsewhere by the expiry date it already holds.
 | 5 | Two tabs, the second claims after the first | The second tab says it was claimed in another tab or account, and to reload. Until 12 Oct it did nothing at all: the first tab's claim took the secret out of the localStorage both tabs share, and the button returned without a word | `claim.e2e.ts` "a second tab that claims after the first is told it was claimed elsewhere" |
 | 6 | After 30 days | 404, and the page says the quiz passed its 30 days and was deleted. The sweep deletes it | `claim.e2e.ts` "a claim after the 30 days says the quiz expired"; `test_claim_races.py`: a claim on a quiz that expired while it ran takes nothing; the sweep still deletes what nobody claimed |
 | 7 | A mail scanner opens the sign-in link | No effect on any quiz: claiming is a button pressed after sign-in, never a link. The sign-in link is not single-use, so a scanner does not use it up (finding 4 of the security audit, post-V1) | Written outcome |
-| 8 | Signing in between making and claiming | The secret survives sign-in in the same browser, so the button appears once signed in. Nothing is claimed by itself | `sign-in.e2e.ts` "keep this quiz", which signs up from the quiz's page and then claims it |
+| 8 | Signing in between making and claiming | The secret survives sign-in in the same browser. Right after sign-in one prompt lists this browser's quizzes with Keep all and Not now, Not now focused (D42); on the quiz's own page its Claim button does it instead. Nothing is claimed without a press | `claim.e2e.ts` "right after sign-in..." and "Not now..."; `sign-in.e2e.ts` "keep this quiz" |
 | 9 | First sign-in, before a username is picked | No account exists until the username is picked (D21), so there is nothing to claim into yet; the button appears after | `sign-in.e2e.ts` "keep this quiz" (as 8) |
 | 10 | The claim puts the account over its quota | Goes through (decided, #43); uploads are refused until the account is back under | `claim_quiz` does not check the quota; written outcome |
 | 11 | An anonymous editor is open on the quiz when it is claimed | That editor's next save says the quiz was deleted or moved into an account, keeps the typed text, and offers Save as a new quiz. The claimed quiz is untouched | `claim.e2e.ts` "an editor left open when the quiz is claimed says so and keeps the text"; `test_counter_writes.py` covers the opposite order (a save does not revert a claim) |

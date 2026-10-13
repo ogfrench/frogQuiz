@@ -142,6 +142,10 @@ test('a signed-out visitor can use an example as an anonymous quiz', async ({ br
 	await expect(page.getByRole('searchbox')).toHaveCount(0);
 	await examples.getByRole('link', { name: title }).click();
 	await expect(page).toHaveURL(/\/view\//);
+	await page.waitForLoadState('networkidle');
+	// D43: hosting needs no account, so Play is offered rather than "Sign in to host".
+	await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled();
+	await expect(page.getByRole('link', { name: 'Sign in to host' })).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Use this template' }).click();
 	await expect(page).toHaveURL(/\/edit\?quiz_id=[0-9a-f-]{32,36}$/);

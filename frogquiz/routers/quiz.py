@@ -41,7 +41,7 @@ from frogquiz.helpers.anonymous_quiz import ANON_QUIZ_EXPIRE_DAYS, enforce_anony
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
 from frogquiz.helpers.live_images import hold_images, is_live, mark_live
-from frogquiz.helpers.ratelimit import rate_limit
+from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 from frogquiz.kahoot_importer.import_quiz import import_quiz
 import urllib.parse
 
@@ -179,10 +179,8 @@ async def start_quiz(
         require_anonymous_quizzes()
         await rate_limit(request, "quiz_start_anon", limit=20, window_seconds=60)
     quiz = await _find_own_quiz(quiz_id, user, x_anon_secret)
-    if quiz is None and user is not None:
-        # Signed-out callers get no public-quiz fallback: hosting without an
-        # account is only allowed for a quiz that was itself created anonymously
-        # and whose secret the caller holds, not for hosting someone else's quiz.
+    if quiz is None:
+        # Any public quiz, with or without an account: hosting needs none (D43).
         quiz = await Quiz.objects.get_or_none(id=quiz_id, public=True)
     if quiz is None or _quiz_expired(quiz):
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
@@ -266,7 +264,9 @@ async def claim_quiz(
     quiz all 404 identically, so this can't be used to probe which quiz IDs
     exist or which ones are still unclaimed.
     """
-    await rate_limit(request, "quiz_claim", limit=20, window_seconds=60)
+    # Per account: an office shares one address, as editor saves did (E9).
+    await rate_limit_key(f"quiz_claim_user:{user.id.hex}", limit=20, window_seconds=60)
+    await rate_limit(request, "quiz_claim", limit=120, window_seconds=60)
     quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
     if quiz is None or _quiz_expired(quiz) or not verify_anon_secret(x_anon_secret, quiz.anon_secret):
         raise HTTPException(status_code=404, detail="quiz not found")

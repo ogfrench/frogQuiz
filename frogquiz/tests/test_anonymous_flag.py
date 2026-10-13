@@ -150,3 +150,48 @@ def test_with_the_flag_off_a_signed_in_user_still_makes_and_hosts_quizzes(
         # Deleting the account takes its quizzes with it.
         test_client.request("DELETE", "/api/v1/users/me", json={"password": PASSWORD}, cookies=cookies)
         test_client.cookies.clear()
+
+
+def test_anyone_hosts_a_public_quiz_but_not_someone_elses_unlisted_one(
+    test_client: TestClient, monkeypatch  # noqa: F811
+):
+    """D43: hosting needs no account. Signed out, hosting someone else's quiz used to be refused."""
+    user = _sign_up(test_client, "public-quiz-owner")
+    cookies = user["cookies"]
+
+    def save(public: bool) -> str:
+        quiz = copy.deepcopy(example_quiz)
+        quiz["public"] = public
+        token = test_client.post("/api/v1/editor/start?edit=false", cookies=cookies).json()["token"]
+        resp = test_client.post(f"/api/v1/editor/finish?edit_id={token}", json=quiz, cookies=cookies)
+        assert resp.status_code == 200, resp.text
+        return resp.json()["id"]
+
+    try:
+        public, unlisted = save(True), save(False)
+        test_client.cookies.clear()
+        started = test_client.post(f"/api/v1/quiz/start/{public}?game_mode=kahoot")
+        assert started.status_code == 200, started.text
+        assert started.json()["user_id"] is None
+        assert test_client.post(f"/api/v1/quiz/start/{unlisted}?game_mode=kahoot").status_code == 404
+        # With quizzes without an account switched off, signed-out hosting is off too.
+        monkeypatch.setattr(get_settings(), "anonymous_quizzes_enabled", False)
+        assert test_client.post(f"/api/v1/quiz/start/{public}?game_mode=kahoot").status_code == 401
+    finally:
+        monkeypatch.undo()
+        test_client.request("DELETE", "/api/v1/users/me", json={"password": PASSWORD}, cookies=cookies)
+        test_client.cookies.clear()
+
+
+def test_the_browser_that_made_a_quiz_downloads_it(test_client: TestClient):  # noqa: F811
+    """D43: the spreadsheet is still the owner's only; the secret makes this browser the owner."""
+    quiz_id, secret = _anon_quiz(test_client)
+    url = f"/api/v1/eximport/excel/{quiz_id}"
+    try:
+        assert test_client.get(url).status_code == 401
+        assert test_client.get(url, headers={"X-Anon-Secret": "not-the-secret"}).status_code == 404
+        resp = test_client.get(url, headers={"X-Anon-Secret": secret})
+        assert resp.status_code == 200, resp.text
+        assert "spreadsheetml" in resp.headers["content-type"]
+    finally:
+        test_client.delete(f"/api/v1/quiz/delete/{quiz_id}", headers={"X-Anon-Secret": secret})
