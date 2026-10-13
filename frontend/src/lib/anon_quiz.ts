@@ -11,7 +11,13 @@ const STORAGE_KEY = 'frogquiz_anon_secrets';
 function readAll(): Record<string, string> {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		return raw ? JSON.parse(raw) : {};
+		const parsed: unknown = raw ? JSON.parse(raw) : {};
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+		return Object.fromEntries(
+			Object.entries(parsed).filter((entry): entry is [string, string] =>
+				typeof entry[1] === 'string' && entry[1].length > 0
+			)
+		);
 	} catch {
 		return {};
 	}
@@ -198,3 +204,4 @@ export function claimFailure(
 	if (status === 404) return anonDaysLeft(expire_at, now) === 0 ? 'expired' : 'gone';
 	return 'failed';
 }
+

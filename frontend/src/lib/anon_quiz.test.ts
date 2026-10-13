@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	anonDaysLeft,
+	anonQuizIds,
 	claimFailure,
 	claimQuiz,
 	claimQuizzes,
@@ -39,6 +40,20 @@ describe('claiming from this browser', () => {
 		vi.stubGlobal('sessionStorage', memoryStorage());
 	});
 	afterEach(() => vi.unstubAllGlobals());
+
+	it.each(['null', '[]', '123', '"text"', '{broken'])('ignores malformed saved secrets: %s', (raw) => {
+		localStorage.setItem('frogquiz_anon_secrets', raw);
+		expect(anonQuizIds()).toEqual([]);
+		expect(getAnonSecret('missing')).toBeNull();
+		setAnonSecret('new', 'secret');
+		expect(getAnonSecret('new')).toBe('secret');
+	});
+
+	it('keeps valid secrets when another stored entry is malformed', () => {
+		localStorage.setItem('frogquiz_anon_secrets', JSON.stringify({ valid: 'secret', bad: null, empty: '' }));
+		expect(anonQuizIds()).toEqual(['valid']);
+		expect(getAnonSecret('valid')).toBe('secret');
+	});
 
 	it('the just-signed-in flag is read once', () => {
 		expect(takeJustSignedIn()).toBe(false);
@@ -178,3 +193,4 @@ describe('claimFailure', () => {
 		expect(claimFailure(500, new Date(now + DAY), now)).toBe('failed');
 	});
 });
+

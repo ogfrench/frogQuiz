@@ -195,3 +195,53 @@ def test_the_sweep_holds_the_images_of_a_game_still_running(
     # Membership, not equality: an earlier test may leave another expired quiz for this sweep.
     assert (hex_id, [f"image-of-{hex_id}"]) in held
     assert f"image-of-{hex_id}" not in released
+
+
+
+def test_failed_claim_rolls_back_and_the_same_secret_can_retry(test_client: TestClient, users, monkeypatch):  # noqa: F811
+    quiz_id, secret = _anon_quiz(test_client)
+    before = _sql("SELECT user_id, anon_secret, expire_at FROM quiz WHERE id = :id", id=uuid.UUID(quiz_id).hex)[0]
+    real_adjust = quiz_router.adjust_storage_used
+
+    async def fail_accounting(*args):
+        raise RuntimeError("claim accounting interrupted")
+
+    monkeypatch.setattr(quiz_router, "adjust_storage_used", fail_accounting)
+    with pytest.raises(RuntimeError, match="claim accounting interrupted"):
+        test_client.post(
+            f"/api/v1/quiz/claim/{quiz_id}",
+            headers={"X-Anon-Secret": secret},
+            cookies=users["claim-ana"]["cookies"],
+        )
+    after = _sql("SELECT user_id, anon_secret, expire_at FROM quiz WHERE id = :id", id=uuid.UUID(quiz_id).hex)[0]
+    assert tuple(after) == tuple(before)
+    test_client.cookies.clear()
+    assert test_client.get(f"/api/v1/quiz/get/{quiz_id}", headers={"X-Anon-Secret": secret}).status_code == 200
+
+    monkeypatch.setattr(quiz_router, "adjust_storage_used", real_adjust)
+    retry = test_client.post(
+        f"/api/v1/quiz/claim/{quiz_id}",
+        headers={"X-Anon-Secret": secret},
+        cookies=users["claim-ana"]["cookies"],
+    )
+    assert retry.status_code == 200
+    assert _owner(quiz_id) == users["claim-ana"]["id"]
+    assert retry.json()["expire_at"] is None
+
+
+def test_claim_returns_the_edit_that_finished_during_its_check(test_client: TestClient, users, monkeypatch):  # noqa: F811
+    quiz_id, secret = _anon_quiz(test_client)
+    real = quiz_router._quiz_expired
+
+    def edit_first(quiz):
+        _sql("UPDATE quiz SET description = :text WHERE id = :id", text="Latest saved edit", id=uuid.UUID(quiz_id).hex)
+        return real(quiz)
+
+    monkeypatch.setattr(quiz_router, "_quiz_expired", edit_first)
+    response = test_client.post(
+        f"/api/v1/quiz/claim/{quiz_id}",
+        headers={"X-Anon-Secret": secret},
+        cookies=users["claim-ana"]["cookies"],
+    )
+    assert response.status_code == 200
+    assert response.json()["description"] == "Latest saved edit"

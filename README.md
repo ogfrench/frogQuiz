@@ -7,15 +7,11 @@ SPDX-License-Identifier: MPL-2.0
 
 # [frogQuiz](https://frogquiz.xyz)
 
-**Live quizzes for teams. Create a quiz, share the PIN, and get everyone playing.**
+Create and run quizzes in your browser. Write the questions yourself or import
+an Excel workbook, then host a live game with timed answers and a leaderboard.
 
-One person hosts on a shared screen. Everyone else joins from their phone with a PIN
-and a nickname. Answer against the clock, watch the leaderboard, and see who comes
-out on top. No app to install.
-
-Build a quiz from scratch or import up to 50 questions from Excel. Guests can create,
-edit, and host quizzes without an account. Sign in to keep your quizzes permanently
-and explore the frog and Capgemini collection.
+You can create, edit, and host without an account. An account lets you save quizzes
+permanently and browse the shared quiz collection.
 
 ## Quick start
 
@@ -29,17 +25,11 @@ Guest quizzes last 30 days and belong to the browser that created them. Clearing
 browser data can remove your access. Signing in offers to save them to your account;
 it does not claim them automatically on a shared computer.
 
-## What you can do
+Excel imports support up to 50 questions. The preview shows each question and its
+correct answers, and flags cells that need fixing before a quiz is created.
 
-- **Create and edit** questions, answers, timers, and quiz details.
-- **Import Excel** with a downloadable template, row-level validation, and a preview of every question and its correct answers.
-- **Host live games** with PIN-based joining, timed answers, scores, and a podium.
-- **Manage your library** in My Quizzes, including temporary browser quizzes and permanent account quizzes.
-- **Explore team quizzes** from frog and Capgemini when signed in.
-
-The interface is in English. See [MVP scope](docs/mvp-scope.md) for supported features
-and the boundaries of this edition. Features described here follow this branch;
-the hosted site may be on an earlier release.
+The interface is in English. [MVP scope](docs/mvp-scope.md) lists the supported
+features. The hosted site may be on an earlier release than this branch.
 
 ## Development
 
@@ -103,8 +93,8 @@ frogQuiz builds on [ClassQuiz](https://github.com/mawoka-myblock/ClassQuiz) by
 Marlon W (Mawoka) and its contributors, which provides the original quiz application
 and realtime game foundation.
 
-**Work developed in frogQuiz** includes the redesigned interface and team-focused
-experience, temporary guest ownership and account claiming, the Excel validation
+**Work developed in frogQuiz** includes the redesigned interface,
+temporary guest ownership and account claiming, the Excel validation
 and preview flow, and the supporting deployment documentation and browser tests.
 See [CHANGELOG.md](CHANGELOG.md) for the development history.
 

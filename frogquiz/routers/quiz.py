@@ -284,40 +284,43 @@ async def claim_quiz(
     # second wrote over the first: the quiz went to whoever came last, and its images were
     # counted twice (#43). The expiry sweep deletes on the opposite condition, so a claim and
     # the sweep never both win. Only these three columns, so a save in between stays (#35).
-    won = await database.fetch_one(
-        "UPDATE quiz SET user_id = :user, anon_secret = NULL, expire_at = NULL"
-        " WHERE id = :id AND user_id IS NULL AND anon_secret = :secret"
-        " AND (expire_at IS NULL OR expire_at >= :now) RETURNING id",
-        {"user": user.id.hex, "id": quiz.id.hex, "secret": quiz.anon_secret, "now": datetime.now()},
-    )
-    if won is None:
-        raise HTTPException(status_code=404, detail="quiz not found")
-    quiz.user_id = user.id
-    quiz.anon_secret = None
-    quiz.expire_at = None
-    # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
-    # ownerless, they counted against nobody's quota and outlived the account. Only the
-    # ones already hashed are counted here; calculate_hash counts the rest when it runs,
-    # now that they have an owner, so nothing is counted twice.
-    #
-    # One statement per image, because calculate_hash may be writing the same row. Read,
-    # changed and saved whole, the job's stale copy put the owner back to nobody, and
-    # neither side counted the bytes (E12 in docs/edge-cases-2026-10.md). Postgres runs the
-    # two updates one after the other, so whichever comes second sees the other's write:
-    # exactly one of them counts the image.
-    counted = 0
-    for image in extract_image_ids_from_quiz(quiz):
-        item_id = check_image_string(str(image))[1]
-        if item_id is None:
-            continue
-        row = await database.fetch_one(
-            'UPDATE storage_items SET "user" = :user WHERE id = :id AND "user" IS NULL'
-            " AND deleted_at IS NULL RETURNING hash, size",
-            {"user": user.id.hex, "id": item_id.hex},
+    # Ownership, images and quota move together. A failure must leave the guest
+    # secret usable so the caller can retry the entire claim.
+    async with database.transaction():
+        won = await database.fetch_one(
+            "UPDATE quiz SET user_id = :user, anon_secret = NULL, expire_at = NULL"
+            " WHERE id = :id AND user_id IS NULL AND anon_secret = :secret"
+            " AND (expire_at IS NULL OR expire_at >= :now) RETURNING id",
+            {"user": user.id.hex, "id": quiz.id.hex, "secret": quiz.anon_secret, "now": datetime.now()},
         )
-        if row is not None and row["hash"] is not None:
-            counted += row["size"]
-    await adjust_storage_used(user.id, counted)
+        if won is None:
+            raise HTTPException(status_code=404, detail="quiz not found")
+        # The conditional update locks this row. Read the current questions/images,
+        # including an edit that finished after the initial ownership check.
+        quiz = await Quiz.objects.get(id=quiz_id)
+        # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
+        # ownerless, they counted against nobody's quota and outlived the account. Only the
+        # ones already hashed are counted here; calculate_hash counts the rest when it runs,
+        # now that they have an owner, so nothing is counted twice.
+        #
+        # One statement per image, because calculate_hash may be writing the same row. Read,
+        # changed and saved whole, the job's stale copy put the owner back to nobody, and
+        # neither side counted the bytes (E12 in docs/edge-cases-2026-10.md). Postgres runs the
+        # two updates one after the other, so whichever comes second sees the other's write:
+        # exactly one of them counts the image.
+        counted = 0
+        for image in extract_image_ids_from_quiz(quiz):
+            item_id = check_image_string(str(image))[1]
+            if item_id is None:
+                continue
+            row = await database.fetch_one(
+                'UPDATE storage_items SET "user" = :user WHERE id = :id AND "user" IS NULL'
+                " AND deleted_at IS NULL RETURNING hash, size",
+                {"user": user.id.hex, "id": item_id.hex},
+            )
+            if row is not None and row["hash"] is not None:
+                counted += row["size"]
+        await adjust_storage_used(user.id, counted)
     return quiz
 
 
@@ -682,3 +685,4 @@ async def import_from_excel(
     if secret:
         response.headers["X-Anon-Secret"] = secret
     return {"id": str(quiz.id), "anonymous": secret is not None}
+
