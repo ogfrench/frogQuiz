@@ -84,6 +84,34 @@ test('on a phone, the browser that made a quiz claims it from My Quizzes', async
 	await context.close();
 });
 
+test('Keep all moves successes out of the browser list after a partial failure', async ({
+	browser,
+	request
+}) => {
+	const first = await anonQuiz(request, `Kept first ${Date.now()}`);
+	const second = await anonQuiz(request, `Retry second ${Date.now()}`);
+	const { context, page } = await phone(browser, request);
+	await rememberAnonQuiz(page, first.id, first.secret);
+	await rememberAnonQuiz(page, second.id, second.secret);
+	await page.route(`**/api/v1/quiz/claim/${second.id}`, (route) =>
+		route.fulfill({ status: 429, json: { detail: 'Try again later' } })
+	);
+	await page.goto('/my-quizzes');
+	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('Kept 1 of 2');
+	const browserList = page.getByRole('region', { name: 'On this browser' });
+	await expect(browserList.locator(`a[href="/view/${first.id}"]`)).toHaveCount(0);
+	await expect(browserList.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
+	await expect(page.locator(`a[href="/view/${first.id}"]`)).toBeVisible();
+	await page.unroute(`**/api/v1/quiz/claim/${second.id}`);
+	await browserList.getByRole('button', { name: 'Claim', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	await expect(page.locator(`a[href="/view/${first.id}"]`)).toBeVisible();
+	await expect(page.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
+	await expectNoHorizontalOverflow(page);
+	await context.close();
+});
+
 /** On a phone holding these quizzes' secrets, signs in by typing the code, as the hint asks. */
 async function signInHolding(
 	browser: Browser,

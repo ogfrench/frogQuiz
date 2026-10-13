@@ -9,7 +9,7 @@ SPDX-License-Identifier: MPL-2.0
 	// Asked, never done by itself: on a shared laptop they may be somebody else's (#43).
 	import { page } from '$app/state';
 	import { getLocalization } from '$lib/i18n';
-	import { claimQuiz, anonQuizIds, loadAnonQuiz, takeJustSignedIn } from '$lib/anon_quiz';
+	import { claimQuizzes, anonQuizIds, loadAnonQuiz, takeJustSignedIn } from '$lib/anon_quiz';
 	import { htmlToPlainText } from '$lib/sanitize';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -54,31 +54,29 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	async function keepAll() {
+		if (keeping) return;
 		keeping = true;
-		let kept = 0;
-		let limited = false;
-		for (const quiz of quizzes) {
-			const { outcome } = await claimQuiz(quiz.id);
-			if (outcome === 'claimed') kept++;
-			if (outcome === 'limited') {
-				limited = true;
-				break;
-			}
-		}
+		const result = await claimQuizzes(quizzes.map((quiz) => quiz.id));
 		keeping = false;
-		if (kept === quizzes.length) {
+		if (result.claimed.length === quizzes.length) {
 			window.location.reload();
 			return;
 		}
-		summary = $t('claim_prompt.kept_some', { kept, total: quizzes.length });
-		if (limited) summary += ' ' + $t('claim_prompt.limited');
+		summary = $t('claim_prompt.kept_some', {
+			kept: result.claimed.length,
+			total: quizzes.length
+		});
+		if (result.gone.length) summary += ' ' + $t('claim.gone');
+		if (result.stopped) summary += ' ' + $t(`claim_prompt.${result.stopped}`);
 	}
 </script>
 
 <AlertDialog.Root bind:open>
 	<AlertDialog.Content class="max-w-md">
 		<AlertDialog.Header>
-			<AlertDialog.Title>{$t('claim_prompt.title', { count: quizzes.length })}</AlertDialog.Title>
+			<AlertDialog.Title
+				>{$t('claim_prompt.title', { count: quizzes.length })}</AlertDialog.Title
+			>
 			<AlertDialog.Description>
 				{$t('claim_prompt.body', { username })}
 			</AlertDialog.Description>
@@ -95,7 +93,9 @@ SPDX-License-Identifier: MPL-2.0
 			{#if summary}
 				<Button onclick={() => window.location.reload()}>{$t('claim_prompt.done')}</Button>
 			{:else}
-				<AlertDialog.Cancel disabled={keeping}>{$t('claim_prompt.not_now')}</AlertDialog.Cancel>
+				<AlertDialog.Cancel disabled={keeping}
+					>{$t('claim_prompt.not_now')}</AlertDialog.Cancel
+				>
 				<!-- A plain Button, not AlertDialog.Action, so the dialog stays open to report. -->
 				<Button disabled={keeping} onclick={keepAll}>
 					{#if keeping}

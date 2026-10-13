@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Added Excel creation for guests and accounts: a downloadable template, row-by-row validation without saving, and explicit confirmation that creates a new private quiz. Guest imports use the existing 30-day ownership and claiming flow; same-title quizzes are kept separate.
+- Preserved guest import ownership before opening the editor, prevented expired account sessions from silently creating guest quizzes, and discarded previews that arrive after their dialog closes.
+- Updated account messaging: guests can create, import, and host; signing in keeps quizzes permanently and opens the frog and Capgemini collection in Explore.
+- Keep all now moves successful claims into the account list even when a later claim fails. Batches stop on expired sessions, connection failures, and rate limits, preserving remaining ownership secrets and explaining how to retry.
 - Enabled anonymous quizzes by default and let signed-out visitors browse Examples and use them to create editable 30-day quizzes.
 - Added a prompt right after sign-in that offers to keep the quizzes this browser made (Keep all, or Not now), and Keep all on My Quizzes (D42).
 - Limited claims to 20 a minute per account instead of per address, so an office claiming at once no longer shares one limit.

@@ -37,6 +37,19 @@ export function setAnonSecret(quizId: string, secret: string): void {
 	writeAll(secrets);
 }
 
+/** Check before creating a guest quiz whose ownership must survive navigation. */
+export function canRememberAnonQuiz(): boolean {
+	const key = `frogquiz_anon_probe_${Math.random()}`;
+	try {
+		localStorage.setItem(key, '1');
+		const writable = localStorage.getItem(key) === '1';
+		localStorage.removeItem(key);
+		return writable;
+	} catch {
+		return false;
+	}
+}
+
 export function clearAnonSecret(quizId: string): void {
 	const secrets = readAll();
 	delete secrets[quizId];
@@ -123,6 +136,30 @@ export async function claimQuiz(
 	if (status === 404) return { outcome: 'gone', status };
 	if (status === 429) return { outcome: 'limited', status };
 	return { outcome: 'failed', status };
+}
+
+/** Stops on a retryable failure, preserving ownership for it and the unattempted quizzes. */
+export async function claimQuizzes(ids: string[], doFetch: typeof fetch = fetch) {
+	const claimed: string[] = [];
+	const gone: string[] = [];
+	let stopped: 'limited' | 'signed_out' | 'offline' | 'failed' | null = null;
+	for (const [index, id] of ids.entries()) {
+		const result = await claimQuiz(id, doFetch);
+		if (result.outcome === 'claimed') claimed.push(id);
+		else if (result.outcome === 'gone') gone.push(id);
+		else {
+			stopped =
+				result.status === 429
+					? 'limited'
+					: result.status === 401
+						? 'signed_out'
+						: result.status === null
+							? 'offline'
+							: 'failed';
+			return { claimed, gone, remaining: ids.slice(index), stopped };
+		}
+	}
+	return { claimed, gone, remaining: [] as string[], stopped };
 }
 
 const DAY_MS = 86_400_000;

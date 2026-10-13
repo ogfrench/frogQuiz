@@ -9,7 +9,7 @@
         "host_cta": "Go to your quizzes",
         "create_anon": "Create a quiz without an account",
         "create_cta": "Create a quiz",
-        "create_hint": "No account needed. Quizzes made without one stay in this browser and are deleted after 30 days.",
+        "create_hint": "Create, import, and host without an account. Sign in to keep your quizzes and explore quizzes from frog and Capgemini. Guest quizzes stay in this browser for 30 days.",
         "create_hint_account": "Making and hosting a quiz needs a team account. Players only need the PIN."
     },
     "overview_page": {
@@ -364,7 +364,7 @@
         "frogquiz_quiz": "A frogQuiz-Quiz",
         "upload_file_ending": "Upload the file ending in .cqa or .xlsx",
         "this_side_frogquiz": "Import a quiz that was exported from frogQuiz.",
-        "this_side_frogquiz_excel": "You can also upload an Excel file filled out from the template below. If a quiz with that title already exists, the questions are appended to it.",
+        "this_side_frogquiz_excel": "Upload an Excel file filled out from the template below. Preview it first, then confirm to create a new quiz.",
         "download_template_here": "Download the template",
         "choose_a_source": "Bring a quiz in from Kahoot, or from a frogQuiz export.",
         "choose_a_file": "Choose a file"
@@ -513,7 +513,7 @@
         "examples": "Examples",
         "examples_hint": "Ready-made quizzes. Play one as it is, or copy it and make it your own.",
         "examples_hint_signed_out": "Ready-made quizzes. Use one as a starting point for your own quiz.",
-        "sign_in_to_search": "Sign in to search quizzes. You can browse and use these templates without an account.",
+        "sign_in_to_search": "Sign in to explore quizzes created by frog and Capgemini. These example templates are available without an account.",
         "newest": "Newest"
     },
     "search_page": {
@@ -702,7 +702,8 @@
         "error_too_big": "That file is over 2 MB. Is it carrying pictures? The template is text only.",
         "error_signed_out": "Your session ended. Sign in again to import.",
         "error_rate_limited": "Too many uploads in a minute. Wait a moment and try again.",
-        "error_failed": "Something went wrong and nothing was saved. Try again."
+        "error_failed": "Couldn't confirm the import. Check My Quizzes before trying again.",
+        "error_browser_storage": "This browser cannot remember your quiz. Enable browser storage or sign in before importing."
     },
     "security_settings": {
         "backup_code": "Backup-Code",
@@ -763,8 +764,11 @@
         "not_now": "Not now",
         "keep_all": "Keep all",
         "keeping": "Keeping…",
-        "kept_some": "Kept {{kept}} of {{total}}. The rest are under On this browser in My Quizzes.",
+        "kept_some": "Kept {{kept}} of {{total}}. Any quizzes still available to keep are under On this browser in My Quizzes.",
         "limited": "Try the rest again in a minute.",
+        "signed_out": "Sign in again, then keep the remaining quizzes from My Quizzes.",
+        "offline": "The connection was lost. Your remaining quizzes can be kept once you are back online.",
+        "failed": "The remaining quizzes could not be kept. Try again from My Quizzes.",
         "done": "Done"
     },
     "copy": {
@@ -794,7 +798,7 @@
         "anon_more": "Details",
         "anon_less": "Hide",
         "anon_claim_hint": "Claim it to your account to keep it, make it searchable, and manage it from My Quizzes.",
-        "anon_sign_in_hint": "Sign in to keep it, make it searchable, and manage it from My Quizzes. Your first sign-in creates your account. Without one, you'll lose the quiz when it expires.",
+        "anon_sign_in_hint": "Sign in to keep this quiz and explore quizzes from frog and Capgemini. Your first sign-in creates your account. Without one, this quiz is deleted after 30 days.",
         "anon_sign_up": "Sign in to keep this quiz",
         "claim_quiz": "Claim this quiz to your account",
         "claiming": "Claiming…",

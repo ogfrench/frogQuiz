@@ -71,7 +71,7 @@ for (const theme of ['light', 'dark']) {
 			await apiLogin(context.request, user.email);
 			const page = await context.newPage();
 			let mode: 'clean' | 'broken' = 'broken';
-			await page.route('**/api/v1/quiz/excel-import*', (route) =>
+			await page.route('**/api/v1/quiz/excel-preview*', (route) =>
 				route.fulfill({ json: mode === 'clean' ? clean : broken })
 			);
 			await page.goto('/my-quizzes');

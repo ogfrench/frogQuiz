@@ -8,6 +8,7 @@ import io
 import json
 import random
 import secrets
+import html
 import uuid
 from datetime import datetime, timedelta
 from random import randint
@@ -20,7 +21,6 @@ from frogquiz.helpers import (
     check_image_string,
     extract_image_ids_from_quiz,
     generate_spreadsheet,
-    handle_import_from_excel,
     release_quiz_images,
 )
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, Response, UploadFile, File
@@ -38,6 +38,15 @@ from frogquiz.config import arq, redis, settings, meilisearch, storage
 from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType, StorageItem
 from frogquiz.examples import examples_owner
 from frogquiz.helpers.anonymous_quiz import ANON_QUIZ_EXPIRE_DAYS, enforce_anonymous_quiz_ceilings
+from frogquiz.helpers.excel_workbook import MAX_FILE_BYTES, MIME_TYPE, excel_template, parse_excel
+from frogquiz.db.models import (
+    QuizInput,
+    MAX_TITLE_LENGTH,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_QUESTION_LENGTH,
+    MAX_ANSWER_LENGTH,
+)
+from starlette.concurrency import run_in_threadpool
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
 from frogquiz.helpers.live_images import hold_images, is_live, mark_live
@@ -335,8 +344,7 @@ async def list_examples():
     return ExamplesResponse(
         username=owner.username,
         quizzes=[
-            ExampleQuiz(id=q.id, title=q.title, description=q.description, questions=len(q.questions))
-            for q in quizzes
+            ExampleQuiz(id=q.id, title=q.title, description=q.description, questions=len(q.questions)) for q in quizzes
         ],
     )
 
@@ -596,7 +604,81 @@ async def export_quiz_answers(export_token: str, game_pin: str):
     )
 
 
+@router.get("/excel-template")
+async def download_excel_template():
+    return Response(
+        content=await run_in_threadpool(excel_template),
+        media_type=MIME_TYPE,
+        headers={"Content-Disposition": 'attachment; filename="frogQuiz-template.xlsx"'},
+    )
+
+
 @router.post("/excel-import")
-async def import_from_excel(file: UploadFile = File(), user: User = Depends(get_current_user)) -> Quiz:
-    quiz = await handle_import_from_excel(file.file, user)
-    return Quiz.model_validate(quiz.model_dump(exclude={"user_id": ...}))
+@router.post("/excel-preview")
+async def import_from_excel(
+    request: Request,
+    response: Response,
+    file: UploadFile = File(),
+    dry_run: bool = False,
+    require_account: bool = False,
+    user: User | None = Depends(get_current_user_optional),
+):
+    # A UI expecting an account must not silently save as a guest after token expiry.
+    if user is None:
+        if require_account:
+            raise HTTPException(status_code=401, detail="Sign in again to save to your account")
+        require_anonymous_quizzes()
+    await rate_limit(request, "excel_import", limit=30, window_seconds=60)
+    try:
+        data = await file.read(MAX_FILE_BYTES + 1)
+    finally:
+        await file.close()
+    if len(data) > MAX_FILE_BYTES:
+        raise HTTPException(status_code=413, detail="The file must be at most 2 MB")
+    if not (file.filename or "").lower().endswith(".xlsx"):
+        raise HTTPException(status_code=400, detail="Use an .xlsx workbook")
+    preview = await run_in_threadpool(
+        parse_excel,
+        data,
+        title_limit=MAX_TITLE_LENGTH,
+        description_limit=MAX_DESCRIPTION_LENGTH,
+        question_limit=MAX_QUESTION_LENGTH,
+        answer_limit=MAX_ANSWER_LENGTH,
+    )
+    # A separate preview URL is safe against an older API that ignores `dry_run` and
+    # immediately imports. Such a deployment returns 404 instead of silently saving.
+    if dry_run or request.url.path.endswith("/excel-preview"):
+        return preview
+    if preview["errors"]:
+        return JSONResponse(status_code=400, content=preview)
+    # Cells are plain text. Escape markup before it enters the editor's rich-text fields.
+    quiz_input = QuizInput(
+        title=html.escape(preview["title"], quote=False),
+        description=html.escape(preview["description"], quote=False),
+        public=False,
+        questions=[
+            QuizQuestion(
+                question=html.escape(q["question"], quote=False),
+                time=str(q["time"]),
+                type=QuizQuestionType.CHECK if q["type"] == "multiple" else QuizQuestionType.ABCD,
+                answers=[{"answer": html.escape(a["text"], quote=False), "right": a["right"]} for a in q["answers"]],
+            )
+            for q in preview["questions"]
+        ],
+    )
+    secret = None
+    if user is None:
+        # Preview never spends the creation quota or allocates an ownership secret.
+        await enforce_anonymous_quiz_ceilings(request)
+        secret = secrets.token_hex(32)
+    quiz = Quiz(
+        **quiz_input.model_dump(),
+        user_id=user.id if user else None,
+        anon_secret=hash_anon_secret(secret) if secret else None,
+        expire_at=datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS) if secret else None,
+    )
+    await quiz.save()
+    await redis.delete("global_quiz_count")
+    if secret:
+        response.headers["X-Anon-Secret"] = secret
+    return {"id": str(quiz.id), "anonymous": secret is not None}

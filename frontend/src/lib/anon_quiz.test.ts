@@ -7,6 +7,8 @@ import {
 	anonDaysLeft,
 	claimFailure,
 	claimQuiz,
+	claimQuizzes,
+	canRememberAnonQuiz,
 	getAnonSecret,
 	loadAnonQuiz,
 	markJustSignedIn,
@@ -44,6 +46,55 @@ describe('claiming from this browser', () => {
 		expect(takeJustSignedIn()).toBe(true);
 		expect(takeJustSignedIn()).toBe(false);
 	});
+
+	it('checks browser storage without leaving a probe or spending existing secrets', () => {
+		setAnonSecret('mine', 'secret');
+		expect(canRememberAnonQuiz()).toBe(true);
+		expect(localStorage.length).toBe(1);
+		expect(getAnonSecret('mine')).toBe('secret');
+	});
+
+	it('refuses guest creation when browser storage is blocked', () => {
+		vi.stubGlobal('localStorage', {
+			setItem: () => {
+				throw new DOMException('Storage blocked');
+			}
+		});
+		expect(canRememberAnonQuiz()).toBe(false);
+	});
+
+	it('a partial batch separates saved, gone, and retryable quizzes', async () => {
+		for (const id of ['a', 'b', 'c']) setAnonSecret(id, 'secret');
+		const fetch = vi
+			.fn()
+			.mockResolvedValueOnce(new Response('', { status: 200 }))
+			.mockResolvedValueOnce(new Response('', { status: 404 }))
+			.mockRejectedValueOnce(new TypeError('offline'));
+		expect(await claimQuizzes(['a', 'b', 'c'], fetch)).toEqual({
+			claimed: ['a'],
+			gone: ['b'],
+			remaining: ['c'],
+			stopped: 'offline'
+		});
+		expect(getAnonSecret('c')).toBe('secret');
+	});
+
+	it.each([401, 429, 503])(
+		'stops a batch on %s and preserves the rest for retry',
+		async (status) => {
+			for (const id of ['a', 'b', 'c']) setAnonSecret(id, 'secret');
+			const fetch = vi
+				.fn()
+				.mockResolvedValueOnce(new Response('', { status: 200 }))
+				.mockResolvedValueOnce(new Response('', { status }));
+			const result = await claimQuizzes(['a', 'b', 'c'], fetch);
+			expect(result.claimed).toEqual(['a']);
+			expect(result.remaining).toEqual(['b', 'c']);
+			expect(fetch).toHaveBeenCalledTimes(2);
+			expect(getAnonSecret('b')).toBe('secret');
+			expect(getAnonSecret('c')).toBe('secret');
+		}
+	);
 
 	it('a claim spends the secret on 200 and on 404, and keeps it otherwise', async () => {
 		setAnonSecret('a', 's');

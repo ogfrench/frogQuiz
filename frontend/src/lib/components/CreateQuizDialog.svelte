@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { signedIn } from '$lib/stores';
 	import { createDialog } from '$lib/create_dialog.svelte';
+	import { canRememberAnonQuiz, setAnonSecret } from '$lib/anon_quiz';
 	import {
 		checkFile,
 		confirmExcel,
@@ -38,6 +39,7 @@ SPDX-License-Identifier: MPL-2.0
 	let problem = $state<string | null>(null);
 	let creating = $state(false);
 	let dragging = $state(false);
+	let previewRequest = 0;
 
 	const clean = $derived(preview !== null && preview.errors.length === 0);
 	const login_href = $derived(
@@ -47,6 +49,7 @@ SPDX-License-Identifier: MPL-2.0
 	// A closed dialog starts over, so the next one is not a stale preview.
 	$effect(() => {
 		if (!createDialog.open) {
+			previewRequest++;
 			step = 'choose';
 			file = null;
 			preview = null;
@@ -66,8 +69,10 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		file = picked;
 		step = 'checking';
-		const result = await previewExcel(picked);
-		if (result.ok) {
+		const request = ++previewRequest;
+		const result = await previewExcel(picked, fetch, $signedIn);
+		if (!createDialog.open || request !== previewRequest) return;
+		if (result.ok === true) {
 			preview = result.preview;
 			step = 'preview';
 		} else {
@@ -79,15 +84,20 @@ SPDX-License-Identifier: MPL-2.0
 
 	const create = async () => {
 		if (!file || !clean || creating) return;
+		if (!$signedIn && !canRememberAnonQuiz()) {
+			problem = $t('create_dialog.error_browser_storage');
+			return;
+		}
 		creating = true;
-		const id = await confirmExcel(file);
-		if (id === null) {
-			problem = $t('create_dialog.error_failed');
+		const result = await confirmExcel(file, fetch, $signedIn);
+		if (result.ok === false) {
+			problem = $t(`create_dialog.error_${result.reason}`);
 			creating = false;
 			return;
 		}
+		if (result.anonSecret) setAnonSecret(result.id, result.anonSecret);
 		createDialog.open = false;
-		await goto(`/edit?quiz_id=${id}`);
+		await goto(`/edit?quiz_id=${result.id}`);
 	};
 
 	const again = () => {
@@ -101,7 +111,14 @@ SPDX-License-Identifier: MPL-2.0
 		'group border-border bg-card hover:border-foreground/30 hover:bg-muted/50 focus-visible:ring-ring flex min-h-28 flex-1 min-w-0 flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors outline-none focus-visible:ring-2 sm:min-h-36';
 </script>
 
-<Dialog.Root bind:open={createDialog.open}>
+<Dialog.Root
+	bind:open={
+		() => createDialog.open,
+		(value) => {
+			if (!creating) createDialog.open = value;
+		}
+	}
+>
 	<Dialog.Content
 		class="max-sm:inset-0 max-sm:top-0 max-sm:left-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:max-w-full max-sm:translate-x-0 max-sm:translate-y-0 max-sm:content-start max-sm:overflow-y-auto max-sm:rounded-none sm:max-h-[90dvh] sm:max-w-xl sm:overflow-y-auto"
 	>
@@ -111,18 +128,14 @@ SPDX-License-Identifier: MPL-2.0
 				<Dialog.Description>{$t('create_dialog.subtitle')}</Dialog.Description>
 			</Dialog.Header>
 			<div class="flex min-w-0 flex-col gap-3 sm:flex-row">
-				<a
-					href="/create"
-					class={optionClass}
-					onclick={() => (createDialog.open = false)}
-				>
+				<a href="/create" class={optionClass} onclick={() => (createDialog.open = false)}>
 					<PencilLine class="text-muted-foreground size-6" aria-hidden="true" />
 					<span class="text-base font-semibold">{$t('create_dialog.scratch')}</span>
 					<span class="text-muted-foreground text-sm"
 						>{$t('create_dialog.scratch_hint')}</span
 					>
 				</a>
-				{#if $signedIn}
+				{#if $signedIn || page.data.anonymousQuizzes === true}
 					<button type="button" class={optionClass} onclick={() => (step = 'upload')}>
 						<FileSpreadsheet class="text-muted-foreground size-6" aria-hidden="true" />
 						<span class="text-base font-semibold">{$t('create_dialog.import')}</span>
@@ -194,7 +207,11 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 
 			<Dialog.Footer class="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-				<Button variant="ghost" onclick={() => (step = 'choose')} disabled={step === 'checking'}>
+				<Button
+					variant="ghost"
+					onclick={() => (step = 'choose')}
+					disabled={step === 'checking'}
+				>
 					<ArrowLeft aria-hidden="true" />
 					{$t('create_dialog.back')}
 				</Button>
@@ -224,7 +241,10 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					{#each preview.errors as error, i (i)}
 						<li class="flex min-w-0 items-start gap-2 text-sm">
-							<CircleAlert class="text-destructive mt-0.5 size-4 shrink-0" aria-hidden="true" />
+							<CircleAlert
+								class="text-destructive mt-0.5 size-4 shrink-0"
+								aria-hidden="true"
+							/>
 							<span class="min-w-0 break-words">{describeError(error)}</span>
 						</li>
 					{/each}
@@ -243,10 +263,13 @@ SPDX-License-Identifier: MPL-2.0
 					{#each preview.questions as q (q.row)}
 						<li class="flex min-w-0 flex-col gap-1.5 p-3">
 							<div class="flex min-w-0 items-baseline gap-2">
-								<span class="text-muted-foreground w-6 shrink-0 text-sm tabular-nums"
+								<span
+									class="text-muted-foreground w-6 shrink-0 text-sm tabular-nums"
 									>{q.row}</span
 								>
-								<span class="min-w-0 text-sm font-medium break-words">{q.question}</span>
+								<span class="min-w-0 text-sm font-medium break-words"
+									>{q.question}</span
+								>
 							</div>
 							<p class="text-muted-foreground pl-8 text-xs">
 								{$t(`create_dialog.type_${q.type}`)} ·
@@ -257,7 +280,10 @@ SPDX-License-Identifier: MPL-2.0
 								{#each q.answers as a, i (i)}
 									<li class="flex min-w-0 items-start gap-1.5">
 										{#if a.right}
-											<Check class="mt-0.5 size-4 shrink-0" aria-label="Correct" />
+											<Check
+												class="mt-0.5 size-4 shrink-0"
+												aria-label="Correct"
+											/>
 										{:else}
 											<span class="size-4 shrink-0" aria-hidden="true"></span>
 										{/if}

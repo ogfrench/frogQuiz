@@ -20,7 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 		anonDaysLeft,
 		anonQuizIds,
 		claimFailure,
-		claimQuiz,
+		claimQuizzes,
 		clearAnonSecret,
 		getAnonSecret,
 		loadAnonQuiz
@@ -182,26 +182,27 @@ SPDX-License-Identifier: MPL-2.0
 	let keep_all_error: string | null = $state(null);
 
 	const keep_all = async () => {
-		if (!browser_quizzes) return;
+		if (!browser_quizzes || claiming !== null) return;
 		claiming = 'all';
 		keep_all_error = null;
-		let kept = 0;
-		let limited = false;
-		for (const quiz of browser_quizzes) {
-			const { outcome } = await claimQuiz(quiz.id);
-			if (outcome === 'claimed') kept++;
-			if (outcome === 'limited') {
-				limited = true;
-				break;
-			}
-		}
+		const total = browser_quizzes.length;
+		const result = await claimQuizzes(browser_quizzes.map((quiz) => quiz.id));
+		// Move successful rows immediately; a failed later request must not leave them
+		// under On this browser with a Claim button whose secret has already been spent.
+		const moved = browser_quizzes.filter((quiz) => result.claimed.includes(quiz.id));
+		account_quizzes = [
+			...account_quizzes,
+			...moved.filter((quiz) => !account_quizzes.some((saved) => saved.id === quiz.id))
+		];
+		browser_quizzes = browser_quizzes.filter((quiz) => result.remaining.includes(quiz.id));
 		claiming = null;
-		if (kept === browser_quizzes.length) {
+		if (result.claimed.length === total) {
 			window.location.reload();
 			return;
 		}
-		keep_all_error = $t('claim_prompt.kept_some', { kept, total: browser_quizzes.length });
-		if (limited) keep_all_error += ' ' + $t('claim_prompt.limited');
+		keep_all_error = $t('claim_prompt.kept_some', { kept: result.claimed.length, total });
+		if (result.gone.length) keep_all_error += ' ' + $t('claim.gone');
+		if (result.stopped) keep_all_error += ' ' + $t(`claim_prompt.${result.stopped}`);
 	};
 </script>
 
@@ -417,6 +418,9 @@ SPDX-License-Identifier: MPL-2.0
 				</ul>
 			{/if}
 
+			{#if keep_all_error}
+				<p class="text-destructive mt-4 text-sm" role="alert">{keep_all_error}</p>
+			{/if}
 			{#if browser_quizzes && browser_quizzes.length > 0}
 				<section class="mt-12" aria-labelledby="browser-heading">
 					<div class="flex flex-wrap items-center justify-between gap-3">
@@ -424,7 +428,12 @@ SPDX-License-Identifier: MPL-2.0
 							{$t('my_quizzes.on_this_browser')}
 						</h2>
 						{#if browser_quizzes.length > 1}
-							<Button variant="outline" size="sm" disabled={claiming !== null} onclick={keep_all}>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={claiming !== null}
+								onclick={keep_all}
+							>
 								{#if claiming === 'all'}
 									<LoaderCircle class="animate-spin" />
 								{:else}
@@ -437,9 +446,6 @@ SPDX-License-Identifier: MPL-2.0
 					<p class="text-muted-foreground mt-1 text-sm">
 						{$t('my_quizzes.on_this_browser_hint')}
 					</p>
-					{#if keep_all_error}
-						<p class="text-destructive mt-2 text-sm" role="alert">{keep_all_error}</p>
-					{/if}
 					<ul class="mt-4 flex flex-col gap-3">
 						{#each browser_quizzes as quiz (quiz.id)}
 							{@render row(quiz, 'browser')}
