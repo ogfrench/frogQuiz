@@ -67,9 +67,8 @@ services:
       # 2 when Netlify or a CDN proxies to it, or every visitor shares one
       # rate-limit bucket. See DEPLOY.md for what raising it costs.
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
-      # Making and hosting quizzes without an account (#55). Off: the team signs in, and
-      # players still join by PIN with no account. With it on, the two ceilings apply.
-      ANONYMOUS_QUIZZES_ENABLED: ${ANONYMOUS_QUIZZES_ENABLED:-false}
+      # Anonymous quiz creation, uploads and hosting are on by default (D40); limits apply.
+      ANONYMOUS_QUIZZES_ENABLED: ${ANONYMOUS_QUIZZES_ENABLED:-true}
       ANON_QUIZ_DAILY_LIMIT: ${ANON_QUIZ_DAILY_LIMIT:-20}
       ANON_QUIZ_TOTAL_LIMIT: ${ANON_QUIZ_TOTAL_LIMIT:-1000}
 

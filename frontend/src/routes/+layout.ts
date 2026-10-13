@@ -14,5 +14,5 @@ export const load: LayoutLoad = ({ data }) => {
 	} else {
 		signedIn.set(false);
 	}
-	return { anonymousQuizzes: data.anonymousQuizzes };
+	return { loggedIn: Boolean(email), anonymousQuizzes: data.anonymousQuizzes };
 };

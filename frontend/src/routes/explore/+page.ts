@@ -21,13 +21,25 @@ import {
  * `fetch` comes from the load so the relative URL resolves during SSR -- `/search` was
  * client-only and its `window.fetch` would have had no origin to resolve against here.
  */
-export const load = (async ({ fetch, url }) => {
+export const load = (async ({ fetch, url, parent }) => {
+	const { loggedIn: logged_in } = await parent();
 	const q = url.searchParams.get('q') ?? '';
 	const mode = searchMode(q);
 	const body = searchRequest(q);
 
+	if (!logged_in) {
+		return {
+			q,
+			mode,
+			hits: [],
+			failed: false,
+			examples: await loadExamples(fetch),
+			logged_in
+		};
+	}
+
 	if (body === null) {
-		return { q, mode, hits: [], failed: false, examples: noExamples };
+		return { q, mode, hits: [], failed: false, examples: noExamples, logged_in };
 	}
 
 	// The examples (#39) sit above Newest, so they belong to browsing only; a search is
@@ -45,11 +57,11 @@ export const load = (async ({ fetch, url }) => {
 	// back to the page, so a 500 from Meilisearch reached the template as an error
 	// object and threw on `.hits`. A failed search is an empty page with a message.
 	if (!response.ok) {
-		return { q, mode, hits: [], failed: true, examples };
+		return { q, mode, hits: [], failed: true, examples, logged_in };
 	}
 
 	const hits = withoutAuthor(normaliseHits(await response.json()), examples.username);
-	return { q, mode, hits, failed: false, examples };
+	return { q, mode, hits, failed: false, examples, logged_in };
 }) satisfies PageLoad;
 
 /** No examples, quietly, when the API is down, refuses, or has none: Newest still shows. */

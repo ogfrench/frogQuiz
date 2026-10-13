@@ -511,6 +511,8 @@
         "create_one": "Create a quiz",
         "examples": "Examples",
         "examples_hint": "Ready-made quizzes. Play one as it is, or copy it and make it your own.",
+        "examples_hint_signed_out": "Ready-made quizzes. Use one as a starting point for your own quiz.",
+        "sign_in_to_search": "Sign in to search quizzes. You can browse and use these templates without an account.",
         "newest": "Newest"
     },
     "search_page": {
@@ -722,6 +724,7 @@
     },
     "copy": {
         "button": "Copy to my quizzes",
+        "use_template": "Use this template",
         "copying": "Copying…",
         "failed": "Couldn't copy this quiz. Try again in a moment.",
         "storage_full": "Not enough storage left to copy this quiz and its images. Delete something you no longer use, then try again."

@@ -6,7 +6,7 @@
 import { signedIn } from '$lib/stores';
 import type { LayoutServerLoad } from './$types';
 
-// Whether a quiz can be made without an account (#55, off in production). The copy on the
+// Whether a quiz can be made without an account (#55, on by default). The copy on the
 // home page and My Quizzes depends on it, and /create's gate reads it from here. Null when
 // the API did not answer in time, which every reader treats as off.
 // ponytail: cached a minute per server instance, so a room of phones opening /play does not

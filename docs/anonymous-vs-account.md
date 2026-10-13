@@ -7,20 +7,21 @@ SPDX-License-Identifier: MPL-2.0
 # Without an account, and with one
 
 What somebody can do with no account, and what needs one (#55), with each claim case from
-#43 and its outcome. Decided by François on 10 and 11 Oct (`MVP.md` D23 and D36).
+#43 and its outcome. Decided by François on 10, 11 and 13 Oct (`MVP.md` D23, D36, D40 and D41).
 
-**The rule:** making, editing, uploading and hosting need a team account. Players join a
-game by PIN with none. It is the setting `anonymous_quizzes_enabled`, **off by default**:
-the old behaviour is hidden behind it, not deleted. CI and the e2e stack turn it on,
-because most specs host without an account.
+**The rule:** anonymous creation, editing, uploads and hosting are on by default. Players
+join by PIN with no account either way. Set `anonymous_quizzes_enabled` to false to require
+sign-in for guest writes; the old behavior remains available behind the setting.
 
 ## The matrix
 
-"Off" is production. "On" is the setting turned on, with its two ceilings.
+"On" is the default. "Off" is an operator override that requires sign-in for guest writes.
 
 | What | No account, setting off | No account, setting on | Signed in |
 | --- | --- | --- | --- |
 | Join a game by PIN and play | Yes | Yes | Yes |
+| Browse curated Examples in Discover | Yes | Yes | Yes |
+| Use an Example as a template | Sign in first | Private copy, 30 days, secret kept in this browser | Unlisted account copy |
 | Open `/create` | Sent to sign-in, back to `/create` after | Yes | Yes |
 | Start a new quiz in the editor (`/editor/start`) | 401 "Sign in to make, edit or host a quiz" | Yes | Yes |
 | Save or finish a quiz | 401, also for an editor opened while the setting was on | Yes; a new quiz is refused with 429 past either ceiling | Yes |
@@ -31,8 +32,8 @@ because most specs host without an account.
 | Claim a quiz into an account | — (needs an account) | — (needs an account) | Yes, with the secret, until it expires |
 | Delete a quiz | With its secret | With its secret | Own quizzes |
 | Save a game's results | No: refused for a host with no account (#52) | No (#52) | Own games |
-| Public, or listed in Explore | Never | Never: always saved unlisted | Owner's choice |
-| Explore, search, profiles | Sign-in needed (D21) | Sign-in needed | Yes |
+| Public, or listed in search | Never | Never: always saved unlisted | Owner's choice |
+| Search and profiles | Sign-in needed (D21) | Sign-in needed | Yes |
 | Lifetime | 30 days from when it was made, then swept | 30 days | Kept |
 
 **The two ceilings**, both settings in `config.py` and `docker-compose.yml`:
@@ -49,7 +50,7 @@ They stop creating, never editing: a quiz that exists can always be saved again.
 ceilings, a signed-in user with the setting off), `frontend/src/lib/create_gate.test.ts`
 (where the gate sends a visitor), and `frontend/e2e/anon-off.e2e.ts` (the `/create` redirect
 through the real loader, and the signed-out copy, on a stack with the setting off; the e2e
-workflow runs it in a second pass).
+workflow runs it in a second pass). `frontend/e2e/examples.e2e.ts` covers guest template use.
 
 ## Claim cases (#43)
 
@@ -58,10 +59,9 @@ holds the quiz's secret. It is one conditional write: it takes the quiz only whi
 unclaimed, unexpired and holds that secret. Every failure is the same 404, so a claim
 cannot be used to learn which quizzes exist.
 
-With the setting off in production, and the app not in use yet, no anonymous quiz exists
-to claim. The cases were run with the setting on. Every case has a test except 7 and 10,
-which have a written outcome. `claim.e2e.ts` runs on a phone (390 wide, touch), in the
-browser that made the quiz and in a second one (12 Oct).
+With the default on, anonymous quizzes can be claimed into accounts before expiry. Every
+case has a test except 7 and 10, which have a written outcome. `claim.e2e.ts` runs on a
+phone (390 wide, touch), in the browser that made the quiz and in a second one (12 Oct).
 
 A failed claim says what happened and what to do (`claimFailure` in
 `frontend/src/lib/anon_quiz.ts`, unit-tested in `anon_quiz.test.ts`). The server's 404 is the
@@ -91,8 +91,8 @@ elsewhere by the expiry date it already holds.
 ## The CRUD grid (#55)
 
 What happens to each thing in each mode, with the test or decision behind it. "Signed out"
-means the setting turned on; with it off (production) every signed-out write is a 401 (the
-matrix above). No cell is unknown, and none is an open bug.
+means the default setting; with it off, guest write paths require sign-in except public
+Examples browsing. No cell is unknown, and none is an open bug.
 
 ### Quiz
 
@@ -102,6 +102,7 @@ matrix above). No cell is unknown, and none is an open bug.
 | Read | Anyone with the id, until it expires. `/quiz/get/public` has no visibility check: decision, #34 in v0.8 | The owner, and any signed-in user for a public quiz. The same `/quiz/get/public` gap (#34) | The same URL keeps working (`account.e2e.ts`) |
 | Update | With the secret (`test_edit_anonymous_quiz_requires_correct_secret`; `editor.e2e.ts` "an existing anonymous quiz can be reopened, edited and saved") | The owner (`account.e2e.ts`) | An editor open during the claim is told, and keeps its text (`claim.e2e.ts`) |
 | Delete | With the secret (`test_delete_anonymous_quiz_requires_correct_secret`, `my-quizzes.e2e.ts`) | The owner (`crud-lifecycle.e2e.ts`) | After the claim, the secret deletes nothing (`account.e2e.ts`) |
+| Copy an Example | New unlisted anonymous quiz with secret, expires in 30 days (`test_copy.py`, `examples.e2e.ts`) | New unlisted account quiz (`test_copy.py`, `examples.e2e.ts`) | — |
 | Expire | Swept after 30 days (`test_the_sweep_still_deletes_what_nobody_claimed`), with a warning first on My Quizzes and the quiz's page (`claim.e2e.ts`, the expiry warning test) | Never | A claim clears the expiry; a claim after it is a 404 that says so (`claim.e2e.ts`, `test_claim_races.py`) |
 | Claim | — | — | The 16 cases above |
 

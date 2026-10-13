@@ -124,12 +124,9 @@ class Settings(BaseSettings):
     # The code is kept, and this brings it back. The backend suite turns it on to keep
     # testing it.
     enable_password_login: bool = False
-    # Making, editing, uploading for and hosting a quiz without an account (#55, François,
-    # 11 Oct). Off: the team signs in, and players still join by PIN with no account. A
-    # quiz made while this was on can still be read with its secret and claimed into an
-    # account until it expires. The e2e stack and CI turn it on, because the suite hosts
-    # without an account almost everywhere.
-    anonymous_quizzes_enabled: bool = False
+    # Anonymous quiz creation, editing, uploads and hosting stay available by default
+    # (D40, 13 Oct); the two ceilings below limit new quizzes.
+    anonymous_quizzes_enabled: bool = True
     # With it on, ceilings against a script filling the database (François, 11 Oct): new
     # quizzes without an account per address a day, and how many may be alive at once.
     # They stop creating, never editing.

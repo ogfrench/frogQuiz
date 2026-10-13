@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Enabled anonymous quizzes by default and let signed-out visitors browse Examples and use them to create editable 30-day quizzes.
 - **The hidden `.cqa` import keeps its images:** it wrote image ids without dashes, which the orphan sweep reads as unused, so an imported quiz's images would have been deleted a day later. The same fix as Copy's in #63.
 
 ### Game polish, 12 Oct

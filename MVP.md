@@ -32,9 +32,10 @@ file is the plan for getting from here to something we can share, and it superse
 > **Discover | My Quizzes | Join** — that look the same whether you are signed in or not.
 > Signing in adds **My Account** and makes quizzes permanent.
 >
-> **Since 11 Oct (D23, #55), making, uploading and hosting need a team account**, behind
-> the setting `anonymous_quizzes_enabled`, off in production. Players still join by PIN
-> with none. The signed-out column and the section below describe the setting turned on.
+> **Since 13 Oct (D40, D41), anonymous quizzes are on by default.** Visitors can create,
+> upload for, edit and host their own quizzes, and browse/use Examples in Discover. Search
+> and profiles still need sign-in. Operators can turn anonymous writes off with
+> `anonymous_quizzes_enabled=false`; players always join by PIN without an account.
 
 | Surface | Signed out | Signed in |
 | --- | --- | --- |
@@ -230,6 +231,8 @@ Owner column: **G** Gonçalo, **F** François, **G+F** both.
 | D37 | The host's "N of M answered" when a player leaves | **F (2026-10-12): it counts only the players still in the game**, so a player who answered and then left drops out of both numbers | — | ☑ |
 | D38 | What happens at expiry in the middle of a session (#55, question 5), for when D23's setting is on | **F (2026-10-11): a game started before the quiz expired runs to its end, with its images. An editor open at expiry keeps its own clock, says the quiz expired, and keeps the text, with Save as a new quiz.** Measured on 12 Oct (`docs/e2e-findings.md` row 13) | — | ☑ |
 | D39 | What V1 still takes, after v0.5 | **F (2026-10-12): #40, #39, #42, #44, #50, #60, #61 ("if easy and possible") and #45 trimmed** to game flow, parts of the stack going down, the room-size number and one real iPhone and Android game. **#33, #34, #38 and #41 move after V1**; D24, D25 and D28 stay for when they return. Examples: three general knowledge, plus "frogQuiz onboarding" and "frog's history" (five, narrowing D26's six). #42 and #44 cover the live screens, and the hidden things get a check that can end in a redesign: hidden actions in #42, and an inventory of hidden routes from which F picks what comes back | — | ☑ |
+| D40 | Default for anonymous quizzes (#55) | **F (2026-10-13): on by default** in code and Compose; the 20/day and 1,000-live ceilings remain, and operators can set the flag false. Reverses D23's production default, not its limits or privacy rules | — | ☑ |
+| D41 | Examples for signed-out visitors (#39, #55) | **F (2026-10-13): Discover shows curated Examples without sign-in; a guest can use one to create a private 30-day anonymous copy.** Search, profiles and sitemap remain sign-in-only. Narrows D21 and extends D26/D33 | — | ☑ |
 
 G's ticks above were given in Claude sessions on 2026-09-28 and 2026-09-29.
 **François signed D1 and D3–D15 on 2026-10-02** ("I agree with all the decisions"), after
@@ -240,7 +243,7 @@ signature. **D16 and D18 still need Gonçalo's tick**: both are François's call
 calls from 5 Oct and need Gonçalo's tick too.** D21 changes how everybody signs in, so it is
 the one to read first; `docs/mvp-scope.md` has what it does to existing accounts.
 
-**From 11 Oct (D31) François decides alone**, so D22 to D38 carry no G column, and the
+**From 11 Oct (D31) François decides alone**, so D22 to D41 carry no G column, and the
 open G ticks above (D16 to D21) are no longer a gate. They stay as a record.
 
 On 2026-09-29 Gonçalo asked for the MVP to be finished that day without waiting on

@@ -19,7 +19,13 @@ SPDX-License-Identifier: MPL-2.0
 	import { goto } from '$app/navigation';
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
-	import { anonDaysLeft, claimFailure, getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
+	import {
+		anonDaysLeft,
+		claimFailure,
+		getAnonSecret,
+		clearAnonSecret,
+		setAnonSecret
+	} from '$lib/anon_quiz';
 	import { copyQuiz } from '$lib/copy_quiz';
 	import { sanitizeTitleHtml, htmlToPlainText } from '$lib/sanitize';
 	import { quizShare } from '$lib/share_meta';
@@ -56,7 +62,11 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 	let { data } = $props();
-	let { quiz, logged_in }: { quiz: QuizData; logged_in: boolean } = $state(data);
+	let {
+		quiz,
+		logged_in,
+		anonymous_quizzes_enabled
+	}: { quiz: QuizData; logged_in: boolean; anonymous_quizzes_enabled: boolean } = $state(data);
 	const share = $derived(quizShare(quiz, page.url.origin, `${page.url.origin}${JpgOpenGraph}`));
 
 	// Ownership of an anonymously-created quiz can only be checked client-side
@@ -109,6 +119,9 @@ SPDX-License-Identifier: MPL-2.0
 	// (POST /quiz/copy answers 404 for somebody else's unlisted quiz); this is the button
 	// not being offered where it could only fail.
 	const can_copy = $derived(logged_in && (quiz.public || owns_on_account));
+	const can_use_template = $derived(
+		!logged_in && anonymous_quizzes_enabled && quiz.is_example === true
+	);
 
 	// A draft is a quiz with at least one unfinished question -- the same rule the
 	// server uses (frogquiz/helpers/completeness.py) to refuse POST /quiz/start.
@@ -160,6 +173,12 @@ SPDX-License-Identifier: MPL-2.0
 		copy_error = null;
 		const result = await copyQuiz(quiz.id);
 		if (result.ok === true) {
+			if (!logged_in && !result.anonSecret) {
+				copying = false;
+				copy_error = $t('copy.failed');
+				return;
+			}
+			if (result.anonSecret) setAnonSecret(result.id, result.anonSecret);
 			// Left disabled while the editor loads, so a second press cannot make a second copy.
 			await goto(`/edit?quiz_id=${result.id}`);
 			return;
@@ -222,6 +241,7 @@ SPDX-License-Identifier: MPL-2.0
 	interface QuizData {
 		id: string;
 		public: boolean;
+		is_example?: boolean;
 		title: string;
 		description: string;
 		cover_image?: string;
@@ -437,7 +457,16 @@ SPDX-License-Identifier: MPL-2.0
 					<Repeat />
 					{$t('words.practice')}
 				</Button>
-				{#if can_copy}
+				{#if can_use_template}
+					<Button variant="outline" size="lg" disabled={copying} onclick={copy_to_my_quizzes}>
+						{#if copying}
+							<LoaderCircle class="animate-spin" aria-hidden="true" />
+						{:else}
+							<Copy />
+						{/if}
+						{copying ? $t('copy.copying') : $t('copy.use_template')}
+					</Button>
+				{:else if can_copy}
 					<Button
 						variant="outline"
 						size="lg"

@@ -91,10 +91,11 @@ def test_someone_elses_unlisted_quiz_is_a_404_like_no_quiz(test_client: TestClie
     assert _copy(test_client, str(uuid.uuid4()), ben).status_code == 404
 
 
-def test_a_public_quiz_copies_to_anyone_signed_in_but_not_signed_out(test_client: TestClient, people):  # noqa: F811
+def test_a_public_non_example_copies_to_signed_in_users_only(test_client: TestClient, people):  # noqa: F811
     ana, ben = people
     public = _quiz(test_client, ana, public=True)
-    assert _copy(test_client, public).status_code == 401
+    assert _copy(test_client, public).status_code == 404
+    assert test_client.get(f"/api/v1/quiz/get/public/{public}").json()["is_example"] is False
     resp = _copy(test_client, public, ben)
     assert resp.status_code == 200, resp.text
     me = test_client.get("/api/v1/users/me", cookies=ben).json()["id"]
@@ -170,13 +171,74 @@ def test_the_seed_runs_twice_without_duplicates_and_explore_lists_it(
     assert test_client.portal.call(seed, example_folder) == [example_id("an-example")]
     assert test_client.portal.call(seed, example_folder) == [example_id("an-example")]
 
-    assert test_client.get("/api/v1/quiz/examples").status_code == 401
-    listed = test_client.get("/api/v1/quiz/examples", cookies=ana).json()
+    listed_response = test_client.get("/api/v1/quiz/examples")
+    assert listed_response.status_code == 200
+    listed = listed_response.json()
     assert listed["username"] == EXAMPLES_USERNAME
     assert [(q["id"], q["title"], q["questions"]) for q in listed["quizzes"]] == [
         (str(example_id("an-example")), "An example", len(example_quiz["questions"]))
     ]
+    assert test_client.get(f"/api/v1/quiz/get/public/{example_id('an-example')}").json()["is_example"] is True
     assert _copy(test_client, str(example_id("an-example")), ana).status_code == 200
+
+
+def test_anonymous_template_copy_requires_the_setting(test_client: TestClient, example_folder, monkeypatch):  # noqa: F811
+    test_client.portal.call(seed, example_folder)
+    monkeypatch.setattr(get_settings(), "anonymous_quizzes_enabled", False)
+    response = _copy(test_client, str(example_id("an-example")))
+    assert response.status_code == 401
+    assert "Sign in" in response.json()["detail"]
+
+
+def test_anonymous_template_copy_obeys_the_active_quiz_limit(
+    test_client: TestClient, example_folder, monkeypatch  # noqa: F811
+):
+    test_client.portal.call(seed, example_folder)
+    monkeypatch.setattr(get_settings(), "anon_quiz_total_limit", 0)
+    response = _copy(test_client, str(example_id("an-example")))
+    assert response.status_code == 429
+    assert "Sign in" in response.json()["detail"]
+
+
+def test_signed_out_example_copy_is_private_editable_and_expires(test_client: TestClient, example_folder):  # noqa: F811
+    test_client.portal.call(seed, example_folder)
+    source_id = str(example_id("an-example"))
+    response = _copy(test_client, source_id)
+    assert response.status_code == 200, response.text
+    secret = response.headers["X-Anon-Secret"]
+    quiz_id = response.json()["id"]
+
+    try:
+        saved = test_client.get(
+            f"/api/v1/quiz/get/{quiz_id}", headers={"X-Anon-Secret": secret}
+        )
+        assert saved.status_code == 200, saved.text
+        quiz = saved.json()
+        assert quiz["user_id"] is None
+        assert quiz["public"] is False
+        assert quiz["expire_at"] is not None
+        assert "anon_secret" not in quiz
+        assert quiz["title"] == "An example (copy)"
+
+        edit = test_client.post(
+            f"/api/v1/editor/start?edit=true&quiz_id={quiz_id}", headers={"X-Anon-Secret": secret}
+        )
+        assert edit.status_code == 200, edit.text
+        edited = copy.deepcopy(example_quiz)
+        edited["title"] = "An edited template"
+        saved = test_client.post(
+            f"/api/v1/editor/finish?edit_id={edit.json()['token']}",
+            json=edited,
+            headers={"X-Anon-Secret": secret},
+        )
+        assert saved.status_code == 200, saved.text
+        hosted = test_client.post(
+            f"/api/v1/quiz/start/{quiz_id}?game_mode=kahoot", headers={"X-Anon-Secret": secret}
+        )
+        assert hosted.status_code == 200, hosted.text
+        assert hosted.json()["user_id"] is None
+    finally:
+        test_client.delete(f"/api/v1/quiz/delete/{quiz_id}", headers={"X-Anon-Secret": secret})
 
 
 def test_the_seed_refuses_an_example_with_an_image(test_client: TestClient, example_folder):  # noqa: F811

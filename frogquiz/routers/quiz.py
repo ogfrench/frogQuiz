@@ -7,8 +7,9 @@
 import io
 import json
 import random
+import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from random import randint
 
 import ormar.exceptions
@@ -22,19 +23,21 @@ from frogquiz.helpers import (
     handle_import_from_excel,
     release_quiz_images,
 )
-from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, Response, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError, BaseModel
 
 from frogquiz.auth import (
     get_current_user,
     get_current_user_optional,
+    hash_anon_secret,
     require_anonymous_quizzes,
     verify_anon_secret,
 )
 from frogquiz.config import arq, redis, settings, meilisearch, storage
 from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType, StorageItem
 from frogquiz.examples import examples_owner
+from frogquiz.helpers.anonymous_quiz import ANON_QUIZ_EXPIRE_DAYS, enforce_anonymous_quiz_ceilings
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
 from frogquiz.helpers.live_images import hold_images, is_live, mark_live
@@ -136,6 +139,7 @@ class PublicQuizResponse(Quiz.get_pydantic(exclude={"questions", "anon_secret"})
     dislikes: int
     views: int
     plays: int
+    is_example: bool = False
 
 
 @router.get("/get/public/{quiz_id}")
@@ -145,7 +149,9 @@ async def get_public_quiz(quiz_id: uuid.UUID):
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
     else:
         await _count(quiz, "views")
-        return PublicQuizResponse(**quiz.model_dump())
+        owner = await examples_owner()
+        is_example = owner is not None and quiz.user_id is not None and quiz.user_id.id == owner.id
+        return PublicQuizResponse(**quiz.model_dump(), is_example=is_example)
 
 
 @router.post("/start/{quiz_id}")
@@ -320,8 +326,8 @@ class ExamplesResponse(BaseModel):
 
 
 @router.get("/examples", response_model=ExamplesResponse)
-async def list_examples(_: User = Depends(get_current_user)):
-    """The ready-made quizzes Explore shows above Newest (#39). Signed in, like Explore."""
+async def list_examples():
+    """The ready-made quizzes Explore shows above Newest (#39)."""
     owner = await examples_owner()
     if owner is None:
         return ExamplesResponse(username=None, quizzes=[])
@@ -335,7 +341,7 @@ async def list_examples(_: User = Depends(get_current_user)):
     )
 
 
-async def _copy_image(image: str, user: User) -> StorageItem | None:
+async def _copy_image(image: str, user: User | None) -> StorageItem | None:
     """A new upload owned by `user` with the same bytes, or None when there is nothing to copy."""
     item_id = check_image_string(str(image))[1]
     # ponytail: upstream's old `uuid--uuid` keys are dropped from a copy rather than copied.
@@ -367,7 +373,12 @@ async def _copy_image(image: str, user: User) -> StorageItem | None:
 
 
 @router.post("/copy/{quiz_id}")
-async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(get_current_user)):
+async def copy_quiz(
+    request: Request,
+    response: Response,
+    quiz_id: uuid.UUID,
+    user: User | None = Depends(get_current_user_optional),
+):
     """Copy a quiz into the caller's account (#39, D33).
 
     Your own quiz, or any public one, which includes the examples. An unlisted quiz of
@@ -376,14 +387,30 @@ async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(g
     owner's quota and vanished from the copy when that owner deleted their account.
     """
     await rate_limit(request, "quiz_copy", limit=20, window_seconds=60)
-    source = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id) or await Quiz.objects.get_or_none(
-        id=quiz_id, public=True
-    )
+    if user is None:
+        require_anonymous_quizzes()
+        owner = await examples_owner()
+        source = (
+            await Quiz.objects.get_or_none(id=quiz_id, user_id=owner.id, public=True) if owner is not None else None
+        )
+    else:
+        source = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id) or await Quiz.objects.get_or_none(
+            id=quiz_id, public=True
+        )
     if source is None or _quiz_expired(source):
         raise HTTPException(status_code=404, detail="quiz not found")
-    image_ids = {check_image_string(str(i))[1] for i in extract_image_ids_from_quiz(source)} - {None}
-    sizes = await StorageItem.objects.filter(id__in=list(image_ids), deleted_at=None).all() if image_ids else []
-    if user.storage_used + sum(i.size for i in sizes) > settings.free_storage_limit:
+    if user is None:
+        await enforce_anonymous_quiz_ceilings(request)
+        raw_anon_secret = secrets.token_hex(32)
+        anon_secret_hash = hash_anon_secret(raw_anon_secret)
+        expire_at = datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS)
+    else:
+        raw_anon_secret = None
+        anon_secret_hash = None
+        expire_at = None
+        image_ids = {check_image_string(str(i))[1] for i in extract_image_ids_from_quiz(source)} - {None}
+        sizes = await StorageItem.objects.filter(id__in=list(image_ids), deleted_at=None).all() if image_ids else []
+    if user is not None and user.storage_used + sum(i.size for i in sizes) > settings.free_storage_limit:
         raise HTTPException(status_code=409, detail="Storage limit reached")
 
     copies: dict[str, StorageItem | None] = {}
@@ -411,7 +438,9 @@ async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(g
         description=source.description,
         created_at=now,
         updated_at=now,
-        user_id=user.id,
+        user_id=user.id if user is not None else None,
+        anon_secret=anon_secret_hash,
+        expire_at=expire_at,
         questions=questions,
         cover_image=await copied(source.cover_image),
         background_color=source.background_color,
@@ -421,6 +450,8 @@ async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(g
     for item in {c.id: c for c in copies.values() if c}.values():
         await quiz.storageitems.add(item)
     await redis.delete("global_quiz_count")
+    if raw_anon_secret is not None:
+        response.headers["X-Anon-Secret"] = raw_anon_secret
     return {"id": quiz.id}
 
 
