@@ -5,6 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { getLocalization } from '$lib/i18n';
@@ -42,8 +43,9 @@ SPDX-License-Identifier: MPL-2.0
 	let previewRequest = 0;
 
 	const clean = $derived(preview !== null && preview.errors.length === 0);
+	// The shared layout also renders static docs, whose build has no query string.
 	const login_href = $derived(
-		`/account/login?returnTo=${encodeURIComponent(page.url.pathname + page.url.search)}`
+		`/account/login?returnTo=${encodeURIComponent(page.url.pathname + (browser ? page.url.search : ''))}`
 	);
 
 	// A closed dialog starts over, so the next one is not a stale preview.

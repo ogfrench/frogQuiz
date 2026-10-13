@@ -28,7 +28,7 @@ test('a guest imports, edits, hosts, then signs in and keeps the quiz', async ({
 		.first()
 		.click();
 	const dialog = page.getByRole('dialog');
-	await dialog.getByRole('button', { name: 'Import from Excel', exact: true }).click();
+	await dialog.getByRole('button', { name: /import from excel/i }).click();
 	await dialog.locator('input[type=file]').setInputFiles({
 		name: 'quiz.xlsx',
 		mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -107,7 +107,7 @@ test('preview creates no quiz and bad files offer no confirmation', async ({ pag
 		.first()
 		.click();
 	const dialog = page.getByRole('dialog');
-	await dialog.getByRole('button', { name: 'Import from Excel', exact: true }).click();
+	await dialog.getByRole('button', { name: /import from excel/i }).click();
 	await dialog.locator('input[type=file]').setInputFiles({
 		name: 'broken.xlsx',
 		mimeType: 'application/octet-stream',

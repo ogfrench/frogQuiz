@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Fixed production builds of static documentation pages: the shared creation dialog now reads URL query parameters only in the browser.
 - Captured desktop and phone creation screens before the full browser suite, including real guest Excel import and sign-in claiming. Added the production frontend build to CI to diagnose preview build failures.
 - Corrected three formatting errors inherited from the anonymous branch and aligned the guest import access test with the existing 401 response for missing credentials (a wrong secret still returns 404).
 - Added Excel creation for guests and accounts: a downloadable template, row-by-row validation without saving, and explicit confirmation that creates a new private quiz. Guest imports use the existing 30-day ownership and claiming flow; same-title quizzes are kept separate.

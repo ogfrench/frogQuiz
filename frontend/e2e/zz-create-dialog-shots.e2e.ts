@@ -132,7 +132,7 @@ for (const size of [sizes[0], sizes[2]]) {
 		const dialog = page.getByRole('dialog');
 		await expect(dialog).toBeVisible();
 		await shot('2-choose');
-		await dialog.getByRole('button', { name: 'Import from Excel', exact: true }).click();
+		await dialog.getByRole('button', { name: /import from excel/i }).click();
 		await shot('3-upload');
 		const template = await request.get('/api/v1/quiz/excel-template');
 		expect(template.status()).toBe(200);

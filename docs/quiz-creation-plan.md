@@ -90,4 +90,13 @@ Prepare one reviewable PR. Merging and deployment are separate steps.
   run before the full browser suite so they can be reviewed sooner.
 - The Netlify preview build failed. Production frontend compilation is now included
   in CI to provide a reproducible failure trace.
+- Follow-up CI passed 331 backend tests (one skipped), all 30 workbook tests,
+  backend lint, frontend lint, all 288 frontend tests, type checks, audit, and CodeQL.
+- The production build exposed a query-string read in the shared creation dialog
+  during prerendering of static docs. Guarded that read to run only in the browser;
+  the production Netlify build now passes locally.
+- Six screenshot variants passed and produced desktop, tablet, and phone dialog
+  captures. Guest capture reached the creation choice; its exact accessible-name
+  selector omitted the hint in the button name. Corrected that selector in both
+  screenshot and guest import journey tests before rerunning.
 - No merge, deployment, or production database mutation has been performed.
