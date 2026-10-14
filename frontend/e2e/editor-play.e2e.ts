@@ -140,20 +140,35 @@ test('on a draft Play is disabled, and the reason is what describes it', async (
 		/1 question needs finishing before it can be played/
 	);
 
-	// Save opens the quiz's view page. Wait for that navigation before editing again;
-	// otherwise a click can race with Save and be discarded as the editor closes.
+	// Hold a real save response so finishing the question races with that save.
+	// Saving an incomplete draft must keep the editor open, even once it is complete.
+	let releaseSave!: () => void;
+	const heldSave = new Promise<void>((resolve) => { releaseSave = resolve; });
+	await page.route('**/api/v1/editor/save**', async (route) => {
+		const response = await route.fetch();
+		await heldSave;
+		await route.fulfill({ response });
+	}, { times: 1 });
+	await questionBox(page).fill('Draft edited before Save');
+	const saving = page.waitForRequest((req) => req.url().includes('/api/v1/editor/save'));
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
-	await page.waitForURL(`/view/${saved.body.id}`);
-	await expect(play(page)).toBeDisabled();
-	await expect(play(page)).toHaveAttribute('aria-describedby', 'draft-hint');
-	await page.getByRole('link', { name: 'Edit', exact: true }).click();
-	await expect(titleBox(page)).toContainText(title);
-	await expect(play(page)).toBeDisabled();
-
-	// Finishing the question turns it on, and the reason goes with it.
+	await saving;
+	await expect(page.locator('header [role=status]#play-hint')).toBeVisible();
+	await expect(page.locator('[id="play-hint"]')).toHaveCount(1);
+	await expect(play(page)).toHaveAttribute('aria-describedby', 'play-hint');
 	await page.getByRole('button', { name: 'Mark as correct: Lyon', exact: true }).click();
 	await expect(play(page)).toBeEnabled();
 	await expect(play(page)).not.toHaveAttribute('aria-describedby', /.+/);
+	const savedResponse = page.waitForResponse((res) => res.url().includes('/api/v1/editor/save'));
+	releaseSave();
+	await savedResponse;
+	// Play flushes the newer answer before opening its dialog, without losing the editor.
+	await play(page).click();
+	await expect(startDialog(page)).toBeVisible();
+	expect(page.url()).toContain(`/edit?quiz_id=${saved.body.id}`);
+	const stored = await (await page.request.get(`/api/v1/quiz/get/${saved.body.id}`)).json();
+	expect(stored.questions[0].question).toBe('Draft edited before Save');
+	expect(stored.questions[0].answers.some((answer: { right: boolean }) => answer.right)).toBe(true);
 	await context.close();
 });
 

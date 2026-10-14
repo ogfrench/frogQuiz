@@ -4,7 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
-- Stabilize the draft Play browser check by waiting for Save to navigate before reopening the editor and finishing the question.
+- Keep the editor open when a draft becomes complete during a pending save, or newer edits remain unsaved; cover the race with a delayed real save response and verify Play persists the newer answer.
+
 
 - Use Add to account and Add all to account for browser quizzes; remove the redundant Not now explanation and align browser coverage and the interactive preview.
 
