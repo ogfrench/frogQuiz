@@ -88,7 +88,7 @@ test('an anonymous quiz can be claimed after signing up', async ({ browser, requ
 	// Signed in, the banner opens on its own. Someone who had just made an account to keep
 	// this quiz came back to it collapsed, still saying "isn't saved", Claim inside it.
 	await user.page
-		.getByRole('button', { name: 'Claim this quiz to your account' })
+		.getByRole('button', { name: 'Add this quiz to your account' })
 		.click({ timeout: 5_000 });
 	await expect(user.page.getByText("This quiz isn't saved to an account")).toHaveCount(0);
 	await user.page.goto('/my-quizzes');

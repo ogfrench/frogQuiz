@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Use Add to account and Add all to account for browser quizzes; remove the redundant Not now explanation and align browser coverage and the interactive preview.
+
 - Capture a real twelve-quiz bulk claim on mobile, verifying the scrollable prompt and that one Keep all action saves every quiz permanently.
 
 - Align the existing account browser test with idempotent same-owner claims, while retaining the spent-secret access check.

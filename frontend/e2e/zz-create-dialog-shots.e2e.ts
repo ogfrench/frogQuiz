@@ -205,7 +205,7 @@ for (const size of [sizes[0], sizes[2]]) {
 		const prompt = page.getByRole('alertdialog');
 		await expect(prompt).toContainText('Capital cities of Europe');
 		await shot('7-claim-prompt');
-		await prompt.getByRole('button', { name: 'Keep all', exact: true }).click();
+		await prompt.getByRole('button', { name: 'Add all to account', exact: true }).click();
 		await expect(prompt).toHaveCount(0);
 		await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 		await expect(page.getByText('Capital cities of Europe', { exact: true })).toBeVisible();
@@ -247,15 +247,15 @@ test('guest creation screens bulk claim of twelve quizzes on mobile', async ({ b
 	const prompt = page.getByRole('alertdialog');
 	const list = prompt.locator('ul');
 	await expect(list.locator('li')).toHaveCount(12);
-	await expect(prompt.getByRole('button', { name: 'Keep all', exact: true })).toBeInViewport();
+	await expect(prompt.getByRole('button', { name: 'Add all to account', exact: true })).toBeInViewport();
 	await expectNoHorizontalOverflow(page);
 	await page.screenshot({ path: `${OUT}/claim-390-twelve-top.png`, animations: 'disabled' });
 	expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
 	await list.evaluate((el) => { el.scrollTop = el.scrollHeight; });
 	await expect(list.locator('li').last()).toBeInViewport();
-	await expect(prompt.getByRole('button', { name: 'Keep all', exact: true })).toBeInViewport();
+	await expect(prompt.getByRole('button', { name: 'Add all to account', exact: true })).toBeInViewport();
 	await page.screenshot({ path: `${OUT}/claim-390-twelve-bottom.png`, animations: 'disabled' });
-	await prompt.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await prompt.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(prompt).toHaveCount(0);
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	for (const id of ids) {

@@ -92,7 +92,7 @@ test('signed in: browser quizzes sit under the account list and Claim moves them
 	const section = user.page.getByRole('region', { name: 'On this browser' });
 	await expect(section.getByRole('link', { name: loose })).toBeVisible();
 
-	await section.getByRole('button', { name: 'Claim' }).click();
+	await section.getByRole('button', { name: 'Add to account' }).click();
 	await expect(user.page.getByRole('region', { name: 'On this browser' })).toHaveCount(0);
 	await expect(user.page.getByRole('link', { name: loose })).toBeVisible();
 	await user.context.close();

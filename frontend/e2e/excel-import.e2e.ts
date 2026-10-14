@@ -84,7 +84,7 @@ test('a guest imports, edits, hosts, then signs in and keeps the quiz', async ({
 	await page.waitForURL(/\/my-quizzes/);
 	const prompt = page.getByRole('alertdialog');
 	await expect(prompt).toContainText(title);
-	await prompt.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await prompt.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	await expect(page.getByText(title, { exact: true })).toBeVisible();
 	await expectNoHorizontalOverflow(page);

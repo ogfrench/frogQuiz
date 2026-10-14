@@ -77,7 +77,7 @@ test('on a phone, the browser that made a quiz claims it from My Quizzes', async
 	await page.goto('/my-quizzes');
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toBeVisible();
 	await expectNoHorizontalOverflow(page);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	// The page reloads with the quiz in the account's list and nothing left in the browser's.
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	await expect(page.getByText(title)).toBeVisible();
@@ -85,7 +85,7 @@ test('on a phone, the browser that made a quiz claims it from My Quizzes', async
 	await context.close();
 });
 
-test('Keep all moves successes out of the browser list after a partial failure', async ({
+test('Add all to account moves successes out of the browser list after a partial failure', async ({
 	browser,
 	request
 }) => {
@@ -98,8 +98,8 @@ test('Keep all moves successes out of the browser list after a partial failure',
 		route.fulfill({ status: 429, json: { detail: 'Try again later' } })
 	);
 	await page.goto('/my-quizzes');
-	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
-	await expect(page.getByRole('alert')).toContainText('Kept 1 of 2');
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('Added 1 of 2');
 	await page.screenshot({
 		path: path.resolve(process.cwd(), '../e2e/.data/shots/claim-390-partial-429.png'),
 		fullPage: true,
@@ -110,7 +110,7 @@ test('Keep all moves successes out of the browser list after a partial failure',
 	await expect(browserList.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
 	await expect(page.locator(`a[href="/view/${first.id}"]`)).toBeVisible();
 	await page.unroute(`**/api/v1/quiz/claim/${second.id}`);
-	await browserList.getByRole('button', { name: 'Claim', exact: true }).click();
+	await browserList.getByRole('button', { name: 'Add to account', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	await expect(page.locator(`a[href="/view/${first.id}"]`)).toBeVisible();
 	await expect(page.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
@@ -118,7 +118,7 @@ test('Keep all moves successes out of the browser list after a partial failure',
 	await context.close();
 });
 
-test('a connection failure during Keep all retains the remaining quiz for retry', async ({
+test('a connection failure during Add all to account retains the remaining quiz for retry', async ({
 	browser,
 	request
 }) => {
@@ -131,7 +131,7 @@ test('a connection failure during Keep all retains the remaining quiz for retry'
 		route.abort('internetdisconnected')
 	);
 	await page.goto('/my-quizzes');
-	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('alert')).toContainText('The connection was lost');
 	const browserList = page.getByRole('region', { name: 'On this browser' });
 	await expect(browserList.locator(`a[href="/view/${first.id}"]`)).toHaveCount(0);
@@ -143,7 +143,7 @@ test('a connection failure during Keep all retains the remaining quiz for retry'
 		animations: 'disabled'
 	});
 	await page.unroute(`**/api/v1/quiz/claim/${second.id}`);
-	await browserList.getByRole('button', { name: 'Claim', exact: true }).click();
+	await browserList.getByRole('button', { name: 'Add to account', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	for (const quiz of [first, second]) {
 		expect((await context.request.get(`/api/v1/quiz/get/${quiz.id}`)).status()).toBe(200);
@@ -151,7 +151,7 @@ test('a connection failure during Keep all retains the remaining quiz for retry'
 	await context.close();
 });
 
-test('an expired session during Keep all can sign in again and claim the remainder', async ({
+test('an expired session during Add all to account can sign in again and claim the remainder', async ({
 	browser,
 	request
 }) => {
@@ -166,7 +166,7 @@ test('an expired session during Keep all can sign in again and claim the remaind
 		await route.continue();
 	});
 	await page.goto('/my-quizzes');
-	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('alert')).toContainText('Sign in again');
 	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toEqual([second.id]);
 	await page.screenshot({
@@ -183,7 +183,7 @@ test('an expired session during Keep all can sign in again and claim the remaind
 	const prompt = page.getByRole('alertdialog');
 	await expect(prompt).toContainText(`Retry after sign-in`);
 	await expect(prompt).not.toContainText(`Kept before sign-out`);
-	await prompt.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await prompt.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(prompt).toHaveCount(0);
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	const fresh = await browser.newContext();
@@ -216,7 +216,7 @@ async function signInHolding(
 	return { context, page, user };
 }
 
-test('right after sign-in the quizzes this browser made are offered, and Keep all keeps them', async ({
+test('right after sign-in the quizzes this browser made are offered, and Add all to account keeps them', async ({
 	browser,
 	request
 }) => {
@@ -224,13 +224,13 @@ test('right after sign-in the quizzes this browser made are offered, and Keep al
 	const quizzes = [await anonQuiz(request, titles[0]), await anonQuiz(request, titles[1])];
 	const { context, page, user } = await signInHolding(browser, request, quizzes);
 	const dialog = page.getByRole('alertdialog');
-	await expect(dialog).toContainText('Keep these 2 quizzes on your account?');
+	await expect(dialog).toContainText('Add these 2 quizzes to your account?');
 	await expect(dialog).toContainText(user.username);
 	for (const title of titles) await expect(dialog).toContainText(title);
 	// A shared laptop: the safe answer has the focus.
 	await expect(dialog.getByRole('button', { name: 'Not now' })).toBeFocused();
 	await expectNoHorizontalOverflow(page);
-	await dialog.getByRole('button', { name: 'Keep all' }).tap();
+	await dialog.getByRole('button', { name: 'Add all to account' }).tap();
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	for (const title of titles) await expect(page.getByText(title)).toBeVisible();
 	await context.close();
@@ -259,7 +259,7 @@ test('a second tab that claims after the first is told it was claimed elsewhere'
 	const { context, page } = await phone(browser, request);
 	await rememberAnonQuiz(page, quiz.id, quiz.secret);
 	await page.goto('/my-quizzes');
-	await expect(page.getByRole('button', { name: 'Claim', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toBeVisible();
 	// The other tab's claim: it lands on the server and takes the secret out of this browser,
 	// whose localStorage both tabs share. This tab's Claim used to do nothing at all.
 	const res = await context.request.post(`/api/v1/quiz/claim/${quiz.id}`, {
@@ -274,7 +274,7 @@ test('a second tab that claims after the first is told it was claimed elsewhere'
 		},
 		[ANON_KEY, quiz.id]
 	);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	await expect(page.getByText(/claimed in another tab or account, or deleted/)).toBeVisible();
 	await expectNoHorizontalOverflow(page);
 	await context.close();
@@ -286,9 +286,9 @@ test('a claim after another account took the quiz says so', async ({ browser, re
 	const { context, page } = await phone(browser, request);
 	await rememberAnonQuiz(page, quiz.id, quiz.secret);
 	await page.goto('/my-quizzes');
-	await expect(page.getByRole('button', { name: 'Claim', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toBeVisible();
 	await claimElsewhere(browser, request, quiz);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	await expect(page.getByText(/claimed in another tab or account, or deleted/)).toBeVisible();
 	await context.close();
 });
@@ -301,7 +301,7 @@ test('another browser has no Claim, and is told which browser can', async ({
 	const { context, page } = await phone(browser, request);
 	await page.goto(`/view/${quiz.id}`);
 	await expect(page.getByText(/Only that browser can claim it/)).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Claim this quiz to your account' })).toHaveCount(
+	await expect(page.getByRole('button', { name: 'Add this quiz to your account' })).toHaveCount(
 		0
 	);
 	await expectNoHorizontalOverflow(page);
@@ -315,11 +315,11 @@ test('a claim after the 30 days says the quiz expired', async ({ browser, reques
 	await rememberAnonQuiz(page, quiz.id, quiz.secret);
 	await page.clock.install();
 	await page.goto('/my-quizzes');
-	await expect(page.getByRole('button', { name: 'Claim', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toBeVisible();
 	// The page stays open past the deadline: the server's copy expires, the phone's clock moves on.
 	expireIn(quiz.id, '-1 day');
 	await page.clock.setSystemTime(Date.now() + 31 * DAY);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	await expect(page.getByText(/passed its 30 days and was deleted/)).toBeVisible();
 	await context.close();
 });
@@ -425,7 +425,7 @@ test('an editor open past the 30 days says the quiz expired and keeps the text',
 
 
 
-test('Keep all recovers when a successful claim response is lost', async ({ browser, request }) => {
+test('Add all to account recovers when a successful claim response is lost', async ({ browser, request }) => {
 	const first = await anonQuiz(request, `Lost response ${Date.now()}`);
 	const second = await anonQuiz(request, `Still waiting ${Date.now()}`);
 	const { context, page } = await phone(browser, request);
@@ -436,11 +436,11 @@ test('Keep all recovers when a successful claim response is lost', async ({ brow
 		await route.abort('internetdisconnected');
 	});
 	await page.goto('/my-quizzes');
-	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('alert')).toContainText('The connection was lost');
 	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toHaveLength(2);
 	await page.unroute(`**/api/v1/quiz/claim/${first.id}`);
-	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	for (const quiz of [first, second]) {
 		await expect(page.locator(`a[href="/view/${quiz.id}"]`)).toBeVisible();
