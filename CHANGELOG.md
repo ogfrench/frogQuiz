@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Capture a real twelve-quiz bulk claim on mobile, verifying the scrollable prompt and that one Keep all action saves every quiz permanently.
+
 - Align the existing account browser test with idempotent same-owner claims, while retaining the spent-secret access check.
 
 - Recover a lost successful claim response: retrying from the owning account succeeds without transferring or counting anything twice. Cover same-account races and the lost-response browser journey.

@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
 import { apiLogin, askForSignIn, registerUser } from './accounts';
-import { expectNoHorizontalOverflow, titleBox } from './helpers';
+import { expectNoHorizontalOverflow, mc, rememberAnonQuiz, saveQuiz, titleBox } from './helpers';
 
 const OUT = path.resolve(process.cwd(), '../e2e/.data/shots');
 const sizes = [
@@ -214,3 +214,56 @@ for (const size of [sizes[0], sizes[2]]) {
 	});
 }
 
+
+test('guest creation screens bulk claim of twelve quizzes on mobile', async ({ browser, request }) => {
+	test.setTimeout(90_000);
+	const user = await registerUser(request);
+	const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+	await context.addInitScript(() => localStorage.setItem('theme', 'light'));
+	const page = await context.newPage();
+	const titles = [
+		'Capital cities of Europe', 'Friday team quiz', 'Music through the decades',
+		'Science and discovery', 'Around the world', 'Film night',
+		'Food and drink', 'Sports highlights', 'History in ten questions',
+		'Nature and wildlife', 'Design essentials', 'The final challenge'
+	];
+	const ids: string[] = [];
+	for (const title of titles) {
+		const saved = await saveQuiz(request, {
+			title,
+			description: 'Browser quiz',
+			questions: [mc('Which city is the capital of Portugal?', [['Lisbon', true], ['Porto', false]])]
+		});
+		expect(saved.status).toBe(200);
+		expect(saved.secret).toBeTruthy();
+		ids.push(saved.body.id);
+		await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+	}
+	await page.goto('/account/login');
+	const { code } = await askForSignIn(page, user.email);
+	await page.getByRole('textbox', { name: 'Six-digit code' }).fill(code);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await page.waitForURL(/\/my-quizzes/);
+	const prompt = page.getByRole('alertdialog');
+	const list = prompt.locator('ul');
+	await expect(list.locator('li')).toHaveCount(12);
+	await expect(prompt.getByRole('button', { name: 'Keep all', exact: true })).toBeInViewport();
+	await expectNoHorizontalOverflow(page);
+	await page.screenshot({ path: `${OUT}/claim-390-twelve-top.png`, animations: 'disabled' });
+	expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+	await list.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+	await expect(list.locator('li').last()).toBeInViewport();
+	await expect(prompt.getByRole('button', { name: 'Keep all', exact: true })).toBeInViewport();
+	await page.screenshot({ path: `${OUT}/claim-390-twelve-bottom.png`, animations: 'disabled' });
+	await prompt.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await expect(prompt).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	for (const id of ids) {
+		await expect(page.locator(`a[href="/view/${id}"]`)).toBeVisible();
+		const owned = await context.request.get(`/api/v1/quiz/get/${id}`);
+		expect(owned.status()).toBe(200);
+		expect((await owned.json()).expire_at).toBeNull();
+	}
+	await page.screenshot({ path: `${OUT}/claim-390-twelve-saved.png`, fullPage: true, animations: 'disabled' });
+	await context.close();
+});
