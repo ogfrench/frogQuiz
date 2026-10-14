@@ -162,13 +162,14 @@ summary of the cloud conversation. The documents carry the same facts. Plain git
 - **No model names** in commit messages, PR titles or bodies, or code comments. Follow the session's own attribution instruction for trailers.
 - **How François likes it:** short and straight, US English, no flattery, no em dashes, no emojis. Get to the choices. Do not over-plan: backups (#61) and monitoring (#60) were turned into issues on purpose.
 
-### 4. What François decided (10 and 11 Oct)
+### 4. What François decided (10 to 13 Oct)
 
-All of D22 to D36 are in `MVP.md` §4.0 and the plan's "Decisions" table. The ones people forget:
+All of D22 to D41 are in `MVP.md` §4.0 and the plan's "Decisions" table. The ones people forget:
 
 | Topic | Decision |
 | --- | --- |
-| Who can use it without an account | Creating, uploading and hosting need a team account. Players join by PIN with none. Built behind `anonymous_quizzes_enabled`, off. Anonymous quizzes are unlisted only and last 30 days. A running game continues after expiry. An editor open at expiry keeps its clock, shows the reason and keeps the text. |
+| Who can use it without an account | Anonymous creation, uploads and hosting are on by default; `anonymous_quizzes_enabled=false` turns them off. Players join by PIN either way. Anonymous quizzes are unlisted only and last 30 days. A running game continues after expiry. An editor open at expiry keeps its clock, shows the reason and keeps the text. |
+| Guest templates (D41) | Signed-out visitors can browse curated Examples in Discover and make an editable anonymous copy. Search, profiles and sitemap still require sign-in. |
 | The ceilings | 20 new quizzes per address a day, 1,000 alive in total. Both are settings. |
 | Copy (#39, D33) | Anyone signed in can copy any public quiz, as well as their own and the Examples. A copy carries the answers, which narrows D18 for public quizzes. |
 | Scoreboard (D34) | The host's scoreboard and results cards stay white on the dark projector. |

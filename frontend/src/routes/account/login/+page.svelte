@@ -17,6 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { safeReturnTo } from '$lib/return_to';
 	import { normalizeCode } from '$lib/sign_in_code';
+	import { anonQuizIds, markJustSignedIn } from '$lib/anon_quiz';
 	import QuarantineNotice from '$lib/QuarantineNotice.svelte';
 	import { cooldownFromRefusal, createCooldown, formatWait } from '$lib/resend_cooldown.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -38,6 +39,7 @@ SPDX-License-Identifier: MPL-2.0
 	let username = $state('');
 	let error = $state('');
 	let busy = $state(false);
+	let holds_quizzes = $state(false);
 	let challenge = '';
 	let signup = '';
 	let return_to: string | null = null;
@@ -54,6 +56,7 @@ SPDX-License-Identifier: MPL-2.0
 	// A full load rather than goto(): the session cookies were set by this response, and
 	// the layout reads who is signed in on the server.
 	const signedIn = (target: string | null) => {
+		markJustSignedIn();
 		window.location.replace(
 			safeReturnTo(target ?? page.url.searchParams.get('returnTo'), '/my-quizzes')
 		);
@@ -200,6 +203,7 @@ SPDX-License-Identifier: MPL-2.0
 	});
 
 	onMount(async () => {
+		holds_quizzes = anonQuizIds().length > 0;
 		if (!token) return;
 		busy = true;
 		await finish(await post('email/verify', { token }));
@@ -294,6 +298,9 @@ SPDX-License-Identifier: MPL-2.0
 							/>
 						</div>
 						{@render problem()}
+						{#if holds_quizzes}
+							<p class="text-muted-foreground text-sm">{$t('sign_in.code_here_to_keep')}</p>
+						{/if}
 						<Button type="submit" disabled={busy || code.length !== 6}>
 							{#if busy}<LoaderCircle
 									class="size-4 animate-spin"

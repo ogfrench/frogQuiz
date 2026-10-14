@@ -2,8 +2,159 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-import { describe, expect, it } from 'vitest';
-import { anonDaysLeft, claimFailure } from './anon_quiz';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+	anonDaysLeft,
+	anonQuizIds,
+	claimFailure,
+	claimQuiz,
+	claimQuizzes,
+	canRememberAnonQuiz,
+	getAnonSecret,
+	loadAnonQuiz,
+	markJustSignedIn,
+	setAnonSecret,
+	takeJustSignedIn
+} from './anon_quiz';
+
+function memoryStorage(): Storage {
+	const m = new Map<string, string>();
+	return {
+		get length() {
+			return m.size;
+		},
+		clear: () => m.clear(),
+		getItem: (k) => m.get(k) ?? null,
+		key: (i) => [...m.keys()][i] ?? null,
+		removeItem: (k) => void m.delete(k),
+		setItem: (k, v) => void m.set(k, String(v))
+	};
+}
+
+const reply = (status: number, body: unknown = {}) =>
+	vi.fn(async () => new Response(JSON.stringify(body), { status }));
+
+describe('claiming from this browser', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', memoryStorage());
+		vi.stubGlobal('sessionStorage', memoryStorage());
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it.each(['null', '[]', '123', '"text"', '{broken'])('ignores malformed saved secrets: %s', (raw) => {
+		localStorage.setItem('frogquiz_anon_secrets', raw);
+		expect(anonQuizIds()).toEqual([]);
+		expect(getAnonSecret('missing')).toBeNull();
+		setAnonSecret('new', 'secret');
+		expect(getAnonSecret('new')).toBe('secret');
+	});
+
+	it('keeps valid secrets when another stored entry is malformed', () => {
+		localStorage.setItem('frogquiz_anon_secrets', JSON.stringify({ valid: 'secret', bad: null, empty: '' }));
+		expect(anonQuizIds()).toEqual(['valid']);
+		expect(getAnonSecret('valid')).toBe('secret');
+	});
+
+	it('the just-signed-in flag is read once', () => {
+		expect(takeJustSignedIn()).toBe(false);
+		markJustSignedIn();
+		expect(takeJustSignedIn()).toBe(true);
+		expect(takeJustSignedIn()).toBe(false);
+	});
+
+	it('checks browser storage without leaving a probe or spending existing secrets', () => {
+		setAnonSecret('mine', 'secret');
+		expect(canRememberAnonQuiz()).toBe(true);
+		expect(localStorage.length).toBe(1);
+		expect(getAnonSecret('mine')).toBe('secret');
+	});
+
+	it('refuses guest creation when browser storage is blocked', () => {
+		vi.stubGlobal('localStorage', {
+			setItem: () => {
+				throw new DOMException('Storage blocked');
+			}
+		});
+		expect(canRememberAnonQuiz()).toBe(false);
+	});
+
+	it('a partial batch separates saved, gone, and retryable quizzes', async () => {
+		for (const id of ['a', 'b', 'c']) setAnonSecret(id, 'secret');
+		const fetch = vi
+			.fn()
+			.mockResolvedValueOnce(new Response('', { status: 200 }))
+			.mockResolvedValueOnce(new Response('', { status: 404 }))
+			.mockRejectedValueOnce(new TypeError('offline'));
+		expect(await claimQuizzes(['a', 'b', 'c'], fetch)).toEqual({
+			claimed: ['a'],
+			gone: ['b'],
+			remaining: ['c'],
+			stopped: 'offline'
+		});
+		expect(getAnonSecret('c')).toBe('secret');
+	});
+
+	it.each([401, 429, 503])(
+		'stops a batch on %s and preserves the rest for retry',
+		async (status) => {
+			for (const id of ['a', 'b', 'c']) setAnonSecret(id, 'secret');
+			const fetch = vi
+				.fn()
+				.mockResolvedValueOnce(new Response('', { status: 200 }))
+				.mockResolvedValueOnce(new Response('', { status }));
+			const result = await claimQuizzes(['a', 'b', 'c'], fetch);
+			expect(result.claimed).toEqual(['a']);
+			expect(result.remaining).toEqual(['b', 'c']);
+			expect(fetch).toHaveBeenCalledTimes(2);
+			expect(getAnonSecret('b')).toBe('secret');
+			expect(getAnonSecret('c')).toBe('secret');
+		}
+	);
+
+	it('a claim spends the secret on 200 and on 404, and keeps it otherwise', async () => {
+		setAnonSecret('a', 's');
+		expect((await claimQuiz('a', reply(200))).outcome).toBe('claimed');
+		expect(getAnonSecret('a')).toBeNull();
+		setAnonSecret('b', 's');
+		expect((await claimQuiz('b', reply(404))).outcome).toBe('gone');
+		expect(getAnonSecret('b')).toBeNull();
+		setAnonSecret('c', 's');
+		expect((await claimQuiz('c', reply(429))).outcome).toBe('limited');
+		expect(getAnonSecret('c')).toBe('s');
+		const down = vi.fn(async () => {
+			throw new TypeError('Failed to fetch');
+		});
+		expect((await claimQuiz('c', down)).outcome).toBe('failed');
+		expect(getAnonSecret('c')).toBe('s');
+	});
+
+	// Two tabs: the first tab's claim took the secret out of the storage both share.
+	it('a secret another tab already spent is skipped without a request', async () => {
+		const fetch = reply(200);
+		expect((await claimQuiz('gone', fetch)).outcome).toBe('gone');
+		expect(fetch).not.toHaveBeenCalled();
+	});
+
+	it('loads a quiz with its secret and drops dead ones, without counting a view', async () => {
+		setAnonSecret('live', 's1');
+		const fetch = reply(200, { id: 'live', title: 'Mine', user_id: null });
+		expect(await loadAnonQuiz('live', fetch)).toMatchObject({ title: 'Mine' });
+		expect(fetch).toHaveBeenCalledWith('/api/v1/quiz/get/live', {
+			headers: { 'X-Anon-Secret': 's1' }
+		});
+		setAnonSecret('expired', 's2');
+		expect(await loadAnonQuiz('expired', reply(404))).toBeNull();
+		expect(getAnonSecret('expired')).toBeNull();
+		setAnonSecret('claimed', 's3');
+		expect(
+			await loadAnonQuiz('claimed', reply(200, { id: 'claimed', user_id: 'u' }))
+		).toBeNull();
+		expect(getAnonSecret('claimed')).toBeNull();
+		setAnonSecret('down', 's4');
+		expect(await loadAnonQuiz('down', reply(503))).toBeNull();
+		expect(getAnonSecret('down')).toBe('s4');
+	});
+});
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -42,3 +193,4 @@ describe('claimFailure', () => {
 		expect(claimFailure(500, new Date(now + DAY), now)).toBe('failed');
 	});
 });
+

@@ -473,12 +473,14 @@ SPDX-License-Identifier: MPL-2.0
 		if (!savable) {
 			return;
 		}
+		const was_playable = playable;
 		await flush();
-		if (save_error || failure || conflict || !playable) {
-			// Kept as a draft; the header now says what is left to do.
+		if (save_error || failure || conflict || !was_playable || !playable || unsaved) {
+			// A draft stays open even if it becomes complete while this save is pending.
+			// Likewise, do not navigate away from edits made after the submitted snapshot.
 			return;
 		}
-		// Every save lands on the quiz's view page, new or existing, signed in or not.
+		// A completed save opens the quiz's view page, new or existing, signed in or not.
 		window.location.href = `/view/${current_id}`;
 	};
 </script>

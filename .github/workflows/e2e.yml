@@ -25,8 +25,9 @@ on:
 permissions:
   contents: read
 
+# Preserve each commit's evidence while the next commit captures updated screens.
 concurrency:
-  group: e2e-${{ github.ref }}
+  group: e2e-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -55,12 +56,32 @@ jobs:
         working-directory: ./frontend
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Capture creation screens
+        env:
+          E2E_BROWSER: chromium
+        run: |
+          bash e2e/run.sh e2e/zz-create-dialog-shots.e2e.ts e2e/zz-preview-flow.e2e.ts e2e/claim.e2e.ts --grep "create dialog|guest creation screens|interactive preview|partial failure|connection failure|expired session"
+          cp docs/quiz-creation-preview.html e2e/.data/shots/flow-preview.html
+          cp docs/quiz-creation-50-questions.xlsx e2e/.data/shots/
+
+      - name: Keep creation screen captures
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: creation-screens
+          path: e2e/.data/shots
+          retention-days: 14
+          include-hidden-files: true
+          if-no-files-found: ignore
+
       - name: Run the suite
         env:
           E2E_BROWSER: chromium
-        run: bash e2e/run.sh
+        run: |
+          bash e2e/stop.sh || true
+          bash e2e/run.sh --grep-invert "create dialog|guest creation screens|interactive preview"
 
-      # Production runs with quizzes without an account off (#55). The pass above has it on,
+      # Also exercise installations with anonymous quizzes disabled. The pass above has it on,
       # which most specs need to host without signing in. These cover the off side. stop.sh
       # first: on Linux, stopping pnpm can leave its vite child holding the port.
       - name: Run the specs for the production setting
@@ -84,3 +105,4 @@ jobs:
           retention-days: 14
           # e2e/.data is a dot directory, which upload-artifact skips unless told.
           include-hidden-files: true
+

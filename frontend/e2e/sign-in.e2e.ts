@@ -155,13 +155,15 @@ test('a taken username is refused whatever its case, and another one works', asy
 	await page.waitForURL(/\/my-quizzes/);
 });
 
-test('Discover sends a signed-out visitor to sign in, and the link brings them back', async ({
+test('Discover asks a signed-out visitor to sign in to search, and the link brings them back', async ({
 	page,
 	request
 }) => {
 	expect((await request.post('/api/v1/search/', { data: { q: '' } })).status()).toBe(401);
 	const { email } = await registerUser(request);
 	await page.goto('/explore?q=frog');
+	await expect(page.getByRole('searchbox')).toHaveCount(0);
+	await page.getByRole('main').getByRole('link', { name: 'Sign in' }).click();
 	await expect(page).toHaveURL(/\/account\/login\?returnTo=%2Fexplore%3Fq%3Dfrog/);
 	const { link } = await askForSignIn(page, email);
 	await page.goto(link);
@@ -185,7 +187,7 @@ test('"keep this quiz" signs you up and brings you back to the quiz', async ({ p
 	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
 	await page.goto(`/view/${saved.body.id}`);
 	await page.getByRole('button', { name: /isn't saved to an account/ }).click();
-	await page.getByRole('link', { name: 'Create an account to keep this quiz' }).click();
+	await page.getByRole('link', { name: 'Sign in to add this quiz' }).click();
 	await expect(page).toHaveURL(/\/account\/login\?returnTo=/);
 	const { link } = await askForSignIn(page, address());
 	await page.goto(link);
@@ -194,7 +196,7 @@ test('"keep this quiz" signs you up and brings you back to the quiz', async ({ p
 	await page.waitForURL(new RegExp(`/view/${saved.body.id}`));
 	// #43 cases 8 and 9: the username came first, the secret survived sign-in, and the quiz
 	// is claimed by a button press, not by itself.
-	const claim = page.getByRole('button', { name: 'Claim this quiz to your account' });
+	const claim = page.getByRole('button', { name: 'Add this quiz to your account' });
 	await claim.click();
 	await page.waitForURL(/\/my-quizzes/);
 	await expect(page.getByText(saved.body.title)).toBeVisible();

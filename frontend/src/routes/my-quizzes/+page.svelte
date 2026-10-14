@@ -20,8 +20,10 @@ SPDX-License-Identifier: MPL-2.0
 		anonDaysLeft,
 		anonQuizIds,
 		claimFailure,
+		claimQuizzes,
 		clearAnonSecret,
-		getAnonSecret
+		getAnonSecret,
+		loadAnonQuiz
 	} from '$lib/anon_quiz';
 	import { copyQuiz } from '$lib/copy_quiz';
 	import CommandpaletteNotice from '$lib/components/popover/commandpalettenotice.svelte';
@@ -30,6 +32,7 @@ SPDX-License-Identifier: MPL-2.0
 	import StartGamePopup from '$lib/dashboard/start_game.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { openCreateDialog } from '$lib/create_dialog.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
@@ -87,31 +90,7 @@ SPDX-License-Identifier: MPL-2.0
 		(quiz.questions.length === 0 || quiz.questions.some((q) => !isQuestionComplete(q)));
 
 	onMount(async () => {
-		const results = await Promise.all(
-			anonQuizIds().map(async (id): Promise<Row | null> => {
-				try {
-					const res = await fetch(`/api/v1/quiz/get/public/${id}`);
-					if (res.status === 404) {
-						// Expired and swept, or deleted elsewhere. Drop the dead secret
-						// so the list doesn't keep retrying it forever.
-						clearAnonSecret(id);
-						return null;
-					}
-					if (!res.ok) return null;
-					const quiz = await res.json();
-					if (quiz.user_id) {
-						// Claimed from another tab: the account owns it now and the
-						// secret proves nothing.
-						clearAnonSecret(id);
-						return null;
-					}
-					return quiz;
-				} catch {
-					// Offline or the API is down: keep the secret, just show less.
-					return null;
-				}
-			})
-		);
+		const results = await Promise.all(anonQuizIds().map((id) => loadAnonQuiz<Row>(id)));
 		browser_quizzes = results.filter((q): q is Row => q !== null);
 	});
 
@@ -198,6 +177,32 @@ SPDX-License-Identifier: MPL-2.0
 		// The account list is loaded by the server, which knows about the claim and
 		// the fields /get/public leaves out; reloading is simpler than patching them in.
 		window.location.reload();
+	};
+
+	let keep_all_error: string | null = $state(null);
+
+	const keep_all = async () => {
+		if (!browser_quizzes || claiming !== null) return;
+		claiming = 'all';
+		keep_all_error = null;
+		const total = browser_quizzes.length;
+		const result = await claimQuizzes(browser_quizzes.map((quiz) => quiz.id));
+		// Move successful rows immediately; a failed later request must not leave them
+		// under On this browser with a Claim button whose secret has already been spent.
+		const moved = browser_quizzes.filter((quiz) => result.claimed.includes(quiz.id));
+		account_quizzes = [
+			...account_quizzes,
+			...moved.filter((quiz) => !account_quizzes.some((saved) => saved.id === quiz.id))
+		];
+		browser_quizzes = browser_quizzes.filter((quiz) => result.remaining.includes(quiz.id));
+		claiming = null;
+		if (result.claimed.length === total) {
+			window.location.reload();
+			return;
+		}
+		keep_all_error = $t('claim_prompt.kept_some', { kept: result.claimed.length, total });
+		if (result.gone.length) keep_all_error += ' ' + $t('claim.gone');
+		if (result.stopped) keep_all_error += ' ' + $t(`claim_prompt.${result.stopped}`);
 	};
 </script>
 
@@ -315,17 +320,17 @@ SPDX-License-Identifier: MPL-2.0
 						<Copy />
 					{/if}
 				</Button>
-				<!-- Analytics hidden with Results for the MVP (D4). -->
-				<Button
-					variant="ghost"
-					size="icon"
-					title={$t('words.download')}
-					aria-label={$t('words.download')}
-					onclick={() => (download_id = quiz.id)}
-				>
-					<Download />
-				</Button>
 			{/if}
+			<!-- Analytics hidden with Results for the MVP (D4). Browser rows download with their secret. -->
+			<Button
+				variant="ghost"
+				size="icon"
+				title={$t('words.download')}
+				aria-label={$t('words.download')}
+				onclick={() => (download_id = quiz.id)}
+			>
+				<Download />
+			</Button>
 			<ConfirmAction
 				title={$t('view_quiz_page.delete_confirm_title')}
 				body={$t('view_quiz_page.delete_confirm_named', { title: quiz.title })}
@@ -357,7 +362,7 @@ SPDX-License-Identifier: MPL-2.0
 			<!-- Signed out with the setting off, Create only leads to sign-in, which the empty
 			     state already offers: one strong button, not two. -->
 			{#if signed_in || anonymous_on}
-				<Button href="/create" size="lg">
+				<Button href="/create" size="lg" onclick={openCreateDialog}>
 					<Plus />
 					{$t('dashboard.create_quiz')}
 				</Button>
@@ -376,7 +381,7 @@ SPDX-License-Identifier: MPL-2.0
 					<p class="text-muted-foreground max-w-sm text-balance">
 						{$t('my_quizzes.empty_signed_in')}
 					</p>
-					<Button href="/create">
+					<Button href="/create" onclick={openCreateDialog}>
 						<Plus />
 						{$t('dashboard.create_quiz')}
 					</Button>
@@ -413,11 +418,31 @@ SPDX-License-Identifier: MPL-2.0
 				</ul>
 			{/if}
 
+			{#if keep_all_error}
+				<p class="text-destructive mt-4 text-sm" role="alert">{keep_all_error}</p>
+			{/if}
 			{#if browser_quizzes && browser_quizzes.length > 0}
 				<section class="mt-12" aria-labelledby="browser-heading">
-					<h2 id="browser-heading" class="text-lg font-semibold tracking-tight">
-						{$t('my_quizzes.on_this_browser')}
-					</h2>
+					<div class="flex flex-wrap items-center justify-between gap-3">
+						<h2 id="browser-heading" class="text-lg font-semibold tracking-tight">
+							{$t('my_quizzes.on_this_browser')}
+						</h2>
+						{#if browser_quizzes.length > 1}
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={claiming !== null}
+								onclick={keep_all}
+							>
+								{#if claiming === 'all'}
+									<LoaderCircle class="animate-spin" />
+								{:else}
+									<UserPlus />
+								{/if}
+								{$t('my_quizzes.keep_all')}
+							</Button>
+						{/if}
+					</div>
 					<p class="text-muted-foreground mt-1 text-sm">
 						{$t('my_quizzes.on_this_browser_hint')}
 					</p>
@@ -439,7 +464,12 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					<TriangleAlert class="text-primary size-5 shrink-0" aria-hidden="true" />
 					<p class="min-w-0 flex-1 text-sm">{$t('my_quizzes.signed_out_notice')}</p>
-					<Button href="/account/register" variant="outline" size="sm" class="shrink-0">
+					<Button
+						href="/account/login?returnTo=%2Fmy-quizzes"
+						variant="outline"
+						size="sm"
+						class="shrink-0"
+					>
 						<UserPlus />
 						{$t('my_quizzes.create_account')}
 					</Button>
@@ -471,7 +501,7 @@ SPDX-License-Identifier: MPL-2.0
 					<p class="text-muted-foreground max-w-md text-sm text-balance">
 						{$t('my_quizzes.signed_out_notice')}
 					</p>
-					<Button href="/create">
+					<Button href="/create" onclick={openCreateDialog}>
 						<Plus />
 						{$t('dashboard.create_quiz')}
 					</Button>

@@ -128,6 +128,43 @@ test('Discover lists the examples above Newest, and Newest does not list them ag
 	await context.close();
 });
 
+test('a signed-out visitor can use an example as an anonymous quiz', async ({ browser }) => {
+	const context = await browser.newContext({ viewport: PHONE, isMobile: true, hasTouch: true });
+	const page = await context.newPage();
+	const title = EXAMPLES[0];
+
+	await page.goto('/explore');
+	const examples = page.getByRole('region', { name: 'Examples' });
+	await expect(examples).toBeVisible();
+	const signIn = page.getByRole('main').getByRole('link', { name: 'Sign in' });
+	await expect(signIn).toBeVisible();
+	await expect(signIn).toHaveAttribute('href', '/account/login?returnTo=%2Fexplore');
+	await expect(page.getByRole('searchbox')).toHaveCount(0);
+	await examples.getByRole('link', { name: title }).click();
+	await expect(page).toHaveURL(/\/view\//);
+	await page.waitForLoadState('networkidle');
+	// D43: hosting needs no account, so Play is offered rather than "Sign in to host".
+	await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled();
+	await expect(page.getByRole('link', { name: 'Sign in to host' })).toHaveCount(0);
+
+	await page.getByRole('button', { name: 'Use this template' }).click();
+	await expect(page).toHaveURL(/\/edit\?quiz_id=[0-9a-f-]{32,36}$/);
+	await expect(titleBox(page)).toContainText(`${title} (copy)`);
+	const quizId = new URL(page.url()).searchParams.get('quiz_id')!;
+	await expect
+		.poll(async () =>
+			page.evaluate(() => {
+				const secrets = JSON.parse(localStorage.getItem('frogquiz_anon_secrets') ?? '{}');
+				return Object.keys(secrets);
+			})
+		)
+		.toContain(quizId);
+
+	await page.goto('/my-quizzes');
+	await expect(page.getByRole('listitem').filter({ hasText: `${title} (copy)` })).toBeVisible();
+	await context.close();
+});
+
 test('an example is copied into your quizzes and opens in the editor', async ({
 	browser,
 	request

@@ -33,6 +33,7 @@ from frogquiz.auth import (
     require_anonymous_quizzes,
     verify_anon_secret,
 )
+from frogquiz.helpers.anonymous_quiz import ANON_QUIZ_EXPIRE_DAYS, enforce_anonymous_quiz_ceilings
 from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 import os
 from datetime import datetime, timedelta
@@ -50,10 +51,6 @@ settings = settings()
 router = APIRouter()
 
 allowed_image_extensions = [".gif", ".jpg", ".jpeg", ".png", ".svg", ".webp", ".jfif"]
-
-# How long a quiz created without an account is kept before it's swept up if
-# no one claims it (see the arq cleanup job in frogquiz/worker/__init__.py).
-ANON_QUIZ_EXPIRE_DAYS = 30
 
 
 class InitEditorResponse(BaseModel):
@@ -182,29 +179,6 @@ async def save_edit(
     await rate_limit_key(f"editor_save_session:{edit_id}", limit=60, window_seconds=60)
     await rate_limit(request, "editor_save", limit=600, window_seconds=60)
     return await _persist(request, response, edit_id, quiz_input, user, x_anon_secret, keep_session=True, base=base)
-
-
-async def _anonymous_quiz_ceilings(request: Request) -> None:
-    """429 when a new quiz without an account would pass either ceiling (#55).
-
-    Checked on the save that creates the quiz, which is the only place one is made. The
-    total is read, then the quiz is written, so a burst of saves at once can pass it by a
-    few: it is a ceiling against a script, not an exact count.
-    """
-    alive = await database.fetch_val(
-        "SELECT count(*) FROM quiz WHERE user_id IS NULL AND (expire_at IS NULL OR expire_at >= :now)",
-        {"now": datetime.now()},
-    )
-    if alive >= settings.anon_quiz_total_limit:
-        raise HTTPException(
-            status_code=429,
-            detail="Too many quizzes without an account right now. Sign in to keep going.",
-        )
-    try:
-        await rate_limit(request, "anon_quiz_create", limit=settings.anon_quiz_daily_limit, window_seconds=86400)
-    except HTTPException as limited:
-        limited.detail = "You have reached today's limit for quizzes without an account. Sign in to keep going."
-        raise
 
 
 async def _persist(
@@ -388,7 +362,7 @@ async def _persist(
         anon_secret_hash = None
         expire_at = None
         if is_anonymous:
-            await _anonymous_quiz_ceilings(request)
+            await enforce_anonymous_quiz_ceilings(request)
             raw_anon_secret = secrets.token_hex(32)
             anon_secret_hash = hash_anon_secret(raw_anon_secret)
             expire_at = datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS)

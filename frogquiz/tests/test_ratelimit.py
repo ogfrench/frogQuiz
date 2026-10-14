@@ -147,3 +147,33 @@ def test_registration_fits_an_office_behind_one_address(test_client: TestClient,
         test_client.portal.call(redis.delete, bucket)
         # TestStats counts accounts and expects none left behind.
         test_client.portal.call(lambda: User.objects.filter(email=email).delete())
+
+
+# Claims were limited to 20 a minute per address, so an office keeping its quizzes after a
+# workshop shared one bucket. The limit is per account now, with a looser one per address.
+def test_claims_are_limited_per_account_not_per_address(test_client: TestClient, monkeypatch):  # noqa: F811
+    from frogquiz.tests.test_claim_races import PASSWORD, _sign_up
+
+    ana = _sign_up(test_client, "claim-limit-ana")
+    ben = _sign_up(test_client, "claim-limit-ben")
+    on = settings().model_copy(update={"rate_limit_enabled": True})
+    monkeypatch.setattr("frogquiz.helpers.ratelimit.settings", lambda: on)
+    keys = [
+        f"ratelimit:quiz_claim_user:{ana['id']}",
+        f"ratelimit:quiz_claim_user:{ben['id']}",
+        "ratelimit:quiz_claim:testclient",
+    ]
+    # Ana has used her minute; Ben, at the same address, has not.
+    test_client.portal.call(lambda: redis.set(keys[0], 20, ex=60))
+    missing = f"/api/v1/quiz/claim/{uuid.uuid4()}"
+    headers = {"X-Anon-Secret": "not-a-secret"}
+    try:
+        assert test_client.post(missing, headers=headers, cookies=ana["cookies"]).status_code == 429
+        assert test_client.post(missing, headers=headers, cookies=ben["cookies"]).status_code == 404
+    finally:
+        monkeypatch.undo()
+        for key in keys:
+            test_client.portal.call(redis.delete, key)
+        for user in (ana, ben):
+            test_client.request("DELETE", "/api/v1/users/me", json={"password": PASSWORD}, cookies=user["cookies"])
+        test_client.cookies.clear()

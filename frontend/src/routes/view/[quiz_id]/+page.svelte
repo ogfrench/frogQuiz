@@ -19,7 +19,13 @@ SPDX-License-Identifier: MPL-2.0
 	import { goto } from '$app/navigation';
 	import ModComponent from './ModComponent.svelte';
 	import { get_foreground_color } from '$lib/helpers.ts';
-	import { anonDaysLeft, claimFailure, getAnonSecret, clearAnonSecret } from '$lib/anon_quiz';
+	import {
+		anonDaysLeft,
+		claimFailure,
+		getAnonSecret,
+		clearAnonSecret,
+		setAnonSecret
+	} from '$lib/anon_quiz';
 	import { copyQuiz } from '$lib/copy_quiz';
 	import { sanitizeTitleHtml, htmlToPlainText } from '$lib/sanitize';
 	import { quizShare } from '$lib/share_meta';
@@ -56,7 +62,11 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 	let { data } = $props();
-	let { quiz, logged_in }: { quiz: QuizData; logged_in: boolean } = $state(data);
+	let {
+		quiz,
+		logged_in,
+		anonymous_quizzes_enabled
+	}: { quiz: QuizData; logged_in: boolean; anonymous_quizzes_enabled: boolean } = $state(data);
 	const share = $derived(quizShare(quiz, page.url.origin, `${page.url.origin}${JpgOpenGraph}`));
 
 	// Ownership of an anonymously-created quiz can only be checked client-side
@@ -99,16 +109,23 @@ SPDX-License-Identifier: MPL-2.0
 	const visitor_order = (answers: { answer: string }[]) =>
 		[...answers].sort((a, b) => a.answer.localeCompare(b.answer));
 
-	// What the server actually allows (routers/quiz.py, start_quiz): its own creator, or
-	// anyone signed in if the quiz is public. Offering Play on somebody else's unlisted
-	// quiz gave a signed-in visitor a button that answered "quiz not found".
-	const can_start = $derived(owns_anonymously || (logged_in && (quiz.public || owns_on_account)));
+	// What the server allows (routers/quiz.py, start_quiz): the owner, by account or by this
+	// browser's secret, or anyone for a public quiz; signed out, only while quizzes without
+	// an account are on (D43). Someone else's unlisted quiz still answers "quiz not found".
+	const can_start = $derived(
+		owns_anonymously ||
+			owns_on_account ||
+			(quiz.public && (logged_in || anonymous_quizzes_enabled))
+	);
 
 	// Copy to my quizzes (#39) is the same rule less the anonymous owner: the copy lands in
 	// an account, and a browser with only a secret has none. The server enforces it too
 	// (POST /quiz/copy answers 404 for somebody else's unlisted quiz); this is the button
 	// not being offered where it could only fail.
 	const can_copy = $derived(logged_in && (quiz.public || owns_on_account));
+	const can_use_template = $derived(
+		!logged_in && anonymous_quizzes_enabled && quiz.is_example === true
+	);
 
 	// A draft is a quiz with at least one unfinished question -- the same rule the
 	// server uses (frogquiz/helpers/completeness.py) to refuse POST /quiz/start.
@@ -160,6 +177,12 @@ SPDX-License-Identifier: MPL-2.0
 		copy_error = null;
 		const result = await copyQuiz(quiz.id);
 		if (result.ok === true) {
+			if (!logged_in && !result.anonSecret) {
+				copying = false;
+				copy_error = $t('copy.failed');
+				return;
+			}
+			if (result.anonSecret) setAnonSecret(result.id, result.anonSecret);
 			// Left disabled while the editor loads, so a second press cannot make a second copy.
 			await goto(`/edit?quiz_id=${result.id}`);
 			return;
@@ -222,6 +245,7 @@ SPDX-License-Identifier: MPL-2.0
 	interface QuizData {
 		id: string;
 		public: boolean;
+		is_example?: boolean;
 		title: string;
 		description: string;
 		cover_image?: string;
@@ -344,7 +368,7 @@ SPDX-License-Identifier: MPL-2.0
 							{/if}
 						{:else}
 							<Button
-								href="/account/register?returnTo=/view/{quiz.id}"
+								href="/account/login?returnTo={encodeURIComponent(`/view/${quiz.id}`)}"
 								class="w-full sm:w-fit"
 							>
 								{$t('view_quiz_page.anon_sign_up')}
@@ -437,6 +461,16 @@ SPDX-License-Identifier: MPL-2.0
 					<Repeat />
 					{$t('words.practice')}
 				</Button>
+				{#if can_use_template}
+					<Button variant="outline" size="lg" disabled={copying} onclick={copy_to_my_quizzes}>
+						{#if copying}
+							<LoaderCircle class="animate-spin" aria-hidden="true" />
+						{:else}
+							<Copy />
+						{/if}
+						{copying ? $t('copy.copying') : $t('copy.use_template')}
+					</Button>
+				{/if}
 				{#if can_copy}
 					<Button
 						variant="outline"
@@ -454,17 +488,10 @@ SPDX-License-Identifier: MPL-2.0
 					</Button>
 				{/if}
 				<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`
-				     above already hides it from a non-owner on screen. Still disabled while
-				     signed out, because the endpoint needs a session -- an anonymous owner
-				     holds the quiz in this browser, not in an account. -->
+				     above already hides it from a non-owner on screen. The owner may be this
+				     browser, by its secret (D43). -->
 				{#if is_owner}
-					<Button
-						variant="outline"
-						size="lg"
-						disabled={!logged_in}
-						onclick={() => (download_id = quiz.id)}
-						aria-describedby={logged_in ? undefined : 'signed-out-hint'}
-					>
+					<Button variant="outline" size="lg" onclick={() => (download_id = quiz.id)}>
 						<Download />
 						{$t('words.download')}
 					</Button>
@@ -544,15 +571,11 @@ SPDX-License-Identifier: MPL-2.0
 					{is_owner ? $t('draft.hint_owner') : $t('draft.hint')}
 				</p>
 			{/if}
-			{#if !logged_in}
+			{#if !can_start && !is_draft}
 				<p id="signed-out-hint" class="text-muted-foreground -mt-2 px-6 text-sm">
-					{can_start
-						? $t('view_quiz_page.download_signed_out_hint')
-						: $t('view_quiz_page.start_signed_out_hint')}
-				</p>
-			{:else if !can_start && !is_draft}
-				<p id="signed-out-hint" class="text-muted-foreground -mt-2 px-6 text-sm">
-					{$t('view_quiz_page.unlisted_not_yours')}
+					{quiz.public
+						? $t('view_quiz_page.start_signed_out_hint')
+						: $t('view_quiz_page.unlisted_not_yours')}
 				</p>
 			{/if}
 		</Card.Root>

@@ -19,7 +19,7 @@ SPDX-License-Identifier: MPL-2.0
   - make, edit, copy, play, host and delete quizzes
   - start a game straight from the editor
   - find, play and copy the Examples in Explore
-- **Without an account:** creating, uploading and hosting need a team account. Players join by PIN with no account.
+- **Without an account:** creation, uploads and hosting are enabled by default with daily and live-total limits. Players join by PIN either way. Guests can browse Examples and use one as a private 30-day quiz.
 - **Production:**
   - the VM is within its limits and backed up, with one restore tested
   - the API answers at `api.frogquiz.xyz` (since 12 Oct)
@@ -40,7 +40,7 @@ They are also recorded in `MVP.md` §4.0, as D22 to D38.
 
 | Issue | Decision |
 | --- | --- |
-| #55 | Creating, uploading and hosting need a team account. Players join by PIN without one. It is built behind the flag `anonymous_quizzes_enabled`, default off. Old anonymous quizzes can be claimed until they expire, with a banner. |
+| #55 | Creating, uploading and hosting work without an account by default, behind `anonymous_quizzes_enabled`; operators can turn them off. Players join by PIN either way. The two ceilings and 30-day expiry apply. D40, 13 Oct. |
 | #55, the rest (11 Oct) | A cap on anonymous quizzes, built in V1: 20 new ones per address a day and 1,000 live in total, both settings. The 30-day window stays. Anonymous quizzes are unlisted only. An editor open at expiry keeps its clock, shows the reason and keeps the text. A running game continues after expiry. |
 | #34 | Public, Unlisted and Private, with Unlisted as the default for a new quiz. Private is owner only, and old links to a quiz made Private give 404. A private quiz's images stay reachable by their unguessable URL. |
 | #33 | A username can be changed: 3 to 20 characters, unique whatever the case, and the old URL gives 404. One name, no display name. An optional bio, up to 160 characters. |

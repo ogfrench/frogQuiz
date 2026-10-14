@@ -4,6 +4,48 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Wait for finite control animations before auditing mobile touch targets, preserving hidden-control and size checks without mistaking answer fade-in for a hover-only control.
+
+- Keep the editor open when a draft becomes complete during a pending save, or newer edits remain unsaved; cover the race with a delayed real save response and verify Play persists the newer answer.
+
+
+- Use Add to account and Add all to account for browser quizzes; remove the redundant Not now explanation and align browser coverage and the interactive preview.
+
+- Capture a real twelve-quiz bulk claim on mobile, verifying the scrollable prompt and that one Keep all action saves every quiz permanently.
+
+- Align the existing account browser test with idempotent same-owner claims, while retaining the spent-secret access check.
+
+- Recover a lost successful claim response: retrying from the owning account succeeds without transferring or counting anything twice. Cover same-account races and the lost-response browser journey.
+
+- Make claims atomic across quiz ownership, images and storage accounting; reload the current quiz under the claim lock and verify rollback/retry and concurrent-edit recovery.
+- Ignore malformed browser-secret entries while preserving valid quizzes.
+- Simplify the README and remove organization-specific collection names.
+
+- Left-align the claim card and group its quiz list; align the standalone preview with the mobile app, including its close control and fixed actions.
+
+- Rewrite the README around frogQuiz's product, quick start and additions, preserving upstream and asset attribution.
+
+- Make Excel review explicit with a continuous list of numbered questions, expandable answers and persistent import controls.
+- Focus Not now when offering to claim browser quizzes after sign-in; update Create navigation coverage for the choice dialog.
+
+- Preserved in-flight browser verification across branch updates so newer captures do not cancel the earlier evidence.
+- Added actual 50-question Excel previews and desktop, tablet, and phone captures to verify bounded scrolling with the Create quiz action visible.
+- Corrected creation captures to wait for the loaded editor, finish dialog animations, and check phone overflow.
+- Added browser claim recovery coverage for connection loss and a revoked sign-in session, preserving remaining secrets through retries.
+- Added a downloadable interactive flow demonstration that reads actual Excel files and labels saving, hosting, and claiming as simulated; bundled the preview and template with CI screenshots.
+- Fixed production builds of static documentation pages: the shared creation dialog now reads URL query parameters only in the browser.
+- Captured desktop and phone creation screens before the full browser suite, including real guest Excel import and sign-in claiming. Added the production frontend build to CI to diagnose preview build failures.
+- Corrected three formatting errors inherited from the anonymous branch and aligned the guest import access test with the existing 401 response for missing credentials (a wrong secret still returns 404).
+- Added Excel creation for guests and accounts: a downloadable template, row-by-row validation without saving, and explicit confirmation that creates a new private quiz. Guest imports use the existing 30-day ownership and claiming flow; same-title quizzes are kept separate.
+- Preserved guest import ownership before opening the editor, prevented expired account sessions from silently creating guest quizzes, and discarded previews that arrive after their dialog closes.
+- Updated account messaging: guests can create, import, and host; signing in keeps quizzes permanently and opens the frog and Capgemini collection in Explore.
+- Keep all now moves successful claims into the account list even when a later claim fails. Batches stop on expired sessions, connection failures, and rate limits, preserving remaining ownership secrets and explaining how to retry.
+- Enabled anonymous quizzes by default and let signed-out visitors browse Examples and use them to create editable 30-day quizzes.
+- Added a prompt right after sign-in that offers to keep the quizzes this browser made (Keep all, or Not now), and Keep all on My Quizzes (D42).
+- Limited claims to 20 a minute per account instead of per address, so an office claiming at once no longer shares one limit.
+- Renamed "Create an account to keep this quiz" to "Sign in to keep this quiz", and added a hint on the code step that the link may open in another browser.
+- Let anyone host a public quiz without an account, and let the browser that made a quiz download its spreadsheet (D43).
+- Stopped My Quizzes counting a view on every quiz this browser holds each time it loads.
 - **The hidden `.cqa` import keeps its images:** it wrote image ids without dashes, which the orphan sweep reads as unused, so an imported quiz's images would have been deleted a day later. The same fix as Copy's in #63.
 
 ### Game polish, 12 Oct
@@ -828,7 +870,7 @@ bites: the editor let a user build something the server then refused with a 422 
   but its schema let a scripted or pasted value through to a 422. Bounded in the schema too.
 
 The six shared limits (four text, two shape — answers and timer) are now pinned
-editor == server by `text_limits.test.ts`, which reads both files, because this drift *is*
+editor == server by `text_limits.test.ts`, which reads both files, because this drift _is_
 the bug class and a one-sided test cannot catch it. The question count is intentionally
 not pinned (editor 50, server 1000). A backend test covers the question ceiling (1001
 refused), and the existing `api-edge.e2e.ts` scale tests cover the accept side (200, 500).
@@ -881,12 +923,12 @@ decodes it without allocating a real bomb.
 Every spec in the suite used "Lisbon" and "ana", so none of them proved anything about a
 real room. Attacking the running app found this, measured against the code as it was:
 
-| Attack | Before |
-| --- | --- |
-| 272-character title with no spaces | Player lobby overflowed **6611px** at 390 |
+| Attack                                | Before                                    |
+| ------------------------------------- | ----------------------------------------- |
+| 272-character title with no spaces    | Player lobby overflowed **6611px** at 390 |
 | Same text as a question and an answer | Host screen overflowed **7736px** at 1440 |
-| 5000-character title | **Accepted and stored intact** |
-| 50-character nickname with no spaces | Player lobby overflowed 6px at 390 |
+| 5000-character title                  | **Accepted and stored intact**            |
+| 50-character nickname with no spaces  | Player lobby overflowed 6px at 390        |
 
 **The root cause is worse than the symptoms.** `ormar.Text()` is unbounded, so the server
 enforced no text limit of any kind — while `yupSchemas.ts` had carried
@@ -902,7 +944,7 @@ Two independent defences, because they protect against different things:
   `bleach`, because they arrive as editor HTML — counting the raw string would spend the
   budget on tags nobody typed and make the same sentence pass or fail depending on whether
   a word in it is bold. They sit on `QuizInput` rather than `QuizQuestion`, following that
-  model's existing reasoning: a quiz already in the database stays *loadable*, merely
+  model's existing reasoning: a quiz already in the database stays _loadable_, merely
   unsaveable until fixed.
 - **`wrap-anywhere` at six render sites**, because a quiz saved before today is never
   revalidated, so the CSS is what actually protects a room from existing content. The
@@ -915,7 +957,7 @@ What was missing was the CSS on the two places a player-supplied name is rendere
 player's own "You're in, …" and the host's lobby chips.
 
 New tests. `src/lib/editor/text_limits.test.ts` (7) reads both files and pins the four
-client numbers against the four server numbers, since that drift *is* the bug.
+client numbers against the four server numbers, since that drift _is_ the bug.
 `e2e/hostile-text.e2e.ts` (4) reproduces each break: 5000 characters refused in all four
 fields, a realistic quiz still saves, already-stored unbreakable text cannot push a layout
 sideways, and four hostile nicknames at once (combining marks, CJK, emoji, long token)
@@ -954,12 +996,12 @@ and confirming the `worker` container runs) and linking everything else.
 
 ### Everything green, verified at the end
 
-| Suite | Result |
-| --- | --- |
-| e2e | **127 passed**, 10.0 min |
-| Backend | **147 passed**, 1 skipped |
-| Unit | **126 passed** |
-| `flake8 .` | 0 |
+| Suite      | Result                                    |
+| ---------- | ----------------------------------------- |
+| e2e        | **127 passed**, 10.0 min                  |
+| Backend    | **147 passed**, 1 skipped                 |
+| Unit       | **126 passed**                            |
+| `flake8 .` | 0                                         |
 | `eslint .` | 0 errors (108 warnings, all pre-existing) |
 
 Measured after the last change, not carried forward from an earlier run.
@@ -969,7 +1011,7 @@ first-run failure was my own assumption, not a product bug** — nine of them. W
 wrong role (link vs button), wrong moment (before a transition settles), wrong encoding
 (base64, CRLF, oklch), wrong element type (contenteditable vs input), wrong state (podium
 vs lobby). The app was right every time, which is the useful result: a journey encodes
-what a *user* expects, and where that disagreed with the app, the app won. The table is in
+what a _user_ expects, and where that disagreed with the app, the app won. The table is in
 [`docs/session-2026-10-02.md`](docs/session-2026-10-02.md), and each spec carries a
 comment naming the assumption and the truth.
 
@@ -1017,7 +1059,7 @@ through the editor like a person instead of posting one to the API. `saveButton`
 **Every first-run failure was mine, not the product's** — worth recording, because each
 looked like a finding:
 
-- **A visitor is meant to see the answers.** D12 hides *which* one is right, not the
+- **A visitor is meant to see the answers.** D12 hides _which_ one is right, not the
   options: a visitor needs to see what a quiz asks to decide whether to play it. The test
   now asserts the `sr-only` "Correct" label is absent for a visitor **and present for the
   owner on the same page**, so it cannot pass by the marker being deleted for everybody.
@@ -1083,7 +1125,7 @@ The second run passing does **not** close the first run's failure: that is 1 occ
 ### One e2e failure, cause still unproven
 
 The full suite came back 118 passed / 1 failed:
-*editor.e2e.ts > build a quiz by hand, save it, and play it*. I attributed it to the
+_editor.e2e.ts > build a quiz by hand, save it, and play it_. I attributed it to the
 fire-and-forget `start_game` race fixed earlier this session, then measured it: **the
 unfixed spec passed 10 out of 10 runs in isolation**, so that attribution is not
 supported and the cause is still unknown. The failure has been seen once, under
@@ -1245,9 +1287,9 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
 
 ### The flaky socket test had a root cause
 
-- *an answer after the host showed the results is refused* was written off as a flake —
+- _an answer after the host showed the results is refused_ was written off as a flake —
   by me, as "passes 3/3 in isolation". Measured properly it fails **2 in 10 in
-  isolation**, so that was wrong, and it was failing on its *first* assertion, not the
+  isolation**, so that was wrong, and it was failing on its _first_ assertion, not the
   one the test is named for.
 - Cause: every `start_game` emit in `live-socket.e2e.ts` was fire-and-forget, so
   `set_question_number` could read `game:{pin}` before `start_game` had saved and write
@@ -1256,7 +1298,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
   `player_answer`. `docs/e2e-findings.md` described this race and claimed the specs
   waited for `start_game` "for this reason" — they did not; that claim is corrected.
 - `startGame()` in `e2e/sockets.ts` waits for the echo, and all nine legitimate call
-  sites use it. The tenth is left raw on purpose: it is an attacker who should *not* be
+  sites use it. The tenth is left raw on purpose: it is an attacker who should _not_ be
   able to start the game, so waiting for an echo would be wrong. **12/12 now**, and the
   whole spec is 21/21.
 - The underlying server-side race is untouched and still wants an `HSET` or a `WATCH`
@@ -1282,7 +1324,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
 - **`anon-game.e2e.ts` carried four stale assertions, all from my own changes today**, and
   it is the one spec that drives a whole game, so it was failing for a different reason
   each time I looked. It clicked "Next Question" after "Show results" (the standings step);
-  it matched `getByText('1st Place')` unscoped on both the host *and* the player, the
+  it matched `getByText('1st Place')` unscoped on both the host _and_ the player, the
   player side having become ambiguous because `max-sm:sr-only` keeps the podium label in
   the DOM at phone width where `hidden` had removed it; it asserted the winner sees
   "You're on place 1!", which `player-medal.e2e.ts` explicitly asserts they do **not**
@@ -1329,7 +1371,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
   could never end early again and the host sat through every full timer for the rest of
   the game. That is the worst thing that can happen to a game running in a room.
   Disconnecting now drops the player from the count and re-checks whether the question
-  can close — deliberately *not* the same as leaving: the rejoin key stays, so a
+  can close — deliberately _not_ the same as leaving: the rejoin key stays, so a
   backgrounded phone can still come back, which is the whole reason this could not just
   call `leave_game`.
 - **A player who reloaded vanished from the host's lobby for good.** The host filters its
@@ -1363,7 +1405,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
   it is refused outright when no provider key is configured — so a game that demands an
   uncheckable captcha cannot be created.
 - `check_captcha` was worse than the "returns True with no secret" it was filed as: every
-  `settings.hcaptcha_key` read was on config.py's *uncalled* `lru_cache` wrapper, so it
+  `settings.hcaptcha_key` read was on config.py's _uncalled_ `lru_cache` wrapper, so it
   raised `AttributeError` out of `join_game`. Fixed, and it now fails closed with a
   logged reason instead of falling through.
 
@@ -1374,7 +1416,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
   the server sends (`time_taken`).
 - Corrected the `svelte-check` note in `TODO.md` — and then had to correct the
   correction. The real figures, from a **single** run: 1054 errors, **229 ours, 825 under
-  `node_modules`**. My first pass read 339/331 from two *separate* `svelte-check`
+  `node_modules`**. My first pass read 339/331 from two _separate_ `svelte-check`
   invocations, so the two counts never described the same run, and I reported that our
   share was half the problem rather than a fifth. The note I "fixed" (~300 ours, ~820 in
   `bits-ui`) had been right all along. Ours also cluster: the top five files are 81 of the
@@ -1402,7 +1444,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
   at 8 MB (`max_image_upload_size`), enforced in three places: Caddy's `request_body` on
   `/api/v1/storage/*`, a `Content-Length` check before the body is read, and the route's
   own check on the counted bytes.
-- **The browser cap was not applied either.** `restrictions` is an Uppy *Core* option and
+- **The browser cap was not applied either.** `restrictions` is an Uppy _Core_ option and
   was being passed through the Dashboard plugin, where it appears nowhere in the types —
   so the picker had neither a size cap nor a type filter and would accept an SVG. It is
   on the Uppy instance now, and the numbers come from a new `GET /api/v1/storage/limits`
@@ -1467,7 +1509,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
 - Rebuilt the `/play` join screen on the landing page's PIN card: the wordmark, a labeled field with the "enter the PIN from the host's screen" line, and one full-width primary button. It was a floating label, an unlabeled box and a gray Submit on an empty page — and it is the first screen every player sees.
 - The host's per-question results and standings are set for a projector at last: at 1920 the question, the answer labels, the counts and the standings scale up instead of staying at laptop size.
 - Play is no longer offered to a signed-in visitor on somebody else's unlisted quiz, which the server answers with "quiz not found". The page says why, and points at Practice.
-- The navbar's Register link was shown only when registration was *disabled* — inherited inverted from upstream, so the only sign-up link appeared exactly when signing up was off.
+- The navbar's Register link was shown only when registration was _disabled_ — inherited inverted from upstream, so the only sign-up link appeared exactly when signing up was off.
 - `/explore` is headed Discover, which is what the navbar has called it since the merge.
 - Removed "Forgot password?" from the registration form, which is for people who have no password yet.
 - The browser-data warning on My Quizzes now appears when there are quizzes to warn about; with none, the empty state carries the sentence instead of stacking two panels.
@@ -1605,7 +1647,7 @@ remain, all `{@html}` and unkeyed `{#each}` in untouched files).
 
 ### CI: an unresponsive S3 backend could hang a job for its full 10-minute timeout
 
-- `S3Storage.__init__` built its `minio.Minio` client with the library's own default -- a 5-minute connect *and* read timeout, 5 retries -- and called `bucket_exists()`/`make_bucket()` on it synchronously, with no `await`, straight out of `__init__`. A backend that accepts the connection and then simply never answers (rather than refusing or erroring, which fail fast) blocks the whole event loop for as long as that takes. `test_minio` hits a public demo endpoint, `play.min.io`, for exactly this reason, and twice in a row it ate an entire CI job's 10-minute timeout before the runner killed it -- not a test failure, a stall with no error message. Gave the client an explicit 15-second connect/read timeout instead (production S3-compatible backends answer in milliseconds; this is generous) so an unreachable backend now fails fast and clearly, in test or in production, instead of hanging silently.
+- `S3Storage.__init__` built its `minio.Minio` client with the library's own default -- a 5-minute connect _and_ read timeout, 5 retries -- and called `bucket_exists()`/`make_bucket()` on it synchronously, with no `await`, straight out of `__init__`. A backend that accepts the connection and then simply never answers (rather than refusing or erroring, which fail fast) blocks the whole event loop for as long as that takes. `test_minio` hits a public demo endpoint, `play.min.io`, for exactly this reason, and twice in a row it ate an entire CI job's 10-minute timeout before the runner killed it -- not a test failure, a stall with no error message. Gave the client an explicit 15-second connect/read timeout instead (production S3-compatible backends answer in milliseconds; this is generous) so an unreachable backend now fails fast and clearly, in test or in production, instead of hanging silently.
 - Even bounded, `play.min.io` stayed unreachable from GitHub's runners across three separate CI runs (identical `ConnectTimeoutError` each time) -- an outage of a public demo server this repo doesn't control, not a flake and not fixable from here. Skipped `test_minio` (François's call, not a unilateral one) rather than leave CI permanently red on it. The skip names what would replace it: a real MinIO service in `docker-compose.dev.yml` alongside `db`/`redis`/`meilisearch`, the way `run_tests.sh` already stands the others up, so the S3 backend has local coverage that doesn't depend on a third party's uptime.
 
 ### Account management: verification, password change, and a delete-cascade audit
@@ -1696,9 +1738,8 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Rebuilt `lib/dashboard/start_game.svelte` on shadcn `Dialog`/`Button`/`Input`/`Label`/`Switch` (the last newly added to `frontend/src/lib/components/ui/`). It was the last pre-redesign surface in the host path: a hand-rolled `<div>` overlay with its own Escape/backdrop handling, hardcoded `w-screen`/`h-screen`/`text-black`/`bg-white`/`bg-green-500`, and `marck-script` on the CTA.
 - Dropped the Normal/Old-School game-mode picker — Old-School was never used, so the modal now always sends `game_mode=kahoot`; the API still accepts `normal` if that's ever wanted back. Also dropped the captcha toggle, which was dead UI while hCaptcha is off at the config level.
 - The start request built its query string by interpolating `custom_field` directly, so an `&` in it silently truncated the value and a `#` dropped everything after it from the request entirely. Now built with `URLSearchParams`.
-- The failure path was a bare `alert()` that then bounced to `/account/login` on *any* non-200 whenever there was no anonymous secret — so a 500, a rate limit, or a quiz deleted in another tab all threw a signed-in host out of the page as though their session had expired. Now only an explicit 401/403 redirects; other failures show an inline message, with a sign-in link when a 404 for a non-anonymous caller suggests an expired session.
+- The failure path was a bare `alert()` that then bounced to `/account/login` on _any_ non-200 whenever there was no anonymous secret — so a 500, a rate limit, or a quiz deleted in another tab all threw a signed-in host out of the page as though their session had expired. Now only an explicit 401/403 redirects; other failures show an inline message, with a sign-in link when a 404 for a non-anonymous caller suggests an expired session.
 - Tracked as [ogfrench/frogQuiz#16](https://github.com/ogfrench/frogQuiz/issues/16). Not yet driven in a browser at 390/834/1440 — no local backend and no headless-browser tooling in this environment; batched into the standing visual-pass item ([#19](https://github.com/ogfrench/frogQuiz/issues/19)).
-
 
 ### Security: quiz text was rendered as HTML
 
@@ -1708,13 +1749,11 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Removed the author name from `{@html}` entirely -- it never contained highlights.
 - `GET /api/v1/quiz/get/public/{id}` returned `anon_secret`, the stored ownership hash, on an unauthenticated response. It is a SHA-256 of 256 random bits so it was not reversible, but it is a credential and is now excluded from the response model.
 
-
 ### Player nicknames were unbounded
 
 - `JoinGameData.username` was a plain `str`. The join form caps it at 17 characters, but the socket server is reachable without the form, so nothing server-side bounded what arrived -- a crafted client could join with a 100,000-character nickname, an empty one, or one containing newlines and null bytes. A nickname becomes a Redis key, a member of the player set and a line on the host's projector, so that was a way to bloat Redis and break the display for everyone else in the room. Nicknames are now trimmed, stripped of control characters, required to be non-empty and capped at 50 characters; `custom_field` is capped at 200. The server bound is deliberately looser than the form's so it can never reject someone the UI let through.
 - `RejoinGameData.username` is cleaned identically, or a rejoin would look up a key the join path could never have written.
 - The join form now trims before its own length check. Untrimmed, four spaces passed as a nickname, which the new server-side rule would then reject with nothing shown to the player.
-
 
 ### Anonymous quizzes
 
@@ -1723,14 +1762,12 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - Added `/my-quizzes`, a per-browser list built from the stored secrets, linked from the landing page. `localStorage` was the only record of an anonymous quiz, so closing the tab left it unreachable until the sweep. Dead entries are pruned when the quiz 404s.
 - Extracted `collect_quiz_image_keys` in `frogquiz/helpers`; the delete endpoint and the expired-quiz sweep each carried their own copy of the storage-key regex and the imgur exclusion. Deliberately unchanged: only question images are collected, not `cover_image`/`background_image`, because neither caller has ever deleted those and widening what a delete removes is not a change to make in passing.
 
-
 ### Scope
 
 - Added an "MVP1 working set" section to `BACKLOG.md`, ahead of the MVP2 list: the anonymous host's login wall (P0), the Explore/Search merge and play/host UX (P1), and the dashboard merge, play modal, view-page design and editor add-button (P2). Records Gonçalo's position on feature consolidation as his position, since `CLAUDE.md` makes the blanket form a joint call with François.
 
 - Settled that an account is what makes a quiz permanent, not what lets you use the app: no account to create, host, share a PIN or play; an account to make a quiz permanent, searchable and manageable. Recorded in `docs/mvp-scope.md` along with the two rejected alternatives (public searchable anonymous quizzes, and free-text author names) and what each would have cost.
 - Settled that `public` keeps meaning world-visible for MVP1. Marking a quiz public publishes its title and description to anyone on the internet; quizzes are private by default, so this only affects ones somebody deliberately made public. Recorded as a known property with the two ways out if it stops being acceptable.
-
 
 ### Hosting a game: the modal, and parity between the two kinds of host
 
@@ -1743,24 +1780,20 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - `slide.svelte` and `voting_results.svelte` were the last two host surfaces outside `fq-stage`, so they sat flush against the top of the projector with the bottom half empty. Both are in it now. The slide image was sized `h-full` against a parent that no longer has a fixed height, so it is capped at `70dvh` and centered by the stage instead.
 - Recorded the anonymous-versus-signed-in host differences in `docs/redesign-status.md`, each checked against the endpoint rather than assumed. One assumed difference turned out not to exist: there is no "resume lobby" card for anyone, so anonymous hosts are not missing one.
 
-
 ### Issue tracker
 
 - Recorded the MVP1 working-set progress on GitHub. Status comment on the MVP1 umbrella (#3), and three new sub-issues: #17 (view page), #18 (dashboard merge), #19 (the outstanding 390/834/1440 visual pass).
 - The "play modal front-end fix" that `BACKLOG.md` carried as blocked on a decision is **#16**, which specifies it as the host's start-game modal — the same component the play/host UX item has to rebuild. The two are one piece of work now. #16 also carries a scope cut this backlog entry did not: drop the Normal/Old-School mode picker and the dead captcha toggle.
 - #13 already described the account-deletion foreign-key and storage-leak bugs fixed here, which were found independently while auditing foreign keys. Commented rather than duplicating, noting that the fix also covers `rating.quiz` — which #13 missed, and which broke ordinary quiz deletion for any rated quiz, not just account deletion.
 
-
 ### Backlog
 
 - `BACKLOG.md`'s MVP1 working set now opens with a status table — three items done, one next, three open, one blocked on a decision — and records the two verification constraints that shaped how each was checked: there is no local backend, and the Vite proxy cannot reach the deployed one from this environment because TLS interception breaks the certificate chain. The play/host and view-page items were filled in with what reading the files actually turned up, so neither starts from a one-line description.
-
 
 ### Docs corrected
 
 - `docs/redesign-status.md` claimed `/view/[quiz_id]` had been "reviewed and needed no change". It had not: the page still carries `bg-white dark:bg-gray-700`, hardcoded blue and yellow shadows, a hand-rolled collapsible and an icon-only Play button with no accessible name. Corrected, and the two surfaces touched here are listed as redesigned-but-not-yet-driven rather than promoted to Done, which on that page means a real browser at 390/834/1440.
 - `CLAUDE.md`'s note that Explore and Search are coupled through `search-card.svelte`'s use of `explore_page.*` is no longer true and says so. The removal surface below it is unchanged, and deleting either remains a joint call.
-
 
 ### Explore and Search are one page
 
@@ -1772,20 +1805,17 @@ Details, and how each was fixed, are in `docs/e2e-findings.md`. All 63 e2e tests
 - `search-card.svelte` rebuilt on the shadcn `Card`. It was `bg-white`/`dark:bg-slate-800` with `text-gray-800`/`text-gray-600`, and carried `my-20` on every card — which is where the huge vertical gaps came from, since the grid had no gap and each card paid for its own spacing. `min-w-0` on the link, because a grid item defaults to `min-width: auto` and a long unbroken title pushed the card out of its column. `highlightToHtml` and `lib/search/highlight.ts` are untouched.
 - One Explore entry in the navbar, desktop and mobile, in place of the Explore/Search pair.
 
-
 ### Adding a question in the editor
 
 - The rail's "Add question" button was the last child of the scrolling question list, so on a quiz with more than a screenful of questions it scrolled out of reach — you had to scroll to the bottom of the list before you could add anything. It is now a pinned footer of the rail, outside the scroll container.
 - Added a second add control at the end of the canvas column, inside the reading measure, where a document editor puts it. Both open the same picker; the rail keeps its own.
 - `AddNewQuestionPopup` is now the shadcn `Dialog`. It was a hand-rolled overlay with a `document.body` keydown listener for Escape and a `target === currentTarget` check for the backdrop, and no focus trap or focus return — so tabbing out of it landed behind the overlay. The question types, their descriptions and `add_question` are unchanged. Its own close button is turned off because the generated label is hardcoded English; the translated one is kept.
 
-
 ### Hosting without an account
 
 - `/admin`, the screen that runs a live game, no longer redirects to the login page. The account-free path was built end to end on the backend -- an anonymous user can create a quiz at `/create?anon=true` and the server will start a game for them -- but the one screen that hosts it bounced them, so the path dead-ended at the moment of use. The wall was not access control either: `register_as_admin` accepts any valid game pin + game id pair from anyone, signed in or not, which is what it has always done.
 - The "Save results" button is hidden for an anonymous host. The backend writes the `GameResults` row with `user=NULL` and every read path in `routers/results.py` is user-scoped, so the saved row would be unreachable. The podium and the spreadsheet export both work without an account and are unchanged.
 - The loader returns `signed_in` and the page renders from it, rather than reading the `signedIn` store -- the store is module-scope state mutated during SSR, so it is shared across concurrent requests under adapter-node and is not safe to base this on.
-
 
 ### UI foundations
 

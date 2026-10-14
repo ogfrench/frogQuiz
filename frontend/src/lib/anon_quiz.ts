@@ -11,7 +11,13 @@ const STORAGE_KEY = 'frogquiz_anon_secrets';
 function readAll(): Record<string, string> {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		return raw ? JSON.parse(raw) : {};
+		const parsed: unknown = raw ? JSON.parse(raw) : {};
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+		return Object.fromEntries(
+			Object.entries(parsed).filter((entry): entry is [string, string] =>
+				typeof entry[1] === 'string' && entry[1].length > 0
+			)
+		);
 	} catch {
 		return {};
 	}
@@ -37,6 +43,19 @@ export function setAnonSecret(quizId: string, secret: string): void {
 	writeAll(secrets);
 }
 
+/** Check before creating a guest quiz whose ownership must survive navigation. */
+export function canRememberAnonQuiz(): boolean {
+	const key = `frogquiz_anon_probe_${Math.random()}`;
+	try {
+		localStorage.setItem(key, '1');
+		const writable = localStorage.getItem(key) === '1';
+		localStorage.removeItem(key);
+		return writable;
+	} catch {
+		return false;
+	}
+}
+
 export function clearAnonSecret(quizId: string): void {
 	const secrets = readAll();
 	delete secrets[quizId];
@@ -45,6 +64,108 @@ export function clearAnonSecret(quizId: string): void {
 
 export function anonQuizIds(): string[] {
 	return Object.keys(readAll());
+}
+
+// Set by the sign-in page just before it leaves, read once by the claim prompt.
+const JUST_SIGNED_IN = 'frogquiz_just_signed_in';
+
+export function markJustSignedIn(): void {
+	try {
+		sessionStorage.setItem(JUST_SIGNED_IN, '1');
+	} catch {
+		/* no prompt then; My Quizzes still offers Claim */
+	}
+}
+
+export function takeJustSignedIn(): boolean {
+	try {
+		const set = sessionStorage.getItem(JUST_SIGNED_IN) === '1';
+		sessionStorage.removeItem(JUST_SIGNED_IN);
+		return set;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * A quiz this browser made, read with its secret, or null. Dead secrets (expired, deleted,
+ * claimed) are dropped. `/quiz/get/{id}` rather than `/get/public`, which counts a view.
+ */
+export async function loadAnonQuiz<
+	T = { id: string; title: string; expire_at?: string | null; [k: string]: unknown }
+>(id: string, doFetch: typeof fetch = fetch): Promise<T | null> {
+	const secret = getAnonSecret(id);
+	if (!secret) return null;
+	try {
+		const res = await doFetch(`/api/v1/quiz/get/${id}`, {
+			headers: { 'X-Anon-Secret': secret }
+		});
+		if (res.status === 404) {
+			clearAnonSecret(id);
+			return null;
+		}
+		if (!res.ok) return null;
+		const quiz = await res.json();
+		if (quiz.user_id) {
+			clearAnonSecret(id);
+			return null;
+		}
+		return quiz;
+	} catch {
+		// Offline: keep the secret, show less.
+		return null;
+	}
+}
+
+export type ClaimOutcome = 'claimed' | 'gone' | 'limited' | 'failed';
+
+/** Claims one quiz with this browser's secret. A secret another tab already spent is 'gone'. */
+export async function claimQuiz(
+	id: string,
+	doFetch: typeof fetch = fetch
+): Promise<{ outcome: ClaimOutcome; status: number | null }> {
+	const secret = getAnonSecret(id);
+	if (!secret) return { outcome: 'gone', status: null };
+	let status: number | null = null;
+	try {
+		status = (
+			await doFetch(`/api/v1/quiz/claim/${id}`, {
+				method: 'POST',
+				headers: { 'X-Anon-Secret': secret }
+			})
+		).status;
+	} catch {
+		return { outcome: 'failed', status: null };
+	}
+	if (status === 200 || status === 404) clearAnonSecret(id);
+	if (status === 200) return { outcome: 'claimed', status };
+	if (status === 404) return { outcome: 'gone', status };
+	if (status === 429) return { outcome: 'limited', status };
+	return { outcome: 'failed', status };
+}
+
+/** Stops on a retryable failure, preserving ownership for it and the unattempted quizzes. */
+export async function claimQuizzes(ids: string[], doFetch: typeof fetch = fetch) {
+	const claimed: string[] = [];
+	const gone: string[] = [];
+	let stopped: 'limited' | 'signed_out' | 'offline' | 'failed' | null = null;
+	for (const [index, id] of ids.entries()) {
+		const result = await claimQuiz(id, doFetch);
+		if (result.outcome === 'claimed') claimed.push(id);
+		else if (result.outcome === 'gone') gone.push(id);
+		else {
+			stopped =
+				result.status === 429
+					? 'limited'
+					: result.status === 401
+						? 'signed_out'
+						: result.status === null
+							? 'offline'
+							: 'failed';
+			return { claimed, gone, remaining: ids.slice(index), stopped };
+		}
+	}
+	return { claimed, gone, remaining: [] as string[], stopped };
 }
 
 const DAY_MS = 86_400_000;
@@ -83,3 +204,4 @@ export function claimFailure(
 	if (status === 404) return anonDaysLeft(expire_at, now) === 0 ? 'expired' : 'gone';
 	return 'failed';
 }
+

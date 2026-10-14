@@ -25,8 +25,22 @@ describe('copyFailure', () => {
 describe('copyQuiz', () => {
 	it('posts to the copy endpoint and returns the new id', async () => {
 		const fetch = reply(200, { id: 'new-id' });
-		expect(await copyQuiz('old-id', fetch)).toEqual({ ok: true, id: 'new-id' });
+		expect(await copyQuiz('old-id', fetch)).toEqual({ ok: true, id: 'new-id', anonSecret: null });
 		expect(fetch).toHaveBeenCalledWith('/api/v1/quiz/copy/old-id', { method: 'POST' });
+	});
+
+	it('returns the one-time ownership secret for an anonymous copy', async () => {
+		const fetch = vi.fn(
+			async () => new Response(JSON.stringify({ id: 'new-id' }), {
+				status: 200,
+				headers: { 'X-Anon-Secret': 'ownership-secret' }
+			})
+		);
+		expect(await copyQuiz('old-id', fetch)).toEqual({
+			ok: true,
+			id: 'new-id',
+			anonSecret: 'ownership-secret'
+		});
 	});
 
 	it('maps a 409 to the storage message', async () => {

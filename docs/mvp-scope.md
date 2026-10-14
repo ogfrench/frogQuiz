@@ -301,13 +301,14 @@ own auth path, and a registration/recovery flow that was just made to work end t
 The account-free path people actually wanted already exists — `/create?anon=true` covers
 create, host, share a PIN and play without signing up.
 
-**Superseded on 11 Oct by D23 (#55):** making, uploading and hosting now need a team
-account, behind `anonymous_quizzes_enabled`, off in production. Players still join with
-none. What follows records the earlier call, which the setting turned on restores.
+**Updated on 13 Oct by D40 and D41:** anonymous creation, uploads and hosting are on by
+default; operators can turn them off with `anonymous_quizzes_enabled`. Signed-out visitors
+can browse curated Examples and use one to make an anonymous copy. Search and profiles still
+need sign-in. The 11 Oct D23 entry below records the previous default.
 
 So the boundary sits at **permanence**, not usage:
 
-- **No account** to create a quiz, host it, share the PIN, or play.
+- **No account** to create a quiz, host it, share the PIN, or play, when the setting is on.
 - **An account** to make a quiz permanent, findable in search, and manageable from a
   dashboard.
 
@@ -350,11 +351,12 @@ not seen it yet.
   gets five tries, and an address ten a day.
 - **A first sign-in makes the account.** The page asks for a username (3 to 20 characters,
   unique whatever the case, fixed for good as C13 decided), and that is registration.
-- **Who can see what.** Discover, `/api/v1/search/`, the sitemap and the community listings
-  need a signed-in account. With sign-in limited to the team's domains, that makes "public"
+- **Who can see what.** Signed-out visitors can browse curated Examples in Discover;
+  `/api/v1/search/`, the sitemap and the community listings need a signed-in account. With
+  sign-in limited to the team's domains, that makes "public"
   mean "the team", which closes open decision 6 below. Anonymous create, host and play were
-  unchanged by this, and so were unlisted links. Since D23 (11 Oct) creating and hosting
-  need an account unless `anonymous_quizzes_enabled` is on; playing never does.
+  unchanged by this, and so were unlisted links. Since D40 (13 Oct) anonymous creation and
+  hosting are on by default; playing never needs an account.
 - **What was hidden, not removed.** Password login, registration, reset, resend-confirmation
   and change, behind `ENABLE_PASSWORD_LOGIN` (off). The old pages redirect to sign-in; the
   change-password card is behind `PASSWORDS` in `routes/account/settings/+page.svelte`; the
@@ -386,19 +388,12 @@ Collected so they can be settled in one pass rather than rediscovered:
 5. **English only, and the 33 deleted locale files** — same rule, and the one cut on
    this page that removed files from the tree rather than gating them. See
    [Languages](#languages) for the argument and for how to restore any one of them.
-6. **Settled differently on 2026-10-05: Discover and search need a signed-in account, and
-   only team addresses can sign in** (D21, the section above). What follows is the record
-   from before. **There is no team-visible tier. Settled: leave it as-is for MVP1.** Only
-   `public=True` quizzes are indexed, and `POST /api/v1/search/` has no auth dependency,
-   so on an internet-facing deployment "make it findable by the team" and "publish it to
-   the world" are the same switch. This is now a known and accepted property, not an
-   oversight: **marking a quiz public publishes its title and description to anyone on
-   the internet**, and the team should not put anything sensitive in either. Quizzes are
-   private by default, so this only affects quizzes somebody deliberately made public.
-   If that stops being acceptable, the two ways out, ascending in cost, are: require auth
-   on `/api/v1/search/` and `/explore`, so `public` means "visible to signed-in users";
-   or add a third `visibility` tier (`private`/`team`/`public`) and gate results on the
-   caller.
+6. **D41 (13 Oct) narrows D21:** signed-out visitors can browse the curated Examples in
+  Discover and use one as a template. Search, profiles, community listings and the sitemap
+  still require a team account. Public quizzes are indexed for signed-in users only; the
+  search API requires authentication. This replaces the earlier proposal to make public
+  quiz titles searchable across the internet. Anonymous template copies are unlisted and
+  expire after 30 days.
 7. **Account deletion. Fixed in code, not yet verified against a database.**
    `controller.user`, `rating.user` and `rating.quiz` were created without ON DELETE, so
    Postgres defaulted them to NO ACTION and deleting an account that had rated a quiz or

@@ -7,7 +7,9 @@
 
 export type CopyFailure = 'storage_full' | 'failed';
 
-export type CopyResult = { ok: true; id: string } | { ok: false; reason: CopyFailure };
+export type CopyResult =
+	| { ok: true; id: string; anonSecret: string | null }
+	| { ok: false; reason: CopyFailure };
 
 /**
  * Why a copy failed, as the key under `copy.` for its message. The API says which of its
@@ -26,7 +28,9 @@ export async function copyQuiz(quizId: string, doFetch: typeof fetch = fetch): P
 		status = res.status;
 		if (res.ok) {
 			const { id } = await res.json();
-			if (typeof id === 'string' && id !== '') return { ok: true, id };
+			if (typeof id === 'string' && id !== '') {
+				return { ok: true, id, anonSecret: res.headers.get('X-Anon-Secret') };
+			}
 		}
 	} catch {
 		/* no answer, or a body that was not JSON: status stays as it was */

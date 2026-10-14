@@ -41,6 +41,14 @@ const CONTROLS =
  * field also has to render at 16px or more, or iOS zooms the page when it takes focus.
  */
 async function audit(page: Page, root = 'body'): Promise<string[]> {
+	// Playwright visibility allows opacity: 0 during an entrance animation.
+	// Measure settled controls; permanent opacity: 0 must still fail the audit below.
+	await page.locator(root).evaluate(async (container, selector) => {
+		const animations = Array.from(container.querySelectorAll(selector))
+			.flatMap((control) => control.getAnimations())
+			.filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime));
+		await Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)));
+	}, CONTROLS);
 	return page.evaluate(
 		([sel, root]) => {
 			const out: string[] = [];

@@ -7,7 +7,7 @@ import { redirect } from '@sveltejs/kit';
 import { createGate } from '$lib/create_gate';
 
 // Signed in, this is the editor for a new quiz. Signed out, it depends on the API's
-// `anonymous_quizzes_enabled` (#55, off by default), which the root layout reads: on, the
+// `anonymous_quizzes_enabled` (#55, on by default), which the root layout reads: on, the
 // quiz is saved without an account and this browser keeps its secret; off, sign in first
 // and come back here. Old `?anon=true` links still work; it is ignored.
 export async function load({ parent, url }) {

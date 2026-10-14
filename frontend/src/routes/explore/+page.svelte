@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import SearchCard from '$lib/search-card.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { openCreateDialog } from '$lib/create_dialog.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import Search from '@lucide/svelte/icons/search';
 	import type { PageData } from './$types';
@@ -31,6 +32,11 @@ SPDX-License-Identifier: MPL-2.0
 	let term = $derived(data.q);
 
 	const has_examples = $derived(data.examples.quizzes.length > 0);
+	const sign_in_href = $derived(
+		`/account/login?returnTo=${encodeURIComponent(
+			data.q ? `/explore?q=${encodeURIComponent(data.q)}` : '/explore'
+		)}`
+	);
 
 	// Explicit submit rather than searching as you type: every keystroke would be a
 	// Meilisearch request, and the URL is the state here.
@@ -64,19 +70,28 @@ SPDX-License-Identifier: MPL-2.0
 		     /explore (MVP.md section 2) -- it is the label that had drifted. -->
 		<h1 class="text-2xl font-semibold tracking-tight">{$t('words.discover')}</h1>
 
-		<form class="mt-4 flex gap-2" onsubmit={submit}>
-			<Input
-				type="search"
-				class="min-w-0 flex-1"
-				bind:value={term}
-				placeholder={$t('search_page.at_least_3_characters')}
-				aria-label={$t('words.search')}
-			/>
-			<Button type="submit" class="shrink-0">
-				<Search />
-				<span class="sr-only sm:not-sr-only">{$t('words.search')}</span>
-			</Button>
-		</form>
+		{#if data.logged_in}
+			<form class="mt-4 flex gap-2" onsubmit={submit}>
+				<Input
+					type="search"
+					class="min-w-0 flex-1"
+					bind:value={term}
+					placeholder={$t('search_page.at_least_3_characters')}
+					aria-label={$t('words.search')}
+				/>
+				<Button type="submit" class="shrink-0">
+					<Search />
+					<span class="sr-only sm:not-sr-only">{$t('words.search')}</span>
+				</Button>
+			</form>
+		{:else}
+			<div class="mt-4 flex flex-wrap items-center gap-3">
+				<p class="text-muted-foreground text-sm">{$t('explore_page.sign_in_to_search')}</p>
+				<Button href={sign_in_href} variant="outline">
+					{$t('sign_in.sign_in')}
+				</Button>
+			</div>
+		{/if}
 
 		<!-- Browsing only; the load leaves it empty for a search. Shown whatever became of
 		     the search itself: they are separate requests, and a failed Newest should not
@@ -86,7 +101,9 @@ SPDX-License-Identifier: MPL-2.0
 				<h2 id="examples-heading" class="text-lg font-semibold tracking-tight">
 					{$t('explore_page.examples')}
 				</h2>
-				<p class="text-muted-foreground mt-1 text-sm">{$t('explore_page.examples_hint')}</p>
+				<p class="text-muted-foreground mt-1 text-sm">
+					{$t(data.logged_in ? 'explore_page.examples_hint' : 'explore_page.examples_hint_signed_out')}
+				</p>
 				<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{#each data.examples.quizzes as quiz (quiz.id)}
 						<SearchCard {quiz} questions={quiz.questions} />
@@ -95,15 +112,15 @@ SPDX-License-Identifier: MPL-2.0
 			</section>
 		{/if}
 
-		{#if data.failed}
+		{#if data.logged_in && data.failed}
 			<p class="text-destructive mt-10 text-center text-sm" role="alert">
 				{$t('explore_page.search_failed')}
 			</p>
-		{:else if data.mode === 'too_short'}
+		{:else if data.logged_in && data.mode === 'too_short'}
 			<p class="text-muted-foreground mt-10 text-center text-sm">
 				{$t('search_page.at_least_3_characters')}
 			</p>
-		{:else if data.hits.length === 0}
+		{:else if data.logged_in && data.hits.length === 0}
 			<!-- With examples above, a list that is empty because they were taken out of it is
 			     not an empty page. -->
 			{#if !has_examples}
@@ -114,17 +131,17 @@ SPDX-License-Identifier: MPL-2.0
 					<p class="text-muted-foreground mt-2 text-sm">
 						{$t('explore_page.nothing_here_detail')}
 					</p>
-					<Button href="/create" class="mt-4">{$t('explore_page.create_one')}</Button>
+					<Button href="/create" class="mt-4" onclick={openCreateDialog}>{$t('explore_page.create_one')}</Button>
 				</div>
 			{/if}
-		{:else if has_examples}
+		{:else if data.logged_in && has_examples}
 			<section class="mt-10" aria-labelledby="newest-heading">
 				<h2 id="newest-heading" class="text-lg font-semibold tracking-tight">
 					{$t('explore_page.newest')}
 				</h2>
 				{@render hitGrid('mt-4')}
 			</section>
-		{:else}
+		{:else if data.logged_in}
 			{@render hitGrid('mt-8')}
 		{/if}
 	</div>

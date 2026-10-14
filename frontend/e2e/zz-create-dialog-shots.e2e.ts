@@ -1,0 +1,269 @@
+// SPDX-FileCopyrightText: 2026 frogQuiz contributors
+// SPDX-License-Identifier: MPL-2.0
+
+// Signed-in dialog variants use preview fixtures; guest journeys use the real API.
+import { expect, test } from '@playwright/test';
+import path from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { apiLogin, askForSignIn, registerUser } from './accounts';
+import { expectNoHorizontalOverflow, mc, rememberAnonQuiz, saveQuiz, titleBox } from './helpers';
+
+const OUT = path.resolve(process.cwd(), '../e2e/.data/shots');
+const sizes = [
+	{ name: '390', width: 390, height: 844 },
+	{ name: '834', width: 834, height: 1112 },
+	{ name: '1440', width: 1440, height: 900 }
+];
+
+const clean = {
+	title: 'Capital cities of Europe',
+	description: 'A warm-up',
+	errors: [],
+	questions: [
+		{
+			row: 1,
+			question: 'What is the capital of Portugal?',
+			type: 'single',
+			time: 20,
+			answers: [
+				{ text: 'Lisbon', right: true },
+				{ text: 'Porto', right: false },
+				{ text: 'Faro', right: false }
+			]
+		},
+		{
+			row: 2,
+			question: 'Which of these are capitals?',
+			type: 'multiple',
+			time: 30,
+			answers: [
+				{ text: 'Madrid', right: true },
+				{ text: 'Barcelona', right: false },
+				{ text: 'Rome', right: true },
+				{ text: 'Milan', right: false }
+			]
+		},
+		{
+			row: 3,
+			question: 'What is the capital of Austria?',
+			type: 'single',
+			time: 20,
+			answers: [
+				{ text: 'Vienna', right: true },
+				{ text: 'Salzburg', right: false }
+			]
+		}
+	]
+};
+const broken = {
+	...clean,
+	questions: clean.questions.slice(0, 2),
+	errors: [
+		{ row: 4, column: 'Time', message: 'must be a whole number from 1 to 120' },
+		{ row: 5, column: 'Correct answers', message: 'points at Answer 5, which is empty' },
+		{ row: 7, column: 'Answer 1', message: 'needs at least 2 answers' }
+	]
+};
+
+for (const size of sizes) {
+	test(`guest creation screens with 50 questions ${size.name}`, async ({ browser }) => {
+		const context = await browser.newContext({ viewport: { width: size.width, height: size.height } });
+		const page = await context.newPage();
+		await page.goto('/my-quizzes');
+		await page.waitForLoadState('networkidle');
+		await page.getByRole('link', { name: /create a quiz/i }).first().click();
+		const dialog = page.getByRole('dialog');
+		await dialog.getByRole('button', { name: /import from excel/i }).click();
+		await dialog.locator('input[type=file]').setInputFiles({
+			name: 'quiz-creation-50-questions.xlsx',
+			mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			buffer: await readFile(path.resolve(process.cwd(), '../docs/quiz-creation-50-questions.xlsx'))
+		});
+		await expect(dialog.getByText('50 questions, ready to import')).toBeVisible();
+		const list = dialog.locator('ol');
+		await expect(list.locator(':scope > li')).toHaveCount(50);
+		await expect(dialog.getByRole('status')).toHaveText('Scroll to review all 50 questions');
+		await expect(dialog.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
+		await expectNoHorizontalOverflow(page);
+		await page.screenshot({ path: `${OUT}/guest-${size.name}-50-questions-top.png`, animations: 'disabled' });
+		await list.locator('summary').first().click();
+		await expect(list.getByText('Correct answer 1', { exact: true })).toBeVisible();
+		await page.screenshot({ path: `${OUT}/guest-${size.name}-50-questions-expanded.png`, animations: 'disabled' });
+		await dialog.getByRole('button', { name: 'Jump to last', exact: true }).click();
+		await expect(dialog.getByRole('status')).toHaveText('End of list · 50 questions');
+		await expect(list.locator(':scope > li').last()).toBeInViewport();
+		await expect(list.locator(':scope > li').last()).toContainText('Question 50:');
+		await expect(dialog.getByRole('button', { name: 'Create quiz', exact: true })).toBeInViewport();
+		await page.screenshot({ path: `${OUT}/guest-${size.name}-50-questions-bottom.png`, animations: 'disabled' });
+		await dialog.getByRole('button', { name: 'Back to first', exact: true }).click();
+		await expect(list.locator(':scope > li').first()).toBeInViewport();
+		await context.close();
+	});
+}
+
+for (const theme of ['light', 'dark']) {
+	for (const s of sizes) {
+		test(`create dialog ${theme} ${s.name}`, async ({ browser, request }) => {
+			const user = await registerUser(request);
+			const context = await browser.newContext({
+				viewport: { width: s.width, height: s.height }
+			});
+			await context.addInitScript((t) => localStorage.setItem('theme', t), theme);
+			await apiLogin(context.request, user.email);
+			const page = await context.newPage();
+			let mode: 'clean' | 'broken' = 'broken';
+			await page.route('**/api/v1/quiz/excel-preview*', (route) =>
+				route.fulfill({ json: mode === 'clean' ? clean : broken })
+			);
+			await page.goto('/my-quizzes');
+			await page.waitForLoadState('networkidle');
+			await page
+				.getByRole('link', { name: /create a quiz/i })
+				.first()
+				.click();
+			const dialog = page.getByRole('dialog');
+			await dialog.waitFor();
+			const shot = (n: string) =>
+				page.screenshot({ path: `${OUT}/${theme}-${s.name}-${n}.png`, animations: 'disabled' });
+			await shot('1-choose');
+			await dialog.getByRole('button', { name: /import from excel/i }).click();
+			await shot('2-upload');
+			const file = {
+				name: 'quiz.xlsx',
+				mimeType: 'application/octet-stream',
+				buffer: Buffer.from('x')
+			};
+			await dialog.locator('input[type=file]').setInputFiles(file);
+			await dialog.getByText(/things to fix/).waitFor();
+			await shot('3-errors');
+			mode = 'clean';
+			await dialog.getByRole('button', { name: /choose another/i }).click();
+			await dialog.locator('input[type=file]').setInputFiles(file);
+			await dialog.getByRole('button', { name: /create quiz/i }).waitFor();
+			await shot('4-ready');
+			const overflow = await page.evaluate(
+				() => document.documentElement.scrollWidth > document.documentElement.clientWidth
+			);
+			if (overflow) throw new Error('horizontal overflow');
+			await context.close();
+		});
+	}
+}
+
+for (const size of [sizes[0], sizes[2]]) {
+	test(`guest creation screens ${size.name}`, async ({ browser, request }) => {
+		const user = await registerUser(request);
+		const context = await browser.newContext({
+			viewport: { width: size.width, height: size.height }
+		});
+		await context.addInitScript(() => localStorage.setItem('theme', 'light'));
+		const page = await context.newPage();
+		const shot = async (name: string) => {
+			await expectNoHorizontalOverflow(page);
+			await page.screenshot({
+				path: `${OUT}/guest-${size.name}-${name}.png`,
+				fullPage: true,
+				animations: 'disabled'
+			});
+		};
+		await page.goto('/my-quizzes');
+		await page.waitForLoadState('networkidle');
+		await shot('1-my-quizzes');
+		await page
+			.getByRole('link', { name: /create a quiz/i })
+			.first()
+			.click();
+		const dialog = page.getByRole('dialog');
+		await expect(dialog).toBeVisible();
+		await shot('2-choose');
+		await dialog.getByRole('button', { name: /import from excel/i }).click();
+		await shot('3-upload');
+		const template = await request.get('/api/v1/quiz/excel-template');
+		expect(template.status()).toBe(200);
+		await writeFile(path.join(OUT, 'frogquiz-excel-template.xlsx'), await template.body());
+		await dialog.locator('input[type=file]').setInputFiles({
+			name: 'frogquiz-excel-template.xlsx',
+			mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			buffer: await template.body()
+		});
+		await expect(dialog.getByText('2 questions, ready to import')).toBeVisible();
+		await shot('4-preview');
+		await dialog.getByRole('button', { name: 'Create quiz', exact: true }).click();
+		await page.waitForURL(/\/edit\?quiz_id=/);
+		await expect(titleBox(page)).toBeVisible();
+		await expect(titleBox(page)).toHaveText('Capital cities of Europe');
+		await expect(page.locator('[data-question-card]')).toHaveCount(2);
+		await shot('5-editor');
+		await page.goto('/my-quizzes');
+		await expect(page.getByText('Capital cities of Europe', { exact: true })).toBeVisible();
+		await shot('6-browser-library');
+		await page.goto('/account/login');
+		const { code } = await askForSignIn(page, user.email);
+		await page.getByRole('textbox', { name: 'Six-digit code' }).fill(code);
+		await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+		await page.waitForURL(/\/my-quizzes/);
+		const prompt = page.getByRole('alertdialog');
+		await expect(prompt).toContainText('Capital cities of Europe');
+		await shot('7-claim-prompt');
+		await prompt.getByRole('button', { name: 'Add all to account', exact: true }).click();
+		await expect(prompt).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+		await expect(page.getByText('Capital cities of Europe', { exact: true })).toBeVisible();
+		await shot('8-account-library');
+		await context.close();
+	});
+}
+
+
+test('guest creation screens bulk claim of twelve quizzes on mobile', async ({ browser, request }) => {
+	test.setTimeout(90_000);
+	const user = await registerUser(request);
+	const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+	await context.addInitScript(() => localStorage.setItem('theme', 'light'));
+	const page = await context.newPage();
+	const titles = [
+		'Capital cities of Europe', 'Friday team quiz', 'Music through the decades',
+		'Science and discovery', 'Around the world', 'Film night',
+		'Food and drink', 'Sports highlights', 'History in ten questions',
+		'Nature and wildlife', 'Design essentials', 'The final challenge'
+	];
+	const ids: string[] = [];
+	for (const title of titles) {
+		const saved = await saveQuiz(request, {
+			title,
+			description: 'Browser quiz',
+			questions: [mc('Which city is the capital of Portugal?', [['Lisbon', true], ['Porto', false]])]
+		});
+		expect(saved.status).toBe(200);
+		expect(saved.secret).toBeTruthy();
+		ids.push(saved.body.id);
+		await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+	}
+	await page.goto('/account/login');
+	const { code } = await askForSignIn(page, user.email);
+	await page.getByRole('textbox', { name: 'Six-digit code' }).fill(code);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await page.waitForURL(/\/my-quizzes/);
+	const prompt = page.getByRole('alertdialog');
+	const list = prompt.locator('ul');
+	await expect(list.locator('li')).toHaveCount(12);
+	await expect(prompt.getByRole('button', { name: 'Add all to account', exact: true })).toBeInViewport();
+	await expectNoHorizontalOverflow(page);
+	await page.screenshot({ path: `${OUT}/claim-390-twelve-top.png`, animations: 'disabled' });
+	expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+	await list.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+	await expect(list.locator('li').last()).toBeInViewport();
+	await expect(prompt.getByRole('button', { name: 'Add all to account', exact: true })).toBeInViewport();
+	await page.screenshot({ path: `${OUT}/claim-390-twelve-bottom.png`, animations: 'disabled' });
+	await prompt.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(prompt).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	for (const id of ids) {
+		await expect(page.locator(`a[href="/view/${id}"]`)).toBeVisible();
+		const owned = await context.request.get(`/api/v1/quiz/get/${id}`);
+		expect(owned.status()).toBe(200);
+		expect((await owned.json()).expire_at).toBeNull();
+	}
+	await page.screenshot({ path: `${OUT}/claim-390-twelve-saved.png`, fullPage: true, animations: 'disabled' });
+	await context.close();
+});

@@ -7,8 +7,10 @@
 import io
 import json
 import random
+import secrets
+import html
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from random import randint
 
 import ormar.exceptions
@@ -19,26 +21,36 @@ from frogquiz.helpers import (
     check_image_string,
     extract_image_ids_from_quiz,
     generate_spreadsheet,
-    handle_import_from_excel,
     release_quiz_images,
 )
-from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, Response, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import ValidationError, BaseModel
 
 from frogquiz.auth import (
     get_current_user,
     get_current_user_optional,
+    hash_anon_secret,
     require_anonymous_quizzes,
     verify_anon_secret,
 )
 from frogquiz.config import arq, redis, settings, meilisearch, storage
 from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType, StorageItem
 from frogquiz.examples import examples_owner
+from frogquiz.helpers.anonymous_quiz import ANON_QUIZ_EXPIRE_DAYS, enforce_anonymous_quiz_ceilings
+from frogquiz.helpers.excel_workbook import MAX_FILE_BYTES, MIME_TYPE, excel_template, parse_excel
+from frogquiz.db.models import (
+    QuizInput,
+    MAX_TITLE_LENGTH,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_QUESTION_LENGTH,
+    MAX_ANSWER_LENGTH,
+)
+from starlette.concurrency import run_in_threadpool
 from frogquiz.helpers.box_controller import generate_code
 from frogquiz.helpers.completeness import unfinished_questions
 from frogquiz.helpers.live_images import hold_images, is_live, mark_live
-from frogquiz.helpers.ratelimit import rate_limit
+from frogquiz.helpers.ratelimit import rate_limit, rate_limit_key
 from frogquiz.kahoot_importer.import_quiz import import_quiz
 import urllib.parse
 
@@ -136,6 +148,7 @@ class PublicQuizResponse(Quiz.get_pydantic(exclude={"questions", "anon_secret"})
     dislikes: int
     views: int
     plays: int
+    is_example: bool = False
 
 
 @router.get("/get/public/{quiz_id}")
@@ -145,7 +158,9 @@ async def get_public_quiz(quiz_id: uuid.UUID):
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
     else:
         await _count(quiz, "views")
-        return PublicQuizResponse(**quiz.model_dump())
+        owner = await examples_owner()
+        is_example = owner is not None and quiz.user_id is not None and quiz.user_id.id == owner.id
+        return PublicQuizResponse(**quiz.model_dump(), is_example=is_example)
 
 
 @router.post("/start/{quiz_id}")
@@ -173,10 +188,8 @@ async def start_quiz(
         require_anonymous_quizzes()
         await rate_limit(request, "quiz_start_anon", limit=20, window_seconds=60)
     quiz = await _find_own_quiz(quiz_id, user, x_anon_secret)
-    if quiz is None and user is not None:
-        # Signed-out callers get no public-quiz fallback: hosting without an
-        # account is only allowed for a quiz that was itself created anonymously
-        # and whose secret the caller holds, not for hosting someone else's quiz.
+    if quiz is None:
+        # Any public quiz, with or without an account: hosting needs none (D43).
         quiz = await Quiz.objects.get_or_none(id=quiz_id, public=True)
     if quiz is None or _quiz_expired(quiz):
         return JSONResponse(status_code=404, content={"detail": "quiz not found"})
@@ -257,10 +270,17 @@ async def claim_quiz(
 
     Requires being signed in -- claiming isn't itself something an anonymous
     caller can do. A wrong secret and a nonexistent/already-claimed/expired
-    quiz all 404 identically, so this can't be used to probe which quiz IDs
+    quiz all 404 for non-owners, so this cannot be used to probe which quiz IDs
     exist or which ones are still unclaimed.
     """
-    await rate_limit(request, "quiz_claim", limit=20, window_seconds=60)
+    # Per account: an office shares one address, as editor saves did (E9).
+    await rate_limit_key(f"quiz_claim_user:{user.id.hex}", limit=20, window_seconds=60)
+    await rate_limit(request, "quiz_claim", limit=120, window_seconds=60)
+    # A committed claim may lose its HTTP response. The account's own authority
+    # makes that retry safe; the spent guest secret grants no access to anyone else.
+    owned = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+    if owned is not None:
+        return owned
     quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
     if quiz is None or _quiz_expired(quiz) or not verify_anon_secret(x_anon_secret, quiz.anon_secret):
         raise HTTPException(status_code=404, detail="quiz not found")
@@ -269,40 +289,47 @@ async def claim_quiz(
     # second wrote over the first: the quiz went to whoever came last, and its images were
     # counted twice (#43). The expiry sweep deletes on the opposite condition, so a claim and
     # the sweep never both win. Only these three columns, so a save in between stays (#35).
-    won = await database.fetch_one(
-        "UPDATE quiz SET user_id = :user, anon_secret = NULL, expire_at = NULL"
-        " WHERE id = :id AND user_id IS NULL AND anon_secret = :secret"
-        " AND (expire_at IS NULL OR expire_at >= :now) RETURNING id",
-        {"user": user.id.hex, "id": quiz.id.hex, "secret": quiz.anon_secret, "now": datetime.now()},
-    )
-    if won is None:
-        raise HTTPException(status_code=404, detail="quiz not found")
-    quiz.user_id = user.id
-    quiz.anon_secret = None
-    quiz.expire_at = None
-    # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
-    # ownerless, they counted against nobody's quota and outlived the account. Only the
-    # ones already hashed are counted here; calculate_hash counts the rest when it runs,
-    # now that they have an owner, so nothing is counted twice.
-    #
-    # One statement per image, because calculate_hash may be writing the same row. Read,
-    # changed and saved whole, the job's stale copy put the owner back to nobody, and
-    # neither side counted the bytes (E12 in docs/edge-cases-2026-10.md). Postgres runs the
-    # two updates one after the other, so whichever comes second sees the other's write:
-    # exactly one of them counts the image.
-    counted = 0
-    for image in extract_image_ids_from_quiz(quiz):
-        item_id = check_image_string(str(image))[1]
-        if item_id is None:
-            continue
-        row = await database.fetch_one(
-            'UPDATE storage_items SET "user" = :user WHERE id = :id AND "user" IS NULL'
-            " AND deleted_at IS NULL RETURNING hash, size",
-            {"user": user.id.hex, "id": item_id.hex},
+    # Ownership, images and quota move together. A failure must leave the guest
+    # secret usable so the caller can retry the entire claim.
+    async with database.transaction():
+        won = await database.fetch_one(
+            "UPDATE quiz SET user_id = :user, anon_secret = NULL, expire_at = NULL"
+            " WHERE id = :id AND user_id IS NULL AND anon_secret = :secret"
+            " AND (expire_at IS NULL OR expire_at >= :now) RETURNING id",
+            {"user": user.id.hex, "id": quiz.id.hex, "secret": quiz.anon_secret, "now": datetime.now()},
         )
-        if row is not None and row["hash"] is not None:
-            counted += row["size"]
-    await adjust_storage_used(user.id, counted)
+        if won is None:
+            # Another request from this same account may have won while we waited.
+            owned = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+            if owned is not None:
+                return owned
+            raise HTTPException(status_code=404, detail="quiz not found")
+        # The conditional update locks this row. Read the current questions/images,
+        # including an edit that finished after the initial ownership check.
+        quiz = await Quiz.objects.get(id=quiz_id)
+        # The images it was made with come along (C7 in docs/crud-audit-2026-10.md): left
+        # ownerless, they counted against nobody's quota and outlived the account. Only the
+        # ones already hashed are counted here; calculate_hash counts the rest when it runs,
+        # now that they have an owner, so nothing is counted twice.
+        #
+        # One statement per image, because calculate_hash may be writing the same row. Read,
+        # changed and saved whole, the job's stale copy put the owner back to nobody, and
+        # neither side counted the bytes (E12 in docs/edge-cases-2026-10.md). Postgres runs the
+        # two updates one after the other, so whichever comes second sees the other's write:
+        # exactly one of them counts the image.
+        counted = 0
+        for image in extract_image_ids_from_quiz(quiz):
+            item_id = check_image_string(str(image))[1]
+            if item_id is None:
+                continue
+            row = await database.fetch_one(
+                'UPDATE storage_items SET "user" = :user WHERE id = :id AND "user" IS NULL'
+                " AND deleted_at IS NULL RETURNING hash, size",
+                {"user": user.id.hex, "id": item_id.hex},
+            )
+            if row is not None and row["hash"] is not None:
+                counted += row["size"]
+        await adjust_storage_used(user.id, counted)
     return quiz
 
 
@@ -320,8 +347,8 @@ class ExamplesResponse(BaseModel):
 
 
 @router.get("/examples", response_model=ExamplesResponse)
-async def list_examples(_: User = Depends(get_current_user)):
-    """The ready-made quizzes Explore shows above Newest (#39). Signed in, like Explore."""
+async def list_examples():
+    """The ready-made quizzes Explore shows above Newest (#39)."""
     owner = await examples_owner()
     if owner is None:
         return ExamplesResponse(username=None, quizzes=[])
@@ -329,13 +356,12 @@ async def list_examples(_: User = Depends(get_current_user)):
     return ExamplesResponse(
         username=owner.username,
         quizzes=[
-            ExampleQuiz(id=q.id, title=q.title, description=q.description, questions=len(q.questions))
-            for q in quizzes
+            ExampleQuiz(id=q.id, title=q.title, description=q.description, questions=len(q.questions)) for q in quizzes
         ],
     )
 
 
-async def _copy_image(image: str, user: User) -> StorageItem | None:
+async def _copy_image(image: str, user: User | None) -> StorageItem | None:
     """A new upload owned by `user` with the same bytes, or None when there is nothing to copy."""
     item_id = check_image_string(str(image))[1]
     # ponytail: upstream's old `uuid--uuid` keys are dropped from a copy rather than copied.
@@ -367,7 +393,12 @@ async def _copy_image(image: str, user: User) -> StorageItem | None:
 
 
 @router.post("/copy/{quiz_id}")
-async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(get_current_user)):
+async def copy_quiz(
+    request: Request,
+    response: Response,
+    quiz_id: uuid.UUID,
+    user: User | None = Depends(get_current_user_optional),
+):
     """Copy a quiz into the caller's account (#39, D33).
 
     Your own quiz, or any public one, which includes the examples. An unlisted quiz of
@@ -376,15 +407,31 @@ async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(g
     owner's quota and vanished from the copy when that owner deleted their account.
     """
     await rate_limit(request, "quiz_copy", limit=20, window_seconds=60)
-    source = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id) or await Quiz.objects.get_or_none(
-        id=quiz_id, public=True
-    )
+    if user is None:
+        require_anonymous_quizzes()
+        owner = await examples_owner()
+        source = (
+            await Quiz.objects.get_or_none(id=quiz_id, user_id=owner.id, public=True) if owner is not None else None
+        )
+    else:
+        source = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id) or await Quiz.objects.get_or_none(
+            id=quiz_id, public=True
+        )
     if source is None or _quiz_expired(source):
         raise HTTPException(status_code=404, detail="quiz not found")
-    image_ids = {check_image_string(str(i))[1] for i in extract_image_ids_from_quiz(source)} - {None}
-    sizes = await StorageItem.objects.filter(id__in=list(image_ids), deleted_at=None).all() if image_ids else []
-    if user.storage_used + sum(i.size for i in sizes) > settings.free_storage_limit:
-        raise HTTPException(status_code=409, detail="Storage limit reached")
+    if user is None:
+        await enforce_anonymous_quiz_ceilings(request)
+        raw_anon_secret = secrets.token_hex(32)
+        anon_secret_hash = hash_anon_secret(raw_anon_secret)
+        expire_at = datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS)
+    else:
+        raw_anon_secret = None
+        anon_secret_hash = None
+        expire_at = None
+        image_ids = {check_image_string(str(i))[1] for i in extract_image_ids_from_quiz(source)} - {None}
+        sizes = await StorageItem.objects.filter(id__in=list(image_ids), deleted_at=None).all() if image_ids else []
+        if user.storage_used + sum(i.size for i in sizes) > settings.free_storage_limit:
+            raise HTTPException(status_code=409, detail="Storage limit reached")
 
     copies: dict[str, StorageItem | None] = {}
 
@@ -411,7 +458,9 @@ async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(g
         description=source.description,
         created_at=now,
         updated_at=now,
-        user_id=user.id,
+        user_id=user.id if user is not None else None,
+        anon_secret=anon_secret_hash,
+        expire_at=expire_at,
         questions=questions,
         cover_image=await copied(source.cover_image),
         background_color=source.background_color,
@@ -421,6 +470,8 @@ async def copy_quiz(request: Request, quiz_id: uuid.UUID, user: User = Depends(g
     for item in {c.id: c for c in copies.values() if c}.values():
         await quiz.storageitems.add(item)
     await redis.delete("global_quiz_count")
+    if raw_anon_secret is not None:
+        response.headers["X-Anon-Secret"] = raw_anon_secret
     return {"id": quiz.id}
 
 
@@ -565,7 +616,81 @@ async def export_quiz_answers(export_token: str, game_pin: str):
     )
 
 
+@router.get("/excel-template")
+async def download_excel_template():
+    return Response(
+        content=await run_in_threadpool(excel_template),
+        media_type=MIME_TYPE,
+        headers={"Content-Disposition": 'attachment; filename="frogQuiz-template.xlsx"'},
+    )
+
+
 @router.post("/excel-import")
-async def import_from_excel(file: UploadFile = File(), user: User = Depends(get_current_user)) -> Quiz:
-    quiz = await handle_import_from_excel(file.file, user)
-    return Quiz.model_validate(quiz.model_dump(exclude={"user_id": ...}))
+@router.post("/excel-preview")
+async def import_from_excel(
+    request: Request,
+    response: Response,
+    file: UploadFile = File(),
+    dry_run: bool = False,
+    require_account: bool = False,
+    user: User | None = Depends(get_current_user_optional),
+):
+    # A UI expecting an account must not silently save as a guest after token expiry.
+    if user is None:
+        if require_account:
+            raise HTTPException(status_code=401, detail="Sign in again to save to your account")
+        require_anonymous_quizzes()
+    await rate_limit(request, "excel_import", limit=30, window_seconds=60)
+    try:
+        data = await file.read(MAX_FILE_BYTES + 1)
+    finally:
+        await file.close()
+    if len(data) > MAX_FILE_BYTES:
+        raise HTTPException(status_code=413, detail="The file must be at most 2 MB")
+    if not (file.filename or "").lower().endswith(".xlsx"):
+        raise HTTPException(status_code=400, detail="Use an .xlsx workbook")
+    preview = await run_in_threadpool(
+        parse_excel,
+        data,
+        title_limit=MAX_TITLE_LENGTH,
+        description_limit=MAX_DESCRIPTION_LENGTH,
+        question_limit=MAX_QUESTION_LENGTH,
+        answer_limit=MAX_ANSWER_LENGTH,
+    )
+    # A separate preview URL is safe against an older API that ignores `dry_run` and
+    # immediately imports. Such a deployment returns 404 instead of silently saving.
+    if dry_run or request.url.path.endswith("/excel-preview"):
+        return preview
+    if preview["errors"]:
+        return JSONResponse(status_code=400, content=preview)
+    # Cells are plain text. Escape markup before it enters the editor's rich-text fields.
+    quiz_input = QuizInput(
+        title=html.escape(preview["title"], quote=False),
+        description=html.escape(preview["description"], quote=False),
+        public=False,
+        questions=[
+            QuizQuestion(
+                question=html.escape(q["question"], quote=False),
+                time=str(q["time"]),
+                type=QuizQuestionType.CHECK if q["type"] == "multiple" else QuizQuestionType.ABCD,
+                answers=[{"answer": html.escape(a["text"], quote=False), "right": a["right"]} for a in q["answers"]],
+            )
+            for q in preview["questions"]
+        ],
+    )
+    secret = None
+    if user is None:
+        # Preview never spends the creation quota or allocates an ownership secret.
+        await enforce_anonymous_quiz_ceilings(request)
+        secret = secrets.token_hex(32)
+    quiz = Quiz(
+        **quiz_input.model_dump(),
+        user_id=user.id if user else None,
+        anon_secret=hash_anon_secret(secret) if secret else None,
+        expire_at=datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS) if secret else None,
+    )
+    await quiz.save()
+    await redis.delete("global_quiz_count")
+    if secret:
+        response.headers["X-Anon-Secret"] = secret
+    return {"id": str(quiz.id), "anonymous": secret is not None}

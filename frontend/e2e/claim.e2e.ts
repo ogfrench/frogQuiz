@@ -10,7 +10,8 @@
 // Quizzes without an account exist only with the setting on, so this skips with it off.
 
 import { expect, test, type APIRequestContext, type Browser } from '@playwright/test';
-import { apiLogin, registerUser, signedInContext } from './accounts';
+import { apiLogin, askForSignIn, registerUser, signedInContext } from './accounts';
+import path from 'node:path';
 import {
 	ANON_KEY,
 	advanceToFinalResults,
@@ -62,7 +63,7 @@ async function phone(browser: Browser, request: APIRequestContext) {
 	const user = await registerUser(request);
 	const context = await browser.newContext({ viewport: PHONE, isMobile: true, hasTouch: true });
 	await apiLogin(context.request, user.email);
-	return { context, page: await context.newPage() };
+	return { context, page: await context.newPage(), user };
 }
 
 test('on a phone, the browser that made a quiz claims it from My Quizzes', async ({
@@ -76,11 +77,177 @@ test('on a phone, the browser that made a quiz claims it from My Quizzes', async
 	await page.goto('/my-quizzes');
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toBeVisible();
 	await expectNoHorizontalOverflow(page);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	// The page reloads with the quiz in the account's list and nothing left in the browser's.
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
 	await expect(page.getByText(title)).toBeVisible();
 	await expectNoHorizontalOverflow(page);
+	await context.close();
+});
+
+test('Add all to account moves successes out of the browser list after a partial failure', async ({
+	browser,
+	request
+}) => {
+	const first = await anonQuiz(request, `Kept first ${Date.now()}`);
+	const second = await anonQuiz(request, `Retry second ${Date.now()}`);
+	const { context, page } = await phone(browser, request);
+	await rememberAnonQuiz(page, first.id, first.secret);
+	await rememberAnonQuiz(page, second.id, second.secret);
+	await page.route(`**/api/v1/quiz/claim/${second.id}`, (route) =>
+		route.fulfill({ status: 429, json: { detail: 'Try again later' } })
+	);
+	await page.goto('/my-quizzes');
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('Added 1 of 2');
+	await page.screenshot({
+		path: path.resolve(process.cwd(), '../e2e/.data/shots/claim-390-partial-429.png'),
+		fullPage: true,
+		animations: 'disabled'
+	});
+	const browserList = page.getByRole('region', { name: 'On this browser' });
+	await expect(browserList.locator(`a[href="/view/${first.id}"]`)).toHaveCount(0);
+	await expect(browserList.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
+	await expect(page.locator(`a[href="/view/${first.id}"]`)).toBeVisible();
+	await page.unroute(`**/api/v1/quiz/claim/${second.id}`);
+	await browserList.getByRole('button', { name: 'Add to account', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	await expect(page.locator(`a[href="/view/${first.id}"]`)).toBeVisible();
+	await expect(page.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
+	await expectNoHorizontalOverflow(page);
+	await context.close();
+});
+
+test('a connection failure during Add all to account retains the remaining quiz for retry', async ({
+	browser,
+	request
+}) => {
+	const first = await anonQuiz(request, `Kept before offline ${Date.now()}`);
+	const second = await anonQuiz(request, `Retry after offline ${Date.now()}`);
+	const { context, page } = await phone(browser, request);
+	await rememberAnonQuiz(page, first.id, first.secret);
+	await rememberAnonQuiz(page, second.id, second.secret);
+	await page.route(`**/api/v1/quiz/claim/${second.id}`, (route) =>
+		route.abort('internetdisconnected')
+	);
+	await page.goto('/my-quizzes');
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('The connection was lost');
+	const browserList = page.getByRole('region', { name: 'On this browser' });
+	await expect(browserList.locator(`a[href="/view/${first.id}"]`)).toHaveCount(0);
+	await expect(browserList.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
+	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toEqual([second.id]);
+	await page.screenshot({
+		path: path.resolve(process.cwd(), '../e2e/.data/shots/claim-390-partial-offline.png'),
+		fullPage: true,
+		animations: 'disabled'
+	});
+	await page.unroute(`**/api/v1/quiz/claim/${second.id}`);
+	await browserList.getByRole('button', { name: 'Add to account', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	for (const quiz of [first, second]) {
+		expect((await context.request.get(`/api/v1/quiz/get/${quiz.id}`)).status()).toBe(200);
+	}
+	await context.close();
+});
+
+test('an expired session during Add all to account can sign in again and claim the remainder', async ({
+	browser,
+	request
+}) => {
+	const first = await anonQuiz(request, `Kept before sign-out ${Date.now()}`);
+	const second = await anonQuiz(request, `Retry after sign-in ${Date.now()}`);
+	const { context, page, user } = await phone(browser, request);
+	await rememberAnonQuiz(page, first.id, first.secret);
+	await rememberAnonQuiz(page, second.id, second.secret);
+	// Revoke the real session between the two claims; this is not a mocked 401.
+	await page.route(`**/api/v1/quiz/claim/${second.id}`, async (route) => {
+		await context.request.post('/api/v1/users/logout', { maxRedirects: 0 });
+		await route.continue();
+	});
+	await page.goto('/my-quizzes');
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('Sign in again');
+	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toEqual([second.id]);
+	await page.screenshot({
+		path: path.resolve(process.cwd(), '../e2e/.data/shots/claim-390-partial-expired-session.png'),
+		fullPage: true,
+		animations: 'disabled'
+	});
+	await page.unroute(`**/api/v1/quiz/claim/${second.id}`);
+	await page.goto('/account/login');
+	const { code } = await askForSignIn(page, user.email);
+	await page.getByRole('textbox', { name: 'Six-digit code' }).fill(code);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await page.waitForURL(/\/my-quizzes/);
+	const prompt = page.getByRole('alertdialog');
+	await expect(prompt).toContainText(`Retry after sign-in`);
+	await expect(prompt).not.toContainText(`Kept before sign-out`);
+	await prompt.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(prompt).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	const fresh = await browser.newContext();
+	await apiLogin(fresh.request, user.email);
+	for (const quiz of [first, second]) {
+		const owned = await fresh.request.get(`/api/v1/quiz/get/${quiz.id}`);
+		expect(owned.status()).toBe(200);
+		expect((await owned.json()).expire_at).toBeNull();
+	}
+	await fresh.close();
+	await context.close();
+});
+
+/** On a phone holding these quizzes' secrets, signs in by typing the code, as the hint asks. */
+async function signInHolding(
+	browser: Browser,
+	request: APIRequestContext,
+	quizzes: { id: string; secret: string }[]
+) {
+	const user = await registerUser(request);
+	const context = await browser.newContext({ viewport: PHONE, isMobile: true, hasTouch: true });
+	const page = await context.newPage();
+	for (const quiz of quizzes) await rememberAnonQuiz(page, quiz.id, quiz.secret);
+	await page.goto('/account/login');
+	const { code } = await askForSignIn(page, user.email);
+	await expect(page.getByText(/Type the code here/)).toBeVisible();
+	await page.getByRole('textbox', { name: 'Six-digit code' }).fill(code);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await page.waitForURL(/\/my-quizzes/);
+	return { context, page, user };
+}
+
+test('right after sign-in the quizzes this browser made are offered, and Add all to account keeps them', async ({
+	browser,
+	request
+}) => {
+	const titles = [`Prompt A ${Date.now()}`, `Prompt B ${Date.now()}`];
+	const quizzes = [await anonQuiz(request, titles[0]), await anonQuiz(request, titles[1])];
+	const { context, page, user } = await signInHolding(browser, request, quizzes);
+	const dialog = page.getByRole('alertdialog');
+	await expect(dialog).toContainText('Add these 2 quizzes to your account?');
+	await expect(dialog).toContainText(user.username);
+	for (const title of titles) await expect(dialog).toContainText(title);
+	// A shared laptop: the safe answer has the focus.
+	await expect(dialog.getByRole('button', { name: 'Not now' })).toBeFocused();
+	await expectNoHorizontalOverflow(page);
+	await dialog.getByRole('button', { name: 'Add all to account' }).tap();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	for (const title of titles) await expect(page.getByText(title)).toBeVisible();
+	await context.close();
+});
+
+test('Not now leaves the quizzes in the browser and asks again only after the next sign-in', async ({
+	browser,
+	request
+}) => {
+	const quiz = await anonQuiz(request, `Not now ${Date.now()}`);
+	const { context, page } = await signInHolding(browser, request, [quiz]);
+	const dialog = page.getByRole('alertdialog');
+	await dialog.getByRole('button', { name: 'Not now' }).tap();
+	await expect(dialog).toHaveCount(0);
+	await page.reload();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toBeVisible();
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 	await context.close();
 });
 
@@ -92,7 +259,7 @@ test('a second tab that claims after the first is told it was claimed elsewhere'
 	const { context, page } = await phone(browser, request);
 	await rememberAnonQuiz(page, quiz.id, quiz.secret);
 	await page.goto('/my-quizzes');
-	await expect(page.getByRole('button', { name: 'Claim', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toBeVisible();
 	// The other tab's claim: it lands on the server and takes the secret out of this browser,
 	// whose localStorage both tabs share. This tab's Claim used to do nothing at all.
 	const res = await context.request.post(`/api/v1/quiz/claim/${quiz.id}`, {
@@ -107,7 +274,7 @@ test('a second tab that claims after the first is told it was claimed elsewhere'
 		},
 		[ANON_KEY, quiz.id]
 	);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	await expect(page.getByText(/claimed in another tab or account, or deleted/)).toBeVisible();
 	await expectNoHorizontalOverflow(page);
 	await context.close();
@@ -119,9 +286,9 @@ test('a claim after another account took the quiz says so', async ({ browser, re
 	const { context, page } = await phone(browser, request);
 	await rememberAnonQuiz(page, quiz.id, quiz.secret);
 	await page.goto('/my-quizzes');
-	await expect(page.getByRole('button', { name: 'Claim', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toBeVisible();
 	await claimElsewhere(browser, request, quiz);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	await expect(page.getByText(/claimed in another tab or account, or deleted/)).toBeVisible();
 	await context.close();
 });
@@ -134,7 +301,7 @@ test('another browser has no Claim, and is told which browser can', async ({
 	const { context, page } = await phone(browser, request);
 	await page.goto(`/view/${quiz.id}`);
 	await expect(page.getByText(/Only that browser can claim it/)).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Claim this quiz to your account' })).toHaveCount(
+	await expect(page.getByRole('button', { name: 'Add this quiz to your account' })).toHaveCount(
 		0
 	);
 	await expectNoHorizontalOverflow(page);
@@ -148,11 +315,11 @@ test('a claim after the 30 days says the quiz expired', async ({ browser, reques
 	await rememberAnonQuiz(page, quiz.id, quiz.secret);
 	await page.clock.install();
 	await page.goto('/my-quizzes');
-	await expect(page.getByRole('button', { name: 'Claim', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toBeVisible();
 	// The page stays open past the deadline: the server's copy expires, the phone's clock moves on.
 	expireIn(quiz.id, '-1 day');
 	await page.clock.setSystemTime(Date.now() + 31 * DAY);
-	await page.getByRole('button', { name: 'Claim', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add to account', exact: true }).tap();
 	await expect(page.getByText(/passed its 30 days and was deleted/)).toBeVisible();
 	await context.close();
 });
@@ -254,4 +421,32 @@ test('an editor open past the 30 days says the quiz expired and keeps the text',
 	});
 	await expect(titleBox(page)).toHaveText('Typed after the deadline');
 	await expect(page.getByRole('button', { name: 'Save as a new quiz' })).toBeVisible();
+});
+
+
+
+test('Add all to account recovers when a successful claim response is lost', async ({ browser, request }) => {
+	const first = await anonQuiz(request, `Lost response ${Date.now()}`);
+	const second = await anonQuiz(request, `Still waiting ${Date.now()}`);
+	const { context, page } = await phone(browser, request);
+	for (const quiz of [first, second]) await rememberAnonQuiz(page, quiz.id, quiz.secret);
+	await page.route(`**/api/v1/quiz/claim/${first.id}`, async (route) => {
+		const committed = await route.fetch();
+		expect(committed.status()).toBe(200);
+		await route.abort('internetdisconnected');
+	});
+	await page.goto('/my-quizzes');
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('The connection was lost');
+	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toHaveLength(2);
+	await page.unroute(`**/api/v1/quiz/claim/${first.id}`);
+	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	for (const quiz of [first, second]) {
+		await expect(page.locator(`a[href="/view/${quiz.id}"]`)).toBeVisible();
+		const owned = await context.request.get(`/api/v1/quiz/get/${quiz.id}`);
+		expect(owned.status()).toBe(200);
+		expect((await owned.json()).expire_at).toBeNull();
+	}
+	await context.close();
 });
