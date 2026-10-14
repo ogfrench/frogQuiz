@@ -52,7 +52,7 @@ test('interactive preview reads the workbook and demonstrates partial claim retr
 	await page.getByLabel('Simulate a claim response').selectOption('429');
 	await page.getByRole('button', { name: 'Add all to account (2)', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toHaveCount(1);
-	await expect(page.getByRole('status')).toContainText('1 quiz kept.');
+	await expect(page.getByRole('status')).toContainText('1 quiz added.');
 	await page.screenshot({ path: `${OUT}/demo-1440-partial-claim.png`, animations: 'disabled' });
 	await page.getByRole('button', { name: 'Add all to account (1)', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Add to account', exact: true })).toHaveCount(0);
