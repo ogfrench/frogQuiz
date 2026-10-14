@@ -102,7 +102,9 @@ test('an anonymous quiz can be claimed after signing up', async ({ browser, requ
 	const again = await user.context.request.post(`/api/v1/quiz/claim/${saved.body.id}`, {
 		headers: { 'X-Anon-Secret': saved.secret! }
 	});
-	expect(again.status(), 'claiming twice').toBe(404);
+	// The signed-in owner can safely retry after losing a successful response.
+	expect(again.status(), 'same-account claim retry').toBe(200);
+	expect((await again.json()).id).toBe(saved.body.id);
 	await user.context.close();
 });
 
