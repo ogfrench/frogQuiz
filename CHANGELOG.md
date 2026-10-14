@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Recover a lost successful claim response: retrying from the owning account succeeds without transferring or counting anything twice. Cover same-account races and the lost-response browser journey.
+
 - Make claims atomic across quiz ownership, images and storage accounting; reload the current quiz under the claim lock and verify rollback/retry and concurrent-edit recovery.
 - Ignore malformed browser-secret entries while preserving valid quizzes.
 - Simplify the README and remove organization-specific collection names.

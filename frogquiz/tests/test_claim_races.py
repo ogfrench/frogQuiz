@@ -197,8 +197,9 @@ def test_the_sweep_holds_the_images_of_a_game_still_running(
     assert f"image-of-{hex_id}" not in released
 
 
-
-def test_failed_claim_rolls_back_and_the_same_secret_can_retry(test_client: TestClient, users, monkeypatch):  # noqa: F811
+def test_failed_claim_rolls_back_and_the_same_secret_can_retry(
+    test_client: TestClient, users, monkeypatch  # noqa: F811
+):
     quiz_id, secret = _anon_quiz(test_client)
     before = _sql("SELECT user_id, anon_secret, expire_at FROM quiz WHERE id = :id", id=uuid.UUID(quiz_id).hex)[0]
     real_adjust = quiz_router.adjust_storage_used
@@ -229,7 +230,9 @@ def test_failed_claim_rolls_back_and_the_same_secret_can_retry(test_client: Test
     assert retry.json()["expire_at"] is None
 
 
-def test_claim_returns_the_edit_that_finished_during_its_check(test_client: TestClient, users, monkeypatch):  # noqa: F811
+def test_claim_returns_the_edit_that_finished_during_its_check(
+    test_client: TestClient, users, monkeypatch  # noqa: F811
+):
     quiz_id, secret = _anon_quiz(test_client)
     real = quiz_router._quiz_expired
 
@@ -245,3 +248,20 @@ def test_claim_returns_the_edit_that_finished_during_its_check(test_client: Test
     )
     assert response.status_code == 200
     assert response.json()["description"] == "Latest saved edit"
+
+
+def test_two_claims_by_the_same_account_both_report_success(test_client: TestClient, users, monkeypatch):  # noqa: F811
+    quiz_id, secret = _anon_quiz(test_client)
+    ana = users["claim-ana"]
+    real = quiz_router._quiz_expired
+
+    def same_account_wins_first(quiz):
+        _claim_in_sql(quiz_id, ana["id"])
+        return real(quiz)
+
+    monkeypatch.setattr(quiz_router, "_quiz_expired", same_account_wins_first)
+    response = test_client.post(
+        f"/api/v1/quiz/claim/{quiz_id}", headers={"X-Anon-Secret": secret}, cookies=ana["cookies"]
+    )
+    assert response.status_code == 200
+    assert _owner(quiz_id) == ana["id"]

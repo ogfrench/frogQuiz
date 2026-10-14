@@ -423,3 +423,30 @@ test('an editor open past the 30 days says the quiz expired and keeps the text',
 	await expect(page.getByRole('button', { name: 'Save as a new quiz' })).toBeVisible();
 });
 
+
+
+test('Keep all recovers when a successful claim response is lost', async ({ browser, request }) => {
+	const first = await anonQuiz(request, `Lost response ${Date.now()}`);
+	const second = await anonQuiz(request, `Still waiting ${Date.now()}`);
+	const { context, page } = await phone(browser, request);
+	for (const quiz of [first, second]) await rememberAnonQuiz(page, quiz.id, quiz.secret);
+	await page.route(`**/api/v1/quiz/claim/${first.id}`, async (route) => {
+		const committed = await route.fetch();
+		expect(committed.status()).toBe(200);
+		await route.abort('internetdisconnected');
+	});
+	await page.goto('/my-quizzes');
+	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('The connection was lost');
+	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toHaveLength(2);
+	await page.unroute(`**/api/v1/quiz/claim/${first.id}`);
+	await page.getByRole('button', { name: 'Keep all', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);
+	for (const quiz of [first, second]) {
+		await expect(page.locator(`a[href="/view/${quiz.id}"]`)).toBeVisible();
+		const owned = await context.request.get(`/api/v1/quiz/get/${quiz.id}`);
+		expect(owned.status()).toBe(200);
+		expect((await owned.json()).expire_at).toBeNull();
+	}
+	await context.close();
+});

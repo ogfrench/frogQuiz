@@ -203,7 +203,9 @@ class TestAnonymousQuiz:
             headers={"X-Anon-Secret": AnonState.secret},
             cookies=AnonState.claimer_cookies,
         )
-        assert resp.status_code == 404
+        # The signed-in owner can safely retry a committed claim. The old secret
+        # alone was refused above; this succeeds because of the account session.
+        assert resp.status_code == 200
 
         # The important one: once a quiz has an owner, the anonymous delete path
         # must not reach it. Otherwise a stale secret would be a way to destroy

@@ -270,12 +270,17 @@ async def claim_quiz(
 
     Requires being signed in -- claiming isn't itself something an anonymous
     caller can do. A wrong secret and a nonexistent/already-claimed/expired
-    quiz all 404 identically, so this can't be used to probe which quiz IDs
+    quiz all 404 for non-owners, so this cannot be used to probe which quiz IDs
     exist or which ones are still unclaimed.
     """
     # Per account: an office shares one address, as editor saves did (E9).
     await rate_limit_key(f"quiz_claim_user:{user.id.hex}", limit=20, window_seconds=60)
     await rate_limit(request, "quiz_claim", limit=120, window_seconds=60)
+    # A committed claim may lose its HTTP response. The account's own authority
+    # makes that retry safe; the spent guest secret grants no access to anyone else.
+    owned = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+    if owned is not None:
+        return owned
     quiz = await Quiz.objects.get_or_none(id=quiz_id, user_id=None)
     if quiz is None or _quiz_expired(quiz) or not verify_anon_secret(x_anon_secret, quiz.anon_secret):
         raise HTTPException(status_code=404, detail="quiz not found")
@@ -294,6 +299,10 @@ async def claim_quiz(
             {"user": user.id.hex, "id": quiz.id.hex, "secret": quiz.anon_secret, "now": datetime.now()},
         )
         if won is None:
+            # Another request from this same account may have won while we waited.
+            owned = await Quiz.objects.get_or_none(id=quiz_id, user_id=user.id)
+            if owned is not None:
+                return owned
             raise HTTPException(status_code=404, detail="quiz not found")
         # The conditional update locks this row. Read the current questions/images,
         # including an edit that finished after the initial ownership check.
@@ -685,4 +694,3 @@ async def import_from_excel(
     if secret:
         response.headers["X-Anon-Secret"] = secret
     return {"id": str(quiz.id), "anonymous": secret is not None}
-
