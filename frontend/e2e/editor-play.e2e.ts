@@ -140,12 +140,15 @@ test('on a draft Play is disabled, and the reason is what describes it', async (
 		/1 question needs finishing before it can be played/
 	);
 
-	// Once Save has been pressed the header says it out loud, and Play points at that
-	// sentence rather than at a hidden copy: one element with the id, not two.
+	// Save opens the quiz's view page. Wait for that navigation before editing again;
+	// otherwise a click can race with Save and be discarded as the editor closes.
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(page.locator('header [role=status]#play-hint')).toBeVisible();
-	await expect(page.locator('[id="play-hint"]')).toHaveCount(1);
-	await expect(play(page)).toHaveAttribute('aria-describedby', 'play-hint');
+	await page.waitForURL(`/view/${saved.body.id}`);
+	await expect(play(page)).toBeDisabled();
+	await expect(play(page)).toHaveAttribute('aria-describedby', 'draft-hint');
+	await page.getByRole('link', { name: 'Edit', exact: true }).click();
+	await expect(titleBox(page)).toContainText(title);
+	await expect(play(page)).toBeDisabled();
 
 	// Finishing the question turns it on, and the reason goes with it.
 	await page.getByRole('button', { name: 'Mark as correct: Lyon', exact: true }).click();

@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Stabilize the draft Play browser check by waiting for Save to navigate before reopening the editor and finishing the question.
+
 - Use Add to account and Add all to account for browser quizzes; remove the redundant Not now explanation and align browser coverage and the interactive preview.
 
 - Capture a real twelve-quiz bulk claim on mobile, verifying the scrollable prompt and that one Keep all action saves every quiz permanently.
