@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Added read-only production diagnostics to locate the original Compose configuration during Oracle recovery.
+
 - Added a manual GitHub Actions SSH check and guarded backend guest-access repair, with credential setup and rollback instructions.
 
 - Wait for finite control animations before auditing mobile touch targets, preserving hidden-control and size checks without mistaking answer fade-in for a hover-only control.
