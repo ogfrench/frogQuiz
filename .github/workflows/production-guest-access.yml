@@ -78,7 +78,9 @@ jobs:
           printf '%s\n' "$SSH_PRIVATE_KEY" > "$key_dir/key"
           printf '%s\n' "$SSH_KNOWN_HOSTS" > "$key_dir/known_hosts"
           unset SSH_PRIVATE_KEY SSH_KNOWN_HOSTS
-          ssh-keygen -y -P '' -f "$key_dir/key" > /dev/null
+          ssh-keygen -y -P '' -f "$key_dir/key" > "$key_dir/key.pub"
+          echo 'GitHub SSH public-key fingerprint:'
+          ssh-keygen -lf "$key_dir/key.pub"
           ssh-keygen -F "$SSH_HOST" -f "$key_dir/known_hosts" > /dev/null
           ssh_args=(-i "$key_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes
             -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$key_dir/known_hosts"
