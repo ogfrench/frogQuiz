@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Added a manual GitHub Actions SSH check and guarded backend guest-access repair, with credential setup and rollback instructions.
+
 - Wait for finite control animations before auditing mobile touch targets, preserving hidden-control and size checks without mistaking answer fade-in for a hover-only control.
 
 - Keep the editor open when a draft becomes complete during a pending save, or newer edits remain unsaved; cover the race with a delayed real save response and verify Play persists the newer answer.
