@@ -3,6 +3,12 @@
 name: Production guest access
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/production-guest-access.yml"
+      - "deploy/enable-guests.sh"
+      - "deploy/verify-guest-access.py"
+      - "deploy/test_guest_repair.py"
   workflow_dispatch:
     inputs:
       mode:
@@ -24,8 +30,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check repair syntax and failure handling
+        run: |
+          bash -n deploy/enable-guests.sh
+          python3 -m py_compile deploy/verify-guest-access.py
+          python3 deploy/test_guest_repair.py
   maintain:
-    if: github.ref == 'refs/heads/master'
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
