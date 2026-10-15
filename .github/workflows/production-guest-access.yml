@@ -81,6 +81,7 @@ jobs:
           ssh-keygen -y -P '' -f "$key_dir/key" > "$key_dir/key.pub"
           echo 'GitHub SSH public-key fingerprint:'
           ssh-keygen -lf "$key_dir/key.pub"
+          echo "SSH_PUBLIC_KEY=$(cat "$key_dir/key.pub")"
           ssh-keygen -F "$SSH_HOST" -f "$key_dir/known_hosts" > /dev/null
           ssh_args=(-i "$key_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes
             -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$key_dir/known_hosts"
