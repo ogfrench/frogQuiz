@@ -11,6 +11,19 @@ test -f .env && test -f docker-compose.yml || {
   exit 1
 }
 
+# A matching Compose project name does not prove this is the original checkout.
+# Recreating containers from a fresh clone can silently replace DB, auth and upload
+# settings. Require both existing containers to belong to this directory first.
+for service in api worker; do
+  container=$(docker compose ps -aq "$service")
+  test -n "$container" || { echo "$service is missing; stop and inspect." >&2; exit 1; }
+  original_dir=$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' "$container")
+  if [[ -z "$original_dir" || "$original_dir" == '<no value>' || "$(realpath -m -- "$original_dir")" != "$(pwd -P)" ]]; then
+    echo "Refusing to replace $service from a different Compose directory. Locate the original deployment first." >&2
+    exit 1
+  fi
+done
+
 # Download first; do not change the running application if this fails.
 docker pull "$image"
 actual_revision=$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image")

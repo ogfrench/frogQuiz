@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Blocked guest repair when existing containers belong to a different Compose directory, preventing a fresh clone from replacing production settings.
+
 - Added read-only production diagnostics to locate the original Compose configuration during Oracle recovery.
 
 - Added a manual GitHub Actions SSH check and guarded backend guest-access repair, with credential setup and rollback instructions.
