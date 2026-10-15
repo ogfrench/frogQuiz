@@ -9,7 +9,7 @@
         "host_cta": "Go to your quizzes",
         "create_anon": "Create a quiz without an account",
         "create_cta": "Create a quiz",
-        "create_hint": "Create, import, and host without an account. Sign in to keep your quizzes and explore quizzes from frog and Capgemini. Guest quizzes stay in this browser for 30 days.",
+        "create_hint": "Create, import and host without an account. Sign in to keep quizzes beyond 30 days.",
         "create_hint_account": "Making and hosting a quiz needs a team account. Players only need the PIN."
     },
     "overview_page": {
@@ -513,7 +513,7 @@
         "examples": "Examples",
         "examples_hint": "Ready-made quizzes. Play one as it is, or copy it and make it your own.",
         "examples_hint_signed_out": "Ready-made quizzes. Use one as a starting point for your own quiz.",
-        "sign_in_to_search": "Sign in to explore quizzes created by frog and Capgemini. These example templates are available without an account.",
+        "sign_in_to_search": "Sign in to browse shared quizzes, or try an example without an account.",
         "newest": "Newest"
     },
     "search_page": {

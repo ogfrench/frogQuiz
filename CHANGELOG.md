@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Consolidated the issue backlog into production operations, V1 quality and post-V1 feature trackers, and updated the living plan with current release status.
+
+- Shortened guest creation and Discover copy and updated Terms, Privacy and Attribution for email sign-in, current hosting, retention and concise credits.
+
 - Waited for confirmed player rejoining between reloads in the browser test, rather than treating an open socket as a completed rejoin.
 
 - Prevented server-rendered game sockets from connecting and firing browser-only player handlers during later Netlify requests.
