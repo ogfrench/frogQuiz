@@ -95,7 +95,7 @@ jobs:
           docker compose ps api worker
           if [[ "$2" == check ]]; then
             docker ps -a --format '{{.Names}} | {{.Status}}'
-            docker inspect $(docker ps -aq) --format '{{.Name}} | {{index .Config.Labels "com.docker.compose.project.working_dir"}} | {{index .Config.Labels "com.docker.compose.project.config_files"}}'
+            docker inspect $(docker ps -aq) --format '{{.Name}} | revision={{index .Config.Labels "org.opencontainers.image.revision"}} | {{index .Config.Labels "com.docker.compose.project.working_dir"}} | {{index .Config.Labels "com.docker.compose.project.config_files"}}'
             find /home /opt /srv -maxdepth 4 -name .env -type f -print 2>/dev/null || true
             docker compose config --format json | python3 -c 'import json,sys; c=json.load(sys.stdin); print("Guest setting:", c["services"]["api"].get("environment", {}).get("ANONYMOUS_QUIZZES_ENABLED", "image default"))'
             echo 'SSH and Compose access verified. Nothing changed.'

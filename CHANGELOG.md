@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Prevented server-rendered game sockets from connecting and firing browser-only player handlers during later Netlify requests.
+
 - Printed the SSH public-key fingerprint in production checks to diagnose credential mismatches without exposing private keys.
 
 - Blocked guest repair when existing containers belong to a different Compose directory, preventing a fresh clone from replacing production settings.
