@@ -133,7 +133,13 @@ test.describe('repeated and mid-question reloads', () => {
 		// rejoin it held a stale socket id and the second reload was refused.
 		const { player } = await setUp(page, request, browser);
 		await reloadHydrated(player.page);
+		// Connected! means the transport opened, before the server acknowledges
+		// rejoin and the new socket id is saved. Wait for that restored state before
+		// reloading again, so this exercises two completed reloads.
+		await expect(player.page.getByText(/You're in/)).toBeVisible();
 		await reloadHydrated(player.page);
+		await expect(player.page.getByText(/You're in/)).toBeVisible();
+		await expect(page.getByText('reloader', { exact: true })).toBeVisible();
 		await page.getByRole('button', { name: 'Start game' }).click();
 		await page.getByRole('button', { name: /Next question/ }).click();
 		await expect(player.page.getByRole('button', { name: 'Yes' })).toBeVisible({

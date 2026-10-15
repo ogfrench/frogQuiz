@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Waited for confirmed player rejoining between reloads in the browser test, rather than treating an open socket as a completed rejoin.
+
 - Prevented server-rendered game sockets from connecting and firing browser-only player handlers during later Netlify requests.
 
 - Printed the SSH public-key fingerprint in production checks to diagnose credential mismatches without exposing private keys.
