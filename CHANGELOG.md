@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Kept attribution checks focused on the artist, license and described artwork changes rather than the old introductory sentence.
+
 - Consolidated the issue backlog into production operations, V1 quality and post-V1 feature trackers, and updated the living plan with current release status.
 
 - Shortened guest creation and Discover copy and updated Terms, Privacy and Attribution for email sign-in, current hosting, retention and concise credits.
