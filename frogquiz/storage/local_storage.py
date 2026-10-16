@@ -36,9 +36,12 @@ class LocalStorage:
         name = os.path.basename(file_name)
         if not name or name in (".", "..") or name != file_name or "\\" in name or "\x00" in name:
             raise ValueError("Invalid storage filename")
-        path = os.path.join(self.base_path, name)
+        path = os.path.abspath(os.path.join(self.base_path, name))
+        prefix = os.path.join(self.base_path, "")
+        if not path.startswith(prefix):
+            raise ValueError("Storage filename escapes its directory")
         resolved = os.path.realpath(path)
-        if os.path.commonpath((self.base_path, resolved)) != self.base_path:
+        if not resolved.startswith(prefix):
             raise ValueError("Storage filename escapes its directory")
         return path
 
