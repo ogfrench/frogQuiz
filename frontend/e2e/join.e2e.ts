@@ -98,9 +98,8 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 	request
 }) => {
 	// A real game, so the enabled state can be reached. A rejected PIN is not a way in:
-	// `set_game_pin` clears the field on failure, so the button correctly goes straight
-	// back to disabled. (My first version of this test assumed otherwise and failed
-	// against correct code.)
+	// it stays in the box to be corrected, but marked wrong, and Join stays disabled
+	// until it is edited (#82, pin-entry.e2e.ts).
 	const saved = await saveQuiz(request, QUIZ);
 	expect(saved.status).toBe(200);
 	await rememberAnonQuiz(page, saved.body.id, saved.secret!);

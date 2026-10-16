@@ -15,7 +15,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
+	import PinEntry, { type PinCheck } from '$lib/components/PinEntry.svelte';
 	import Check from '@lucide/svelte/icons/check';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	import { hcaptcha_site_key, recaptcha_key } from '$lib/config';
 	import { signedIn } from '$lib/stores';
 
@@ -35,7 +38,11 @@ SPDX-License-Identifier: MPL-2.0
 		username = $bindable(),
 		error_message = $bindable('')
 	}: Props = $props();
-	let custom_field = $state();
+	let custom_field = $state<string | null>(null);
+	// The nickname step shows once the server has confirmed the PIN, never on the PIN's
+	// length: the sixth digit used to show it straight away, then take it back, PIN and
+	// any nickname typed meanwhile with it, when the server said no such game (#82).
+	let pin_ok = $state(false);
 	// '' rather than undefined: this is bound to a text input, and an undefined
 	// value there makes Svelte render the box with the literal string "undefined"
 	// the first time a keystroke is undone, and sends undefined on submit even
@@ -105,40 +112,29 @@ SPDX-License-Identifier: MPL-2.0
 		username = json.username;
 	};
 
-	const set_game_pin = async () => {
-		let process_var;
-		try {
-			process_var = process;
-		} catch {
-			process_var = { env: { API_URL: undefined } };
-		}
-
-		const res = await fetch(
-			`${process_var.env.API_URL ?? ''}/api/v1/quiz/play/check_captcha/${game_pin}`
-		);
-		const json = await res.json();
-		game_mode = json.game_mode;
-		if (res.status === 200) {
-			captcha_enabled = json.enabled;
-			custom_field = json.custom_field;
-		}
-		if (res.status === 404) {
-			error_message = $t('play_page.game_not_found');
-			game_pin = '';
-			return;
-		}
-		if (res.status !== 200) {
-			error_message = $t('play_page.unknown_error');
-			return;
-		}
+	const accepted = (_pin: string, check: PinCheck) => {
+		game_mode = check.game_mode;
+		captcha_enabled = check.captcha;
+		custom_field = check.custom_field;
 		error_message = '';
+		pin_ok = true;
 	};
 
-	$effect(() => {
-		if (/^\d{6}$/.test(game_pin)) {
-			set_game_pin();
-		}
-	});
+	// A PIN in the address is one the game turned down: reloading would only ask again.
+	const forget_pin_in_url = () => {
+		if (!page.url.searchParams.has('pin')) return;
+		const url = new URL(page.url);
+		url.searchParams.delete('pin');
+		url.searchParams.delete('ref');
+		replaceState(url, {});
+	};
+
+	// Back to the PIN, which stays on screen to be corrected rather than typed again.
+	const refused = (message: string) => {
+		pin_ok = false;
+		error_message = message;
+		forget_pin_in_url();
+	};
 
 	const setUsername = async (e: Event) => {
 		e.preventDefault();
@@ -205,28 +201,11 @@ SPDX-License-Identifier: MPL-2.0
 			});
 		}
 	};
-	socket.on('game_not_found', () => {
-		game_pin = '';
-		error_message = $t('play_page.game_not_found');
-	});
-	socket.on('game_locked', () => {
-		game_pin = '';
-		error_message = $t('play_page.game_locked');
-	});
-	socket.on('game_finished', () => {
-		game_pin = '';
-		error_message = $t('play_page.game_finished');
-	});
+	socket.on('game_not_found', () => refused($t('play_page.game_not_found')));
+	socket.on('game_locked', () => refused($t('play_page.game_locked')));
+	socket.on('game_finished', () => refused($t('play_page.game_finished')));
 	socket.on('username_already_exists', () => {
 		error_message = $t('play_page.username_taken');
-	});
-	// Digits only, six at most. The box has no maxlength: it cut "123 456" pasted from a
-	// chat to "123 45" before the space could be stripped (E10 in docs/edge-cases-2026-10.md).
-	$effect(() => {
-		const cleaned = game_pin.replace(/\D/g, '').slice(0, 6);
-		if (cleaned !== game_pin) {
-			game_pin = cleaned;
-		}
 	});
 </script>
 
@@ -257,42 +236,15 @@ SPDX-License-Identifier: MPL-2.0
 		<h1 class="sr-only">{$t('play_page.join_title')}</h1>
 		<Wordmark size={44} />
 
-		{#if game_pin === '' || game_pin.length < 6}
-			<!-- No submit handler of its own: the sixth digit advances it. Without this,
-			     Enter did a native submit and reloaded the page. -->
-			<form
-				class="border-border/70 bg-card w-full rounded-xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
-				onsubmit={(e) => e.preventDefault()}
-			>
-				<Label for="game-pin" class="text-sm font-medium">{$t('words.game_pin')}</Label>
-				<p class="text-muted-foreground mt-1.5 text-sm">
-					{$t('index_page.join_prompt')}
-				</p>
-				<Input
-					id="game-pin"
-					bind:value={game_pin}
-					inputmode="numeric"
-					pattern="[0-9]*"
-					autocomplete="one-time-code"
-					class="mt-4 h-12 text-center font-mono text-xl tracking-[0.35em]"
-					autofocus
-				/>
-				{#if error_message}
-					<p class="text-destructive mt-3 text-sm text-balance" role="alert">
-						{error_message}
-					</p>
-				{/if}
-				<Button
-					type="submit"
-					size="lg"
-					class="mt-4 h-12 w-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
-					disabled={game_pin.length < 6}
-				>
-					<!-- "Join", as on the landing page's PIN box, which does the same thing.
-					     Both steps here said "Submit", which names the mechanism, not the act. -->
-					{$t('words.join')}
-				</Button>
-			</form>
+		{#if !pin_ok}
+			<PinEntry
+				bind:value={game_pin}
+				bind:error={error_message}
+				advance="auto"
+				autofocus
+				onaccepted={accepted}
+				onrejected={forget_pin_in_url}
+			/>
 		{:else}
 			<form
 				onsubmit={setUsername}

@@ -11,8 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { openCreateDialog } from '$lib/create_dialog.svelte';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
+	import PinEntry from '$lib/components/PinEntry.svelte';
 	import { page } from '$app/state';
 	import JpgOpenGraph from '$lib/assets/landing/opengraph-home.jpg';
 
@@ -28,16 +27,8 @@ SPDX-License-Identifier: MPL-2.0
 	const share_image = $derived(`${origin}${JpgOpenGraph}`);
 	const share_url = $derived(`${origin}/`);
 
-	let pin = $state('');
-	// Digits only: no maxlength, which cut "123 456" pasted from a chat to "123 45" (E10).
-	const digits = $derived(pin.replace(/\D/g, '').slice(0, 6));
-	let ready = $derived(digits.length === 6);
-
-	const join = (e: Event) => {
-		e.preventDefault();
-		if (!ready) return;
-		goto(`/play?pin=${digits}`);
-	};
+	// Checked here, so a wrong PIN is fixed on this page instead of on /play (#82).
+	const join = (pin: string) => goto(`/play?pin=${pin}`);
 </script>
 
 <svelte:head>
@@ -70,32 +61,9 @@ SPDX-License-Identifier: MPL-2.0
 				<h1 class="mt-7 text-4xl font-medium tracking-[-0.04em] sm:text-5xl">frogQuiz</h1>
 			</div>
 
-			<form
-				onsubmit={join}
-				class="border-border/70 bg-card mt-12 rounded-xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
-			>
-				<Label for="game-pin" class="text-sm font-medium">{$t('words.game_pin')}</Label>
-				<p class="text-muted-foreground mt-1.5 text-sm">
-					{$t('index_page.join_prompt')}
-				</p>
-				<div class="mt-4 flex gap-2">
-					<Input
-						id="game-pin"
-						bind:value={pin}
-						inputmode="numeric"
-						autocomplete="off"
-						class="h-11 text-center font-mono text-lg tracking-[0.35em]"
-					/>
-					<Button
-						type="submit"
-						size="lg"
-						disabled={!ready}
-						class="h-11 px-5 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
-					>
-						{$t('words.join')}
-					</Button>
-				</div>
-			</form>
+			<div class="mt-12">
+				<PinEntry advance="submit" layout="inline" onaccepted={join} />
+			</div>
 
 			<!-- Hosting is the other half of the product, not a footnote: these were three
 			     muted text links under the PIN box, which put making a quiz below logging in
@@ -129,8 +97,8 @@ SPDX-License-Identifier: MPL-2.0
 				{data.anonymousQuizzes === null
 					? 'Quiz creation is temporarily unavailable. Please try again.'
 					: data.anonymousQuizzes
-					? $t('index_page.create_hint')
-					: $t('index_page.create_hint_account')}
+						? $t('index_page.create_hint')
+						: $t('index_page.create_hint_account')}
 			</p>
 		</div>
 	</div>

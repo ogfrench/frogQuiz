@@ -560,6 +560,7 @@
         "game_ended_body": "This game was canceled before it started.",
         "join_another": "Join another game",
         "game_not_found": "No game with that PIN. Check the number on the host's screen.",
+        "pin_too_long": "A game PIN has 6 digits.",
         "game_locked": "The host has locked this game, so nobody new can join.",
         "game_finished": "That game has finished.",
         "unknown_error": "Something went wrong. Try again in a moment.",

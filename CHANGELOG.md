@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Fixed a wrong game PIN flashing the nickname step and then wiping the PIN on /play (#82): the nickname step now waits for the server to confirm the PIN, and a wrong PIN stays on screen, selected, with the error under it until it is edited.
+- Unified the PIN box on / and /play into one component, `PinEntry`: digits only, a pasted join link gives its PIN, more than 6 digits is named instead of cut, and a wrong PIN on / is caught on / instead of after the jump to /play.
+- Fixed digits typed into the PIN box before the page finished loading being lost.
+- Dropped a refused PIN from the /play address, so a reload does not ask about it again.
 - Fixed the deploy guard reading no migration head: it now reads the head from the image's migration files, since `alembic heads` imports the app's settings, which need production's environment.
 - Kept nightly backups for 30 days instead of 14, for a month of history at negligible size.
 - Added a cleanup mode to the Production ops workflow: removes the unused frontend container on the VM, unused images and the build cache, never volumes.
