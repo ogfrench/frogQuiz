@@ -15,3 +15,16 @@ a22912a88aebed565a0836621e750f19ee64f5b4:.env.ci:generic-api-key:14
 # inherited from ClassQuiz.
 068d0b6f761beee4171fab938f5e78c83fa163be:classquiz/tests/test_storage.py:generic-api-key:60
 a22912a88aebed565a0836621e750f19ee64f5b4:frogquiz/tests/test_storage.py:generic-api-key:60
+
+# Historical Mapbox pk. browser tokens, not sk. secret tokens. Removed from the
+# current Dockerfile; public prefix verified during the 16 Oct 2026 review (#75).
+4d6e919d7706810ebb8c57c7b76d4bf8eb0ec345:frontend/Dockerfile (copy):generic-api-key:12
+82900f3e3d741e75cce3675ec6989a283bdbc4c9:frontend/Dockerfile (copy):generic-api-key:12
+49ff503898fbf82598a63aa9926bc3bbb701c953:frontend/Dockerfile:generic-api-key:7
+
+# Public client-side hCaptcha site key, not its server-side verification secret.
+805258c5ff7d2c4476935090d73fc766cf5bc45c:frontend/src/lib/play/join.svelte:generic-api-key:9
+
+# Same documented MinIO public playground fixture as the entries above, in an
+# older version of the test. Exact value equality checked without logging it.
+a0b02ec9c320b6edf18d11b3e056cc4985363f40:classquiz/tests/test_storage.py:generic-api-key:64

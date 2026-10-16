@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -93,3 +94,46 @@ async def test_minio():
     await storage.upload(file_name="test.txt", file_data=io.BytesIO(initial_bytes=file_contents))
     url = await storage.get_url(file_name="test.txt", expiry=20)
     assert url is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "name", ["../outside", "nested/../../outside", "/tmp/outside", "..", ".", "", "..\\outside", "bad\x00name"]
+)
+async def test_local_rejects_paths_for_every_operation(tmp_path, name):
+    from frogquiz.storage.local_storage import LocalStorage
+
+    storage = LocalStorage(str(tmp_path / "uploads"))
+    outside = tmp_path / "outside"
+    outside.write_bytes(b"untouched")
+    with pytest.raises(ValueError):
+        await storage.upload(name, io.BytesIO(b"changed"), size=None)
+    with pytest.raises(ValueError):
+        async for _ in storage.download(name):
+            pass
+    with pytest.raises(ValueError):
+        storage.size(name)
+    with pytest.raises(ValueError):
+        await storage.delete([name])
+    assert outside.read_bytes() == b"untouched"
+
+
+@pytest.mark.asyncio
+async def test_local_rejects_symlink_outside_storage(tmp_path):
+    from frogquiz.storage.local_storage import LocalStorage
+
+    uploads = tmp_path / "uploads"
+    storage = LocalStorage(str(uploads))
+    outside = tmp_path / "outside"
+    outside.write_bytes(b"private")
+    (uploads / "image").symlink_to(outside)
+    with pytest.raises(ValueError):
+        storage.size("image")
+    with pytest.raises(ValueError):
+        await storage.upload("image", io.BytesIO(b"changed"), size=None)
+    with pytest.raises(ValueError):
+        async for _ in storage.download("image"):
+            pass
+    with pytest.raises(ValueError):
+        await storage.delete(["image"])
+    assert outside.read_bytes() == b"private"

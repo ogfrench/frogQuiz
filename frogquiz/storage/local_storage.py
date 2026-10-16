@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -15,7 +16,7 @@ _DEFAULT_CHUNK_SIZE = 32768  # bytes; arbitrary
 
 class LocalStorage:
     def __init__(self, base_path: str):
-        self.base_path = base_path
+        self.base_path = os.path.realpath(base_path)
         # Nothing else ever created this directory, and `upload` below is a bare
         # open(..., "wb") -- so a STORAGE_PATH that does not exist yet meant every image
         # upload answered 500 with a FileNotFoundError in the log and no hint about the
@@ -29,9 +30,21 @@ class LocalStorage:
         # rather than once per teacher who adds a picture.
         os.makedirs(self.base_path, exist_ok=True)
 
+    def _file_path(self, file_name: str) -> str:
+        # Storage keys are single filenames, never user-supplied paths. Check every
+        # operation here, including persisted legacy keys and symlinks on disk.
+        name = os.path.basename(file_name)
+        if not name or name in (".", "..") or name != file_name or "\\" in name or "\x00" in name:
+            raise ValueError("Invalid storage filename")
+        path = os.path.join(self.base_path, name)
+        resolved = os.path.realpath(path)
+        if os.path.commonpath((self.base_path, resolved)) != self.base_path:
+            raise ValueError("Storage filename escapes its directory")
+        return path
+
     async def download(self, file_name: str) -> Generator | None:
         try:
-            async with aiofiles.open(file=os.path.join(self.base_path, file_name), mode="rb") as f:
+            async with aiofiles.open(file=self._file_path(file_name), mode="rb") as f:
                 while True:
                     chunk = await f.read(8192)
                     if not chunk:
@@ -48,19 +61,19 @@ class LocalStorage:
         size: int | None,
         mime_type: str | None = None,
     ) -> None:
-        with open(file=os.path.join(self.base_path, file_name), mode="wb") as f:
+        with open(file=self._file_path(file_name), mode="wb") as f:
             copyfileobj(file, f)
 
     async def delete(self, file_names: [str]) -> None:
         for i in file_names:
             try:
-                await aiofiles.os.remove(os.path.join(self.base_path, i))
+                await aiofiles.os.remove(self._file_path(i))
             except FileNotFoundError:
                 pass
         return None
 
     def size(self, file_name: str) -> int | None:
         try:
-            return os.stat(os.path.join(self.base_path, file_name)).st_size
+            return os.stat(self._file_path(file_name)).st_size
         except FileNotFoundError:
             return None

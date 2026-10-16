@@ -4,6 +4,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Documented the guest credential storage tradeoff and security alert dispositions, and allowed only five confirmed public/test historical secret-scan fingerprints.
+
+- Replaced regex-based title HTML filtering with a parser-based allowlist and added malformed-markup regression tests.
+- Rejected path traversal and symlinks escaping local uploads for reads, writes, sizes and deletion.
+
 - Retained all possible pending rejoin credentials until acknowledgement, including a successful attempt followed by another interrupted attempt.
 
 - Ran the player-rejoin recovery regressions before the full browser suite so failures surface early in CI.
