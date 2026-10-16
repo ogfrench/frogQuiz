@@ -4,6 +4,11 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Added a CI check that builds the frontend as Netlify does and renders pages through its server function with Node's stricter module loading, so a package that crashes Netlify's runtime fails the pull request. It reproduces the 16 Oct outage on #76's code.
+- Fixed the Discover outage test clicking before the page hydrated, which made the server rather than the browser fetch the examples.
+- Remembered a failed guest-setting lookup for five seconds and shortened Discover's server-side requests to five seconds, so a hanging API cannot push a page past Netlify's 10-second function limit.
+- Let the outage banner re-read the guest setting on its own when the connection returns, instead of waiting for a click.
+
 - Bundle the sanitizer for SSR so Netlify functions do not require an ESM-only parser from CommonJS on older runtimes.
 
 - Distinguish unavailable guest configuration from disabled creation, add retry states for Discover failures, and show a non-blocking service-health banner without reloading open editors.

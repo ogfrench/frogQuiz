@@ -44,10 +44,12 @@
 	onMount(() => {
 		void check();
 		const timer = setInterval(() => {
-			if (!document.hidden) void check();
+			if (!document.hidden) void check(true);
 		}, 60000);
+		// Both also re-read the guest setting when it was unavailable, so the banner and
+		// the copy that depends on it recover without a click once the API is back.
 		const online = () => {
-			void check();
+			void check(true);
 		};
 		window.addEventListener('online', online);
 		return () => {

@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+
+# Builds the frontend the way Netlify does and renders pages through the server function
+# it produces. #76 passed every other check and then took production down for hours: on
+# Netlify's runtime, sanitize-html require()d an ES module and every server-rendered page
+# returned 502. Plain Node 22 and later allows that require(), which is why nothing here
+# saw it; --no-experimental-require-module turns it back into the error Netlify threw.
+
+name: "[CI] Frontend / Netlify SSR"
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - "frontend/**"
+      - "netlify.toml"
+      - ".github/workflows/netlify_ssr.yml"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "netlify.toml"
+      - ".github/workflows/netlify_ssr.yml"
+
+jobs:
+  netlify_ssr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          version: 10.24.0
+          working-directory: ./frontend
+
+      # netlify.toml's NODE_VERSION.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build as Netlify does
+        working-directory: ./frontend
+        env:
+          NETLIFY: "true"
+          VITE_API_ORIGIN: https://api.frogquiz.xyz
+        run: pnpm run build
+
+      # No API runs here: loads that call it fail and fall back. A page that cannot be
+      # rendered at all fails the job.
+      - name: Render pages through the server function
+        working-directory: ./frontend
+        env:
+          API_URL: http://127.0.0.1:9
+        run: node --no-experimental-require-module scripts/check-netlify-ssr.mjs

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 frogQuiz contributors
 // SPDX-License-Identifier: MPL-2.0
 
+import { browser } from '$app/environment';
 import type { PageLoad } from './$types';
 import {
 	noExamples,
@@ -11,6 +12,10 @@ import {
 	searchRequest,
 	withoutAuthor
 } from '$lib/search/query';
+
+// On the server these run after the layout's config request (up to 2 s), inside a Netlify
+// function that ends at 10 s, so they give up sooner there than in the browser.
+const TIMEOUT = browser ? 15_000 : 5_000;
 
 export const load = (async ({ fetch, url, parent }) => {
 	const { loggedIn: logged_in } = await parent();
@@ -42,7 +47,7 @@ async function loadSearch(fetch: typeof globalThis.fetch, body: object) {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body),
-			signal: AbortSignal.timeout(15000)
+			signal: AbortSignal.timeout(TIMEOUT)
 		});
 		if (!response.ok) throw new Error('Search unavailable');
 		const payload = await response.json();
@@ -55,7 +60,7 @@ async function loadSearch(fetch: typeof globalThis.fetch, body: object) {
 
 async function loadExamples(fetch: typeof globalThis.fetch) {
 	try {
-		const res = await fetch('/api/v1/quiz/examples', { signal: AbortSignal.timeout(15000) });
+		const res = await fetch('/api/v1/quiz/examples', { signal: AbortSignal.timeout(TIMEOUT) });
 		// Explicitly disabled guest access is not an outage.
 		if (res.status === 401 || res.status === 403)
 			return { examples: noExamples, examplesFailed: false };

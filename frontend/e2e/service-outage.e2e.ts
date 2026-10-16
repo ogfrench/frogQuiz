@@ -38,6 +38,9 @@ test('Discover reports an examples outage and retries successfully', async ({ pa
 		})
 	);
 	await page.goto('/');
+	// A click before hydration is a full page load, and the examples request is then made
+	// by the server, where page.route cannot reach it. Navigate in the client.
+	await page.waitForLoadState('networkidle');
 	await page.getByRole('link', { name: 'Discover', exact: true }).first().click();
 	await expect(
 		page.getByText('We couldn’t load example quizzes. Please try again.')
