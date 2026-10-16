@@ -15,6 +15,8 @@
 #   API          - uvicorn from the project venv, port 8010 (8000 is in a Windows
 #                  reserved port range on the machines this was built on).
 #   Frontend     - vite dev on 3000, proxied to the API.
+#   MCP          - the MCP service in mcp-server/ on 8020, when mcp-server/.venv exists
+#                  or MCP_VENV names a virtualenv for it (docs/mcp.md). Skipped otherwise.
 #   Browser      - Playwright driving an already-installed browser: Edge on Windows,
 #                  Chromium elsewhere. Override with E2E_BROWSER=chrome|msedge|chromium,
 #                  or point E2E_CHROME at an executable. E2E_VENV points at a
@@ -46,6 +48,7 @@ MEILI_PORT=$((7701 + OFF))
 MAIL_PORT_LOCAL=$((2526 + OFF))
 API_PORT=$((8010 + OFF))
 WEB_PORT=$((3000 + OFF))
+MCP_PORT=$((8020 + OFF))
 
 log() { printf '\033[1;32m[e2e]\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31m[e2e]\033[0m %s\n' "$*" >&2; exit 1; }
@@ -96,6 +99,17 @@ fi
 VENV="$(cygpath -u "$VENV_RAW" 2>/dev/null || printf '%s' "$VENV_RAW")"
 PY="$VENV/Scripts/python.exe"; [ -x "$PY" ] || PY="$VENV/bin/python"
 [ -x "$PY" ] || die "no python in $VENV"
+# The MCP service has a venv of its own: its SDK needs a newer pydantic than the API's
+# ormar allows. Optional, so a checkout that never set it up runs exactly as before.
+MCP_PY=""
+MCP_VENV_RAW="${MCP_VENV:-$ROOT/mcp-server/.venv}"
+if [ -d "$MCP_VENV_RAW" ]; then
+  MCP_VENV_DIR="$(cygpath -u "$MCP_VENV_RAW" 2>/dev/null || printf '%s' "$MCP_VENV_RAW")"
+  MCP_PY="$MCP_VENV_DIR/Scripts/python.exe"; [ -x "$MCP_PY" ] || MCP_PY="$MCP_VENV_DIR/bin/python"
+  [ -x "$MCP_PY" ] || die "no python in $MCP_VENV_DIR"
+elif [ -n "${MCP_VENV:-}" ]; then
+  die "MCP_VENV=$MCP_VENV does not exist"
+fi
 PNPM="$(command -v pnpm || echo "${APPDATA:-}/npm/pnpm")"
 [ -x "$PNPM" ] || command -v "$PNPM" >/dev/null 2>&1 || die "pnpm not found on PATH"
 
@@ -152,7 +166,7 @@ wait_http() { # url, name
   die "$2 did not come up; see $DATA/$2.log"
 }
 
-for p in $PG_PORT $REDIS_PORT $MEILI_PORT $MAIL_PORT_LOCAL $API_PORT $WEB_PORT; do
+for p in $PG_PORT $REDIS_PORT $MEILI_PORT $MAIL_PORT_LOCAL $API_PORT $WEB_PORT ${MCP_PY:+$MCP_PORT}; do
   # A stack stopped a moment ago (the e2e workflow runs two passes in one job) can hold a
   # port for a few seconds while its processes exit.
   for _ in $(seq 1 15); do port_busy "$p" || break; sleep 1; done
@@ -249,6 +263,8 @@ export STORAGE_PATH="$DATA/storage"
 # is what makes the backend skip AUTH; MAIL_SECURITY=none keeps it off STARTTLS.
 export MAIL_SERVER=127.0.0.1
 export MAIL_PORT=$MAIL_PORT_LOCAL
+# What My Account's AI agents section puts in its `claude mcp add` command.
+[ -n "$MCP_PY" ] && export MCP_URL="http://localhost:$MCP_PORT/mcp"
 # Stand-in for python-magic, whose Windows DLL crashes on import. See e2e/shims/magic.py.
 # Everywhere else the real libmagic works, and the shim would only hide a difference.
 [ "$OS" = "windows" ] && export PYTHONPATH="$ROOT/e2e/shims${PYTHONPATH:+:$PYTHONPATH}"
@@ -267,6 +283,16 @@ PYTHONUNBUFFERED=1 "${WORKER[@]}" >"$DATA/worker.log" 2>&1 & PIDS+=($!)
 # taskkill wants the Windows pid; if Git Bash cannot give it, stop.sh falls back to kill.
 worker=$!
 { [ "$OS" = "windows" ] && cat "/proc/$worker/winpid" 2>/dev/null || echo "$worker"; } >"$DATA/worker.pid"
+
+# ---- MCP -------------------------------------------------------------------------
+if [ -n "$MCP_PY" ]; then
+  log "starting the MCP service on $MCP_PORT"
+  (cd "$ROOT/mcp-server" && FROGQUIZ_API_URL="http://127.0.0.1:$API_PORT"     MCP_PUBLIC_URL="http://localhost:$MCP_PORT" MCP_ALLOWED_HOSTS="localhost:$MCP_PORT,127.0.0.1:$MCP_PORT"     exec "$MCP_PY" -m uvicorn frogquiz_mcp.server:app --host 127.0.0.1 --port $MCP_PORT)     >"$DATA/mcp.log" 2>&1 & PIDS+=($!)
+  wait_http "http://127.0.0.1:$MCP_PORT/healthz" mcp
+  export E2E_MCP_URL="$MCP_URL"
+else
+  log "no mcp-server/.venv: skipping the MCP service"
+fi
 
 # ---- frontend --------------------------------------------------------------------
 log "starting frontend on $WEB_PORT"

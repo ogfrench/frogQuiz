@@ -96,7 +96,18 @@ class FidoCredentials(ormar.Model):
 
 
 class ApiKey(ormar.Model):
-    key: str = ormar.String(max_length=48, min_length=48, primary_key=True)
+    """A personal key, for an AI agent through the MCP service or for the /live routes.
+
+    Only the sha256 of the key is stored (migration a7c3e5f1b9d2). The key itself is shown
+    once, when it is made, and `prefix` is what lets its owner recognise it afterwards.
+    """
+
+    id: uuid.UUID = ormar.UUID(primary_key=True, default=uuid.uuid4)
+    key_hash: str = ormar.String(max_length=64, min_length=64, unique=True)
+    prefix: str = ormar.String(max_length=12)
+    name: str = ormar.String(max_length=60)
+    created_at: datetime = ormar.DateTime(default=datetime.now)
+    last_used_at: datetime | None = ormar.DateTime(nullable=True)
     user: Optional[User] = ormar.ForeignKey(User, ondelete=ReferentialAction.CASCADE)
 
     ormar_config = ormar.OrmarConfig(

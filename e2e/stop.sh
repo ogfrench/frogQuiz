@@ -26,7 +26,8 @@ fi
 # in step.
 # E2E_PORT_OFFSET as given to run.sh, so a second stack can be stopped without the first.
 OFF="${E2E_PORT_OFFSET:-0}"
-for port in $((6380 + OFF)) $((7701 + OFF)) $((8010 + OFF)) $((3000 + OFF)) $((2526 + OFF)); do
+# 8020 is the MCP service, which run.sh starts only when mcp-server/.venv exists.
+for port in $((6380 + OFF)) $((7701 + OFF)) $((8010 + OFF)) $((3000 + OFF)) $((2526 + OFF)) $((8020 + OFF)); do
   if [ "$OS" = windows ]; then
     for pid in $(netstat -ano | awk -v p=":$port" '$2 ~ p"$" && $4 == "LISTENING" {print $5}' | sort -u); do
       taskkill //F //T //PID "$pid" >/dev/null 2>&1 && echo "stopped :$port (pid $pid)"

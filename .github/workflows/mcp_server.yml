@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+
+# The MCP service in mcp-server/ (docs/mcp.md): its tests on every change, and its image,
+# built on a pull request to prove the Dockerfile and pushed to ghcr.io from master.
+# docker-compose.yml runs that image under `--profile mcp`.
+name: MCP server
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "mcp-server/**"
+      - ".github/workflows/mcp_server.yml"
+  pull_request:
+    paths:
+      - "mcp-server/**"
+      - ".github/workflows/mcp_server.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ogfrench/frogquiz-mcp
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ./mcp-server
+    steps:
+      - uses: actions/checkout@v6
+      - run: pipx install pipenv
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: "pipenv"
+          cache-dependency-path: mcp-server/Pipfile.lock
+      - run: pipenv sync --dev
+      - run: pipenv run black --check -l 120 .
+      - run: pipenv run pytest -q
+
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+      - name: Log into ${{ env.REGISTRY }}
+        if: github.event_name == 'push'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ./mcp-server
+          push: ${{ github.event_name == 'push' }}
+          load: ${{ github.event_name != 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      # The image answers its own healthcheck as the non-root user it ships with.
+      - name: The image starts and is healthy
+        if: github.event_name != 'push'
+        run: |
+          image=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
+          docker run -d --name mcp -e MCP_PUBLIC_URL=http://localhost:8000 -p 8000:8000 "$image"
+          for _ in $(seq 1 30); do curl -fs http://localhost:8000/healthz && break; sleep 1; done
+          test "$(docker exec mcp id -u)" = 10001
+          # No key, no session: the SDK's own bearer check answers before any tool runs.
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8000/mcp)" = 401

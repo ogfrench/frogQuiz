@@ -5,6 +5,7 @@
 
 import hashlib
 import hmac
+import secrets
 import uuid
 from datetime import timedelta
 from typing import Dict
@@ -304,14 +305,94 @@ async def check_token(token: str = Depends(oauth2_scheme)):
     return token_data.email
 
 
-async def check_api_key(key: str) -> uuid.UUID | None:
-    redis_res = await redis.get(f"apikey:{key}")
-    if redis_res is None:
-        key2 = await ApiKey.objects.get_or_none(key=key)
-        if key2 is None:
-            return None
-        else:
-            await redis.set(f"apikey:{key}", key2.user.id.hex, ex=3600)
-            return key2.user.id
-    else:
-        return uuid.UUID(redis_res)
+# What a key made today starts with. It lets a secret scanner (.gitleaks.toml, GitHub's)
+# recognise one pasted into a repository, and lets the agent API refuse anything else
+# before it touches Redis or the database. Keys made before 15 Oct are 48 hex characters
+# with no prefix; they still work on /live, never on /agent.
+API_KEY_PREFIX = "fq_"
+# Longer than any key ever issued. A caller's string is hashed, so this only bounds the
+# work an absurd header can cause.
+MAX_API_KEY_LENGTH = 128
+
+
+def new_api_key() -> str:
+    """A fresh key: the prefix and 32 random bytes, 46 characters in all."""
+    return API_KEY_PREFIX + secrets.token_urlsafe(32)
+
+
+def hash_api_key(key: str) -> str:
+    """The form a key is stored and cached in.
+
+    A fast hash is enough for the same reason as hash_session_key: the key is 32 random
+    bytes, so this protects against a database or Redis read handing over working keys,
+    not against guessing. The migration that hashed the old keys (a7c3e5f1b9d2) does the
+    same sha256 in SQL, so the two must not drift.
+    """
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+def api_key_cache_key(key_hash: str) -> str:
+    # By hash, so a key is never itself a Redis key name.
+    return f"apikey:{key_hash}"
+
+
+API_KEY_CACHE_SECONDS = 3600
+_REVOKED = "revoked"
+
+
+async def forget_api_key(key_hash: str) -> None:
+    """Called once a key's row is deleted. Writes a marker rather than deleting the cache
+    entry: a check that read the row just before the delete would otherwise cache the owner
+    again a moment later, and the revoked key would work for another hour."""
+    await redis.set(api_key_cache_key(key_hash), _REVOKED, ex=API_KEY_CACHE_SECONDS)
+
+
+async def check_api_key(key: str | None) -> uuid.UUID | None:
+    """The owner of a key, or None. A revoked key stops working on the next request, not
+    when its cache entry runs out (forget_api_key)."""
+    if not key or len(key) > MAX_API_KEY_LENGTH:
+        return None
+    key_hash = hash_api_key(key)
+    cached = await redis.get(api_key_cache_key(key_hash))
+    if cached == _REVOKED:
+        return None
+    if cached is not None:
+        return uuid.UUID(cached)
+    row = await ApiKey.objects.get_or_none(key_hash=key_hash)
+    if row is None or row.user is None:
+        return None
+    # nx: never over a revocation marker written since the row was read.
+    await redis.set(api_key_cache_key(key_hash), row.user.id.hex, ex=API_KEY_CACHE_SECONDS, nx=True)
+    return row.user.id
+
+
+agent_credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="A frogQuiz agent key is required. Make one under My Account, AI agents.",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+
+async def get_agent_user(request: Request) -> User:
+    """The account behind `Authorization: Bearer fq_...`, for the agent API only.
+
+    Reads that header and nothing else: never the session cookie, so a browser cannot be
+    walked into an agent call, and never a query string, where a key ends up in access
+    logs. The reverse holds too: the session routes read only the cookie, so a key sent
+    to them is not a login. Every failure is the same 401, so it does not say whether a
+    key exists, was revoked, or belongs to an account that is gone.
+    """
+    scheme, key = get_authorization_scheme_param(request.headers.get("Authorization"))
+    if scheme.lower() != "bearer" or not key.startswith(API_KEY_PREFIX):
+        raise agent_credentials_exception
+    user_id = await check_api_key(key)
+    if user_id is None:
+        raise agent_credentials_exception
+    user = await get_user_from_id(str(user_id))
+    if user is None:
+        raise agent_credentials_exception
+    key_hash = hash_api_key(key)
+    # At most one write a minute per key: an agent making a quiz calls several times.
+    if await redis.set(f"apikey_used:{key_hash}", "1", ex=60, nx=True):
+        await ApiKey.objects.filter(key_hash=key_hash).update(last_used_at=datetime.now())
+    return user

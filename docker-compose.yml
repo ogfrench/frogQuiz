@@ -71,6 +71,11 @@ services:
       ANONYMOUS_QUIZZES_ENABLED: ${ANONYMOUS_QUIZZES_ENABLED:-true}
       ANON_QUIZ_DAILY_LIMIT: ${ANON_QUIZ_DAILY_LIMIT:-20}
       ANON_QUIZ_TOTAL_LIMIT: ${ANON_QUIZ_TOTAL_LIMIT:-1000}
+      # AI agents (docs/mcp.md): the agent API, and the My Account section that hands out
+      # its keys. Off until François and Gonçalo turn it on. MCP_URL is the address the
+      # section tells people to connect to, e.g. https://api.frogquiz.xyz/mcp.
+      AGENT_API_ENABLED: ${AGENT_API_ENABLED:-false}
+      MCP_URL: ${MCP_URL:-}
 
       # --- MAIL CONFIG ---
       # Required: signing in is by an emailed link or code only (passwords are off), so
@@ -195,6 +200,27 @@ services:
     # disk. tests/test_compose.py keeps the two in step.
     volumes:
       - ./uploads:/app/data
+
+  # The MCP service for AI agents (mcp-server/, docs/mcp.md). Not started unless asked
+  # for: `docker compose --profile mcp up -d`. It holds no data and no secrets; every rule
+  # is the API's, which also needs AGENT_API_ENABLED=true above. Caddy sends /mcp here.
+  mcp:
+    image: ghcr.io/ogfrench/frogquiz-mcp:master
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    profiles: [mcp]
+    restart: always
+    logging: *logging
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      FROGQUIZ_API_URL: http://api:80
+      # The public origin agents use, e.g. https://api.frogquiz.xyz. Its host is the only
+      # Host header answered, unless MCP_ALLOWED_HOSTS lists others.
+      MCP_PUBLIC_URL: ${MCP_PUBLIC_URL:-http://localhost}
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-}
 
 volumes:
   data:

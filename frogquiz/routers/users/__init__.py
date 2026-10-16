@@ -15,7 +15,7 @@ from typing import Annotated
 import ormar
 import pydantic
 from email_validator import validate_email, EmailNotValidError
-from fastapi import APIRouter, Response, HTTPException, Request, Depends
+from fastapi import APIRouter, Body, Response, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, RedirectResponse
 
 
@@ -24,8 +24,12 @@ from frogquiz.helpers.avatar import gzipped_user_avatar
 import base64
 
 from frogquiz.auth import (
+    API_KEY_PREFIX,
+    forget_api_key,
     get_password_hash,
+    hash_api_key,
     hash_session_key,
+    new_api_key,
     revoke_sessions,
     revoke_token,
     verify_password,
@@ -88,11 +92,21 @@ def _passwords_on() -> None:
         raise HTTPException(status_code=404, detail="Not found")
 
 
+async def _revoke_api_keys(user: User) -> None:
+    hashes = [row.key_hash for row in await ApiKey.objects.filter(user=user).all()]
+    await ApiKey.objects.filter(user=user).delete()
+    for key_hash in hashes:
+        await forget_api_key(key_hash)
+
+
 async def _sign_out_everywhere(user: User) -> None:
     # Revoked first, so the access tokens those sessions handed out stop working now
     # rather than when they expire; see revoke_sessions.
     await revoke_sessions([session.id for session in await UserSession.objects.filter(user=user).all()])
     await UserSession.objects.filter(user=user).delete()
+    # An agent's key is a way in too. It survived this (finding 5 in
+    # docs/security-audit-2026-10-11.md), so a password change after a leak left it working.
+    await _revoke_api_keys(user)
     await clear_cache_for_account(user)
 
 
@@ -496,7 +510,7 @@ async def delete_account(user: User, access_token: str | None = None) -> None:
     storage_names = [
         item.storage_path or item.id.hex for item in await StorageItem.objects.filter(user=user, deleted_at=None).all()
     ]
-    api_keys = [row.key for row in await ApiKey.objects.filter(user=user).all()]
+    api_key_hashes = [row.key_hash for row in await ApiKey.objects.filter(user=user).all()]
 
     # One commit or none. A failure partway through used to leave an account signed
     # out everywhere with every quiz deleted and the account itself still present --
@@ -522,8 +536,8 @@ async def delete_account(user: User, access_token: str | None = None) -> None:
         await clear_cache_for_account(user)
         if access_token is not None:
             await revoke_token(access_token.removeprefix("Bearer "))
-        for key in api_keys:
-            await redis.delete(f"apikey:{key}")
+        for key_hash in api_key_hashes:
+            await forget_api_key(key_hash)
     except Exception:
         # Worth a loud log: until the entry expires, the deleted account's token
         # still resolves to a cached user. Raising here would report failure for a
@@ -608,23 +622,72 @@ class GetEmailFromJWT(BaseModel):
     jwt: str
 
 
-@router.post("/api_keys", response_model=ApiKey, response_model_include={"key"})
-async def generate_api_key(user: User = Depends(get_current_user)):
-    key = ApiKey(key=os.urandom(24).hex(), user=user)
-    await key.save()
-    return key.model_dump(include={"key"})
+# Enough for a laptop, a desktop and a few agents each. A ceiling, so one account cannot
+# fill the table; deleting one makes room.
+MAX_API_KEYS_PER_ACCOUNT = 10
 
 
-@router.get("/api_keys", response_model=list[ApiKey], response_model_include={"key"})
+class NewApiKey(BaseModel):
+    # What its owner calls it ("Claude on my laptop"). Optional so the /live tests, which
+    # post no body, keep working.
+    name: Annotated[str, pydantic.StringConstraints(strip_whitespace=True, min_length=1, max_length=60)] = "API key"
+
+
+class ApiKeyInfo(BaseModel):
+    """A key as its owner sees it afterwards: never the key, never its hash."""
+
+    id: uuid.UUID
+    name: str
+    prefix: str
+    created_at: datetime
+    last_used_at: datetime | None = None
+
+
+class CreatedApiKey(ApiKeyInfo):
+    # The only time the key leaves the server. Only its hash is kept.
+    key: str
+
+
+def _key_info(row: ApiKey) -> dict:
+    return ApiKeyInfo.model_validate(row.model_dump(include=set(ApiKeyInfo.model_fields))).model_dump()
+
+
+@router.post("/api_keys", response_model=CreatedApiKey)
+async def generate_api_key(data: NewApiKey | None = Body(default=None), user: User = Depends(get_current_user)):
+    await rate_limit_key(f"api_key_create:{user.id}", limit=20, window_seconds=3600)
+    if await ApiKey.objects.filter(user=user).count() >= MAX_API_KEYS_PER_ACCOUNT:
+        raise HTTPException(
+            status_code=409, detail=f"An account can have {MAX_API_KEYS_PER_ACCOUNT} keys. Revoke one to make another."
+        )
+    key = new_api_key()
+    row = ApiKey(
+        key_hash=hash_api_key(key),
+        prefix=key[: len(API_KEY_PREFIX) + 4],
+        name=(data or NewApiKey()).name,
+        created_at=datetime.now(),
+        user=user,
+    )
+    await row.save()
+    return {**_key_info(row), "key": key}
+
+
+@router.get("/api_keys", response_model=list[ApiKeyInfo])
 async def list_api_keys(user: User = Depends(get_current_user)):
-    keys = await ApiKey.objects.filter(user=user).all()
-    return keys
+    # Read by response_model_include={"key"} on the ORM model, this answered [] whatever
+    # the account held, so nobody could find a key to revoke it (finding 5 in
+    # docs/security-audit-2026-10-11.md).
+    rows = await ApiKey.objects.filter(user=user).order_by(ApiKey.created_at.desc()).all()
+    return [_key_info(row) for row in rows]
 
 
-@router.delete("/api_keys")
-async def delete_api_key(api_key: str, user: User = Depends(get_current_user)):
-    key = await ApiKey.objects.get_or_none(key=api_key, user=user)
-    if key is None:
+@router.delete("/api_keys/{key_id}")
+async def delete_api_key(key_id: uuid.UUID, user: User = Depends(get_current_user)):
+    # By id, not by the key: the old route took the key itself in the query string.
+    # Looked up as the caller's, so nobody can revoke a key that is not theirs.
+    row = await ApiKey.objects.get_or_none(id=key_id, user=user)
+    if row is None:
         raise HTTPException(status_code=404, detail="Key not found")
-    await redis.delete(f"apikey:{key.key}")
-    await key.delete()
+    await row.delete()
+    # The cache would otherwise keep the key working for up to an hour.
+    await forget_api_key(row.key_hash)
+    return {"message": "Key revoked"}

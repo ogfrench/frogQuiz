@@ -16,6 +16,7 @@ from frogquiz.db import database
 
 from frogquiz.oauth import rememberme_middleware
 from frogquiz.routers import (
+    agent,
     users,
     quiz,
     utils,
@@ -209,4 +210,6 @@ app.include_router(
 )
 app.include_router(avatar.router, tags=["avatar"], prefix="/api/v1/avatar", include_in_schema=True)
 app.include_router(admin.router, tags=["admin"], prefix="/api/v1/admin", include_in_schema=True)
+# What the MCP service (mcp-server/) calls. 404 unless AGENT_API_ENABLED; see docs/mcp.md.
+app.include_router(agent.router, tags=["agent"], prefix="/api/v1/agent", include_in_schema=True)
 app.mount("/", ASGIApp(sio))

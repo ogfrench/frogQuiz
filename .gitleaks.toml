@@ -13,3 +13,11 @@ useDefault = true
 [allowlist]
 description = "The VM's sslip.io hostname"
 regexes = ['''^134-98-158-173\.sslip\.io$''']
+
+# frogQuiz agent keys (My Account, AI agents; docs/mcp.md): "fq_" and 43 base64url
+# characters. The prefix exists so a key pasted into a commit is caught here.
+[[rules]]
+id = "frogquiz-agent-key"
+description = "frogQuiz agent key"
+regex = '''\bfq_[A-Za-z0-9_-]{43}(?:[^A-Za-z0-9_-]|$)'''
+keywords = ["fq_"]

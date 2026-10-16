@@ -52,6 +52,14 @@ jobs:
           pipenv requirements > requirements.txt
           ignores=$(grep -Eo '^[A-Za-z]+-[0-9A-Za-z-]+' .github/audit/pip-audit-ignore.txt | sed 's/^/--ignore-vuln /' | tr '\n' ' ')
           pip-audit -r requirements.txt --no-deps --disable-pip --progress-spinner off $ignores
+      # A lock of its own (docs/mcp.md), so it is audited on its own, against the same
+      # exceptions file.
+      - name: Audit the MCP service's locked dependencies
+        working-directory: ./mcp-server
+        run: |
+          pipenv requirements > requirements.txt
+          ignores=$(grep -Eo '^[A-Za-z]+-[0-9A-Za-z-]+' ../.github/audit/pip-audit-ignore.txt | sed 's/^/--ignore-vuln /' | tr '\n' ' ')
+          pip-audit -r requirements.txt --no-deps --disable-pip --progress-spinner off $ignores
 
   node:
     runs-on: ubuntu-latest

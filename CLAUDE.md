@@ -197,6 +197,16 @@ If the team ever does decide to delete either, this is the full surface. Do it i
 
 Removing the UI is an afternoon. Removing Meilisearch touches the quiz write path, so treat it as its own change with its own testing, not a tidy-up.
 
+## AI agents (MCP)
+
+Agents list and make quizzes through `mcp-server/`, a separate service with its own lock.
+The MCP SDK needs a newer pydantic than the API's ormar allows. It forwards each caller's
+`fq_` key to `/api/v1/agent` (`frogquiz/routers/agent.py`), where every rule lives. It is off
+unless `AGENT_API_ENABLED` is set; turning it on in production is a joint
+François/Gonçalo decision. Read [`docs/mcp.md`](docs/mcp.md) before changing what an agent
+may do. The narrow surface is deliberate: private quizzes only, the owner's quizzes only,
+no images.
+
 ## Upstream independence
 
 frogQuiz should not send data to, or depend at runtime on, servers controlled by the original ClassQuiz maintainer ("Mawoka"). This is separate from MPL-2.0/SPDX attribution (below), which is static legal text, not a network call or data flow.

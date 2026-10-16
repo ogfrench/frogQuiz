@@ -4,6 +4,16 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Added AI agents over MCP: Claude, Cursor and other MCP clients can list, read and create private quizzes with a personal key (docs/mcp.md). Off unless AGENT_API_ENABLED is set.
+- Added the agent API at /api/v1/agent (list, read and create your own quizzes), with its own limits: private quizzes only, two question types, no images, 50 questions, 30 creates an hour.
+- Added the MCP service in mcp-server/, with its own lock, Dockerfile, tests and CI workflow, run by docker-compose under the `mcp` profile and routed by Caddy at /mcp.
+- Added the AI agents section on My Account: create a named key that is shown once with a ready-made `claude mcp add` command, list keys, and revoke them.
+- Changed the My Account command to `claude mcp add --scope user`, so the server is available in every folder rather than only the one the command ran in (the VS Code extension on Windows missed a folder-scoped entry).
+- Changed API keys to be stored as sha256 only (migration a7c3e5f1b9d2 hashes existing keys in place). Keys now have a name, an id, a visible prefix and a last-used time, and are capped at 10 per account.
+- Fixed API keys surviving sign-out-everywhere and GET /users/api_keys always answering an empty list (security audit finding 5). Revoking a key now marks it revoked in the Redis cache, so a check running at the same moment cannot cache it back to life.
+- Moved the Excel import's quiz building into frogquiz/helpers/quiz_create.py, shared with the agent API.
+- Added a gitleaks rule for frogQuiz keys, a pip-audit pass over the MCP lock, and the MCP service to the local e2e stack when mcp-server/.venv exists.
+
 - Fixed the deploy guard reading no migration head: it now reads the head from the image's migration files, since `alembic heads` imports the app's settings, which need production's environment.
 - Kept nightly backups for 30 days instead of 14, for a month of history at negligible size.
 - Added a cleanup mode to the Production ops workflow: removes the unused frontend container on the VM, unused images and the build cache, never volumes.

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+.venv/
+.pytest_cache/
+tests/
+**/__pycache__/
