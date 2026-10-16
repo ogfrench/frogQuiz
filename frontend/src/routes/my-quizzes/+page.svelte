@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import RetryNotice from '$lib/components/RetryNotice.svelte';
 	// My Quizzes: one page whether or not you are signed in (MVP.md decision D1). It
 	// replaced two -- /dashboard for the account's quizzes and a bare browser list here.
 	//
@@ -354,6 +355,8 @@ SPDX-License-Identifier: MPL-2.0
 				<p class="text-muted-foreground mt-1 text-sm">
 					{signed_in
 						? $t('my_quizzes.subtitle_signed_in')
+						: data.anonymousQuizzes === null
+							? 'We couldn’t check quiz creation availability.'
 						: anonymous_on
 							? $t('my_quizzes.subtitle_signed_out')
 							: $t('my_quizzes.subtitle_sign_in')}
@@ -480,6 +483,8 @@ SPDX-License-Identifier: MPL-2.0
 				<div class="text-muted-foreground mt-16 flex justify-center">
 					<LoaderCircle class="size-8 animate-spin" aria-label="Loading" />
 				</div>
+			{:else if browser_quizzes.length === 0 && data.anonymousQuizzes === null}
+				<RetryNotice message="Quiz creation is temporarily unavailable. Please try again." />
 			{:else if browser_quizzes.length === 0 && !anonymous_on}
 				<div
 					class="border-border mt-10 flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center"

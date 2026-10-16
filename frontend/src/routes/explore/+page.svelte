@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import RetryNotice from '$lib/components/RetryNotice.svelte';
 	import { goto } from '$app/navigation';
 	import { getLocalization } from '$lib/i18n';
 	import SearchCard from '$lib/search-card.svelte';
@@ -96,6 +97,9 @@ SPDX-License-Identifier: MPL-2.0
 		<!-- Browsing only; the load leaves it empty for a search. Shown whatever became of
 		     the search itself: they are separate requests, and a failed Newest should not
 		     take the ready-made quizzes down with it. -->
+		{#if data.examplesFailed}
+			<RetryNotice message="We couldn’t load example quizzes. Please try again." />
+		{/if}
 		{#if has_examples}
 			<section class="mt-8" aria-labelledby="examples-heading">
 				<h2 id="examples-heading" class="text-lg font-semibold tracking-tight">
@@ -113,9 +117,7 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 
 		{#if data.logged_in && data.failed}
-			<p class="text-destructive mt-10 text-center text-sm" role="alert">
-				{$t('explore_page.search_failed')}
-			</p>
+			<RetryNotice message="We couldn’t load quizzes. Please try again." />
 		{:else if data.logged_in && data.mode === 'too_short'}
 			<p class="text-muted-foreground mt-10 text-center text-sm">
 				{$t('search_page.at_least_3_characters')}
@@ -123,7 +125,7 @@ SPDX-License-Identifier: MPL-2.0
 		{:else if data.logged_in && data.hits.length === 0}
 			<!-- With examples above, a list that is empty because they were taken out of it is
 			     not an empty page. -->
-			{#if !has_examples}
+			{#if !has_examples && !data.examplesFailed}
 				<div class="mt-10 text-center">
 					<p class="text-lg font-medium">{$t('search_page.nothing_here')}</p>
 					<!-- The old empty state was hardcoded English pointing at /import. The line

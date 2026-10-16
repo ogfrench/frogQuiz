@@ -13,9 +13,9 @@ describe('createGate', () => {
 	it('lets a signed-out visitor through only when quizzes without an account are on', () => {
 		expect(createGate(false, true)).toBeNull();
 	});
-	it('sends a signed-out visitor to sign in, and back, when they are off or unknown', () => {
+	it('sends a signed-out visitor to sign in, and back, when they are explicitly off', () => {
 		expect(createGate(false, false)).toBe('/account/login?returnTo=%2Fcreate');
-		expect(createGate(false, null)).toBe('/account/login?returnTo=%2Fcreate');
+		expect(createGate(false, null)).toBeNull(); // Route renders 503, never an account gate.
 	});
 	it('keeps the query, so a title from the command palette survives sign-in', () => {
 		expect(createGate(false, false, '?title=Rivers & lakes')).toBe(

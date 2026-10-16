@@ -5,6 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import RetryNotice from '$lib/components/RetryNotice.svelte';
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -152,6 +153,8 @@ SPDX-License-Identifier: MPL-2.0
 							>{$t('create_dialog.import_hint')}</span
 						>
 					</button>
+				{:else if page.data.anonymousQuizzes === null}
+					<RetryNotice message="Quiz import is temporarily unavailable. Please try again." />
 				{:else}
 					<a href={login_href} class={optionClass}>
 						<FileSpreadsheet class="text-muted-foreground size-6" aria-hidden="true" />

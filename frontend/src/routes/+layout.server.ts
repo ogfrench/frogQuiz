@@ -8,7 +8,7 @@ import type { LayoutServerLoad } from './$types';
 
 // Whether a quiz can be made without an account (#55, on by default). The copy on the
 // home page and My Quizzes depends on it, and /create's gate reads it from here. Null when
-// the API did not answer in time, which every reader treats as off.
+// the API did not answer in time: preserve this as unavailable, distinct from disabled.
 // ponytail: cached a minute per server instance, so a room of phones opening /play does not
 // each wait on the API. The setting only changes with an API restart.
 let config: { anonymousQuizzes: boolean; at: number } | null = null;
@@ -21,8 +21,10 @@ async function anonymousQuizzes(fetch: typeof globalThis.fetch): Promise<boolean
 			{ signal: AbortSignal.timeout(2000) }
 		);
 		if (!res.ok) return null;
+		const body = await res.json();
+		if (typeof body.anonymous_quizzes_enabled !== 'boolean') return null;
 		config = {
-			anonymousQuizzes: (await res.json()).anonymous_quizzes_enabled === true,
+			anonymousQuizzes: body.anonymous_quizzes_enabled,
 			at: Date.now()
 		};
 		return config.anonymousQuizzes;
@@ -31,7 +33,8 @@ async function anonymousQuizzes(fetch: typeof globalThis.fetch): Promise<boolean
 	}
 }
 
-export const load: LayoutServerLoad = async ({ locals, fetch }) => {
+export const load: LayoutServerLoad = async ({ locals, fetch, depends }) => {
+	depends('app:config');
 	if (locals.email) {
 		signedIn.set(true);
 	} else {

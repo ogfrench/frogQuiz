@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import ErrorPage from '$lib/components/ErrorPage.svelte';
 
-	let status = page.status;
+	const status = $derived(page.status);
 	const { t } = getLocalization();
 </script>
 
@@ -20,5 +20,6 @@ SPDX-License-Identifier: MPL-2.0
 
 <ErrorPage
 	{status}
-	description={status === 404 ? $t('error_page.404_text') : $t('error_page.unknown_error_text')}
+	title={status === 503 ? 'Temporarily unavailable' : undefined}
+	description={status === 503 ? 'We couldn’t reach the service. Please try again shortly.' : status === 404 ? $t('error_page.404_text') : $t('error_page.unknown_error_text')}
 />

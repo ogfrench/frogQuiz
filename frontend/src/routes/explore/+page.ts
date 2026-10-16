@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
 // SPDX-FileCopyrightText: 2026 frogQuiz contributors
-//
 // SPDX-License-Identifier: MPL-2.0
 
 import type { PageLoad } from './$types';
@@ -10,66 +9,61 @@ import {
 	normaliseHits,
 	searchMode,
 	searchRequest,
-	withoutAuthor,
-	type Examples
+	withoutAuthor
 } from '$lib/search/query';
 
-/**
- * One page, two modes, decided by `?q=`. Explore browsed and Search searched; they hit
- * the same endpoint with different bodies, so the split was never more than this.
- *
- * `fetch` comes from the load so the relative URL resolves during SSR -- `/search` was
- * client-only and its `window.fetch` would have had no origin to resolve against here.
- */
 export const load = (async ({ fetch, url, parent }) => {
 	const { loggedIn: logged_in } = await parent();
 	const q = url.searchParams.get('q') ?? '';
 	const mode = searchMode(q);
 	const body = searchRequest(q);
-
-	if (!logged_in) {
-		return {
-			q,
-			mode,
-			hits: [],
-			failed: false,
-			examples: await loadExamples(fetch),
-			logged_in
-		};
-	}
-
-	if (body === null) {
-		return { q, mode, hits: [], failed: false, examples: noExamples, logged_in };
-	}
-
-	// The examples (#39) sit above Newest, so they belong to browsing only; a search is
-	// just its results. Asked for alongside the search rather than after it.
-	const [response, examples] = await Promise.all([
-		fetch('/api/v1/search/', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		}),
-		mode === 'browse' ? loadExamples(fetch) : noExamples
-	]);
-
-	// Explore used to `await response.json()` unconditionally and hand whatever came
-	// back to the page, so a 500 from Meilisearch reached the template as an error
-	// object and threw on `.hits`. A failed search is an empty page with a message.
-	if (!response.ok) {
-		return { q, mode, hits: [], failed: true, examples, logged_in };
-	}
-
-	const hits = withoutAuthor(normaliseHits(await response.json()), examples.username);
-	return { q, mode, hits, failed: false, examples, logged_in };
+	const examplesPromise =
+		!logged_in || mode === 'browse'
+			? loadExamples(fetch)
+			: Promise.resolve({ examples: noExamples, examplesFailed: false });
+	const searchPromise =
+		logged_in && body !== null
+			? loadSearch(fetch, body)
+			: Promise.resolve({ hits: [], failed: false });
+	const [examples, search] = await Promise.all([examplesPromise, searchPromise]);
+	return {
+		q,
+		mode,
+		logged_in,
+		...examples,
+		...search,
+		hits: withoutAuthor(search.hits, examples.examples.username)
+	};
 }) satisfies PageLoad;
 
-/** No examples, quietly, when the API is down, refuses, or has none: Newest still shows. */
-async function loadExamples(fetch: typeof globalThis.fetch): Promise<Examples> {
+async function loadSearch(fetch: typeof globalThis.fetch, body: object) {
 	try {
-		const res = await fetch('/api/v1/quiz/examples');
-		return res.ok ? normaliseExamples(await res.json()) : noExamples;
+		const response = await fetch('/api/v1/search/', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body),
+			signal: AbortSignal.timeout(15000)
+		});
+		if (!response.ok) throw new Error('Search unavailable');
+		const payload = await response.json();
+		if (!Array.isArray(payload?.hits)) throw new Error('Invalid search response');
+		return { hits: normaliseHits(payload), failed: false };
 	} catch {
-		return noExamples;
+		return { hits: [], failed: true };
+	}
+}
+
+async function loadExamples(fetch: typeof globalThis.fetch) {
+	try {
+		const res = await fetch('/api/v1/quiz/examples', { signal: AbortSignal.timeout(15000) });
+		// Explicitly disabled guest access is not an outage.
+		if (res.status === 401 || res.status === 403)
+			return { examples: noExamples, examplesFailed: false };
+		if (!res.ok) throw new Error('Examples unavailable');
+		const payload = await res.json();
+		if (!Array.isArray(payload?.quizzes)) throw new Error('Invalid examples response');
+		return { examples: normaliseExamples(payload), examplesFailed: false };
+	} catch {
+		return { examples: noExamples, examplesFailed: true };
 	}
 }

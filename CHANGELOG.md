@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Distinguish unavailable guest configuration from disabled creation, add retry states for Discover failures, and show a non-blocking service-health banner without reloading open editors.
+
 - Formatted the deployment verification scripts so the repository-wide backend lint check passes when backend files change.
 
 - Documented the guest credential storage tradeoff and security alert dispositions, and allowed only five confirmed public/test historical secret-scan fingerprints.
