@@ -46,7 +46,7 @@ while chunk := src.read(1 << 20):
 
 # The database first: an image uploaded after the dump is an orphan the app ignores,
 # while an image deleted before the tar would be a quiz with a missing picture.
-for part in db uploads; do
+for part in db uploads config; do
   file="$out/$part.age"
   if ! "${remote[@]}" "$deploy_dir" "$part" <"$here/backup.sh" | check_stream "$part" |
     age --encrypt -R "$recipients" -o "$file"; then
@@ -67,7 +67,7 @@ done
   echo "created_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "source_dir=$deploy_dir"
   echo "recipient=$(grep -v '^#' "$recipients" | head -n1)"
-  for part in db uploads; do
+  for part in db uploads config; do
     echo "$part.age bytes=$(stat -c %s "$out/$part.age") sha256=$(sha256sum "$out/$part.age" | cut -d' ' -f1)"
   done
 } >"$out/MANIFEST.txt"

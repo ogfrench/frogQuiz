@@ -25,7 +25,8 @@ for db in source target; do createdb -h "$work" -p "$port" -U postgres "$db"; do
 
 # A deployment directory shaped like /opt/frogquiz, with one quiz and its image.
 mkdir -p "$work/deploy/uploads"
-touch "$work/deploy/.env" "$work/deploy/docker-compose.yml"
+printf 'SECRET_KEY=test-only-not-a-secret\n' >"$work/deploy/.env"
+touch "$work/deploy/docker-compose.yml"
 image_id=0b8c1f2e-6a51-4d2e-9a3c-5e4f7d6c8b9a
 head -c 50000 /dev/urandom >"$work/deploy/uploads/$image_id"
 psql -q "$(url source)" -v ON_ERROR_STOP=1 <<SQL
@@ -41,10 +42,13 @@ export BACKUP_RECIPIENTS="$work/recipient" BACKUP_LOCAL=1 REMOTE="bash -s --"
 # 1. A backup, encrypted. pg_dump's custom format is compressed, so a grep for the
 #    quiz's title would pass on plaintext too: check for age's header instead.
 DB_URL=$(url source) bash "$here/backup-run.sh" "$work/out" "$work/deploy" >/dev/null
-for part in db uploads; do
+for part in db uploads config; do
   [[ "$(head -c 21 "$work/out/$part.age")" == age-encryption.org/v1 ]] ||
     fail "the $part backup is not encrypted"
 done
+# The configuration part holds .env, which comes back intact.
+age -d -i "$work/key" "$work/out/config.age" | tar -xOf - .env >"$work/env.back"
+cmp -s "$work/deploy/.env" "$work/env.back" || fail 'the .env in the config part differs'
 
 # 2. The restore brings back the quiz and the image, byte for byte.
 bash "$here/restore.sh" "$work/out" "$work/key" "$(url target)" "$work/restored" >/dev/null

@@ -7,6 +7,8 @@
 # before it touches a disk; this script never writes a copy on the VM.
 #   PART=db       pg_dump in custom format (pg_restore reads it)
 #   PART=uploads  a tar of ./uploads, the images every quiz points at
+#   PART=config   a tar of .env and the Compose files: the settings and signing key the
+#                 install cannot be rebuilt without (#72)
 #
 # BACKUP_LOCAL=1 uses the pg_dump and tar on PATH instead of throwaway containers, and
 # reads DB_URL from the environment. Only deploy/test_backup_restore.sh sets it.
@@ -30,6 +32,7 @@ if [[ "${BACKUP_LOCAL:-}" == 1 ]]; then
   case "$part" in
     db) exec pg_dump --format=custom --no-owner --no-acl "${DB_URL:?}" 2> >(scrub) ;;
     uploads) exec tar -C uploads -cf - . ;;
+    config) exec tar -cf - .env docker-compose*.yml ;;
   esac
   echo "Unknown part: $part" >&2
   exit 1
@@ -63,6 +66,10 @@ case "$part" in
         pg_dump --format=custom --no-owner --no-acl "$url" </dev/null 2> >(scrub)
     fi
     exec docker compose exec -T db pg_dump --format=custom --no-owner --no-acl -U postgres frogquiz </dev/null 2> >(scrub)
+    ;;
+  config)
+    # Caddyfile and the like if present; .env and docker-compose.yml always are.
+    exec tar -cf - .env docker-compose*.yml $(ls -d Caddyfile* 2>/dev/null) </dev/null
     ;;
   uploads)
     # Through a container, because the API writes these files as its own user.

@@ -1,0 +1,113 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+# SPDX-License-Identifier: MPL-2.0
+#
+# Two manual jobs on the production VM (#72), over the same SSH secrets and `production`
+# environment as the guest-access and backup workflows. Never runs on a push or a PR.
+#   facts   read-only: VM shape and region, disk, memory, uploads, container revisions, and
+#           whether the signing key is one ever committed to this repo (yes/no only).
+#   deploy  moves the api and worker to one backend revision that is on master, with no
+#           migration to run, and rolls back if they do not come up healthy.
+# The log is public: the scripts print no value from .env, no address and no key.
+
+name: Production ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: facts (read-only) or deploy
+        type: choice
+        options: [facts, deploy]
+        default: facts
+        required: true
+      revision:
+        description: For deploy only. The full commit on master that the backend image was built from.
+        type: string
+        required: false
+  pull_request:
+    paths:
+      - ".github/workflows/production-ops.yml"
+      - "deploy/ops-facts.sh"
+      - "deploy/deploy-backend.sh"
+
+permissions:
+  contents: read
+
+env:
+  DEPLOY_PATH: /opt/frogquiz
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - run: bash -n deploy/ops-facts.sh && bash -n deploy/deploy-backend.sh
+
+  run:
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    # On the job, not the workflow, so a pull request's validate run never displaces a
+    # queued deploy. Shared with the guest-access workflow's maintain job.
+    concurrency:
+      group: production-backend-maintenance
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check the revision is on master
+        if: inputs.mode == 'deploy'
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::revision must be a full 40-character commit'; exit 1; }
+          git merge-base --is-ancestor "$REVISION" origin/master ||
+            { echo "::error::$REVISION is not on master"; exit 1; }
+      - name: Run on the VM
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          MODE: ${{ inputs.mode }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          for name in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_KNOWN_HOSTS; do
+            [[ -n "${!name}" ]] || { echo "::error::Missing secret: $name. See docs/github-production-access.md"; exit 1; }
+          done
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] || exit 1
+          [[ "$SSH_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] || exit 1
+          [[ "$MODE" == facts || "$MODE" == deploy ]] || exit 1
+          umask 077
+          key_dir=$(mktemp -d)
+          trap 'rm -rf "$key_dir"' EXIT
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$key_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$key_dir/known_hosts"
+          unset SSH_PRIVATE_KEY SSH_KNOWN_HOSTS
+          ssh_args=(-i "$key_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$key_dir/known_hosts" -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
+          if [[ "$MODE" == facts ]]; then
+            ssh "${ssh_args[@]}" "$SSH_USER@$SSH_HOST" "bash -s -- $DEPLOY_PATH" < deploy/ops-facts.sh | tee "$GITHUB_STEP_SUMMARY"
+          else
+            ssh "${ssh_args[@]}" "$SSH_USER@$SSH_HOST" "bash -s -- $DEPLOY_PATH $REVISION" < deploy/deploy-backend.sh
+          fi
+      - name: Check health after a deploy
+        if: inputs.mode == 'deploy'
+        run: |
+          for attempt in {1..12}; do
+            body=$(curl -sS -m 15 https://api.frogquiz.xyz/api/v1/health || true)
+            if python3 -c 'import json,sys; sys.exit(json.loads(sys.argv[1]).get("status") != "ok")' "$body" 2>/dev/null; then
+              echo "Healthy: $body"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::API health is not ok after the deploy: ${body:-no answer}"
+          exit 1
