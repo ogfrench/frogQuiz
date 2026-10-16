@@ -27,6 +27,7 @@ import { apiLogin, registerUser } from './accounts';
 import {
 	advanceToFinalResults,
 	clearScoreboardStep,
+	enterPin,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
@@ -339,7 +340,7 @@ test.describe('a whole game', () => {
 				const ctx = await themedContext(browser, theme, PHONE);
 				const page = await ctx.newPage();
 				await gotoPlayHydrated(page);
-				await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+				await enterPin(page, pin);
 				await page.getByRole('textbox', { name: 'Nickname' }).fill(name);
 				await page.getByRole('button', { name: 'Join game' }).click();
 				await expect(page.getByText(/You're in/)).toBeVisible();

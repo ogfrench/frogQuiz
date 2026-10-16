@@ -10,6 +10,7 @@ import { test, expect } from '@playwright/test';
 import {
 	advancePastResults,
 	advanceToFinalResults,
+	enterPin,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
@@ -57,7 +58,7 @@ test('a player who placed gets a medal, and nobody gets both', async ({ browser,
 		const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
 		const p = await c.newPage();
 		await gotoPlayHydrated(p);
-		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(p, pin);
 		await p.getByRole('textbox', { name: 'Nickname' }).fill(n);
 		await p.getByRole('button', { name: 'Join game' }).click();
 		made.push({ c, p, a1, a2 });

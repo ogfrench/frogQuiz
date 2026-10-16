@@ -9,6 +9,7 @@
 import { test, expect } from '@playwright/test';
 import {
 	advanceToFinalResults,
+	enterPin,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
@@ -42,7 +43,7 @@ test('the host downloads the game\u2019s answers in one press', async ({ browser
 	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 	const p = await ctx.newPage();
 	await gotoPlayHydrated(p);
-	await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(p, pin);
 	await p.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
 	await p.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);

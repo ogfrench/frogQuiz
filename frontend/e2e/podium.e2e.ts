@@ -10,6 +10,7 @@ import { expect, test } from '@playwright/test';
 import {
 	advancePastResults,
 	advanceToFinalResults,
+	enterPin,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
@@ -48,7 +49,7 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 		const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 		const p = await ctx.newPage();
 		await gotoPlayHydrated(p);
-		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(p, pin);
 		await p.getByRole('textbox', { name: 'Nickname' }).fill(name);
 		await p.getByRole('button', { name: 'Join game' }).click();
 		players.push({ ctx, p, ans });
@@ -120,7 +121,10 @@ test('the podium reveals third, then second, then first', async ({ browser, requ
 	const rising = frames.filter((f) => f.h > 2 && f.h < last.h * 0.9);
 	expect(rising.length, 'the winner never showed part-grown').toBeGreaterThan(3);
 	for (const f of rising) {
-		expect(Math.abs(f.bottom - last.bottom), `the block rose from below the floor: ${JSON.stringify([...new Set(frames.map((x) => Math.round(x.bottom)))])}`).toBeLessThan(2);
+		expect(
+			Math.abs(f.bottom - last.bottom),
+			`the block rose from below the floor: ${JSON.stringify([...new Set(frames.map((x) => Math.round(x.bottom)))])}`
+		).toBeLessThan(2);
 	}
 
 	// Gold, silver and bronze rather than the near-black primary.
@@ -179,7 +183,7 @@ test('the game surfaces fit a phone, from the lobby to the podium', async ({
 	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 	const phone = await ctx.newPage();
 	await gotoPlayHydrated(phone);
-	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(phone, pin);
 	await phone.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);

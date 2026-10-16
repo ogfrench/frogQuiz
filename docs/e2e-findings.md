@@ -159,7 +159,7 @@ by accident.
 ## UX and polish (no test; noted while driving the UI)
 
 - **Nicknames need at least 4 characters, and nothing says so.** The button just stays disabled, which blocks common names like "Ana" or "Rui". The server itself allows anything non-blank up to 50 characters.
-- **Digits typed into the PIN box before the page hydrates are lost.** The PIN form also has no submit handler, so Enter or a native submit reloads the page. The theme toggle has the same pre-hydration gap: a click in the first moment after load does nothing. On a slow phone that first moment is noticeable.
+- **Digits typed into the PIN box before the page hydrates were lost.** Fixed on 16 Oct (#82): the shared `PinEntry` reads what is already in the box when it mounts, and handles Enter itself. The PIN form had no submit handler, so Enter or a native submit reloaded the page. The theme toggle has the same pre-hydration gap: a click in the first moment after load does nothing. On a slow phone that first moment is noticeable.
 - **The view page's Play button has no accessible name.** This is already covered by backlog #17.
 - **The editor rail's description box has no label or placeholder.** When it is required and empty, it's an unexplained red box.
 - **Download is disabled for an anonymous owner**, with no explanation why.

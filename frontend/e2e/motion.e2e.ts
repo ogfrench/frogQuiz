@@ -12,6 +12,7 @@
 import { expect, test } from '@playwright/test';
 import {
 	advanceToFinalResults,
+	enterPin,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
@@ -49,7 +50,7 @@ async function toPodium(browser, request, options: { reducedMotion?: 'reduce' | 
 	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 	const phone = await ctx.newPage();
 	await gotoPlayHydrated(phone);
-	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(phone, pin);
 	await phone.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await host.waitForTimeout(900);

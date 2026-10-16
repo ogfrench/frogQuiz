@@ -7,12 +7,13 @@
 
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import {
-	mc,
-	saveQuiz,
-	rememberAnonQuiz,
-	hostFromViewPage,
+	enterPin,
 	gotoPlayHydrated,
+	hostFromViewPage,
 	joinAsPlayer,
+	mc,
+	rememberAnonQuiz,
+	saveQuiz,
 	showResults
 } from './helpers';
 const FROG_QUIZ = {
@@ -92,7 +93,7 @@ test('one press per question: answers, then the scoreboard, by themselves; none 
 		const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
 		const p = await c.newPage();
 		await gotoPlayHydrated(p);
-		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(p, pin);
 		await p.getByRole('textbox', { name: 'Nickname' }).fill(n);
 		await p.getByRole('button', { name: 'Join game' }).click();
 		made.push({ c, p, a });

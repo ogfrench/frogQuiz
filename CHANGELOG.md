@@ -4,6 +4,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Changed the PIN step on /play to wait for Join once the game is found (D45), as Kahoot, Mentimeter and Gimkit do; a PIN that arrives in the link, from the home page or the QR code, still goes straight on.
+- Redesigned the nickname step: a Change link back to the PIN, one "Your nickname" label instead of a heading and a label, a left-aligned field with a placeholder, a mystery frog that the lobby reveals, a length count from 12 characters, and one message row that no longer pushes the button down.
+- Reworded the note for a nickname that looks like the PIN; it said "You're already in!" before the player was.
+- Fixed a wrong game PIN flashing the nickname step and then wiping the PIN on /play (#82): the nickname step now waits for the server to confirm the PIN, and a wrong PIN stays on screen, selected, with the error under it until it is edited.
+- Unified the PIN box on / and /play into one component, `PinEntry`: digits only, a pasted join link gives its PIN, more than 6 digits is named instead of cut, and a wrong PIN on / is caught on / instead of after the jump to /play.
+- Fixed digits typed into the PIN box before the page finished loading being lost.
+- Dropped a refused PIN from the /play address, so a reload does not ask about it again.
 - Fixed the agent API taking a NUL character: in a title or description it was a 500, in a question or answer it was stored. It is now a 422.
 - Fixed the AI agent copy calling an agent's quiz private: it is unlisted (link only, not in Discover), as D13 defines, since owner-only Private (#34) is not built. Changed in the MCP instructions, the create tool, My Account and docs/mcp.md.
 - Reworded the My Account key footnote so it no longer mentions a password, which broke the check that My Account offers no password.
@@ -19,7 +26,6 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Kept the key check the MCP service makes before each request (GET /api/v1/agent/me) out of the per-minute call budget, so a tool call is counted once and a busy key gets the tool's 429 with a wait time instead of a 401.
 - Moved the Excel import's quiz building into frogquiz/helpers/quiz_create.py, shared with the agent API.
 - Added a gitleaks rule for frogQuiz keys, a pip-audit pass over the MCP lock, and the MCP service to the local e2e stack when mcp-server/.venv exists.
-
 - Fixed the deploy guard reading no migration head: it now reads the head from the image's migration files, since `alembic heads` imports the app's settings, which need production's environment.
 - Kept nightly backups for 30 days instead of 14, for a month of history at negligible size.
 - Added a cleanup mode to the Production ops workflow: removes the unused frontend container on the VM, unused images and the build cache, never volumes.
