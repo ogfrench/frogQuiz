@@ -52,10 +52,11 @@ mystery frog the lobby reveals. Merged as `1f11b54` and live.
 
 **AI agents over MCP (#83, D46).** Gonçalo's MVP merged on 16 Oct as `125c5ad`: list, read and
 create quizzes from Claude Code, Cursor or Claude Desktop with a personal `fq_` key. **It is
-off in production, and the backend there still runs the image from before it.** Its migration
-(`a7c3e5f1b9d2`, hashing API keys) means the next backend deploy is done by hand after a
-backup, and Production ops **deploy** refuses every backend deploy until then. Both steps,
-the migration and turning agents on, are in `DEPLOY.md`, "AI agents (MCP)". What V1 adds
+on in production since 16 Oct, about 21:00 UTC** (#85 added the Production ops modes that
+did it, #86 the arm64 build of the MCP image). The backend runs `125c5ad`, the database is
+at `a7c3e5f1b9d2`, and `https://api.frogquiz.xyz/mcp` answers 401 without a key. Still to
+do: a real Claude Code session with a key, recorded on #68. The steps, and how to turn it
+off, are in `DEPLOY.md`, "AI agents (MCP)". What V1 adds
 (edit, delete, copy, public quizzes, images, Excel, `/live` closed to agent keys) is D46 and
 #68. Gonçalo started on import the same evening; it goes on its own branch from master.
 
@@ -64,11 +65,11 @@ every 30 minutes. It is a stopgap until #72's monitor exists.
 
 **Open, in order.**
 1. The first real restore, timed and written into `DEPLOY.md`.
-2. #76's backend fix on the VM (steps in #72).
+2. ~~#76's backend fix on the VM~~: done, the VM runs `125c5ad`, which carries it.
 3. #72's OCI checks.
 4. The v0.9 cut. `frontend/package.json` is still `0.8.0`, and `## Unreleased` is long.
-5. The #83 migration deploy (`DEPLOY.md`, "AI agents (MCP)", step 1). Until it is done no
-   backend change can ship through Production ops.
+5. ~~The #83 migration deploy~~: done on 16 Oct with Production ops **migrate**. Backend
+   deploys without a migration go through **deploy** again.
 
 ## Game polish, PR #63 (12 Oct, evening)
 

@@ -458,10 +458,10 @@ The migration that comes with it (`a7c3e5f1b9d2`) runs at API start, as every mi
 does. It hashes any existing key in place and drops the plain-text column. It runs whether
 or not the feature is on, and its downgrade deletes every key.
 
-**Merged on 16 Oct as `125c5ad` (#83), off.** Production's API still runs the image from
-before it, so nothing changed there. Turning agents on is two separate steps. The first
-one is needed even if agents stay off, because until it is done every later backend deploy
-is refused.
+**On in production since 16 Oct.** Both steps below were done that evening through
+Production ops: **migrate** (`125c5ad`, database `e4a1f9c2d7b0` to `a7c3e5f1b9d2`, after
+Backup run 38963343694), then **agents-on**. They stay here for a rebuilt VM, and for the
+next migration, which follows step 1.
 
 ### Step 1: the migration deploy (needed for any later backend deploy)
 
