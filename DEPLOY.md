@@ -555,6 +555,10 @@ only by the round-trip test.
   signing key is at least 32 characters and differs from every `SECRET_KEY` value ever
   committed to this repo (yes or no, never the key). Billing and trial status are not in
   the metadata: check those in the OCI console.
+- **cleanup**: frees disk. It removes the unused `frontend` container (Netlify serves the
+  site; Caddy's catch-all on the VM's own address then answers 502 rather than an outdated
+  copy), every image no container uses, and the build cache. Never volumes. It also removes
+  the rollback image, so run it before a deploy, not straight after one.
 - **deploy**: moves the api and worker to one backend revision, which must be on master
   and must be the revision of the registry's `ghcr.io/ogfrench/frogquiz-backend:master`.
   It refuses when the new image's migration head differs from the database's, because the
