@@ -11,8 +11,9 @@ can list your quizzes and make new ones. For example: "write me a ten-question q
 Q3 launch and put it in my frogQuiz". The agent signs in with a personal key that you make
 on My Account.
 
-**It is off by default.** Turning it on for the shared deployment is a joint decision for
-François and Gonçalo. The steps are in [DEPLOY.md](../DEPLOY.md#ai-agents-mcp).
+**It is off by default, and on at frogquiz.xyz since 16 Oct.** Turning it on or off for the
+shared deployment is a joint decision for François and Gonçalo. The steps are in
+[DEPLOY.md](../DEPLOY.md#ai-agents-mcp).
 
 ## Connecting an agent
 

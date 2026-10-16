@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Turned AI agents on in production (migrate, then agents-on), and updated HANDOVER, DEPLOY, docs/mcp.md, CLAUDE.md and the V1 plan to say so.
 - Built the MCP service image for arm64 as well as amd64: the production VM is arm64, and agents-on failed to pull it.
 - Added three modes to the Production ops workflow: migrate (a backend deploy with a migration, only after a Backup run from the last 3 hours, never rolling back past a migration that ran), agents-on and agents-off.
 - Wrote the turn-on runbook for AI agents in DEPLOY.md as two steps: the migration deploy #83 needs before any other backend deploy, then switching agents on.
