@@ -2,44 +2,40 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-// The quiz title is edited with a CKEditor BalloonEditor whose toolbar only
-// offers bold/italic/strikethrough/superscript/subscript, but its `getData()`
-// output is unbounded HTML -- a paste can drag in arbitrary tags, and the
-// editor's own <p> wrapper leaked through to plain-text render sites (the
-// editor sidebar/header), showing literal "<p>...</p>" to the user. This
-// allow-lists exactly the tags the toolbar can produce, everything else
-// (including foreign markup or pasted CSS text sitting between tags) is
-// dropped as a tag but its own text content is kept.
-const ALLOWED_TITLE_TAGS = new Set(['p', 'br', 'strong', 'em', 's', 'strike', 'sup', 'sub']);
+import sanitizeHtml from 'sanitize-html';
+import { Parser } from 'htmlparser2';
 
-/** Strips any tag not on the title toolbar's allow-list and drops all attributes, including on allowed tags. */
+// Parse markup rather than removing tags with regular expressions: removing one
+// fragment can otherwise create a new executable tag. This runs identically in
+// SSR and the browser, with only the editor toolbar's formatting and no attributes.
+const TITLE_TAGS = ['p', 'br', 'strong', 'em', 's', 'strike', 'sup', 'sub'];
+
 export function sanitizeTitleHtml(html: string): string {
-	if (!html) return '';
-	return html
-		.replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, '')
-		.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tagName: string) => {
-			const tag = tagName.toLowerCase();
-			if (!ALLOWED_TITLE_TAGS.has(tag)) return '';
-			return match.startsWith('</') ? `</${tag}>` : `<${tag}>`;
-		});
+	return sanitizeHtml(html || '', {
+		allowedTags: TITLE_TAGS,
+		allowedAttributes: {},
+		allowedSchemes: [],
+		allowProtocolRelative: false
+	});
 }
 
-const HTML_ENTITIES: Record<string, string> = {
-	'&nbsp;': ' ',
-	'&amp;': '&',
-	'&lt;': '<',
-	'&gt;': '>',
-	'&quot;': '"',
-	'&#39;': "'",
-	'&apos;': "'"
-};
-
-/** Reduces title HTML (sanitized or not) to plain text, for tooltips, length checks, and other non-HTML contexts. */
+/** Plain text only: render with escaped text bindings, never an HTML sink. */
 export function htmlToPlainText(html: string): string {
-	if (!html) return '';
-	return html
-		.replace(/<[^>]*>/g, ' ')
-		.replace(/&(nbsp|amp|lt|gt|quot|#39|apos);/gi, (entity) => HTML_ENTITIES[entity.toLowerCase()] ?? entity)
-		.replace(/\s+/g, ' ')
-		.trim();
+	const chunks: string[] = [];
+	const parser = new Parser(
+		{
+			ontext: (text) => {
+				chunks.push(text);
+			},
+			onopentag: () => {
+				chunks.push(' ');
+			},
+			onclosetag: () => {
+				chunks.push(' ');
+			}
+		},
+		{ decodeEntities: true }
+	);
+	parser.end(sanitizeTitleHtml(html));
+	return chunks.join('').replace(/\s+/g, ' ').trim();
 }
