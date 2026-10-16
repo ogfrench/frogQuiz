@@ -17,6 +17,7 @@
 
 import { expect, test } from '@playwright/test';
 import {
+	enterPin,
 	expectNoHorizontalOverflow,
 	gotoPlayHydrated,
 	hostFromViewPage,
@@ -183,7 +184,7 @@ test('a nickname cannot be used to wreck the host’s player list', async ({
 		// hydration is thrown away and the form never advances. The first version of this
 		// test used a bare goto and sat on the PIN step until the 60s timeout.
 		await gotoPlayHydrated(p);
-		await p.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(p, pin);
 		await expect(p.getByRole('textbox', { name: 'Nickname' })).toBeVisible({
 			timeout: 15_000
 		});

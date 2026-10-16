@@ -16,6 +16,9 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import PinEntry, { type PinCheck } from '$lib/components/PinEntry.svelte';
+	// The front-facing sitting pose: of the 25, the one that still reads as a frog when
+	// drawn in a single flat color.
+	import mystery_frog from '$lib/assets/frogs/frog-0-13.webp';
 	import Check from '@lucide/svelte/icons/check';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
@@ -43,6 +46,9 @@ SPDX-License-Identifier: MPL-2.0
 	// length: the sixth digit used to show it straight away, then take it back, PIN and
 	// any nickname typed meanwhile with it, when the server said no such game (#82).
 	let pin_ok = $state(false);
+	// A PIN in the address (the home page's Join, or the QR code) goes straight on once the
+	// game is found; only the first time, so Change does not bounce back past the PIN.
+	let from_link = $state(game_pin !== '');
 	// '' rather than undefined: this is bound to a text input, and an undefined
 	// value there makes Svelte render the box with the literal string "undefined"
 	// the first time a keystroke is undone, and sends undefined on submit even
@@ -61,10 +67,21 @@ SPDX-License-Identifier: MPL-2.0
 	// join rejected, with nothing shown on this screen to say why.
 	const MAX_CUSTOM_FIELD_LENGTH = 200;
 
-	// Players kept typing the PIN again as their name: the sixth digit swaps the form in
-	// place, and nothing said the PIN step was over. All digits is a nudge, not an error
+	// Mirrors the input's maxlength. The server allows 50, but a longer name is cut on the
+	// lobby and the podium.
+	const MAX_NICKNAME = 17;
+	// The count shows once the end is near enough to matter, not from the first letter.
+	const SHOW_COUNT_FROM = 12;
+
+	// Players kept typing the PIN again as their name. All digits is a nudge, not an error
 	// -- "007" is a fine nickname -- so Join stays enabled.
 	const looks_like_pin = $derived(/^\d+$/.test(String(username ?? '').trim()));
+	const name_length = $derived(Array.from(String(username ?? '')).length);
+	// Set by a Join pressed with one letter, and cleared by the next edit. Join is not
+	// disabled for it: a disabled button gives no reason, and it blocks Enter too.
+	let too_short = $state(false);
+	// The nickname step shows a silhouette: the player's own frog comes with their seat,
+	// which the server hands out on join, so the lobby is where it is revealed.
 	// Read back as two groups of three, the way the host screen shows it.
 	const pin_display = $derived(`${game_pin.slice(0, 3)} ${game_pin.slice(3)}`);
 
@@ -131,6 +148,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	// Back to the PIN, which stays on screen to be corrected rather than typed again.
 	const refused = (message: string) => {
+		from_link = false;
 		pin_ok = false;
 		error_message = message;
 		forget_pin_in_url();
@@ -143,6 +161,7 @@ SPDX-License-Identifier: MPL-2.0
 		// then reject a join the form had accepted, with nothing shown here.
 		username = username.trim();
 		if (username.length < MIN_NICKNAME) {
+			too_short = true;
 			return;
 		}
 		let captcha_resp: string;
@@ -240,59 +259,105 @@ SPDX-License-Identifier: MPL-2.0
 			<PinEntry
 				bind:value={game_pin}
 				bind:error={error_message}
-				advance="auto"
 				autofocus
 				onaccepted={accepted}
 				onrejected={forget_pin_in_url}
+				{from_link}
 			/>
 		{:else}
 			<form
 				onsubmit={setUsername}
 				class="border-border/70 bg-card w-full rounded-xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-24px_rgba(0,0,0,0.25)]"
 			>
-				<!-- A second step that says it is one. It used to be the PIN card again with a
-				     different label, so players typed the PIN a second time as their name. -->
-				<p class="text-muted-foreground flex items-center gap-1.5 text-sm">
-					<Check class="size-4" aria-hidden="true" />
-					{$t('play_page.pin_accepted', { pin: pin_display })}
-				</p>
-				<h2 class="mt-3 text-2xl font-semibold tracking-tight">
-					{$t('play_page.nickname_heading')}
-				</h2>
-				<p class="text-muted-foreground mt-1 text-sm">{$t('play_page.nickname_subline')}</p>
-				<Label for="join-username" class="mt-5 text-sm font-medium"
+				<!-- The step before, and a way back to it: a player on the wrong game used to
+				     have to reload. Redesigned 16 Oct (#82): this card had five lines of text
+				     before its field, a heading and a label that both said "nickname", and a
+				     hint that read as an error before anything was typed. -->
+				<div class="flex items-center justify-between gap-3">
+					<p class="text-muted-foreground flex items-center gap-1.5 text-sm">
+						<Check class="size-4" aria-hidden="true" />
+						{$t('play_page.pin_accepted', { pin: pin_display })}
+					</p>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						class="-mr-2 h-11 px-3"
+						onclick={() => {
+							error_message = '';
+							from_link = false;
+							pin_ok = false;
+						}}
+					>
+						{$t('play_page.change_pin')}
+					</Button>
+				</div>
+
+				<!-- Decorative: the line under it says what it is. -->
+				<div class="mt-4 flex flex-col items-center gap-2" data-testid="nickname-frog">
+					<div class="bg-muted relative size-24 rounded-full" aria-hidden="true">
+						<img
+							src={mystery_frog}
+							alt=""
+							class="size-full object-contain p-[9%] opacity-15 brightness-0 dark:opacity-30 dark:invert"
+						/>
+						<span
+							class="bg-background text-muted-foreground ring-border absolute right-0.5 bottom-0.5 flex size-7 items-center justify-center rounded-full text-sm font-semibold ring-1"
+						>
+							?
+						</span>
+					</div>
+					<p class="text-muted-foreground text-sm">{$t('play_page.frog_waiting')}</p>
+				</div>
+
+				<Label for="join-username" class="mt-6 text-base font-medium"
 					>{$t('play_page.nickname_label')}</Label
 				>
-				<!-- The same element either way, so aria-describedby reads whichever is showing,
-				     and aria-live announces the swap as the player types. -->
-				<p
-					id="join-username-hint"
-					aria-live="polite"
-					class={[
-						'mt-1.5 text-sm',
-						looks_like_pin ? 'text-foreground font-medium' : 'text-muted-foreground'
-					]}
-				>
-					{looks_like_pin
-						? $t('play_page.nickname_looks_like_pin')
-						: $t('play_page.nickname_hint', { count: MIN_NICKNAME })}
-				</p>
 				<!-- autocomplete="nickname", not the browser default of guessing: with no
 				     token at all Chrome and Safari read this as an account field and
 				     offered the player's saved email address for what is a game nickname
-				     shown to the whole room. autofocus because the sixth PIN digit swaps
-				     this form in and removes the field that had focus: without it focus fell
-				     to <body>, a phone's keyboard closed between the two fields, and a
-				     typed name went nowhere. -->
+				     shown to the whole room. autofocus because Join swaps this form in and
+				     removes the field that had focus: without it focus fell to <body>, a
+				     phone's keyboard closed between the two fields, and a typed name went
+				     nowhere. -->
 				<Input
 					id="join-username"
 					bind:value={username}
-					maxlength={17}
+					oninput={() => (too_short = false)}
+					maxlength={MAX_NICKNAME}
 					autocomplete="nickname"
-					aria-describedby="join-username-hint"
-					class="mt-4 h-12 text-center text-lg"
+					placeholder={$t('play_page.nickname_placeholder')}
+					aria-describedby="join-username-message"
+					class="mt-2 h-12 text-lg"
 					autofocus
 				/>
+				<!-- One row for whichever message applies, its height held so that nothing
+				     below moves when one appears. The note about the PIN used to take the
+				     hint's place in bold and push the button down a line. -->
+				<div
+					id="join-username-message"
+					aria-live="polite"
+					class="mt-2 flex min-h-5 items-start justify-between gap-3 text-sm"
+				>
+					{#if error_message}
+						<p class="text-destructive text-balance" role="alert">{error_message}</p>
+					{:else if too_short}
+						<p class="text-destructive">
+							{$t('play_page.nickname_too_short', { count: MIN_NICKNAME })}
+						</p>
+					{:else if looks_like_pin}
+						<p class="text-muted-foreground">
+							{$t('play_page.nickname_looks_like_pin')}
+						</p>
+					{:else}
+						<span></span>
+					{/if}
+					{#if name_length >= SHOW_COUNT_FROM}
+						<span class="text-muted-foreground shrink-0 tabular-nums">
+							{name_length}/{MAX_NICKNAME}
+						</span>
+					{/if}
+				</div>
 
 				{#if custom_field}
 					<!-- The label text is whatever the host typed when starting the game, so it
@@ -300,7 +365,7 @@ SPDX-License-Identifier: MPL-2.0
 					     happens to sit above it. -->
 					<Label
 						for="join-custom-field"
-						class="mt-5 block text-sm font-medium text-balance"
+						class="mt-4 block text-base font-medium text-balance"
 					>
 						{custom_field}
 					</Label>
@@ -309,22 +374,11 @@ SPDX-License-Identifier: MPL-2.0
 						bind:value={custom_field_value}
 						maxlength={MAX_CUSTOM_FIELD_LENGTH}
 						autocomplete="off"
-						class="mt-2 h-12 text-center"
+						class="mt-2 h-12"
 					/>
 				{/if}
 
-				{#if error_message}
-					<p class="text-destructive mt-3 text-sm text-balance" role="alert">
-						{error_message}
-					</p>
-				{/if}
-				<Button
-					type="submit"
-					size="lg"
-					class="mt-4 h-12 w-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
-					disabled={username.trim().length < MIN_NICKNAME}
-					onclick={setUsername}
-				>
+				<Button type="submit" size="lg" class="mt-4 h-12 w-full" onclick={setUsername}>
 					{$t('play_page.join_game')}
 				</Button>
 			</form>

@@ -10,9 +10,10 @@ apart: /play showed the nickname step the moment the sixth digit landed, before 
 server had answered, and wiped the PIN when it said no; / took any text and sent whatever
 six digits it found to /play unchecked.
 
-Here the PIN is checked when it reaches six digits and nothing moves on until the server
-says the game exists. A wrong PIN stays on screen, selected, so the next digit starts it
-over, and the error clears as soon as the PIN is edited.
+Here the PIN is checked when it reaches six digits, and Join moves on once the server says
+the game exists: a wait for the player's press, as Kahoot, Mentimeter and Gimkit do
+(François's call on 16 Oct). A wrong PIN stays on screen, selected, so the next digit
+starts it over, and the error clears as soon as the PIN is edited.
 -->
 <script lang="ts" module>
 	export interface PinCheck {
@@ -39,6 +40,7 @@ over, and the error clears as soon as the PIN is edited.
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { cn } from '$lib/utils';
+	import Check from '@lucide/svelte/icons/check';
 
 	const { t } = getLocalization();
 
@@ -47,27 +49,28 @@ over, and the error clears as soon as the PIN is edited.
 		value?: string;
 		/** Shown under the box. Bindable, so a page can arrive with a reason (a locked game). */
 		error?: string;
-		/**
-		 * "auto" moves on as soon as the server confirms the PIN (/play, where the next
-		 * step is on the same screen). "submit" waits for Join (/, which leaves the page).
-		 */
-		advance: 'auto' | 'submit';
 		/** /play puts the button under the box, the home page beside it. */
 		layout?: 'stacked' | 'inline';
 		autofocus?: boolean;
 		onaccepted: (pin: string, check: PinCheck) => void;
 		/** The server said no game has this PIN. */
 		onrejected?: () => void;
+		/**
+		 * The PIN came in the link: from the home page's Join, or the host's QR code. The
+		 * player has already asked to join, so it goes on once the game is found, as a link
+		 * join does on Kahoot. A PIN typed here waits for Join.
+		 */
+		from_link?: boolean;
 	}
 
 	let {
 		value = $bindable(''),
 		error = $bindable(''),
-		advance,
 		layout = 'stacked',
 		autofocus = false,
 		onaccepted,
-		onrejected
+		onrejected,
+		from_link = false
 	}: Props = $props();
 
 	const PIN_LENGTH = 6;
@@ -75,7 +78,7 @@ over, and the error clears as soon as the PIN is edited.
 	let input: HTMLInputElement | null = $state(null);
 	let checking = $state(false);
 	// The PIN the server last confirmed, and what it said about the game.
-	let confirmed: { pin: string; check: PinCheck } | null = null;
+	let confirmed: { pin: string; check: PinCheck } | null = $state(null);
 	// Join pressed while the check was still out: move on when it comes back.
 	let accept_when_confirmed = false;
 	// Each check's number. Only the newest may change the screen, so a slow answer about
@@ -83,6 +86,7 @@ over, and the error clears as soon as the PIN is edited.
 	let latest = 0;
 
 	const complete = $derived(value.length === PIN_LENGTH);
+	const found = $derived(confirmed !== null && confirmed.pin === value);
 	// Wrong-PIN and too-long both mark the box; a network error leaves it as typed.
 	let invalid = $state(false);
 
@@ -117,7 +121,7 @@ over, and the error clears as soon as the PIN is edited.
 					custom_field: json.custom_field ?? null
 				}
 			};
-			if (advance === 'auto' || accept_when_confirmed) {
+			if (accept_when_confirmed) {
 				accept_when_confirmed = false;
 				onaccepted(pin, confirmed.check);
 			}
@@ -167,7 +171,7 @@ over, and the error clears as soon as the PIN is edited.
 			return;
 		}
 		accept_when_confirmed = true;
-		// Still waiting on the server: the answer will move on by itself.
+		// Still waiting on the server: its answer moves on.
 		if (!checking) check(value);
 	};
 
@@ -189,7 +193,10 @@ over, and the error clears as soon as the PIN is edited.
 		const digits = pinDigits(value);
 		if (digits !== value) value = digits;
 		if (digits.length > PIN_LENGTH) reject($t('play_page.pin_too_long'), { select: false });
-		else if (digits.length === PIN_LENGTH) check(digits);
+		else if (digits.length === PIN_LENGTH) {
+			accept_when_confirmed = from_link;
+			check(digits);
+		}
 	});
 </script>
 
@@ -209,23 +216,31 @@ over, and the error clears as soon as the PIN is edited.
 		     inputmode brings up the keypad on a phone. autocomplete="off", not
 		     "one-time-code": that is for identity codes sent by text message, which is what
 		     iOS offers to fill, and a game PIN is read off the host's screen. -->
-		<Input
-			id="game-pin"
-			bind:ref={input}
-			{value}
-			{oninput}
-			inputmode="numeric"
-			pattern="[0-9]*"
-			autocomplete="off"
-			aria-invalid={invalid || undefined}
-			aria-describedby={error ? 'game-pin-error' : undefined}
-			aria-busy={checking || undefined}
-			class={cn(
-				'text-center font-mono tracking-[0.35em]',
-				layout === 'inline' ? 'h-11 min-w-0 flex-1 text-lg' : 'h-12 text-xl'
-			)}
-			{autofocus}
-		/>
+		<div class={cn('relative', layout === 'inline' && 'min-w-0 flex-1')}>
+			<Input
+				id="game-pin"
+				bind:ref={input}
+				{value}
+				{oninput}
+				inputmode="numeric"
+				pattern="[0-9]*"
+				autocomplete="off"
+				aria-invalid={invalid || undefined}
+				aria-describedby="game-pin-message"
+				aria-busy={checking || undefined}
+				class={cn(
+					'text-center font-mono tracking-[0.35em]',
+					layout === 'inline' ? 'h-11 text-lg' : 'h-12 text-xl'
+				)}
+				{autofocus}
+			/>
+			{#if found}
+				<Check
+					class="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2"
+					aria-hidden="true"
+				/>
+			{/if}
+		</div>
 		{#if layout === 'inline'}
 			<Button
 				type="submit"
@@ -237,11 +252,15 @@ over, and the error clears as soon as the PIN is edited.
 			</Button>
 		{/if}
 	</div>
-	{#if error}
-		<p id="game-pin-error" class="text-destructive mt-3 text-sm text-balance" role="alert">
-			{error}
-		</p>
-	{/if}
+	<!-- One row for whichever message applies, its height held so that Join does not jump
+	     when one appears. -->
+	<div id="game-pin-message" class="mt-3 min-h-5 text-sm" aria-live="polite">
+		{#if error}
+			<p class="text-destructive text-balance" role="alert">{error}</p>
+		{:else if found}
+			<p class="text-muted-foreground" role="status">{$t('play_page.game_found')}</p>
+		{/if}
+	</div>
 	{#if layout === 'stacked'}
 		<Button
 			type="submit"

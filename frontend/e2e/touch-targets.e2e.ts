@@ -9,10 +9,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { apiLogin, registerUser } from './accounts';
 import {
-	PHONE,
+	enterPin,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
+	PHONE,
 	rememberAnonQuiz,
 	saveQuiz,
 	showResults
@@ -171,7 +172,7 @@ test('every control on the player game screens is touch-sized', async ({ browser
 	const ctx = await browser.newContext({ viewport: PHONE, hasTouch: true, isMobile: true });
 	const player = await ctx.newPage();
 	await gotoPlayHydrated(player);
-	await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(player, pin);
 	await player.getByRole('textbox', { name: 'Nickname' }).fill('thumb');
 	const found: Record<string, string[]> = { join: await audit(player) };
 	await player.getByRole('button', { name: 'Join game' }).tap();

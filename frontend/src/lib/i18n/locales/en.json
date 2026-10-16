@@ -567,11 +567,13 @@
         "username_taken": "Someone in this game already has that nickname. Pick another.",
         "kicked": "The host removed you from this game.",
         "host_left": "The host's connection dropped. If they don't come back, you can leave the game.",
-        "nickname_hint": "At least {{count}} characters.",
-        "nickname_heading": "Choose a fun nickname",
-        "nickname_subline": "This is how you'll show up on the big screen.",
-        "nickname_label": "Nickname",
-        "nickname_looks_like_pin": "Ribbit, that looks like the PIN. You're already in! Now pick a name.",
+        "frog_waiting": "Your frog is waiting",
+        "nickname_placeholder": "e.g. Ana",
+        "nickname_too_short": "At least {{count}} characters.",
+        "change_pin": "Change",
+        "game_found": "Game found",
+        "nickname_label": "Your nickname",
+        "nickname_looks_like_pin": "That looks like the PIN, not a name.",
         "pin_accepted": "PIN {{pin}}"
     },
     "editor_page": {

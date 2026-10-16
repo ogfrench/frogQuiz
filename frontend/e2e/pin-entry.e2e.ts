@@ -70,7 +70,26 @@ test('a join link pasted into /play joins, wherever it was copied from', async (
 	await page.getByRole('textbox', { name: 'Game PIN' }).focus();
 	// The port's digits used to be read as part of the PIN.
 	await page.keyboard.insertText(`http://localhost:3200/play?pin=${pin}&ref=Qr`);
+	await page.getByRole('button', { name: 'Join', exact: true }).click();
 	await expect(page.getByRole('textbox', { name: 'Nickname' })).toBeVisible();
+	host.disconnect();
+});
+
+// François's call on 16 Oct, after looking at Kahoot, Mentimeter and Gimkit: the PIN is
+// checked at six digits, but the player moves on with Join, not by itself.
+test('a right PIN on /play says the game was found and waits for Join', async ({
+	page,
+	request
+}) => {
+	const { pin, host } = await hostGame(request, QUIZ);
+	await gotoPlayHydrated(page);
+	await page.getByRole('textbox', { name: 'Game PIN' }).pressSequentially(pin);
+	await expect(page.getByRole('status')).toHaveText('Game found');
+	const nickname = page.getByRole('textbox', { name: 'Nickname' });
+	await page.waitForTimeout(500);
+	await expect(nickname).toHaveCount(0);
+	await page.getByRole('button', { name: 'Join', exact: true }).click();
+	await expect(nickname).toBeFocused();
 	host.disconnect();
 });
 

@@ -62,7 +62,7 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 
 			<div class="mt-12">
-				<PinEntry advance="submit" layout="inline" onaccepted={join} />
+				<PinEntry layout="inline" onaccepted={join} />
 			</div>
 
 			<!-- Hosting is the other half of the product, not a footnote: these were three

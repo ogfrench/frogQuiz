@@ -7,6 +7,7 @@
 
 import { expect, test, type Locator } from '@playwright/test';
 import {
+	enterPin,
 	expectNoHorizontalOverflow,
 	gotoPlayHydrated,
 	hostFromViewPage,
@@ -124,7 +125,7 @@ test('a Submit that is not ready reads as inert, not as a broken primary button'
 	).toBeGreaterThan(4.5);
 
 	// Now the enabled state, from the nickname step of a game that exists.
-	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(page, pin);
 	const nickname = page.getByRole('textbox', { name: 'Nickname' });
 	await expect(nickname).toBeVisible({ timeout: 15_000 });
 	await nickname.fill('ana');
@@ -154,6 +155,8 @@ test('a player can join with the keyboard alone', async ({ page, request }) => {
 	const phone = await page.context().browser()!.newPage({ viewport: PHONE });
 	await gotoPlayHydrated(phone);
 	await phone.keyboard.type(pin);
+	// Enter presses Join, which waits for the server to find the game (#82).
+	await phone.keyboard.press('Enter');
 	await expect(phone.getByRole('textbox', { name: 'Nickname' })).toBeFocused();
 	await phone.keyboard.type('Keys');
 	await phone.keyboard.press('Enter');
@@ -187,7 +190,7 @@ test('the host can add a join question, and players are asked it', async ({
 	const player = await browser.newContext({ viewport: PHONE });
 	const phone = await player.newPage();
 	await gotoPlayHydrated(phone);
-	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(phone, pin);
 	await phone.getByRole('textbox', { name: 'Nickname' }).fill('Ana');
 	await phone.getByRole('textbox', { name: 'Team' }).fill('Frogs');
 	await phone.getByRole('button', { name: 'Join game' }).click();
@@ -195,30 +198,95 @@ test('the host can add a join question, and players are asked it', async ({
 	await player.close();
 });
 
-// Players typed the PIN again as their name: the sixth digit swapped the form in place,
-// on the same card, with nothing to say the PIN step was over.
-test('the nickname step says it is one, and notices the PIN typed as a name', async ({
-	page,
-	request
-}) => {
+// Players typed the PIN again as their name, so the step says it is a new one. Redesigned on
+// 16 Oct (#82): one label instead of a heading and a label, no hint before anything is
+// typed, the frog the room will see, and a way back to the PIN.
+async function nicknameStep(page, request) {
 	const saved = await saveQuiz(request, QUIZ);
 	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
 	const pin = await hostFromViewPage(page, saved.body.id);
-
 	const phone = await page.context().browser()!.newPage({ viewport: PHONE });
 	await gotoPlayHydrated(phone);
-	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
-	await expect(phone.getByRole('heading', { name: 'Choose a fun nickname' })).toBeVisible();
-	await expect(phone.getByText(`PIN ${pin.slice(0, 3)} ${pin.slice(3)}`)).toBeVisible();
-
+	await enterPin(phone, pin);
 	const nickname = phone.getByRole('textbox', { name: 'Nickname' });
-	await expect(nickname).toHaveAccessibleDescription(/At least 2 characters/);
-	await nickname.fill(pin);
-	await expect(nickname).toHaveAccessibleDescription(/looks like the PIN/);
-	// A nudge, not a block: an all-digit name is allowed.
-	await expect(phone.getByRole('button', { name: 'Join game' })).toBeEnabled();
-	await nickname.fill('Ana');
-	await expect(nickname).toHaveAccessibleDescription(/At least 2 characters/);
+	await expect(nickname).toBeFocused();
+	return { phone, pin, nickname };
+}
+
+test('the nickname step is one label and a field, and says nothing before you type', async ({
+	page,
+	request
+}) => {
+	const { phone, pin, nickname } = await nicknameStep(page, request);
+	await expect(phone.getByText(`PIN ${pin.slice(0, 3)} ${pin.slice(3)}`)).toBeVisible();
+	await expect(phone.getByText('Your nickname')).toBeVisible();
+	await expect(phone.getByRole('heading', { name: 'Choose a fun nickname' })).toHaveCount(0);
+	await expect(nickname).toHaveAttribute('placeholder', 'e.g. Ana');
+	await expect(phone.getByText(/At least 2 characters/)).toHaveCount(0);
+	// Left-aligned, like the label above it.
+	expect(await nickname.evaluate((el) => getComputedStyle(el).textAlign)).toMatch(/start|left/);
 	await expectNoHorizontalOverflow(phone);
+	await phone.close();
+});
+
+// The server hands out frogs by seat when a player joins, so nobody's frog is known before
+// that. The nickname step shows a silhouette, and the lobby is the reveal.
+test('a mystery frog waits on the nickname step, and joining reveals the real one', async ({
+	page,
+	request
+}) => {
+	const { phone, nickname } = await nicknameStep(page, request);
+	const mystery = phone.getByTestId('nickname-frog');
+	await expect(mystery).toBeVisible();
+	await expect(phone.getByText('Your frog is waiting')).toBeVisible();
+	await nickname.fill('Ana');
+	await phone.getByRole('button', { name: 'Join game' }).click();
+	await expect(phone.getByText("You're in, Ana")).toBeVisible();
+	await expect(mystery).toHaveCount(0);
+	await phone.close();
+});
+
+test('a name that looks like the PIN gets a note, and nothing below it moves', async ({
+	page,
+	request
+}) => {
+	const { phone, pin, nickname } = await nicknameStep(page, request);
+	const join = phone.getByRole('button', { name: 'Join game' });
+	const before = (await join.boundingBox())!.y;
+	await nickname.fill(pin);
+	await expect(nickname).toHaveAccessibleDescription(/looks like the PIN, not a name/);
+	await expect(phone.getByText(/already in/)).toHaveCount(0);
+	expect((await join.boundingBox())!.y).toBe(before);
+	// A nudge, not a block: an all-digit name is allowed.
+	await expect(join).toBeEnabled();
+	await phone.close();
+});
+
+test('the length limit shows up near it, and a one-letter name says why it waits', async ({
+	page,
+	request
+}) => {
+	const { phone, nickname } = await nicknameStep(page, request);
+	await nickname.fill('abcdefghijk');
+	await expect(phone.getByText('11/17')).toHaveCount(0);
+	await nickname.fill('abcdefghijkl');
+	await expect(phone.getByText('12/17')).toBeVisible();
+	await nickname.fill('A');
+	await nickname.press('Enter');
+	await expect(phone.getByText('At least 2 characters.')).toBeVisible();
+	await phone.close();
+});
+
+test('Change goes back to the PIN with the digits kept, and Join comes back', async ({
+	page,
+	request
+}) => {
+	const { phone, pin } = await nicknameStep(page, request);
+	await phone.getByRole('button', { name: 'Change' }).click();
+	const box = phone.getByRole('textbox', { name: 'Game PIN' });
+	await expect(box).toHaveValue(pin);
+	await expect(box).toBeFocused();
+	await phone.getByRole('button', { name: 'Join', exact: true }).click();
+	await expect(phone.getByRole('textbox', { name: 'Nickname' })).toBeVisible();
 	await phone.close();
 });
