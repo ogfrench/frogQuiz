@@ -458,6 +458,13 @@ The migration that comes with it (`a7c3e5f1b9d2`) runs at API start, as every mi
 does. It hashes any existing key in place and drops the plain-text column. It runs whether
 or not the feature is on, and its downgrade deletes every key.
 
+So the first backend deploy that carries it is a deploy with a migration: the Production
+ops **deploy** mode refuses it, and it is done by hand, after a backup. Putting an older
+image back afterwards leaves that code looking for the dropped `key` column, so its API-key
+routes (`/live` with `api_key`, the key list) **and account deletion** fail until the new
+image is back. Nothing else reads that table. Roll forward, not back, unless the database
+is restored as well.
+
 To turn it on, on the VM in `/opt/frogquiz`:
 
 1. In `.env`:

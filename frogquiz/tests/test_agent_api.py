@@ -231,6 +231,17 @@ def test_creating_too_fast_is_a_429(test_client, accounts, monkeypatch):  # noqa
     assert second.status_code == 429 and "Retry-After" in second.headers
 
 
+def test_checking_a_key_is_not_billed_as_a_call(test_client, accounts, monkeypatch):  # noqa: F811
+    # The MCP service asks /me before every request. A key out of calls is still a valid
+    # key, so the tool call is what says 429 and how long to wait, not /me as a 401.
+    monkeypatch.setattr(get_settings(), "rate_limit_enabled", True)
+    monkeypatch.setattr(agent, "CALLS_PER_MINUTE", 1)
+    headers = _auth(accounts["other_key"])
+    calls = [test_client.get("/api/v1/agent/quizzes", headers=headers).status_code for _ in range(2)]
+    assert calls[-1] == 429
+    assert test_client.get("/api/v1/agent/me", headers=headers).status_code == 200
+
+
 def test_list_pages(test_client, accounts):  # noqa: F811
     headers = _auth(accounts["owner_key"])
     first = test_client.get("/api/v1/agent/quizzes?page_size=1", headers=headers).json()

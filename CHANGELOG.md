@@ -11,6 +11,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Changed the My Account command to `claude mcp add --scope user`, so the server is available in every folder rather than only the one the command ran in (the VS Code extension on Windows missed a folder-scoped entry).
 - Changed API keys to be stored as sha256 only (migration a7c3e5f1b9d2 hashes existing keys in place). Keys now have a name, an id, a visible prefix and a last-used time, and are capped at 10 per account.
 - Fixed API keys surviving sign-out-everywhere and GET /users/api_keys always answering an empty list (security audit finding 5). Revoking a key now marks it revoked in the Redis cache, so a check running at the same moment cannot cache it back to life.
+- Documented in DEPLOY.md that the first deploy with the key migration is done by hand after a backup (the deploy guard refuses it), and that an older image put back afterwards breaks account deletion and API-key routes.
+- Kept the key check the MCP service makes before each request (GET /api/v1/agent/me) out of the per-minute call budget, so a tool call is counted once and a busy key gets the tool's 429 with a wait time instead of a 401.
 - Moved the Excel import's quiz building into frogquiz/helpers/quiz_create.py, shared with the agent API.
 - Added a gitleaks rule for frogQuiz keys, a pip-audit pass over the MCP lock, and the MCP service to the local e2e stack when mcp-server/.venv exists.
 

@@ -174,8 +174,10 @@ class AgentQuizCreated(BaseModel):
 
 
 @router.get("/me", response_model=AgentMe)
-async def whoami(user: User = Depends(agent_user)):
-    """Whose key this is. The MCP service checks a key here before it answers a client."""
+async def whoami(user: User = Depends(get_agent_user)):
+    """Whose key this is. The MCP service checks a key here before every request it answers,
+    so it is not metered: counting it would bill each tool call twice, and a busy key would
+    come back as an invalid one (401) rather than as the tool call's own 429."""
     return {"username": user.username}
 
 
