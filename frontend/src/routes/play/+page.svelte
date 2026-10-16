@@ -172,12 +172,14 @@ SPDX-License-Identifier: MPL-2.0
 		const data = JSON.parse(joined_data);
 		rejoining = data;
 		// A reload can interrupt rejoining after the server accepted the new socket
-		// but before its acknowledgement updates our record. Keep both possible
-		// credentials until acknowledgement; the server accepts only its current one.
-		const candidates = [...new Set([data.pending_sid, data.sid])].filter(
+		// but before its acknowledgement updates our record. Keep the possible
+		// credentials until acknowledgement, including multiple interrupted attempts;
+		// the server accepts only its current one.
+		const history = Array.isArray(data.pending_sids) ? data.pending_sids : [];
+		const candidates = [...new Set([...history, data.pending_sid, data.sid])].filter(
 			(sid): sid is string => typeof sid === 'string' && sid.length > 0
 		);
-		const pending = JSON.stringify({ ...data, pending_sid: socket.id });
+		const pending = JSON.stringify({ ...data, pending_sids: [socket.id, ...candidates] });
 		sessionStorage.setItem(JOINED, pending);
 		Cookies.set(JOINED, pending, { expires: JOINED_GAME_COOKIE_DAYS });
 		for (const old_sid of candidates) {

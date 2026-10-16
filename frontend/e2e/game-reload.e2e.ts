@@ -165,9 +165,13 @@ test.describe('repeated and mid-question reloads', () => {
 	});
 });
 
-// Model the two states a lost rejoin response can leave behind. The server's
+// Model the possible states a lost rejoin response can leave behind. The server's
 // credential stays real; only the browser record is restored to its pending state.
-for (const outcome of ['accepted without acknowledgement', 'never accepted'] as const) {
+for (const outcome of [
+	'accepted without acknowledgement',
+	'never accepted',
+	'accepted before another interrupted attempt'
+] as const) {
 	test(`a player recovers a pending rejoin that was ${outcome}`, async ({
 		page,
 		request,
@@ -178,7 +182,7 @@ for (const outcome of ['accepted without acknowledgement', 'never accepted'] as 
 			JSON.parse(sessionStorage.getItem('joined_game')!)
 		);
 		let pending_sid = 'unaccepted-rejoin';
-		if (outcome === 'accepted without acknowledgement') {
+		if (outcome !== 'never accepted') {
 			await reloadHydrated(player.page);
 			await expect(player.page.getByText(/You're in/)).toBeVisible();
 			pending_sid = await player.page.evaluate(
@@ -186,12 +190,14 @@ for (const outcome of ['accepted without acknowledgement', 'never accepted'] as 
 			);
 			expect(pending_sid).not.toBe(before.sid);
 		}
-		await player.page.evaluate(
-			(record) => {
-				sessionStorage.setItem('joined_game', JSON.stringify(record));
-			},
-			{ ...before, pending_sid }
-		);
+		const pending: Record<string, unknown> = { ...before, pending_sid };
+		if (outcome === 'accepted before another interrupted attempt') {
+			pending.pending_sids = ['unaccepted-rejoin', pending_sid, before.sid];
+			delete pending.pending_sid;
+		}
+		await player.page.evaluate((record) => {
+			sessionStorage.setItem('joined_game', JSON.stringify(record));
+		}, pending);
 		await reloadHydrated(player.page);
 		await expect(player.page.getByText(/You're in/)).toBeVisible();
 		await expect(page.getByText('reloader', { exact: true })).toBeVisible();
