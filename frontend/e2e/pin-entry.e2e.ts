@@ -83,6 +83,12 @@ test('a wrong PIN in the link opens /play on the PIN, not on a blank box', async
 	await expect(page).toHaveURL(/\/play$/);
 });
 
+test('a link with too many digits says so instead of a silent, disabled Join', async ({ page }) => {
+	await page.goto('/play?pin=1234567');
+	await expect(page.getByText('A game PIN has 6 digits.')).toBeVisible();
+	await expect(page.getByRole('textbox', { name: 'Game PIN' })).toHaveValue('1234567');
+});
+
 test('the home page box takes digits only, and says when there are too many', async ({ page }) => {
 	await gotoHomeHydrated(page);
 	const pin = page.getByRole('textbox', { name: 'Game PIN' });

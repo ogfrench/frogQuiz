@@ -145,6 +145,9 @@ over, and the error clears as soon as the PIN is edited.
 		latest++;
 		checking = false;
 		accept_when_confirmed = false;
+		// An answer about an earlier PIN is not one about this one, even if the digits
+		// come back to it: the game may have closed in between.
+		confirmed = null;
 		error = '';
 		invalid = false;
 		if (digits.length > PIN_LENGTH) {
@@ -185,7 +188,8 @@ over, and the error clears as soon as the PIN is edited.
 		// A PIN from the link or the QR code.
 		const digits = pinDigits(value);
 		if (digits !== value) value = digits;
-		if (digits.length === PIN_LENGTH) check(digits);
+		if (digits.length > PIN_LENGTH) reject($t('play_page.pin_too_long'), { select: false });
+		else if (digits.length === PIN_LENGTH) check(digits);
 	});
 </script>
 
