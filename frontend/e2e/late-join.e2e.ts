@@ -6,7 +6,14 @@
 // themselves are in live-socket.e2e.ts; this is what the host and a phone see.
 
 import { expect, test, type Browser } from '@playwright/test';
-import { hostFromViewPage, joinAsPlayer, mc, rememberAnonQuiz, saveQuiz } from './helpers';
+import {
+	enterPin,
+	hostFromViewPage,
+	joinAsPlayer,
+	mc,
+	rememberAnonQuiz,
+	saveQuiz
+} from './helpers';
 import { closeAll, join } from './sockets';
 
 const QUIZ = {
@@ -49,7 +56,7 @@ test('the host locks the lobby, a phone is told so, and unlocking lets it in', a
 
 	await host.getByRole('button', { name: 'Unlock game' }).click();
 	await expect(host.getByRole('button', { name: 'Lock game' })).toBeVisible();
-	await phone.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(phone, pin);
 	await phone.getByRole('textbox', { name: 'Nickname' }).fill('knocking');
 	await phone.getByRole('button', { name: 'Join game' }).click();
 	await expect(host.getByRole('button', { name: 'Kick: knocking' })).toBeVisible();

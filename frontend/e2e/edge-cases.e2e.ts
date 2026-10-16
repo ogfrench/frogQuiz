@@ -18,15 +18,16 @@ import { signInMail } from './mail';
 import {
 	advancePastResults,
 	advanceToFinalResults,
+	enterPin,
+	expectQuestionEnded,
 	gotoPlayHydrated,
 	hostFromViewPage,
 	mc,
 	PHONE,
 	rememberAnonQuiz,
 	saveQuiz,
-	titleBox,
 	showResults,
-	expectQuestionEnded
+	titleBox
 } from './helpers';
 import {
 	API_URL,
@@ -450,7 +451,7 @@ test.describe('live game, in the browser', () => {
 		await player.getByRole('dialog').getByRole('link', { name: 'Join' }).click();
 		await player.waitForURL(/\/play$/);
 		await connected;
-		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(player, pin);
 		await player.getByRole('textbox', { name: 'Nickname' }).fill('swiper');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('swiper')).toBeVisible();
@@ -486,7 +487,7 @@ test.describe('live game, in the browser', () => {
 			sockets.push(ws);
 		});
 		await gotoPlayHydrated(player);
-		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(player, pin);
 		await player.getByRole('textbox', { name: 'Nickname' }).fill('dropper');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('dropper')).toBeVisible();
@@ -523,7 +524,7 @@ test.describe('live game, in the browser', () => {
 		const ctx = await browser.newContext({ viewport: PHONE });
 		const player = await ctx.newPage();
 		await gotoPlayHydrated(player);
-		await player.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(player, pin);
 		await player.getByRole('textbox', { name: 'Nickname' }).fill('steady');
 		await player.getByRole('button', { name: 'Join game' }).click();
 		await expect(host.getByText('steady')).toBeVisible();
@@ -541,7 +542,7 @@ test.describe('live game, in the browser', () => {
 
 	async function joinIn(page: Page, pin: string, name: string) {
 		await gotoPlayHydrated(page);
-		await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+		await enterPin(page, pin);
 		await page.getByRole('textbox', { name: 'Nickname' }).fill(name);
 		await page.getByRole('button', { name: 'Join game' }).click();
 	}
@@ -628,6 +629,7 @@ test.describe('live game, in the browser', () => {
 		await gotoPlayHydrated(player);
 		await player.getByRole('textbox', { name: 'Game PIN' }).focus();
 		await player.keyboard.insertText(`${pin.slice(0, 3)} ${pin.slice(3)}`);
+		await player.getByRole('button', { name: 'Join', exact: true }).click();
 		await expect(player.getByRole('textbox', { name: 'Nickname' })).toBeVisible();
 
 		await player.goto('/');

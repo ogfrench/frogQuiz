@@ -13,12 +13,13 @@
 
 import { expect, test } from '@playwright/test';
 import {
-	mc,
-	saveQuiz,
-	rememberAnonQuiz,
-	hostFromViewPage,
+	enterPin,
+	expectQuestionEnded,
 	gotoPlayHydrated,
-	expectQuestionEnded
+	hostFromViewPage,
+	mc,
+	rememberAnonQuiz,
+	saveQuiz
 } from './helpers';
 
 const QUIZ = {
@@ -42,7 +43,7 @@ async function joinPhone(browser, pin: string, name: string) {
 	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 	const page = await ctx.newPage();
 	await gotoPlayHydrated(page);
-	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(page, pin);
 	await page.getByRole('textbox', { name: 'Nickname' }).fill(name);
 	await page.getByRole('button', { name: 'Join game' }).click();
 	return { ctx, page };

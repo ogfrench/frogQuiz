@@ -158,12 +158,20 @@ export async function gotoPlayHydrated(page: Page) {
 	await connected;
 }
 
+/**
+ * Types a PIN on /play and presses Join. The PIN is checked at six digits, but the step
+ * waits for Join, as Kahoot's does (#82); Join pressed before the answer waits for it.
+ */
+export async function enterPin(page: Page, pin: string) {
+	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await page.getByRole('button', { name: 'Join', exact: true }).click();
+}
+
 export async function joinAsPlayer(browser: Browser, pin: string, username: string) {
 	const context = await browser.newContext({ viewport: PHONE });
 	const page = await context.newPage();
 	await gotoPlayHydrated(page);
-	// The PIN form has no submit handler: the sixth digit advances it on its own.
-	await page.getByRole('textbox', { name: 'Game PIN' }).fill(pin);
+	await enterPin(page, pin);
 	await page.getByRole('textbox', { name: 'Nickname' }).fill(username);
 	await page.getByRole('button', { name: 'Join game' }).click();
 	return { context, page };
