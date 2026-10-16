@@ -45,3 +45,10 @@ analyzed, but the integration cannot manually dismiss #4 or resolve the Mapbox a
 A repository security administrator must apply the individual dispositions above.
 The three code fixes should be rechecked against the default branch's next analysis;
 do not call the stored alerts resolved merely because a PR's CodeQL job passes.
+
+## Guest storage decision — 16 October 2026
+
+The maintainer explicitly chose to retain the current guest ownership storage after
+reviewing the persistence versus HttpOnly-session tradeoff. No browser encryption,
+authentication migration or source suppression was added. Alert #4 remains an
+accepted product risk; GitHub alert disposition still requires security-admin access.

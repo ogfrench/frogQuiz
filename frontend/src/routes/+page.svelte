@@ -126,7 +126,9 @@ SPDX-License-Identifier: MPL-2.0
 
 			<p class="text-muted-foreground mt-4 text-center text-xs text-balance">
 				<!-- #55: the 30-day promise holds only while quizzes without an account are on. -->
-				{data.anonymousQuizzes
+				{data.anonymousQuizzes === null
+					? 'Quiz creation is temporarily unavailable. Please try again.'
+					: data.anonymousQuizzes
 					? $t('index_page.create_hint')
 					: $t('index_page.create_hint_account')}
 			</p>

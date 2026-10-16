@@ -76,4 +76,9 @@ const config = {
  end trying*/
 };
 
-export default config;
+// Production bundling converts CommonJS; Vite's dev module runner does not.
+// Keep native Node loading in dev and bundle the parser boundary for deployed SSR.
+export default ({ command }) => ({
+	...config,
+	ssr: { noExternal: command === 'build' ? ['sanitize-html', 'htmlparser2'] : [] }
+});

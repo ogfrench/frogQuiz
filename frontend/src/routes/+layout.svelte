@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	// urls and emits the files. Verified by `document.fonts.check`.
 	import '@fontsource-variable/inter';
 	import '../app.css';
+	import ServiceBanner from '$lib/components/ServiceBanner.svelte';
 	import Navbar from '$lib/navbar.svelte';
 	import Footer from '$lib/footer.svelte';
 	import { page } from '$app/state';
@@ -78,6 +79,7 @@ SPDX-License-Identifier: MPL-2.0
 		<Navbar />
 		<div class="h-16 shrink-0"></div>
 	{/if}
+	<ServiceBanner configUnavailable={page.data.anonymousQuizzes === null} />
 	<main id="main-content" tabindex="-1" class="flex-1 outline-none">
 		{@render children?.()}
 	</main>
