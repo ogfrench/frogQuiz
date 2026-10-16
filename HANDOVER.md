@@ -9,6 +9,51 @@ SPDX-License-Identifier: MPL-2.0
 The newest section comes first. The older ones are kept below for the decisions and commands
 they record.
 
+## Outage, backups and the gaps behind them (13 to 16 Oct)
+
+**What shipped since 12 Oct.**
+- **#63, #64 and #66 (v0.8.1):** the sound kit, the round card, a faster podium, pick your
+  frog, and `.cqa` image ids.
+- **#67:** guests can create, import from Excel and host. This is on by default (D40 to D43),
+  with Keep all after sign-in.
+- **#70 and #71:** the production guest-access workflow (`docs/github-production-access.md`),
+  the server-rendering socket fix, players rejoining after a lost connection, and the new
+  Terms, Privacy and Attribution.
+- **#76:** fixes for the CodeQL alerts on upload paths and title HTML.
+
+The trackers were merged on 15 Oct into #72 (operations), #73 (V1 quality) and #74 (post-V1),
+with #69 (incident) and #68 (MCP) kept apart.
+
+**The outage (16 Oct).** #76 put `sanitize-html` on the server. On Netlify's function runtime
+it `require()`s `htmlparser2`, which is an ES module, so every server-rendered page returned
+502 from about 04:09 UTC. The API stayed healthy, and nothing alerted. Plain Node 22 and later
+allows that `require()`, which is why CI and e2e stayed green. #77 carries the fix
+(`ssr.noExternal` for builds) and adds `.github/workflows/netlify_ssr.yml`. That check builds
+with `NETLIFY=true` and renders `/`, `/explore`, `/play` and `/create` through the generated
+function under `--no-experimental-require-module`. It fails on #76's code and passes on
+#77's. #77's own red e2e test clicked Discover before hydration, so the server fetched the
+examples, where `page.route` cannot see them. The test now waits for `networkidle`, the
+suite's convention.
+
+**Backups (#61, D44).** The setup:
+- `.github/workflows/backup.yml` runs nightly. It uses `deploy/backup.sh` on the VM,
+  `deploy/backup-run.sh` on the runner and `deploy/restore.sh` for restores, with
+  `deploy/test_backup_restore.sh` in CI. The runbook is in `DEPLOY.md`, "Backups".
+- The age public key is committed as `deploy/backup-recipient.txt`. The private key was
+  generated in the 16 Oct session and handed to François as a file. It is not on GitHub.
+- No GitHub secret is needed. The nightly job uses the `production` SSH secrets that
+  already exist. Cloud sessions cannot write secrets anyway: their proxy refuses the Actions
+  secrets and environments endpoints by policy.
+
+**Uptime.** `.github/workflows/uptime.yml` checks the frontend pages and the API's health
+every 30 minutes. It is a stopgap until #72's monitor exists.
+
+**Open, in order.**
+1. The first real restore, timed and written into `DEPLOY.md`.
+2. #76's backend fix on the VM (steps in #72).
+3. #72's OCI checks.
+4. The v0.9 cut. `frontend/package.json` is still `0.8.0`, and `## Unreleased` is long.
+
 ## Game polish, PR #63 (12 Oct, evening)
 
 François used v0.8 and asked for changes; they are in PR #63 and wait for his go to merge and
