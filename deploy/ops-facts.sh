@@ -67,7 +67,11 @@ print("- matches a value ever committed to the repo:", "YES, rotate it" if hashl
 echo '## Configuration files (names only)'
 ls -1d .env docker-compose*.yml Caddyfile* 2>/dev/null | sed 's/^/- /' || true
 if [[ -d .git ]]; then
-  echo "- git checkout: $(git rev-parse --abbrev-ref HEAD) at $(git rev-parse --short HEAD), $([[ -z "$(git status --porcelain --untracked-files=no)" ]] && echo clean || echo 'local edits')"
+  if changes=$(git status --porcelain --untracked-files=no 2>/dev/null); then
+    echo "- git checkout: $(git rev-parse --abbrev-ref HEAD) at $(git rev-parse --short HEAD), $([[ -z "$changes" ]] && echo clean || echo 'local edits')"
+  else
+    echo '- git checkout: yes, but git cannot read it here (ownership?)'
+  fi
 else
   echo '- git checkout: no'
 fi

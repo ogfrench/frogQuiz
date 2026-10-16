@@ -36,7 +36,14 @@ if [[ "$want" == on ]]; then
   # the .env lines below do nothing. A checkout older than #83 is brought forward, but only
   # if it is on master with no local edits to tracked files; anything else is left for a
   # person to look at.
-  if [[ -d .git ]] && ! docker compose --profile mcp config --services </dev/null 2>/dev/null | grep -qx mcp; then
+  # Read into a variable first: `grep -q` in a pipe can end the writer early, which
+  # pipefail would report as no match.
+  has_mcp() {
+    local services
+    services=$(docker compose --profile mcp config --services </dev/null 2>/dev/null) || return 1
+    grep -qx mcp <<<"$services"
+  }
+  if [[ -d .git ]] && ! has_mcp; then
     if [[ "$(git rev-parse --abbrev-ref HEAD)" == master && -z "$(git status --porcelain --untracked-files=no)" ]]; then
       before=$(git rev-parse HEAD)
       git fetch -q origin master </dev/null
@@ -47,20 +54,29 @@ if [[ "$want" == on ]]; then
       echo 'The checkout here is not a clean master; not pulling it.' >&2
     fi
   fi
-  docker compose --profile mcp config --services </dev/null | grep -qx mcp ||
-    { echo 'docker-compose.yml here has no mcp service. Update it to one from #83 on first. Nothing changed.' >&2; exit 1; }
+  has_mcp ||
+    { echo 'docker-compose.yml here has no mcp service. Update it to one from #83 on first. .env and the containers are unchanged.' >&2; exit 1; }
   docker compose config --format json </dev/null | python3 -c '
 import json, sys
 env = json.load(sys.stdin)["services"]["api"].get("environment", {})
 missing = [k for k in ("AGENT_API_ENABLED", "MCP_URL") if k not in env]
-sys.exit("docker-compose.yml here does not pass " + ", ".join(missing) + " to the api. Nothing changed." if missing else 0)
+sys.exit("docker-compose.yml here does not pass " + ", ".join(missing) + " to the api. .env and the containers are unchanged." if missing else 0)
 '
+  # Before .env changes, so a failed pull leaves nothing half done.
+  docker compose pull -q proxy mcp </dev/null
 fi
 
 umask 077
 backup=$(mktemp .env.agents-backup.XXXXXX)
 cp -p .env "$backup"
-echo "Kept the previous .env as $backup."
+# Until the end, any exit (an error, a cancelled job, a dropped SSH session) puts .env back,
+# so agents are never left half on for the next `docker compose up` to finish.
+finished=0
+on_exit() {
+  if ((finished)); then rm -f "$backup"; else cp -p "$backup" .env && rm -f "$backup"; fi
+}
+trap on_exit EXIT
+trap 'exit 1' HUP INT TERM
 
 # Sets or removes KEY=value lines and keeps everything else in .env as it is.
 # COMPOSE_PROFILES is a list: mcp is added to it or taken out, and other profiles stay.
@@ -112,7 +128,6 @@ restore() {
 }
 
 if [[ "$want" == on ]]; then
-  docker compose pull -q proxy mcp </dev/null
   if ! docker compose up -d --no-deps --force-recreate --wait --wait-timeout 180 api worker mcp proxy </dev/null; then
     restore
     echo 'Agents are not on: the containers did not come up healthy. Inspect `docker compose logs api mcp proxy`.' >&2
@@ -127,5 +142,6 @@ else
   docker compose --profile mcp stop mcp </dev/null || true
 fi
 
-docker compose --profile mcp ps --format '- {{.Service}}: {{.Status}}' </dev/null
+finished=1
+docker compose --profile mcp ps --format '- {{.Service}}: {{.Status}}' </dev/null || true
 echo "Agents: $want."

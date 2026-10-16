@@ -101,10 +101,12 @@ jobs:
           artifacts = json.load(open("artifacts.json"))["artifacts"]
           done = datetime.fromisoformat(run["updated_at"].replace("Z", "+00:00"))
           problems = []
-          if run.get("path") != ".github/workflows/backup.yml":
+          if not str(run.get("path", "")).startswith(".github/workflows/backup.yml"):
               problems.append("it is not a Backup run")
-          if run.get("head_branch") != "master":
-              problems.append("it did not run on master")
+          if run.get("head_branch") != "master" or run.get("event") not in ("schedule", "workflow_dispatch"):
+              problems.append("it was not a scheduled or manual run on master")
+          if run.get("head_repository", {}).get("full_name") != run.get("repository", {}).get("full_name"):
+              problems.append("it ran from another repository")
           if run.get("conclusion") != "success":
               problems.append(f"it did not pass ({run.get('conclusion')})")
           if datetime.now(timezone.utc) - done > timedelta(hours=3):

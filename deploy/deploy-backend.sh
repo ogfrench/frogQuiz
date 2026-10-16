@@ -60,9 +60,29 @@ fi
 # `docker compose up` would deploy the pulled image without any of the checks below.
 docker tag "$previous" frogquiz-backend:rollback
 done_ok=0
-restore_tag() { ((done_ok)) || docker tag frogquiz-backend:rollback "$image" 2>/dev/null || true; }
+migrating=0
+current=
+# In migrate mode the old tag goes back only while the database is still where it was: the
+# job can be cancelled while the api is migrating, and the old image must not then be what
+# a later `docker compose up` starts against the new schema.
+restore_tag() {
+  ((done_ok)) && return 0
+  if ((migrating)) && [[ "$(db_revision)" != "$current" ]]; then
+    echo 'Interrupted after the migration may have run: leaving the new image on :master.' >&2
+    return 0
+  fi
+  docker tag frogquiz-backend:rollback "$image" 2>/dev/null || true
+}
 trap restore_tag EXIT
 trap 'exit 1' HUP INT TERM
+
+# The revision the database is at now, read through the image being deployed, which knows
+# every revision. Used after a failed or interrupted start, when the api may be restarting.
+# Empty if it cannot be read.
+db_revision() {
+  docker compose run --rm --no-deps -T --entrypoint sh api -c 'cd /app && alembic current 2>/dev/null' </dev/null 2>/dev/null |
+    awk 'NF {print $1; exit}' || true
+}
 
 docker pull -q "$image" </dev/null
 got=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image" </dev/null)
@@ -103,7 +123,6 @@ current=$(awk 'NF {print $1}' <<<"$current")
 heads_out=$(docker run --rm --entrypoint python3 "$image" -c "$heads_py" "${current:-none}" </dev/null || true)
 new_head=$(awk 'NF && $1 != "forward" && $1 != "not-forward" {print $1}' <<<"$heads_out")
 direction=$(grep -xE 'forward|not-forward' <<<"$heads_out" || true)
-migrating=0
 if [[ "$new_head" =~ ^[0-9a-f]{12}$ && "$current" =~ ^[0-9a-f]{12}$ && "$new_head" == "$current" ]]; then
   echo "Migrations: none to run (head $current)."
 elif [[ "$mode" == migrate && "$new_head" =~ ^[0-9a-f]{12}$ && "$current" =~ ^[0-9a-f]{12}$ && "$direction" == forward ]]; then
@@ -118,13 +137,6 @@ else
   fi
   exit 1
 fi
-
-# The revision the database is at now, read through the image being deployed, which knows
-# every revision. Used after a failed start, when the api may be restarting.
-db_revision() {
-  docker compose run --rm --no-deps -T --entrypoint sh api -c 'cd /app && alembic current 2>/dev/null' </dev/null |
-    awk 'NF {print $1; exit}' || true
-}
 
 if docker compose up -d --no-deps --force-recreate --wait --wait-timeout 180 api worker </dev/null; then
   done_ok=1
@@ -143,7 +155,16 @@ if docker compose up -d --no-deps --force-recreate --wait --wait-timeout 180 api
 fi
 
 if ((migrating)); then
+  # Stop the api first, so a migration still running when the wait gave up cannot commit
+  # between this check and the rollback. Postgres rolls back a migration cut off mid-way.
+  docker compose stop -t 30 api </dev/null || true
   now=$(db_revision)
+  if [[ -z "$now" ]]; then
+    done_ok=1
+    echo 'The new containers did not become healthy, and the database revision cannot be read.' >&2
+    echo 'Not rolling back, since the migration may have run. Read `docker compose logs api` and check `alembic current` by hand.' >&2
+    exit 1
+  fi
   if [[ "$now" != "$current" ]]; then
     # The migration ran, or ran part way. The old image would start against a schema it
     # does not know, so it is not put back: the new one stays, restarting, for a fix
