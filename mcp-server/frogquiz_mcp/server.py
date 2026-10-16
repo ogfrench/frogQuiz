@@ -230,8 +230,8 @@ async def get_quiz(quiz_id: Annotated[str, Field(description="The quiz's id, fro
 @server.tool(
     title="Create a quiz",
     description=(
-        "Make a new unlisted quiz (link only, not in Discover) in this person's account and return its links. Questions are "
-        "multiple choice: one right answer, or several with type 'multiple'. Up to 50 questions."
+        "Make a new unlisted quiz (link only, not in Discover) in this person's account and return its "
+        "links. Questions are multiple choice: one right answer, or several with type 'multiple'. Up to 50 questions."
     ),
     annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
 )
