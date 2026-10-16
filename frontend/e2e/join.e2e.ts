@@ -11,6 +11,7 @@ import {
 	expectNoHorizontalOverflow,
 	gotoPlayHydrated,
 	hostFromViewPage,
+	joinAsPlayer,
 	mc,
 	openGameOptions,
 	PHONE,
@@ -274,6 +275,25 @@ test('the length limit shows up near it, and a one-letter name says why it waits
 	await nickname.fill('A');
 	await nickname.press('Enter');
 	await expect(phone.getByText('At least 2 characters.')).toBeVisible();
+	// An edit clears it again.
+	await nickname.press('b');
+	await expect(phone.getByText('At least 2 characters.')).toHaveCount(0);
+	await phone.close();
+});
+
+test('a name already taken, then a one-letter one, says too short, not taken', async ({
+	page,
+	request
+}) => {
+	const { phone, pin, nickname } = await nicknameStep(page, request);
+	const ana = await joinAsPlayer(page.context().browser()!, pin, 'Ana');
+	await nickname.fill('Ana');
+	await nickname.press('Enter');
+	await expect(phone.getByRole('alert')).toContainText('already has that nickname');
+	await nickname.fill('B');
+	await nickname.press('Enter');
+	await expect(phone.getByRole('alert')).toHaveText('At least 2 characters.');
+	await ana.context.close();
 	await phone.close();
 });
 

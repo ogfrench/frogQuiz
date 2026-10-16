@@ -80,8 +80,6 @@ SPDX-License-Identifier: MPL-2.0
 	// Set by a Join pressed with one letter, and cleared by the next edit. Join is not
 	// disabled for it: a disabled button gives no reason, and it blocks Enter too.
 	let too_short = $state(false);
-	// The nickname step shows a silhouette: the player's own frog comes with their seat,
-	// which the server hands out on join, so the lobby is where it is revealed.
 	// Read back as two groups of three, the way the host screen shows it.
 	const pin_display = $derived(`${game_pin.slice(0, 3)} ${game_pin.slice(3)}`);
 
@@ -293,7 +291,9 @@ SPDX-License-Identifier: MPL-2.0
 					</Button>
 				</div>
 
-				<!-- Decorative: the line under it says what it is. -->
+				<!-- A silhouette: the player's own frog comes with their seat, which the server
+				     hands out on join, so the lobby is where it is revealed. Decorative: the
+				     line under it says what it is. -->
 				<div class="mt-4 flex flex-col items-center gap-2" data-testid="nickname-frog">
 					<div class="bg-muted relative size-24 rounded-full" aria-hidden="true">
 						<img
@@ -323,7 +323,12 @@ SPDX-License-Identifier: MPL-2.0
 				<Input
 					id="join-username"
 					bind:value={username}
-					oninput={() => (too_short = false)}
+					oninput={() => {
+						// An edit answers whatever was said about the last name, "already
+						// taken" included, which otherwise hid "too short" behind it.
+						too_short = false;
+						error_message = '';
+					}}
 					maxlength={MAX_NICKNAME}
 					autocomplete="nickname"
 					placeholder={$t('play_page.nickname_placeholder')}
@@ -334,19 +339,21 @@ SPDX-License-Identifier: MPL-2.0
 				<!-- One row for whichever message applies, its height held so that nothing
 				     below moves when one appears. The note about the PIN used to take the
 				     hint's place in bold and push the button down a line. -->
+				<!-- Not a live region itself: the alert and status inside it announce
+				     themselves, and the count is read with the field's description rather
+				     than on every keystroke. -->
 				<div
 					id="join-username-message"
-					aria-live="polite"
 					class="mt-2 flex min-h-5 items-start justify-between gap-3 text-sm"
 				>
 					{#if error_message}
 						<p class="text-destructive text-balance" role="alert">{error_message}</p>
 					{:else if too_short}
-						<p class="text-destructive">
+						<p class="text-destructive" role="alert">
 							{$t('play_page.nickname_too_short', { count: MIN_NICKNAME })}
 						</p>
 					{:else if looks_like_pin}
-						<p class="text-muted-foreground">
+						<p class="text-muted-foreground" role="status">
 							{$t('play_page.nickname_looks_like_pin')}
 						</p>
 					{:else}

@@ -254,7 +254,7 @@ starts it over, and the error clears as soon as the PIN is edited.
 	</div>
 	<!-- One row for whichever message applies, its height held so that Join does not jump
 	     when one appears. -->
-	<div id="game-pin-message" class="mt-3 min-h-5 text-sm" aria-live="polite">
+	<div id="game-pin-message" class="mt-3 min-h-5 text-sm">
 		{#if error}
 			<p class="text-destructive text-balance" role="alert">{error}</p>
 		{:else if found}
