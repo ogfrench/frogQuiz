@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Fixed the MCP service's lock failing to install on Linux (CI and the Docker image): it was generated on Windows and pinned pywin32 and colorama for every platform. Both now carry a Windows-only marker.
 - Added AI agents over MCP: Claude, Cursor and other MCP clients can list, read and create private quizzes with a personal key (docs/mcp.md). Off unless AGENT_API_ENABLED is set.
 - Added the agent API at /api/v1/agent (list, read and create your own quizzes), with its own limits: private quizzes only, two question types, no images, 50 questions, 30 creates an hour.
 - Added the MCP service in mcp-server/, with its own lock, Dockerfile, tests and CI workflow, run by docker-compose under the `mcp` profile and routed by Caddy at /mcp.
