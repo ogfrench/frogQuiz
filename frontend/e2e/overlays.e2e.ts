@@ -223,9 +223,11 @@ test.describe('command palette (Ctrl+K)', () => {
 
 	test('Tab stays in the palette while it is open', async ({ page }) => {
 		const input = await open(page);
-		for (let i = 0; i < 4; i++) {
-			await page.keyboard.press('Tab');
-			await expect(input).toBeFocused();
+		for (const key of ['Tab', 'Shift+Tab']) {
+			for (let i = 0; i < 4; i++) {
+				await page.keyboard.press(key);
+				await expect(input).toBeFocused();
+			}
 		}
 	});
 

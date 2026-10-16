@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Fixed Enter or Space on the focused question image both opening it and advancing the game on the host screen; Shift+Tab no longer leaves the command palette, and closing it no longer scrolls the page; the My Quizzes cover thumbnail is decorative again rather than a tab stop.
 - Fixed the four overlay findings: the command palette is a named dialog with a labeled field that takes the focus on Ctrl+K from anywhere and gives it back; the full-screen image opens from the keyboard; the Game options row and every Switch have a 44 px press area.
 - Gave the OAuth error page a title; axe flagged it as the only screen without one in the V1 visual capture.
 - Added `frontend/e2e/overlays.e2e.ts` and `docs/ux-review-hidden-menus.md`: every live dialog, sheet and confirmation checked for its name, focus trap, Escape and focus return, plus touch sizes inside them at 390. Four findings are encoded as known bugs: the command palette is not a dialog, Ctrl+K leaves its field unfocused, the full-screen image cannot be opened from the keyboard, and the Game options row and every Switch are under 44 px.

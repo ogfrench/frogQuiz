@@ -124,3 +124,52 @@ for (const showOnDevices of [false, true]) {
 		await phone.context.close();
 	});
 }
+
+// The question image is a button now (it opens full screen from the keyboard). The host
+// page also binds Enter and Space on window to the next step, so a key on the focused
+// image opened it and advanced the game under the host in the same press (16 Oct).
+test("Enter or Space on the projector's image opens it and does not move the game on", async ({
+	page,
+	request,
+	browser
+}) => {
+	test.setTimeout(3 * 60_000);
+	const image = await upload(request, png(200, 120));
+	const saved = await saveQuiz(request, {
+		title: 'Picture keys',
+		description: 'e2e',
+		questions: [
+			{
+				...mc('What is in the picture?', [
+					['Grey', true],
+					['Blue', false]
+				]),
+				image
+			}
+		]
+	} as Parameters<typeof saveQuiz>[1]);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
+	const pin = await hostFromViewPage(page, saved.body.id);
+	const phone = await joinAsPlayer(browser, pin, 'Ana');
+	await expect(page.getByRole('button', { name: /Ana/ })).toBeVisible();
+	await page.getByRole('button', { name: 'Start game' }).click();
+	await page.getByRole('button', { name: /Next question/ }).click();
+	const step = page.getByRole('button', { name: 'Stop time and show solutions' });
+	await expect(step).toBeVisible();
+	const img = questionImage(page).first();
+	await decoded(img);
+
+	for (const key of ['Enter', ' ']) {
+		await img.focus();
+		await page.keyboard.press(key);
+		const full = page.getByRole('dialog');
+		await expect(full).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(full).toBeHidden();
+		// Still on the question: the step did not run.
+		await expect(step).toBeVisible();
+		await expect(phone.page.getByRole('button', { name: 'Grey' })).toBeVisible();
+	}
+	await phone.context.close();
+});

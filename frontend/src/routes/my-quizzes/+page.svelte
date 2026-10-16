@@ -226,9 +226,11 @@ SPDX-License-Identifier: MPL-2.0
 			<div
 				class="bg-muted relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-md sm:block"
 			>
+				<!-- A decorative thumbnail beside the title link, not a second control. -->
 				<MediaComponent
 					src={quiz.cover_image}
 					css_classes="absolute inset-0 h-full w-full object-cover"
+					allow_fullscreen={false}
 				/>
 			</div>
 		{/if}
@@ -357,9 +359,9 @@ SPDX-License-Identifier: MPL-2.0
 						? $t('my_quizzes.subtitle_signed_in')
 						: data.anonymousQuizzes === null
 							? 'We couldn’t check quiz creation availability.'
-						: anonymous_on
-							? $t('my_quizzes.subtitle_signed_out')
-							: $t('my_quizzes.subtitle_sign_in')}
+							: anonymous_on
+								? $t('my_quizzes.subtitle_signed_out')
+								: $t('my_quizzes.subtitle_sign_in')}
 				</p>
 			</div>
 			<!-- Signed out with the setting off, Create only leads to sign-in, which the empty
@@ -484,7 +486,9 @@ SPDX-License-Identifier: MPL-2.0
 					<LoaderCircle class="size-8 animate-spin" aria-label="Loading" />
 				</div>
 			{:else if browser_quizzes.length === 0 && data.anonymousQuizzes === null}
-				<RetryNotice message="Quiz creation is temporarily unavailable. Please try again." />
+				<RetryNotice
+					message="Quiz creation is temporarily unavailable. Please try again."
+				/>
 			{:else if browser_quizzes.length === 0 && !anonymous_on}
 				<div
 					class="border-border mt-10 flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center"

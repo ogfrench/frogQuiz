@@ -98,13 +98,16 @@ SPDX-License-Identifier: MPL-2.0
 				in:fade|global={{ duration: 300 }}
 				src={img_data.data}
 				alt={img_data.alt_text || $t('words.image')}
+				aria-label={$t('play_page.show_image_full_screen')}
 				class="{css_classes} cursor-zoom-in focus-visible:outline-ring focus-visible:outline-2 focus-visible:-outline-offset-2"
 				role="button"
 				tabindex="0"
 				onclick={() => open_fullscreen()}
 				onkeydown={(e) => {
 					if (e.key === 'Enter' || e.key === ' ') {
+						// The host page binds both keys on window to the next step.
 						e.preventDefault();
+						e.stopPropagation();
 						open_fullscreen();
 					}
 				}}

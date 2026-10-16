@@ -296,7 +296,9 @@ SPDX-License-Identifier: MPL-2.0
 		if (!game_state.game_started) return;
 		const target = e.target as HTMLElement | null;
 		if (
-			target?.closest('button, a, input, textarea, select, [role="switch"], [role="dialog"]')
+			target?.closest(
+				'button, a, input, textarea, select, [role="button"], [role="switch"], [role="dialog"]'
+			)
 		) {
 			return;
 		}

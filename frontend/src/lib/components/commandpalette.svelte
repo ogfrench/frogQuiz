@@ -82,7 +82,7 @@ This should be okay, right?
 		node.focus();
 		return {
 			destroy() {
-				before?.focus();
+				before?.focus({ preventScroll: true });
 				before = null;
 			}
 		};
@@ -209,6 +209,10 @@ This should be okay, right?
 			'$mod+k': toggle_open,
 			Escape: close_cp,
 			Tab: autocomplete_on_tab,
+			// Without it Shift+Tab walked out of the dialog to the page behind.
+			'Shift+Tab': (e: KeyboardEvent) => {
+				if (open) e.preventDefault();
+			},
 			ArrowDown: on_arrow_down,
 			ArrowUp: on_arrow_up,
 			Enter: on_enter
@@ -230,7 +234,6 @@ This should be okay, right?
 	<div
 		class="fixed inset-0 z-50 flex h-dvh w-full bg-black/50"
 		onclick={close_on_outside}
-		onkeyup={close_on_outside}
 		role="presentation"
 		transition:fade|global={{ duration: 60 }}
 	>
