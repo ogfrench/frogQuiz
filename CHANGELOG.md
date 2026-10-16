@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Fixed the deploy guard reading no migration head: it now reads the head from the image's migration files, since `alembic heads` imports the app's settings, which need production's environment.
 - Kept nightly backups for 30 days instead of 14, for a month of history at negligible size.
 - Added a cleanup mode to the Production ops workflow: removes the unused frontend container on the VM, unused images and the build cache, never volumes.
 

@@ -64,7 +64,23 @@ got=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.
 
 # Migration head of the new image against the database's current revision. Each must be
 # exactly one 12-hex revision id, or the check fails closed.
-new_head=$(docker run --rm --entrypoint sh "$image" -c 'cd /app && alembic heads 2>/dev/null' </dev/null || true)
+# Read from the migration files rather than `alembic heads`, which loads migrations/env.py
+# and with it the app's settings, which need production's environment to import.
+heads_py='
+import glob, re
+revs, downs = set(), set()
+for path in glob.glob("/app/migrations/versions/*.py"):
+    text = open(path, encoding="utf-8").read()
+    rev = re.search(r"^revision\s*(?::[^=]*)?=\s*[\x27\x22]([0-9a-f]+)[\x27\x22]", text, re.M)
+    if not rev:
+        continue
+    revs.add(rev.group(1))
+    down = re.search(r"^down_revision\s*(?::[^=]*)?=\s*(.+)$", text, re.M)
+    if down:
+        downs.update(re.findall(r"[\x27\x22]([0-9a-f]+)[\x27\x22]", down.group(1)))
+print("\n".join(sorted(revs - downs)))
+'
+new_head=$(docker run --rm --entrypoint python3 "$image" -c "$heads_py" </dev/null || true)
 current=$(docker compose exec -T api sh -c 'cd /app && alembic current 2>/dev/null' </dev/null || true)
 new_head=$(awk 'NF {print $1}' <<<"$new_head")
 current=$(awk 'NF {print $1}' <<<"$current")
