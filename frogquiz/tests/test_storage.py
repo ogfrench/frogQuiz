@@ -124,7 +124,8 @@ async def test_local_rejects_symlink_outside_storage(tmp_path):
 
     uploads = tmp_path / "uploads"
     storage = LocalStorage(str(uploads))
-    outside = tmp_path / "outside"
+    # A sibling with the same prefix must not pass a string-prefix boundary.
+    outside = tmp_path / "uploads-neighbor"
     outside.write_bytes(b"private")
     (uploads / "image").symlink_to(outside)
     with pytest.raises(ValueError):
