@@ -71,6 +71,9 @@ jobs:
           context: ./mcp-server
           push: ${{ github.event_name == 'push' }}
           load: ${{ github.event_name != 'push' }}
+          # The production VM is arm64 (Oracle A1). A pull request builds only the runner's
+          # platform, because `load` cannot take a multi-platform image.
+          platforms: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       # The image answers its own healthcheck as the non-root user it ships with.
