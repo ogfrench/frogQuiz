@@ -3,7 +3,7 @@
 #
 # Nightly backup of production (#61, #72, D44): the Neon database and ./uploads, pulled
 # from the VM over the same SSH access as the guest-access workflow, encrypted on the
-# runner to deploy/backup-recipient.txt and kept as an artifact for 14 days. The repo is
+# runner to deploy/backup-recipient.txt and kept as an artifact for 30 days. The repo is
 # public, so only the encryption keeps them private; the private key is not on GitHub.
 # A failed scheduled run emails whoever last changed the schedule line below. GitHub turns
 # schedules off after 60 days without a commit: check the newest artifact's date monthly.
@@ -92,7 +92,7 @@ jobs:
         with:
           name: frogquiz-backup-${{ env.STAMP }}-${{ github.run_id }}
           path: ${{ runner.temp }}/backup
-          retention-days: 14
+          retention-days: 30
           if-no-files-found: error
           # Already encrypted, and age output does not compress.
           compression-level: 0

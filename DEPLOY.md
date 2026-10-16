@@ -487,7 +487,7 @@ the Neon database (`pg_dump`, custom format) and `./uploads` from `/opt/frogquiz
 same SSH access and `production` environment as the guest-access workflow. The runner
 encrypts each part with [age](https://age-encryption.org) as it arrives, to the public key
 in `deploy/backup-recipient.txt`, and keeps the result as the artifact
-`frogquiz-backup-<date>-<run>` for 14 days: `db.age`, `uploads.age`, `config.age` (`.env`
+`frogquiz-backup-<date>-<run>` for 30 days: `db.age`, `uploads.age`, `config.age` (`.env`
 and the Compose files, so the settings and the signing key survive losing the VM) and
 `MANIFEST.txt` (sizes and checksums). **`config.age` holds the live database password and
 signing key,** in an artifact anyone can download: the age private key therefore protects
@@ -517,7 +517,7 @@ the private key is not on GitHub. Nothing is written in plaintext, on the VM or 
 François's password manager. Losing it makes every backup unreadable; anyone holding it
 can read them all. To replace it: `age-keygen -o new.key`, put the line it prints
 (`age1...`) in `deploy/backup-recipient.txt`, merge, and keep the old key until its last
-backup has expired (14 days).
+backup has expired (30 days).
 
 **Restore** into a scratch database and folder, never over production:
 
@@ -555,6 +555,10 @@ only by the round-trip test.
   signing key is at least 32 characters and differs from every `SECRET_KEY` value ever
   committed to this repo (yes or no, never the key). Billing and trial status are not in
   the metadata: check those in the OCI console.
+- **cleanup**: frees disk. It removes the unused `frontend` container (Netlify serves the
+  site; Caddy's catch-all on the VM's own address then answers 502 rather than an outdated
+  copy), every image no container uses, and the build cache. Never volumes. It also removes
+  the rollback image, so run it before a deploy, not straight after one.
 - **deploy**: moves the api and worker to one backend revision, which must be on master
   and must be the revision of the registry's `ghcr.io/ogfrench/frogquiz-backend:master`.
   It refuses when the new image's migration head differs from the database's, because the
