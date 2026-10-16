@@ -12,6 +12,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Bundle the sanitizer for SSR so Netlify functions do not require an ESM-only parser from CommonJS on older runtimes.
 
 - Distinguish unavailable guest configuration from disabled creation, add retry states for Discover failures, and show a non-blocking service-health banner without reloading open editors.
+- Added a manual Production ops workflow: a read-only facts report for #72 (VM shape, region, resources, revisions, and a yes/no check that the signing key was never committed), and a backend deploy that only accepts a revision on master with no migration to run and rolls back if unhealthy.
+- Added the production .env and Compose files to the nightly encrypted backup, so the settings and signing key survive losing the VM.
+- Recorded the first real restore (16 Oct) in DEPLOY.md.
+
+- Added nightly backups of the Neon database and the uploads as age-encrypted GitHub artifacts kept 14 days, with a restore script that only restores into an empty database and folder, a round-trip test on every change, and a restore runbook in DEPLOY.md (#61, D44).
+- Added a 30-minute uptime check of the frontend pages and the API's health, as a stopgap until an external monitor exists.
+- Recorded the 16 Oct outage, the backups and the open operations work in HANDOVER.md, docs/v1-plan.md and MVP.md (D44).
 
 - Formatted the deployment verification scripts so the repository-wide backend lint check passes when backend files change.
 

@@ -1,0 +1,98 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+# SPDX-License-Identifier: MPL-2.0
+#
+# Nightly backup of production (#61, #72, D44): the Neon database and ./uploads, pulled
+# from the VM over the same SSH access as the guest-access workflow, encrypted on the
+# runner to deploy/backup-recipient.txt and kept as an artifact for 14 days. The repo is
+# public, so only the encryption keeps them private; the private key is not on GitHub.
+# A failed scheduled run emails whoever last changed the schedule line below. GitHub turns
+# schedules off after 60 days without a commit: check the newest artifact's date monthly.
+# The restore runbook is in DEPLOY.md, "Backups".
+
+name: Backup
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/backup.yml"
+      - "deploy/backup*.sh"
+      - "deploy/backup-recipient.txt"
+      - "deploy/restore.sh"
+      - "deploy/test_backup_restore.sh"
+
+permissions:
+  contents: read
+
+env:
+  # The verified production directory (docs/github-production-access.md).
+  DEPLOY_PATH: /opt/frogquiz
+
+jobs:
+  # Not on the nightly run: a runner image without Postgres must not stop the backups.
+  test:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install age
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq age
+          ls -d /usr/lib/postgresql/*/bin >/dev/null 2>&1 || sudo apt-get install -y -qq postgresql
+      - name: Back up and restore on a throwaway cluster
+        run: bash deploy/test_backup_restore.sh
+
+  backup:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    # Only the backup job, so a pull request's test run never queues ahead of it.
+    concurrency:
+      group: production-backup
+      cancel-in-progress: false
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+      - name: Pull and encrypt
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          for name in SSH_HOST SSH_USER SSH_PRIVATE_KEY SSH_KNOWN_HOSTS; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing secret: $name. See docs/github-production-access.md"
+              exit 1
+            fi
+          done
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] || exit 1
+          [[ "$SSH_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] || exit 1
+          umask 077
+          key_dir=$(mktemp -d)
+          trap 'rm -rf "$key_dir"' EXIT
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$key_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$key_dir/known_hosts"
+          unset SSH_PRIVATE_KEY SSH_KNOWN_HOSTS
+          export REMOTE="ssh -i $key_dir/key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$key_dir/known_hosts -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 $SSH_USER@$SSH_HOST bash -s --"
+          bash deploy/backup-run.sh "$RUNNER_TEMP/backup" "$DEPLOY_PATH"
+          echo "STAMP=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: frogquiz-backup-${{ env.STAMP }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/backup
+          retention-days: 14
+          if-no-files-found: error
+          # Already encrypted, and age output does not compress.
+          compression-level: 0

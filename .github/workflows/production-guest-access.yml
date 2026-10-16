@@ -25,10 +25,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: production-backend-maintenance
-  cancel-in-progress: false
-
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -47,6 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
+    # On the job, so a pull request's validate run never displaces a queued repair.
+    concurrency:
+      group: production-backend-maintenance
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
         with:

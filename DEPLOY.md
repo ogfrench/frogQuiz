@@ -471,4 +471,94 @@ unhealthy container on its own: the check is for seeing it.
 
 **Uptime monitor (François, needs an account):** a free UptimeRobot or Better Stack
 monitor on `https://api.frogquiz.xyz/api/v1/health` (alert on any status other than 200)
-and on `https://frogquiz.xyz`, every 5 minutes or more, alerting by email.
+and on `https://frogquiz.xyz`, every 5 minutes or more, alerting by email. Watch the
+frontend too, not only the API: on 16 Oct every server-rendered page returned 502 for
+about six hours while the health endpoint said ok.
+
+**Until then, `.github/workflows/uptime.yml`** checks `/`, `/play` and `/explore` (a
+rendered page, not just a 200) and the health endpoint every 30 minutes. A failed run
+emails whoever last changed its schedule line. GitHub runs schedules late under load and
+turns them off after 60 days without a commit, so it is a stopgap, not the monitor.
+
+## Backups (#61, #72)
+
+**What and where (D44):** every night at 02:17 UTC, `.github/workflows/backup.yml` pulls
+the Neon database (`pg_dump`, custom format) and `./uploads` from `/opt/frogquiz` over the
+same SSH access and `production` environment as the guest-access workflow. The runner
+encrypts each part with [age](https://age-encryption.org) as it arrives, to the public key
+in `deploy/backup-recipient.txt`, and keeps the result as the artifact
+`frogquiz-backup-<date>-<run>` for 14 days: `db.age`, `uploads.age`, `config.age` (`.env`
+and the Compose files, so the settings and the signing key survive losing the VM) and
+`MANIFEST.txt` (sizes and checksums). **`config.age` holds the live database password and
+signing key,** in an artifact anyone can download: the age private key therefore protects
+production credentials, not only data. Keep it as you would the `.env` itself, and if it is
+ever exposed, rotate both it and the credentials in `.env`. `restore.sh` restores the first two; read the third
+with `age -d -i KEY config.age | tar -tvf -` and copy what you need by hand. The repo is public, and only the encryption keeps a backup private:
+the private key is not on GitHub. Nothing is written in plaintext, on the VM or the runner.
+
+- **The database comes first.** An image uploaded between the two parts is an orphan the
+  app ignores; the other order could leave a quiz pointing at a missing picture.
+- **A failed run** emails whoever last changed the schedule line, and leaves no artifact.
+  It fails when either part is not what it claims (a dump starts `PGDMP`, a tar has
+  `ustar`), so a banner or a warning on the stream cannot pass as a backup, and when
+  `./uploads` is missing. An empty `./uploads` is still a valid, small backup.
+- **GitHub turns schedules off after 60 days without a commit,** and only says so by
+  email. Check the newest backup's date once a month.
+- **Connection errors are masked** before they reach the public log: the database URL,
+  the Neon host and the role name.
+- **If the `production` environment requires a reviewer,** the nightly run waits for one.
+  Leave the environment with branch protection only, or the backups stop silently.
+- **Tested** by `deploy/test_backup_restore.sh` on every change to these files: a backup
+  and a restore on a throwaway cluster and key, the quiz row and the image compared byte
+  for byte, and the three refusals below. Each check was seen to fail when its guard was
+  removed.
+
+**The key.** The private half is a one-line file starting `AGE-SECRET-KEY-`, kept in
+François's password manager. Losing it makes every backup unreadable; anyone holding it
+can read them all. To replace it: `age-keygen -o new.key`, put the line it prints
+(`age1...`) in `deploy/backup-recipient.txt`, merge, and keep the old key until its last
+backup has expired (14 days).
+
+**Restore** into a scratch database and folder, never over production:
+
+```bash
+# 1. Download the artifact (Actions, Backup, the run, Artifacts) and unzip it.
+# 2. An empty database, with a client at least as new as the server (Neon is on 18):
+docker run -d --name restore-pg -e POSTGRES_PASSWORD=x -p 5433:5432 postgres:18-alpine
+# 3. Restore. It refuses a database with tables in it, or a folder with files in it, a
+#    backup whose checksums do not match its manifest, and one that does not decrypt.
+#    Both parts are decrypted once before anything is written.
+PG_BIN=/usr/lib/postgresql/18/bin bash deploy/restore.sh ./frogquiz-backup-<date>-<run> \
+  ~/frogquiz-backup.key 'postgresql://postgres:x@localhost:5433/postgres' ./restored-uploads
+# 4. Point a local API at it (DB_URL and the uploads folder) and open a quiz with images.
+```
+
+Without a Postgres 18 client on the machine, run the restore inside the container instead
+(`docker exec -i restore-pg ...`), or install `postgresql-client-18`.
+
+To put a backup back into production, restore into a new Neon branch first, check it, then
+point `DB_URL_OVERRIDE` at that branch and copy `restored-uploads/` over `./uploads` with
+the api and worker stopped. That has not been rehearsed.
+
+**First real restore: 16 Oct 2026**, from the first production backup (run 38889319981),
+into a scratch Postgres 18. 8 quizzes and 2 users came back, schema at `e4a1f9c2d7b0`;
+`restore.sh` took under a second, about five minutes end to end with the download.
+Production had no uploaded images yet (no `storage_items`), so the image half is proven
+only by the round-trip test.
+
+## Production ops: facts and deploys (#72)
+
+`.github/workflows/production-ops.yml`, run by hand from `master` (Actions, Production ops):
+
+- **facts** (read-only): the VM's shape, region and allocation from Oracle's metadata
+  service, CPUs, memory, disk, uploads, container revisions, and whether the running
+  signing key is at least 32 characters and differs from every `SECRET_KEY` value ever
+  committed to this repo (yes or no, never the key). Billing and trial status are not in
+  the metadata: check those in the OCI console.
+- **deploy**: moves the api and worker to one backend revision, which must be on master
+  and must be the revision of the registry's `ghcr.io/ogfrench/frogquiz-backend:master`.
+  It refuses when the new image's migration head differs from the database's, because the
+  image runs `alembic upgrade head` on start and putting the old image back would not undo
+  it: a deploy with a migration is done by hand, after a backup. It keeps the old image as
+  `frogquiz-backend:rollback` and puts it back if the new containers are not healthy, then
+  checks `/api/v1/health` from outside. Nothing else on the VM changes.

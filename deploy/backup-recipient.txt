@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+# SPDX-License-Identifier: MPL-2.0
+#
+# The public half of the backup key (age). Backups are encrypted to it; only the private
+# half, kept off GitHub, can read them. DEPLOY.md, "Backups", says how to replace it.
+age1se6l7eq4khzdfpsuwwujny37vpar6vzds323txwvgjc43m6ecfkq824254

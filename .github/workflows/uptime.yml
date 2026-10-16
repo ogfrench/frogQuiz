@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+# SPDX-License-Identifier: MPL-2.0
+#
+# A stopgap uptime check until #72's external monitor exists. On 16 Oct the frontend
+# returned 502 on every server-rendered page for about six hours while the API reported
+# healthy, and nothing said so: watching /api/v1/health alone would have stayed green.
+# This checks both. A failed scheduled run emails whoever last changed the schedule line.
+# GitHub runs schedules late under load and turns them off after 60 days without a commit,
+# so this is not a replacement for a real monitor.
+
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Frontend and API answer
+        shell: bash
+        run: |
+          set -uo pipefail
+          failed=0
+          # A rendered page, not just a 200: Netlify's own error pages are 200 sometimes.
+          for path in / /play /explore; do
+            body=$(curl -sS -m 20 --retry 1 --retry-delay 15 -w '\n%{http_code}' "https://frogquiz.xyz$path") || body=$'\n000'
+            code=${body##*$'\n'}
+            if [[ "$code" != 200 ]] || ! grep -q 'id="main-content"' <<<"$body"; then
+              echo "::error::https://frogquiz.xyz$path answered $code"
+              failed=1
+            fi
+          done
+          health=$(curl -sS -m 20 --retry 1 --retry-delay 15 https://api.frogquiz.xyz/api/v1/health) || health=''
+          if ! python3 -c 'import json,sys; sys.exit(json.loads(sys.argv[1]).get("status") != "ok")' "$health" 2>/dev/null; then
+            echo "::error::API health is not ok: ${health:-no answer}"
+            failed=1
+          fi
+          exit $failed
