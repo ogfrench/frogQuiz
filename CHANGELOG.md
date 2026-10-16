@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Added three modes to the Production ops workflow: migrate (a backend deploy with a migration, only after a Backup run from the last 3 hours, never rolling back past a migration that ran), agents-on and agents-off.
 - Wrote the turn-on runbook for AI agents in DEPLOY.md as two steps: the migration deploy #83 needs before any other backend deploy, then switching agents on.
 - Recorded the V1 scope for AI agents as D46 in MVP.md, and #83 and #84 in HANDOVER.md and docs/v1-plan.md.
 - Changed the PIN step on /play to wait for Join once the game is found (D45), as Kahoot, Mentimeter and Gimkit do; a PIN that arrives in the link, from the home page or the QR code, still goes straight on.

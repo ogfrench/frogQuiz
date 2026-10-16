@@ -467,7 +467,24 @@ is refused.
 
 The first backend deploy that carries `a7c3e5f1b9d2` is a deploy with a migration. The
 Production ops **deploy** mode refuses it (`deploy/deploy-backend.sh` compares migration
-heads), so it is done by hand, after a backup. Agents stay off throughout.
+heads). Agents stay off throughout.
+
+**With the workflow:**
+
+1. Actions › Backup › Run workflow, on master. Wait for it to pass, and note the run's id
+   (the number at the end of its address).
+2. Actions › Production ops › Run workflow, on master: mode **migrate**, the full commit
+   whose backend image is on `:master` as the revision, and that id as `backup_run`.
+   - It refuses a Backup run that is not on master, did not pass, has no artifact or
+     finished more than 3 hours ago.
+   - On the VM it takes only an image whose migration head is ahead of the database on the
+     same line. The API runs the migration as it starts.
+   - If the new containers fail and the database is still where it was, it puts the old
+     image back, as **deploy** does. If the migration ran, it leaves the new image and says
+     so: fix forward, or restore the backup.
+   - It then checks `/api/v1/health`.
+
+**By hand, if the workflow cannot run:**
 
 1. **Back up.** Actions › Backup › Run workflow, on master. Wait for it to pass and check
    the run has its `frogquiz-backup-…` artifact.
@@ -512,7 +529,24 @@ the database is restored from the backup in step 1 as well.
 
 ### Step 2: turn agents on (François and Gonçalo both agree)
 
-On the VM, in `/opt/frogquiz`:
+**With the workflow:** Actions › Production ops › Run workflow, on master, mode
+**agents-on** (or **agents-off**). `deploy/agents.sh`:
+
+- refuses unless the running API has the agent API and the VM's `docker-compose.yml` has
+  the `mcp` service and passes the settings to the API. When that file is older than #83
+  and the folder is a clean `master` checkout, it fast-forwards the checkout first and
+  prints what changed in the Compose and Caddy files; otherwise it stops.
+- keeps a copy of `.env`, then sets the four lines below. It adds `mcp` to
+  `COMPOSE_PROFILES` and keeps any other profile there.
+- pulls only the `proxy` and `mcp` images, and recreates the API, worker, proxy and `mcp`
+  with `--no-deps`, so Redis, search and the database are not touched. Recreating the
+  proxy drops connections for a few seconds.
+- if they do not come up healthy, puts `.env` back and recreates them as they were.
+
+The workflow then checks that the config says `"agent_api_enabled":true` and that `/mcp`
+answers 401 without a key.
+
+**By hand,** on the VM, in `/opt/frogquiz`:
 
 1. `git pull --ff-only`. The checkout's `docker-compose.yml` has to be one from after #83:
    it adds the `mcp` service and passes `AGENT_API_ENABLED` and `MCP_URL` to the API. With
