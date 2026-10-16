@@ -18,7 +18,7 @@ permanently and browse the shared quiz collection.
 - **Play or host**: [frogquiz.xyz](https://frogquiz.xyz).
 - **Create a quiz**: open **My Quizzes → Create a quiz**, then choose **Start from scratch** or **Import from Excel**.
 - **Import a workbook**: download the template in the import dialog, add your questions, and review the preview before creating the quiz.
-- **Keep your quizzes**: sign in, then choose **Keep all** or claim individual quizzes in **My Quizzes**.
+- **Keep your quizzes**: sign in, then choose **Add all to account**, or **Add to account** on individual quizzes in **My Quizzes**.
 - **Self-host**: [DEPLOY.md](DEPLOY.md) covers Docker, a single-host setup, and a Netlify frontend with a separate backend.
 
 Guest quizzes last 30 days and belong to the browser that created them. Clearing

@@ -121,8 +121,10 @@ and nothing in a quiz needs one.
 
 **The pixel cap is not the byte cap.** A 20000×20000 PNG of one solid color is under
 400 KiB on disk — inside the 5 MB limit — and about 1.6 GB as a bitmap in every browser
-that draws it: every player's phone, and the projector. The server never decodes an image
-(there is no Pillow; the worker only hashes bytes), so the clients are what fall over. The
+that draws it: every player's phone, and the projector. The server decodes an image once,
+in the worker, for its thumbhash (`helpers/thumbhash.py`, Pillow): it converts the whole
+image to RGBA before shrinking it to 100 px, so an 8000×8000 upload costs the worker about
+256 MB for a moment. The clients are what fall over first, at every draw. The
 upload routes read the dimensions from the file's header — no decode, see
 `frogquiz/image_dimensions.py` — and refuse anything over `max_image_dimension` on either
 side with a 413. 8000 clears a 48-megapixel phone photo and sits at the 8192 texture limit
