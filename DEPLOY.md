@@ -458,16 +458,102 @@ The migration that comes with it (`a7c3e5f1b9d2`) runs at API start, as every mi
 does. It hashes any existing key in place and drops the plain-text column. It runs whether
 or not the feature is on, and its downgrade deletes every key.
 
-So the first backend deploy that carries it is a deploy with a migration: the Production
-ops **deploy** mode refuses it, and it is done by hand, after a backup. Putting an older
-image back afterwards leaves that code looking for the dropped `key` column, so its API-key
-routes (`/live` with `api_key`, the key list) **and account deletion** fail until the new
-image is back. Nothing else reads that table. Roll forward, not back, unless the database
-is restored as well.
+**Merged on 16 Oct as `125c5ad` (#83), off.** Production's API still runs the image from
+before it, so nothing changed there. Turning agents on is two separate steps. The first
+one is needed even if agents stay off, because until it is done every later backend deploy
+is refused.
 
-To turn it on, on the VM in `/opt/frogquiz`:
+### Step 1: the migration deploy (needed for any later backend deploy)
 
-1. In `.env`:
+The first backend deploy that carries `a7c3e5f1b9d2` is a deploy with a migration. The
+Production ops **deploy** mode refuses it (`deploy/deploy-backend.sh` compares migration
+heads). Agents stay off throughout.
+
+**With the workflow:**
+
+1. Actions › Backup › Run workflow, on master. Wait for it to pass, and note the run's id
+   (the number at the end of its address).
+2. Actions › Production ops › Run workflow, on master: mode **migrate**, the full commit
+   whose backend image is on `:master` as the revision, and that id as `backup_run`.
+   - It refuses a Backup run that is not on master, did not pass, has no artifact or
+     finished more than 3 hours ago.
+   - On the VM it takes only an image whose migration head is ahead of the database on the
+     same line. The API runs the migration as it starts.
+   - If the new containers fail and the database is still where it was, it puts the old
+     image back, as **deploy** does. If the migration ran, it leaves the new image and says
+     so: fix forward, or restore the backup.
+   - It then checks `/api/v1/health`.
+
+**By hand, if the workflow cannot run:**
+
+1. **Back up.** Actions › Backup › Run workflow, on master. Wait for it to pass and check
+   the run has its `frogquiz-backup-…` artifact.
+2. **On the VM, in `/opt/frogquiz`, pull and check the image:**
+   ```sh
+   docker pull ghcr.io/ogfrench/frogquiz-backend:master
+   docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' \
+     ghcr.io/ogfrench/frogquiz-backend:master
+   ```
+   The revision must be `125c5ad…`, or a later master commit you have read and mean to
+   ship. If it is anything else, stop.
+3. **Keep the running image**, so the pull cannot leave it untagged for a prune or
+   Production ops **cleanup** to delete:
+   ```sh
+   docker tag "$(docker inspect --format '{{.Image}}' "$(docker compose ps -q api)")" frogquiz-backend:rollback
+   ```
+   It is only useful together with a database restore (below).
+4. **Recreate the API and worker.** `prestart.sh` runs `alembic upgrade head` as the API
+   starts:
+   ```sh
+   docker compose up -d --no-deps --force-recreate --wait --wait-timeout 180 api worker
+   docker compose exec -T api sh -c 'cd /app && alembic current'
+   ```
+   `alembic current` must print the image's head followed by `(head)`: `a7c3e5f1b9d2` for
+   `125c5ad`, or a later revision if a later commit added a migration.
+   **If the API does not come up healthy,** read `docker compose logs api`. A failed
+   migration loops the container on restart. Fix forward if the cause is plain; otherwise
+   restore the step 1 backup ("Backups", below), then
+   `docker tag frogquiz-backend:rollback ghcr.io/ogfrench/frogquiz-backend:master` and run
+   the same `up` line again.
+5. **Check:** `https://api.frogquiz.xyz/api/v1/health` says `ok`, `/`, `/play` and
+   `/explore` load, and a sign-in works. `/api/v1/utils/config` shows
+   `"agent_api_enabled":false`.
+
+From here on, Production ops **deploy** works again for backend changes without a
+migration.
+
+**Do not put the older image back afterwards.** Its code reads the dropped `key` column, so
+its API-key routes (`/live` with `api_key`, the key list) **and account deletion** fail
+until the new image is back. Nothing else reads that table. Roll forward, not back, unless
+the database is restored from the backup in step 1 as well.
+
+### Step 2: turn agents on (François and Gonçalo both agree)
+
+**With the workflow:** Actions › Production ops › Run workflow, on master, mode
+**agents-on** (or **agents-off**). `deploy/agents.sh`:
+
+- refuses unless the running API has the agent API and the VM's `docker-compose.yml` has
+  the `mcp` service and passes the settings to the API. When that file is older than #83
+  and the folder is a clean `master` checkout, it fast-forwards the checkout first and
+  prints what changed in the Compose and Caddy files; otherwise it stops.
+- keeps a copy of `.env`, then sets the four lines below. It adds `mcp` to
+  `COMPOSE_PROFILES` and keeps any other profile there.
+- pulls only the `proxy` and `mcp` images, and recreates the API, worker, proxy and `mcp`
+  with `--no-deps`, so Redis, search and the database are not touched. Recreating the
+  proxy drops connections for a few seconds.
+- if they do not come up healthy, puts `.env` back and recreates them as they were.
+
+The workflow then checks that the config says `"agent_api_enabled":true` and that `/mcp`
+answers 401 without a key.
+
+**By hand,** on the VM, in `/opt/frogquiz`:
+
+1. `git pull --ff-only`. The checkout's `docker-compose.yml` has to be one from after #83:
+   it adds the `mcp` service and passes `AGENT_API_ENABLED` and `MCP_URL` to the API. With
+   an older one, the settings below do nothing. Read what the pull changed in it first
+   (`git diff HEAD@{1} -- docker-compose.yml`): `up -d` recreates every service whose
+   definition changed, not only the new one.
+2. In `.env`:
    ```sh
    AGENT_API_ENABLED=true
    MCP_URL=https://api.frogquiz.xyz/mcp
@@ -478,14 +564,24 @@ To turn it on, on the VM in `/opt/frogquiz`:
    sslip.io name still in `SITE_ADDRESS`, agents using that name get 421 unless
    `MCP_ALLOWED_HOSTS=api.frogquiz.xyz,134-98-158-173.sslip.io`. Agents should use the
    new name anyway.
-2. `docker compose pull && docker compose up -d`. The `proxy` image has to be one built
-   after this change, because it carries the `/mcp` route in `Caddyfile-docker`.
-3. Check it:
+3. Pull only the proxy and the agent service, then start:
+   ```sh
+   docker compose pull proxy mcp && docker compose up -d
+   ```
+   Not a bare `docker compose pull`: that would also pull whatever the backend's `:master`
+   is by then and ship it on `up` with no revision or migration check, and could recreate
+   Redis, which drops sessions and live games. The `api` and `worker` are recreated with
+   the image from step 1, to pick up the new settings. The `proxy` image has to be one
+   built after #83, because it carries the `/mcp` route in `Caddyfile-docker`.
+4. Check it:
    - `curl -s https://api.frogquiz.xyz/api/v1/utils/config` shows
      `"agent_api_enabled":true`.
    - `curl -s -o /dev/null -w '%{http_code}' -X POST https://api.frogquiz.xyz/mcp` prints
      `401`, which means no key, so the service is answering.
    - My Account shows **AI agents**.
+5. **Try it for real:** make a key on My Account, paste the `claude mcp add …` command it
+   shows into Claude Code, and ask for a short quiz. It should appear in My Quizzes,
+   unlisted. Revoke the key, and the next agent call should fail. Record the session on #68.
 
 To turn it off: set `AGENT_API_ENABLED=false`, remove `COMPOSE_PROFILES=mcp`, and run
 `docker compose up -d && docker compose stop mcp`. Keys people made stay in the

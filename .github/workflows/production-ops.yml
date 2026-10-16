@@ -9,6 +9,12 @@
 #           cache. Never volumes. Run it before a deploy, since it removes the rollback image.
 #   deploy  moves the api and worker to one backend revision that is on master, with no
 #           migration to run, and rolls back if they do not come up healthy.
+#   migrate the same, for a revision whose migrations move the database forward. It needs
+#           the id of a Backup run that passed on master in the last 3 hours, and once a
+#           migration has run it never puts the old image back (DEPLOY.md).
+#   agents-on, agents-off
+#           AI agents (docs/mcp.md): four .env lines, then the api, worker, proxy and mcp
+#           recreated. Turning them on is a joint François and Gonçalo decision.
 # The log is public: the scripts print no value from .env, no address and no key.
 
 name: Production ops
@@ -17,13 +23,17 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: facts (read-only), cleanup or deploy
+        description: facts (read-only), cleanup, deploy, migrate, agents-on or agents-off
         type: choice
-        options: [facts, cleanup, deploy]
+        options: [facts, cleanup, deploy, migrate, agents-on, agents-off]
         default: facts
         required: true
       revision:
-        description: For deploy only. The full commit on master that the backend image was built from.
+        description: For deploy and migrate. The full commit on master that the backend image was built from.
+        type: string
+        required: false
+      backup_run:
+        description: For migrate only. The id of a Backup run that passed on master in the last 3 hours.
         type: string
         required: false
   pull_request:
@@ -32,9 +42,12 @@ on:
       - "deploy/ops-facts.sh"
       - "deploy/deploy-backend.sh"
       - "deploy/ops-cleanup.sh"
+      - "deploy/agents.sh"
 
 permissions:
   contents: read
+  # To read the Backup run that migrate names.
+  actions: read
 
 env:
   DEPLOY_PATH: /opt/frogquiz
@@ -46,7 +59,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - run: bash -n deploy/ops-facts.sh && bash -n deploy/deploy-backend.sh && bash -n deploy/ops-cleanup.sh
+      - run: bash -n deploy/ops-facts.sh && bash -n deploy/deploy-backend.sh && bash -n deploy/ops-cleanup.sh && bash -n deploy/agents.sh
 
   run:
     needs: validate
@@ -65,13 +78,45 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Check the revision is on master
-        if: inputs.mode == 'deploy'
+        if: inputs.mode == 'deploy' || inputs.mode == 'migrate'
         env:
           REVISION: ${{ inputs.revision }}
         run: |
           [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::revision must be a full 40-character commit'; exit 1; }
           git merge-base --is-ancestor "$REVISION" origin/master ||
             { echo "::error::$REVISION is not on master"; exit 1; }
+      - name: Check a backup passed in the last 3 hours
+        if: inputs.mode == 'migrate'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_RUN: ${{ inputs.backup_run }}
+        run: |
+          [[ "$BACKUP_RUN" =~ ^[0-9]+$ ]] || { echo '::error::backup_run must be the numeric id of a Backup run'; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN" > run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN/artifacts" > artifacts.json
+          python3 - <<'PY'
+          import json, sys
+          from datetime import datetime, timedelta, timezone
+          run = json.load(open("run.json"))
+          artifacts = json.load(open("artifacts.json"))["artifacts"]
+          done = datetime.fromisoformat(run["updated_at"].replace("Z", "+00:00"))
+          problems = []
+          if not str(run.get("path", "")).startswith(".github/workflows/backup.yml"):
+              problems.append("it is not a Backup run")
+          if run.get("head_branch") != "master" or run.get("event") not in ("schedule", "workflow_dispatch"):
+              problems.append("it was not a scheduled or manual run on master")
+          if run.get("head_repository", {}).get("full_name") != run.get("repository", {}).get("full_name"):
+              problems.append("it ran from another repository")
+          if run.get("conclusion") != "success":
+              problems.append(f"it did not pass ({run.get('conclusion')})")
+          if datetime.now(timezone.utc) - done > timedelta(hours=3):
+              problems.append(f"it finished at {done:%Y-%m-%d %H:%M} UTC, over 3 hours ago")
+          if not any(a["name"].startswith("frogquiz-backup-") and not a["expired"] for a in artifacts):
+              problems.append("it has no frogquiz-backup artifact")
+          if problems:
+              sys.exit("::error::Backup run refused: " + "; ".join(problems))
+          print(f"Backup run {run['id']} passed at {done:%Y-%m-%d %H:%M} UTC.")
+          PY
       - name: Run on the VM
         shell: bash
         env:
@@ -88,7 +133,7 @@ jobs:
           done
           [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] || exit 1
           [[ "$SSH_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] || exit 1
-          [[ "$MODE" == facts || "$MODE" == cleanup || "$MODE" == deploy ]] || exit 1
+          [[ "$MODE" =~ ^(facts|cleanup|deploy|migrate|agents-on|agents-off)$ ]] || exit 1
           umask 077
           key_dir=$(mktemp -d)
           trap 'rm -rf "$key_dir"' EXIT
@@ -101,11 +146,15 @@ jobs:
             ssh "${ssh_args[@]}" "$SSH_USER@$SSH_HOST" "bash -s -- $DEPLOY_PATH" < deploy/ops-facts.sh | tee "$GITHUB_STEP_SUMMARY"
           elif [[ "$MODE" == cleanup ]]; then
             ssh "${ssh_args[@]}" "$SSH_USER@$SSH_HOST" "bash -s -- $DEPLOY_PATH" < deploy/ops-cleanup.sh | tee "$GITHUB_STEP_SUMMARY"
-          else
+          elif [[ "$MODE" == deploy ]]; then
             ssh "${ssh_args[@]}" "$SSH_USER@$SSH_HOST" "bash -s -- $DEPLOY_PATH $REVISION" < deploy/deploy-backend.sh
+          elif [[ "$MODE" == migrate ]]; then
+            ssh "${ssh_args[@]}" "$SSH_USER@$SSH_HOST" "bash -s -- $DEPLOY_PATH $REVISION migrate" < deploy/deploy-backend.sh
+          else
+            ssh "${ssh_args[@]}" "$SSH_USER@$SSH_HOST" "bash -s -- $DEPLOY_PATH ${MODE#agents-}" < deploy/agents.sh
           fi
       - name: Check health after a deploy
-        if: inputs.mode == 'deploy'
+        if: inputs.mode != 'facts' && inputs.mode != 'cleanup'
         run: |
           for attempt in {1..12}; do
             body=$(curl -sS -m 15 https://api.frogquiz.xyz/api/v1/health || true)
@@ -116,3 +165,23 @@ jobs:
           done
           echo "::error::API health is not ok after the deploy: ${body:-no answer}"
           exit 1
+      - name: Check agents answer
+        if: inputs.mode == 'agents-on' || inputs.mode == 'agents-off'
+        env:
+          WANT: ${{ inputs.mode == 'agents-on' && 'true' || 'false' }}
+        run: |
+          config=$(curl -sS -m 15 https://api.frogquiz.xyz/api/v1/utils/config)
+          python3 - "$config" "$WANT" <<'PY'
+          import json, sys
+          got = json.loads(sys.argv[1]).get("agent_api_enabled")
+          want = sys.argv[2] == "true"
+          if got is not want:
+              sys.exit(f"::error::agent_api_enabled is {got}, expected {want}")
+          PY
+          if [[ "$WANT" == true ]]; then
+            code=$(curl -sS -o /dev/null -m 15 -w '%{http_code}' -X POST https://api.frogquiz.xyz/mcp)
+            [[ "$code" == 401 ]] || { echo "::error::POST /mcp without a key answered $code, expected 401"; exit 1; }
+            echo 'Agents are on: the config says so, and /mcp asks for a key.'
+          else
+            echo 'Agents are off.'
+          fi

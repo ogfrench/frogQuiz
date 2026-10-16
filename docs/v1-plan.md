@@ -21,7 +21,7 @@ The consolidated issues retain links to every original specification. Closing th
 - V1 ships in four releases, each its own PR from the branch `v1` (D35, 11 Oct): **v0.5** is steps 0 to 3 (PR #57), **v0.8** step 4, **v0.9** step 5, **v1.0** step 6. After each merge, `v1` restarts from master. Master before v0.5 is tagged `mvp`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status (16 Oct): v0.8 shipped in #62 on 12 Oct; guest creation and Excel import shipped in #67; #71 (recovery safeguards, the SSR socket fix, the copy) and #76 (security alerts) merged on 16 Oct. #76 took the frontend down until #77, which also adds a CI check for Netlify's runtime. Nightly encrypted backups and an uptime check follow #77 (D44).** Step 5 (v0.9) was planned for the week of 19 Oct; its remaining work is tracked in #73. François trimmed V1 the same day (D39): #33, #34, #38 and #41 moved after V1, and #60 and #61 came in.
+**Status (16 Oct): v0.8 shipped in #62 on 12 Oct; guest creation and Excel import shipped in #67; #71 (recovery safeguards, the SSR socket fix, the copy) and #76 (security alerts) merged on 16 Oct. #76 took the frontend down until #77, which also adds a CI check for Netlify's runtime. Nightly encrypted backups and an uptime check follow #77 (D44). #84 fixed the join flow (#82, D45), and #83 brought AI agents over MCP, merged off; its migration has to be deployed by hand before any other backend change (DEPLOY.md). D46 sets what agents do in V1.** Step 5 (v0.9) was planned for the week of 19 Oct; its remaining work is tracked in #73. François trimmed V1 the same day (D39): #33, #34, #38 and #41 moved after V1, and #60 and #61 came in.
 
 ## What V1 means
 
@@ -262,6 +262,7 @@ Re-planned 12 Oct after D39. #34, #33, #38 and #41 left the step.
 
 ## Plan changes
 
+- 16 October 2026, evening: #84 fixed #82 (one PIN box, Join on the PIN step, D45). #83 merged with AI agents off, and François set the agent scope for V1 (D46): everything the app does except publishing and hosting, with `/live` closed to agent keys and OAuth last. #83's migration must be deployed by hand before any other backend change; until then Production ops refuses backend deploys.
 - 16 October 2026: #76 passed CI and broke every server-rendered page on Netlify (sanitize-html require()d an ES module), and nothing alerted. #77 carries the fix and a CI check that renders pages through the Netlify function with Node's stricter module loading. #61 is built as encrypted GitHub artifacts (D44, François), with a restore script tested on every change, and a 30-minute uptime check on the frontend and the API stands in for #72's external monitor. Open from #72: the first real restore, OCI eligibility, deploying #76's backend fix to the VM.
 - 15 October 2026: consolidated the issue backlog into #72 (operations), #73 (V1 quality) and #74 (post-V1 features), keeping #69 and #68 separate. Completed Excel import #65 was closed with production verification. Scope and release approval requirements were preserved.
 
