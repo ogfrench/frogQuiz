@@ -73,6 +73,21 @@ This should be okay, right?
 	];
 	let visible_items = $state(actions);
 
+	// Focus goes to the field when the palette opens and back where it was when it closes.
+	// `autofocus` was not enough: Svelte 5 honours it only while <body> has the focus, so
+	// Ctrl+K from a focused link left the typing going to the page behind.
+	let before: HTMLElement | null = null;
+	const grab_focus = (node: HTMLInputElement) => {
+		before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		node.focus();
+		return {
+			destroy() {
+				before?.focus();
+				before = null;
+			}
+		};
+	};
+
 	const toggle_open = (e: KeyboardEvent | undefined) => {
 		e.preventDefault();
 		open = !open;
@@ -216,18 +231,19 @@ This should be okay, right?
 		class="fixed inset-0 z-50 flex h-dvh w-full bg-black/50"
 		onclick={close_on_outside}
 		onkeyup={close_on_outside}
-		role="button"
-		aria-label="Close"
-		tabindex="0"
+		role="presentation"
 		transition:fade|global={{ duration: 60 }}
 	>
+		<!-- A named dialog: the backdrop used to be one role="button" named Close around the
+		     whole panel, so a screen reader heard a button with a text field inside it. -->
 		<div
+			role="dialog"
+			aria-modal="true"
+			aria-label="Command palette"
 			class="border-border bg-popover text-popover-foreground m-auto flex max-h-[60vh] w-[min(36rem,calc(100%-2rem))] flex-col overflow-hidden rounded-xl border shadow-xl"
 		>
 			<div class="border-border grid grid-cols-1 grid-rows-1 border-b">
-				<p
-					class="text-muted-foreground col-start-1 row-start-1 w-full p-4 outline-hidden"
-				>
+				<p class="text-muted-foreground col-start-1 row-start-1 w-full p-4 outline-hidden">
 					{bg_text}
 				</p>
 				<input
@@ -235,7 +251,8 @@ This should be okay, right?
 					class="text-foreground col-start-1 row-start-1 w-full bg-transparent p-4 outline-hidden"
 					bind:value={input}
 					oninput={() => search(input)}
-					autofocus
+					aria-label="Search commands"
+					use:grab_focus
 				/>
 			</div>
 			<div class="flex flex-col p-2 gap-2 overflow-scroll">
@@ -253,7 +270,9 @@ This should be okay, right?
 					>
 						<div class="flex">
 							<h3 class="text-lg my-auto">{vi.title}</h3>
-							<p class="bg-background/60 my-auto ml-auto h-fit rounded-md p-0.5 font-mono">
+							<p
+								class="bg-background/60 my-auto ml-auto h-fit rounded-md p-0.5 font-mono"
+							>
 								/{vi.command}
 								{#if vi.args}
 									{#each vi.args as arg}

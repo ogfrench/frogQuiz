@@ -51,10 +51,10 @@ trigger's own size, "inside" is the size of every control in the open dialog, me
 | Overlay | File | How a user reaches it | Keyboard | Touch | Verdict |
 | --- | --- | --- | --- | --- | --- |
 | Navbar menu (Sheet) | `lib/navbar.svelte:171` | Below 768px: "Open menu" button in the navbar, on any page with the navbar | all. Opens on "frogQuiz home" link. `overlays` > navbar menu | trigger and drawer: `touch-targets.e2e.ts` ("menu drawer") | ok |
-| Command palette | `lib/components/commandpalette.svelte` | Ctrl/Cmd+K on any page. No visible button. My Quizzes shows a one-time notice, with a fine pointer only | Escape closes. Tab stays (it is bound to autocomplete). No dialog role, no name, field not focused when something else has focus. See findings 1 and 2 | Not reachable on a phone | finding |
+| Command palette | `lib/components/commandpalette.svelte` | Ctrl/Cmd+K on any page. No visible button. My Quizzes shows a one-time notice, with a fine pointer only | Escape closes. Tab stays (it is bound to autocomplete). No dialog role, no name, field not focused when something else has focus. See findings 1 and 2, fixed 16 Oct | Not reachable on a phone | fixed |
 | Create a quiz | `lib/components/CreateQuizDialog.svelte` | Navbar "Create a quiz" (desktop); Menu > "Create a quiz" (phone); the same link on Home and My Quizzes | all, on the desktop link. Opens on "Start from scratch". Import step: all, focus goes back to the link. Phone path: opens with focus inside and Escape closes; where focus lands afterwards is not asserted (the menu item that opened it is gone) | inside: clean | ok |
 | Download | `lib/components/DownloadQuiz.svelte` | View page "Download" (owner); My Quizzes row, icon button "Download" | all, from both triggers. Opens on Cancel | trigger: `touch-targets.e2e.ts` (view page, My Quizzes). inside: clean | ok |
-| Start game | `lib/dashboard/start_game.svelte` | View page "Play". Same component on My Quizzes and in the editor, not repeated | all. Opens on "Start game". Role, name and Escape were already in `start-dialog.e2e.ts` | trigger: `touch-targets.e2e.ts`. inside: "Game options" row 36px, three switches about 54x32. Finding 4 | finding |
+| Start game | `lib/dashboard/start_game.svelte` | View page "Play". Same component on My Quizzes and in the editor, not repeated | all. Opens on "Start game". Role, name and Escape were already in `start-dialog.e2e.ts` | trigger: `touch-targets.e2e.ts`. inside: "Game options" row 36px, three switches about 54x32. Finding 4, fixed 16 Oct | fixed |
 | Claim prompt | `lib/components/ClaimPrompt.svelte` | Opens by itself after sign-in, when this browser holds quizzes made without an account | Role, name, trap, Escape: pass. Opens on "Not now" (also in `claim.e2e.ts`). No trigger: focus goes to the page body after Escape, by design | taps in `claim.e2e.ts`; sizes not measured | ok |
 | ConfirmAction: My Quizzes delete | `lib/components/ConfirmAction.svelte`, used in `routes/my-quizzes/+page.svelte:335` | My Quizzes row, trash icon (name "Delete") | all. Opens on the panel, not on Delete. Quiz still exists after Escape | trigger: `touch-targets.e2e.ts` (My Quizzes). inside: clean | ok |
 | ConfirmAction: Leave game (player) | same, `routes/play/+page.svelte:325` | Player phone, in the lobby: "Leave game" | all. Opens on the panel | trigger: `touch-targets.e2e.ts` (lobby). inside: clean | ok |
@@ -64,8 +64,8 @@ trigger's own size, "inside" is the size of every control in the open dialog, me
 | Editor: Add new question | `lib/editor/AddNewQuestionPopup.svelte` | Editor: "Add new question" | all. Opens on Close | trigger: `touch-targets.e2e.ts` (editor). inside: clean | ok |
 | Editor: uploader | `lib/editor/uploader.svelte:256` | Editor, open card: "Add an image". Only the Image type is enabled, so the type picker is skipped | all. Opens on Uppy's "choose a file". The Tab trap holds with Uppy's own inside it | Not measured. Uppy draws it | ok |
 | Editor: delete question | `lib/editor/question-card.svelte:413` | Editor, open card footer: trash icon "Delete question" | all. Opens on the panel. Both questions still there after Escape | trigger: `touch-targets.e2e.ts`. inside: clean | ok |
-| Editor: Advanced settings | `lib/editor/question-card.svelte:456` | Editor, open card: gear icon "Advanced settings" | all. Opens on the switch. Role, name and Escape were already in `editor.e2e.ts` | trigger: `touch-targets.e2e.ts`. inside: the switch is about 54x32. Finding 4 | finding |
-| Editor: full-screen image | `lib/editor/MediaComponent.svelte:118` | Click the question image. Same component on the host's question and the player's | With a mouse: all but focus return (the image cannot hold focus; it lands on `main`). With the keyboard: cannot be opened. Finding 3 | Opens on tap in principle (it is a click handler); not tapped in a test | finding |
+| Editor: Advanced settings | `lib/editor/question-card.svelte:456` | Editor, open card: gear icon "Advanced settings" | all. Opens on the switch. Role, name and Escape were already in `editor.e2e.ts` | trigger: `touch-targets.e2e.ts`. inside: the switch is about 54x32. Finding 4, fixed 16 Oct | fixed |
+| Editor: full-screen image | `lib/editor/MediaComponent.svelte:118` | Click the question image. Same component on the host's question and the player's | With a mouse: all but focus return (the image cannot hold focus; it lands on `main`). With the keyboard: cannot be opened. Finding 3, fixed 16 Oct | Opens on tap in principle (it is a click handler); not tapped in a test | fixed |
 | Editor: save conflict | `lib/editor.svelte:863` | Appears by itself when another tab or device saved first | Role, name, trap: pass. Escape does nothing, by design, so it was checked to stay open. Opens on the panel, so "Keep mine" (which overwrites) does not hold the focus. The two buttons are in `editor-conflict.e2e.ts` | Not measured | ok |
 | Account: revoke an agent key | `routes/account/settings/agent-keys.svelte:280` | My Account > AI agents: "Revoke <key name>" | all. Opens on the panel | inside: clean | ok |
 | Account: delete account | `routes/account/settings/delete-account.svelte:106` | My Account, last card: "Delete account" | all. Opens on the panel. The destructive button stays off until the email is typed | trigger: `touch-targets.e2e.ts`. inside: clean | ok |
@@ -78,6 +78,14 @@ first Tab lands on Cancel. The destructive button is never first. That is the sa
 and it is why the "confirm is not focused" check passes everywhere it was asked.
 
 ## Findings
+
+**All four were fixed on 16 Oct, the same day, and their tests now pass as plain tests**
+(no `test.fail` left, and `KNOWN` in the touch test is empty). The palette is a named
+dialog with a labeled field, and an action puts the focus in the field and back where it
+was on close. The image is itself a focusable `role="button"` that Enter and Space open
+(a wrapping button would have broken the seven layouts that size it). The fold row is
+`min-h-11`, and every Switch's press area reaches 44px tall (`after:-inset-y-[14px]`).
+The text below is the state that was found.
 
 1. **The command palette is not a dialog.** `lib/components/commandpalette.svelte:217-221`
    wraps the whole panel in a `div` with `role="button"` and `aria-label="Close"`. A screen

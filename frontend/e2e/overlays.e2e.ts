@@ -229,40 +229,37 @@ test.describe('command palette (Ctrl+K)', () => {
 		}
 	});
 
-	// FINDING: the palette is a div with role="button" and aria-label="Close" wrapped
+	// FIXED 16 Oct. It was a div with role="button" and aria-label="Close" wrapped
 	// around the whole panel (commandpalette.svelte:217-221), with no dialog role, so a screen
 	// reader announces one button named Close that contains a text field. It also has no
 	// label on the text field and no visible trigger: it opens from Ctrl/Cmd+K only, which
 	// a phone cannot press.
-	test.fail('it is a named dialog', async ({ page }) => {
+	test('it is a named dialog', async ({ page }) => {
 		await open(page);
 		await expect(page.getByRole('dialog', { name: /command|search|palette/i })).toBeVisible({
 			timeout: 2_000
 		});
 	});
 
-	// FINDING: Svelte 5 only honors `autofocus` while <body> holds the focus. With any link,
+	// FIXED 16 Oct (focus is now set by an action). Svelte 5 only honors `autofocus` while <body> holds the focus. With any link,
 	// button or field focused (after a Tab, or a click on a button), Ctrl+K opens the palette
 	// and the text field is not focused: what the person types goes to the page behind it,
 	// and Enter runs nothing. Escape then needs no focus to return, since the old element
 	// never lost it. (commandpalette.svelte:238 `autofocus`.)
-	test.fail(
-		'Ctrl+K from a focused element puts the cursor in the search field',
-		async ({ page }) => {
-			await page.goto('/my-quizzes');
-			await hydrated(page);
-			const link = page.getByRole('link', { name: 'Skip to content' });
-			await link.focus();
-			await expect(link).toBeFocused();
-			const field = page.getByRole('textbox').last();
-			// Press until the palette is up, but never again once it is: the key toggles.
-			await expect(async () => {
-				if ((await field.count()) === 0) await page.keyboard.press('Control+k');
-				expect(await field.count()).toBe(1);
-			}).toPass({ timeout: 15_000 });
-			await expect(field).toBeFocused({ timeout: 2_000 });
-		}
-	);
+	test('Ctrl+K from a focused element puts the cursor in the search field', async ({ page }) => {
+		await page.goto('/my-quizzes');
+		await hydrated(page);
+		const link = page.getByRole('link', { name: 'Skip to content' });
+		await link.focus();
+		await expect(link).toBeFocused();
+		const field = page.getByRole('textbox').last();
+		// Press until the palette is up, but never again once it is: the key toggles.
+		await expect(async () => {
+			if ((await field.count()) === 0) await page.keyboard.press('Control+k');
+			expect(await field.count()).toBe(1);
+		}).toPass({ timeout: 15_000 });
+		await expect(field).toBeFocused({ timeout: 2_000 });
+	});
 });
 
 // ---- Create a quiz ---------------------------------------------------------------
@@ -573,10 +570,10 @@ test.describe('editor', () => {
 			await context.close();
 		});
 
-		// FINDING: the picture that opens full screen is an <img onclick> (MediaComponent.svelte:90-95).
+		// FIXED 16 Oct. The picture that opens full screen was an <img onclick> (MediaComponent.svelte:90-95).
 		// It has no role, no tabindex and no key handler, so a keyboard user cannot open it
 		// at all. The same component draws the host's question image and the player's.
-		test.fail('the image can be opened from the keyboard', async ({ browser, request }) => {
+		test('the image can be opened from the keyboard', async ({ browser, request }) => {
 			const { context, page, img } = await withImage(browser, request);
 			await img.focus();
 			await page.keyboard.press('Enter');
@@ -788,20 +785,9 @@ test.describe('touch targets inside the overlays, at 390 with a touch screen', (
 
 	// Known findings, written down rather than skipped: the test stays green while they
 	// exist and goes red when one is fixed, which is the cue to delete its line here
-	// (docs/e2e-findings.md, the same idea as test.fail).
-	//  - Game options (start_game.svelte:241) is a bare Collapsible.Trigger, min-h-9, with no
-	//    fq-touch-target, so the fold's row is 36px tall.
-	//  - Every Switch (ui/switch, 54x32) is under 44px tall: the three in Start game and the one
-	//    in Advanced settings (question-card.svelte:463). Its label is a separate target.
-	const KNOWN: Record<string, string[]> = {
-		'view: Start game': [
-			'Game options: 310x36',
-			'Add a join question: 54x32',
-			'Randomize answers: 54x32',
-			"Show questions and answers on players' d: 54x32"
-		],
-		'editor: Advanced settings': ['Skip the results: 54x32']
-	};
+	// (docs/e2e-findings.md, the same idea as test.fail). Empty since 16 Oct: the Game
+	// options row is min-h-11, and the Switch's press area reaches 44px tall.
+	const KNOWN: Record<string, string[]> = {};
 	const expected = (found: Record<string, string[]>) =>
 		Object.fromEntries(Object.keys(found).map((k) => [k, KNOWN[k] ?? []]));
 

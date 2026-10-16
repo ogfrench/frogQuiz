@@ -240,7 +240,7 @@ SPDX-License-Identifier: MPL-2.0
 		<Collapsible.Root bind:open={options_open} class="border-border min-w-0 border-t pt-1.5">
 			<Collapsible.Trigger
 				type="button"
-				class="focus-visible:ring-ring/50 flex min-h-9 w-full items-center justify-between gap-2 rounded-md text-left text-sm font-medium outline-none focus-visible:ring-3 dark:font-[380]"
+				class="focus-visible:ring-ring/50 flex min-h-11 w-full items-center justify-between gap-2 rounded-md text-left text-sm font-medium outline-none focus-visible:ring-3 dark:font-[380]"
 			>
 				{$t('start_game.game_options')}
 				<ChevronDown
