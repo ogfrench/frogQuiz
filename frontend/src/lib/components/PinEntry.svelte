@@ -205,8 +205,10 @@ over, and the error clears as soon as the PIN is edited.
 	</p>
 	<div class={cn('mt-4', layout === 'inline' && 'flex gap-2')}>
 		<!-- type="text", not "number": a number field drops leading zeros, shows a spinner
-		     and ignores the pasted "123 456". inputmode brings up the keypad on a phone, and
-		     one-time-code lets it offer a PIN from a message. -->
+		     and ignores the pasted "123 456" (GOV.UK advises against it for codes too).
+		     inputmode brings up the keypad on a phone. autocomplete="off", not
+		     "one-time-code": that is for identity codes sent by text message, which is what
+		     iOS offers to fill, and a game PIN is read off the host's screen. -->
 		<Input
 			id="game-pin"
 			bind:ref={input}
@@ -214,7 +216,7 @@ over, and the error clears as soon as the PIN is edited.
 			{oninput}
 			inputmode="numeric"
 			pattern="[0-9]*"
-			autocomplete="one-time-code"
+			autocomplete="off"
 			aria-invalid={invalid || undefined}
 			aria-describedby={error ? 'game-pin-error' : undefined}
 			aria-busy={checking || undefined}
