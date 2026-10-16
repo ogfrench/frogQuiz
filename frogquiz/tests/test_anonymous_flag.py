@@ -85,7 +85,10 @@ def test_with_the_flag_off_nothing_is_made_edited_uploaded_or_hosted_without_an_
 def test_the_flag_tells_the_frontend(test_client: TestClient, monkeypatch):  # noqa: F811
     assert test_client.get("/api/v1/utils/config").json()["anonymous_quizzes_enabled"] is True
     monkeypatch.setattr(get_settings(), "anonymous_quizzes_enabled", False)
-    assert test_client.get("/api/v1/utils/config").json() == {"anonymous_quizzes_enabled": False}
+    config = test_client.get("/api/v1/utils/config").json()
+    assert config["anonymous_quizzes_enabled"] is False
+    # Public and unauthenticated: a new key here is a decision, not a side effect.
+    assert set(config) == {"anonymous_quizzes_enabled", "agent_api_enabled", "mcp_url"}
 
 
 def test_a_new_anonymous_quiz_past_the_live_total_is_refused(test_client: TestClient, monkeypatch):  # noqa: F811

@@ -132,6 +132,13 @@ class Settings(BaseSettings):
     # They stop creating, never editing.
     anon_quiz_daily_limit: int = 20
     anon_quiz_total_limit: int = 1000
+    # The agent API (/api/v1/agent) that the MCP service in mcp-server/ calls, and the
+    # "AI agents" section on My Account that hands out its keys. Off by default: turning it
+    # on for the shared deployment is François's and Gonçalo's call. See docs/mcp.md.
+    agent_api_enabled: bool = False
+    # Where agents reach the MCP service, e.g. https://api.frogquiz.xyz/mcp. My Account puts
+    # it in the command it shows; unset, the section hands out keys without one.
+    mcp_url: str | None = None
 
     def email_domain_allowed(self, email: str) -> bool:
         """Whether an address may sign in: its domain is on the list, or the list is empty."""

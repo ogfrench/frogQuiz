@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
+#
+# SPDX-License-Identifier: MPL-2.0
+
+# The MCP service's own environment, apart from the API's: the API's ormar pins pydantic
+# below 2.9, and the MCP SDK needs newer (docs/mcp.md). Audited by .github/workflows/audit.yml
+# like the API's lock. Licences were checked on 15 Oct: MIT, BSD, Apache-2.0, PSF, MIT-0 and
+# MPL-2.0 (certifi), nothing copyleft. Check again when adding a package.
+
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+# 2.x is the first major with none of the advisories 1.x had (PYSEC-2026-1617, -3482,
+# -3483). Held to its major: 2.0 renamed FastMCP and moved its imports.
+mcp = ">=2.3,<3"
+httpx = "*"
+uvicorn = "*"
+
+[dev-packages]
+pytest = "*"
+flake8 = "*"
+black = "*"
+
+[requires]
+python_version = "3.13"

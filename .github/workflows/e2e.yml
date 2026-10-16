@@ -19,6 +19,7 @@ on:
       # run.sh reads the Meilisearch version from it.
       - "docker-compose.yml"
       - "Pipfile.lock"
+      - "mcp-server/**"
       - ".github/workflows/e2e.yml"
   workflow_dispatch:
 
@@ -45,6 +46,13 @@ jobs:
           cache: "pipenv"
       - name: Backend dependencies
         run: pipenv sync --dev
+      # In mcp-server/.venv, which is what makes run.sh start the MCP service, so
+      # agent-keys.e2e.ts drives a real agent connection rather than skipping that half.
+      - name: MCP service dependencies
+        working-directory: ./mcp-server
+        env:
+          PIPENV_VENV_IN_PROJECT: "1"
+        run: pipenv sync
 
       - uses: pnpm/action-setup@v5.0.0
         with:

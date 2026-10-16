@@ -447,6 +447,50 @@ Their sockets are refused (their origin is not in `CORS_ORIGINS`), and a sign-in
 one goes to `ROOT_ADDRESS`, not to the preview. Use the local stack for anything that needs
 a live game.
 
+## AI agents (MCP)
+
+Lets Claude and other MCP agents list and make quizzes with a personal key
+([docs/mcp.md](docs/mcp.md)). **Off until François and Gonçalo both agree to turn it on.**
+The `mcp` service starts only under the `mcp` compose profile, and the API refuses agent
+calls unless `AGENT_API_ENABLED` is true.
+
+The migration that comes with it (`a7c3e5f1b9d2`) runs at API start, as every migration
+does. It hashes any existing key in place and drops the plain-text column. It runs whether
+or not the feature is on, and its downgrade deletes every key.
+
+So the first backend deploy that carries it is a deploy with a migration: the Production
+ops **deploy** mode refuses it, and it is done by hand, after a backup. Putting an older
+image back afterwards leaves that code looking for the dropped `key` column, so its API-key
+routes (`/live` with `api_key`, the key list) **and account deletion** fail until the new
+image is back. Nothing else reads that table. Roll forward, not back, unless the database
+is restored as well.
+
+To turn it on, on the VM in `/opt/frogquiz`:
+
+1. In `.env`:
+   ```sh
+   AGENT_API_ENABLED=true
+   MCP_URL=https://api.frogquiz.xyz/mcp
+   MCP_PUBLIC_URL=https://api.frogquiz.xyz
+   COMPOSE_PROFILES=mcp
+   ```
+   `COMPOSE_PROFILES` keeps the service in every later `docker compose up -d`. With the
+   sslip.io name still in `SITE_ADDRESS`, agents using that name get 421 unless
+   `MCP_ALLOWED_HOSTS=api.frogquiz.xyz,134-98-158-173.sslip.io`. Agents should use the
+   new name anyway.
+2. `docker compose pull && docker compose up -d`. The `proxy` image has to be one built
+   after this change, because it carries the `/mcp` route in `Caddyfile-docker`.
+3. Check it:
+   - `curl -s https://api.frogquiz.xyz/api/v1/utils/config` shows
+     `"agent_api_enabled":true`.
+   - `curl -s -o /dev/null -w '%{http_code}' -X POST https://api.frogquiz.xyz/mcp` prints
+     `401`, which means no key, so the service is answering.
+   - My Account shows **AI agents**.
+
+To turn it off: set `AGENT_API_ENABLED=false`, remove `COMPOSE_PROFILES=mcp`, and run
+`docker compose up -d && docker compose stop mcp`. Keys people made stay in the
+database, unusable, until it is turned back on.
+
 ## Health and uptime (#60)
 
 `GET /api/v1/health` needs no sign-in and answers one word per part:

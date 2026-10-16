@@ -11,6 +11,21 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 - Unified the PIN box on / and /play into one component, `PinEntry`: digits only, a pasted join link gives its PIN, more than 6 digits is named instead of cut, and a wrong PIN on / is caught on / instead of after the jump to /play.
 - Fixed digits typed into the PIN box before the page finished loading being lost.
 - Dropped a refused PIN from the /play address, so a reload does not ask about it again.
+- Fixed the agent API taking a NUL character: in a title or description it was a 500, in a question or answer it was stored. It is now a 422.
+- Fixed the AI agent copy calling an agent's quiz private: it is unlisted (link only, not in Discover), as D13 defines, since owner-only Private (#34) is not built. Changed in the MCP instructions, the create tool, My Account and docs/mcp.md.
+- Reworded the My Account key footnote so it no longer mentions a password, which broke the check that My Account offers no password.
+- Fixed the MCP service's lock failing to install on Linux (CI and the Docker image): it was generated on Windows and pinned pywin32 and colorama for every platform. Both now carry a Windows-only marker.
+- Added AI agents over MCP: Claude, Cursor and other MCP clients can list, read and create unlisted quizzes with a personal key (docs/mcp.md). Off unless AGENT_API_ENABLED is set.
+- Added the agent API at /api/v1/agent (list, read and create your own quizzes), with its own limits: unlisted quizzes only, two question types, no images, 50 questions, 30 creates an hour.
+- Added the MCP service in mcp-server/, with its own lock, Dockerfile, tests and CI workflow, run by docker-compose under the `mcp` profile and routed by Caddy at /mcp.
+- Added the AI agents section on My Account: create a named key that is shown once with a ready-made `claude mcp add` command, list keys, and revoke them.
+- Changed the My Account command to `claude mcp add --scope user`, so the server is available in every folder rather than only the one the command ran in (the VS Code extension on Windows missed a folder-scoped entry).
+- Changed API keys to be stored as sha256 only (migration a7c3e5f1b9d2 hashes existing keys in place). Keys now have a name, an id, a visible prefix and a last-used time, and are capped at 10 per account.
+- Fixed API keys surviving sign-out-everywhere and GET /users/api_keys always answering an empty list (security audit finding 5). Revoking a key now marks it revoked in the Redis cache, so a check running at the same moment cannot cache it back to life.
+- Documented in DEPLOY.md that the first deploy with the key migration is done by hand after a backup (the deploy guard refuses it), and that an older image put back afterwards breaks account deletion and API-key routes.
+- Kept the key check the MCP service makes before each request (GET /api/v1/agent/me) out of the per-minute call budget, so a tool call is counted once and a busy key gets the tool's 429 with a wait time instead of a 401.
+- Moved the Excel import's quiz building into frogquiz/helpers/quiz_create.py, shared with the agent API.
+- Added a gitleaks rule for frogQuiz keys, a pip-audit pass over the MCP lock, and the MCP service to the local e2e stack when mcp-server/.venv exists.
 - Fixed the deploy guard reading no migration head: it now reads the head from the image's migration files, since `alembic heads` imports the app's settings, which need production's environment.
 - Kept nightly backups for 30 days instead of 14, for a month of history at negligible size.
 - Added a cleanup mode to the Production ops workflow: removes the unused frontend container on the VM, unused images and the build cache, never volumes.

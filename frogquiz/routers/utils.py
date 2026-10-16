@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+# SPDX-FileCopyrightText: 2026 frogQuiz contributors
 #
 # SPDX-License-Identifier: MPL-2.0
 
@@ -25,6 +26,9 @@ router = APIRouter()
 
 class PublicConfig(BaseModel):
     anonymous_quizzes_enabled: bool
+    # Whether My Account offers keys for AI agents (docs/mcp.md).
+    agent_api_enabled: bool = False
+    mcp_url: str | None = None
 
 
 @router.get("/config", response_model=PublicConfig)
@@ -34,7 +38,11 @@ async def public_config():
     Public and harmless: it says what the API will refuse anyway. `/create` reads it to send
     a signed-out visitor to sign in when quizzes need an account (#55).
     """
-    return PublicConfig(anonymous_quizzes_enabled=settings.anonymous_quizzes_enabled)
+    return PublicConfig(
+        anonymous_quizzes_enabled=settings.anonymous_quizzes_enabled,
+        agent_api_enabled=settings.agent_api_enabled,
+        mcp_url=(settings.mcp_url or None) if settings.agent_api_enabled else None,
+    )
 
 
 @router.get("/qr/{quiz_pin}")

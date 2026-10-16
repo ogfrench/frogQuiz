@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import DeleteAccount from './delete-account.svelte';
+	import AgentKeys from './agent-keys.svelte';
 	import UnverifiedBanner from './unverified-banner.svelte';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import LogOut from '@lucide/svelte/icons/log-out';
@@ -489,6 +490,9 @@ SPDX-License-Identifier: MPL-2.0
 					{/await}
 				</Card.Content>
 			</Card.Root>
+
+			<!-- Hidden unless the API has the agent API on (docs/mcp.md). -->
+			<AgentKeys />
 
 			<DeleteAccount email={user.email} />
 		</div>

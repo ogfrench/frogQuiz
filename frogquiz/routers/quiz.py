@@ -8,7 +8,6 @@ import io
 import json
 import random
 import secrets
-import html
 import uuid
 from datetime import datetime, timedelta
 from random import randint
@@ -39,8 +38,8 @@ from frogquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, 
 from frogquiz.examples import examples_owner
 from frogquiz.helpers.anonymous_quiz import ANON_QUIZ_EXPIRE_DAYS, enforce_anonymous_quiz_ceilings
 from frogquiz.helpers.excel_workbook import MAX_FILE_BYTES, MIME_TYPE, excel_template, parse_excel
+from frogquiz.helpers.quiz_create import build_plain_quiz, save_new_quiz
 from frogquiz.db.models import (
-    QuizInput,
     MAX_TITLE_LENGTH,
     MAX_DESCRIPTION_LENGTH,
     MAX_QUESTION_LENGTH,
@@ -663,34 +662,20 @@ async def import_from_excel(
         return preview
     if preview["errors"]:
         return JSONResponse(status_code=400, content=preview)
-    # Cells are plain text. Escape markup before it enters the editor's rich-text fields.
-    quiz_input = QuizInput(
-        title=html.escape(preview["title"], quote=False),
-        description=html.escape(preview["description"], quote=False),
-        public=False,
-        questions=[
-            QuizQuestion(
-                question=html.escape(q["question"], quote=False),
-                time=str(q["time"]),
-                type=QuizQuestionType.CHECK if q["type"] == "multiple" else QuizQuestionType.ABCD,
-                answers=[{"answer": html.escape(a["text"], quote=False), "right": a["right"]} for a in q["answers"]],
-            )
-            for q in preview["questions"]
-        ],
-    )
+    # Cells are plain text; build_plain_quiz escapes markup before it enters the editor's
+    # rich-text fields. The agent API makes its quizzes the same way.
+    quiz_input = build_plain_quiz(preview["title"], preview["description"], preview["questions"])
     secret = None
     if user is None:
         # Preview never spends the creation quota or allocates an ownership secret.
         await enforce_anonymous_quiz_ceilings(request)
         secret = secrets.token_hex(32)
-    quiz = Quiz(
-        **quiz_input.model_dump(),
-        user_id=user.id if user else None,
-        anon_secret=hash_anon_secret(secret) if secret else None,
+    quiz = await save_new_quiz(
+        quiz_input,
+        user.id if user else None,
+        anon_secret_hash=hash_anon_secret(secret) if secret else None,
         expire_at=datetime.now() + timedelta(days=ANON_QUIZ_EXPIRE_DAYS) if secret else None,
     )
-    await quiz.save()
-    await redis.delete("global_quiz_count")
     if secret:
         response.headers["X-Anon-Secret"] = secret
     return {"id": str(quiz.id), "anonymous": secret is not None}
