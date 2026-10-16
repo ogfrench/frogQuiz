@@ -171,11 +171,24 @@ SPDX-License-Identifier: MPL-2.0
 		}
 		const data = JSON.parse(joined_data);
 		rejoining = data;
-		socket.emit('rejoin_game', {
-			old_sid: data.sid,
-			username: data.username,
-			game_pin: data.game_pin
-		});
+		// A reload can interrupt rejoining after the server accepted the new socket
+		// but before its acknowledgement updates our record. Keep the possible
+		// credentials until acknowledgement, including multiple interrupted attempts;
+		// the server accepts only its current one.
+		const history = Array.isArray(data.pending_sids) ? data.pending_sids : [];
+		const candidates = [...new Set([...history, data.pending_sid, data.sid])].filter(
+			(sid): sid is string => typeof sid === 'string' && sid.length > 0
+		);
+		const pending = JSON.stringify({ ...data, pending_sids: [socket.id, ...candidates] });
+		sessionStorage.setItem(JOINED, pending);
+		Cookies.set(JOINED, pending, { expires: JOINED_GAME_COOKIE_DAYS });
+		for (const old_sid of candidates) {
+			socket.emit('rejoin_game', {
+				old_sid,
+				username: data.username,
+				game_pin: data.game_pin
+			});
+		}
 		const res = await fetch(`/api/v1/quiz/play/check_captcha/${data.game_pin}`);
 		const json = await res.json();
 		game_mode = json.game_mode;

@@ -137,9 +137,9 @@ describe('the frog licence', () => {
 		const section = page.split('<h2>Frog avatars</h2>')[1]?.split('<h2>')[0] ?? '';
 		expect(section).toMatch(/intellikat/);
 		expect(section).toMatch(/creativecommons\.org\/licenses\/by\/4\.0/);
-		expect(section).toMatch(/We changed it/);
 		expect(section).toMatch(/cropped/);
 		expect(section).toMatch(/recoloured/);
+		expect(section).toMatch(/tongue/);
 		expect(section).toMatch(/does not endorse/);
 	});
 });

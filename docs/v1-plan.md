@@ -6,11 +6,22 @@ SPDX-License-Identifier: MPL-2.0
 
 # V1 plan
 
-**This is the living plan for V1.** Issue #56 holds the step checklist and links here.
+**This is the living plan for V1.** The current release checklist is #73; #56 is retained as its historical predecessor.
+
+Current trackers after the 15 October issue review:
+
+- #69: active production guest-access incident and remaining error handling.
+- #72: Oracle operations, backups and tested recovery.
+- #73: V1 UX consistency, robustness, documentation and release gates.
+- #68: MCP integration.
+- #74: post-V1 authoring, discovery and audience features.
+
+The consolidated issues retain links to every original specification. Closing those source issues did not mark their pending work complete.
+
 - V1 ships in four releases, each its own PR from the branch `v1` (D35, 11 Oct): **v0.5** is steps 0 to 3 (PR #57), **v0.8** step 4, **v0.9** step 5, **v1.0** step 6. After each merge, `v1` restarts from master. Master before v0.5 is tagged `mvp`.
 - Each step ends with a re-plan. A re-plan edits this file and adds a line to [Plan changes](#plan-changes). Read the log to see why the plan looks the way it does.
 
-**Status: v0.5 (#57) shipped on 12 Oct; step 4 (v0.8) is built and waits for François's go. Step 5 (v0.9) starts the week of 19 Oct.** François trimmed V1 the same day (D39): #33, #34, #38 and #41 moved after V1, and #60 and #61 came in.
+**Status (15 Oct): v0.8 shipped in #62 on 12 Oct; guest creation and Excel import shipped in #67. PR #71 contains the current recovery safeguards, SSR fix and copy review and is not yet merged.** Step 5 (v0.9) was planned for the week of 19 Oct; its remaining work is tracked in #73. François trimmed V1 the same day (D39): #33, #34, #38 and #41 moved after V1, and #60 and #61 came in.
 
 ## What V1 means
 
@@ -250,6 +261,9 @@ Re-planned 12 Oct after D39. #34, #33, #38 and #41 left the step.
 - **ormar 0.20 → 0.23+:** SQLAlchemy 2, without `databases`. It removes the ormar and setuptools exceptions, and unpins pydantic. Revisit by 31 Dec.
 
 ## Plan changes
+
+- 15 October 2026: consolidated the issue backlog into #72 (operations), #73 (V1 quality) and #74 (post-V1 features), keeping #69 and #68 separate. Completed Excel import #65 was closed with production verification. Scope and release approval requirements were preserved.
+
 
 - **10 Oct:**
   - The plan was made, with François's decisions.

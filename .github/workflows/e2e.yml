@@ -56,11 +56,11 @@ jobs:
         working-directory: ./frontend
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Capture creation screens
+      - name: Capture creation screens and check recovery regressions
         env:
           E2E_BROWSER: chromium
         run: |
-          bash e2e/run.sh e2e/zz-create-dialog-shots.e2e.ts e2e/zz-preview-flow.e2e.ts e2e/claim.e2e.ts --grep "create dialog|guest creation screens|interactive preview|partial failure|connection failure|expired session"
+          bash e2e/run.sh e2e/zz-create-dialog-shots.e2e.ts e2e/zz-preview-flow.e2e.ts e2e/claim.e2e.ts e2e/game-reload.e2e.ts --grep "create dialog|guest creation screens|interactive preview|partial failure|connection failure|expired session|pending rejoin|player can reload twice"
           cp docs/quiz-creation-preview.html e2e/.data/shots/flow-preview.html
           cp docs/quiz-creation-50-questions.xlsx e2e/.data/shots/
 

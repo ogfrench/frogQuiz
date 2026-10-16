@@ -5,20 +5,9 @@ SPDX-FileCopyrightText: 2026 frogQuiz contributors
 SPDX-License-Identifier: MPL-2.0
 -->
 
-<!--
-	This page used to be upstream's contributor list with "ClassQuiz" replaced by
-	"frogQuiz" throughout, so it credited nine named people for contributing to and
-	translating a project they have never worked on. They contributed to ClassQuiz.
-	Their work is in here because frogQuiz is a fork of it, which is a thing to say
-	plainly rather than paper over.
--->
-
 <svelte:head>
-	<title>frogQuiz/docs - Attribution</title>
-	<meta
-		name="description"
-		content="frogQuiz is a fork of ClassQuiz. Who built the software it is based on, and who drew the frogs."
-	/>
+	<title>Attribution — frogQuiz</title>
+	<meta name="description" content="Software and artwork credits for frogQuiz." />
 </svelte:head>
 <article
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
@@ -26,19 +15,18 @@ SPDX-License-Identifier: MPL-2.0
 	<h1>Attribution</h1>
 
 	<p>
-		frogQuiz is a fork of <a href="https://github.com/mawoka-myblock/ClassQuiz">ClassQuiz</a>,
-		created by <a href="https://github.com/mawoka-myblock">Marlon W (Mawoka)</a> and licensed
-		under the
-		<a href="https://www.mozilla.org/en-US/MPL/2.0/">Mozilla Public License 2.0</a>. Most of
-		what runs here was written by him and by ClassQuiz's contributors, and the per-file
-		<code>SPDX-FileCopyrightText</code> headers throughout the source record which parts.
+		frogQuiz is built and maintained by François and Gonçalo.
+		<a href="https://github.com/ogfrench/frogQuiz">View the source on GitHub</a>.
+	</p>
+	<p>
+		It is based on <a href="https://github.com/mawoka-myblock/ClassQuiz">ClassQuiz</a>, created
+		by <a href="https://github.com/mawoka-myblock">Marlon W (Mawoka)</a>, under the
+		<a href="https://www.mozilla.org/en-US/MPL/2.0/">Mozilla Public License 2.0</a>. Copyright
+		notices are recorded in the source files.
 	</p>
 
 	<h2>ClassQuiz contributors</h2>
-	<p>
-		These people contributed code, translations, issues or ideas to ClassQuiz upstream. None of
-		them worked on frogQuiz, but their work is part of it.
-	</p>
+	<p>Credits for code, translations, feedback and ideas contributed to ClassQuiz.</p>
 	<ul>
 		<li>
 			<a href="https://github.com/mawoka-myblock">Marlon W (Mawoka)</a> — author of ClassQuiz
@@ -56,10 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 		</li>
 		<li><a href="https://github.com/Miniontoby">Miniontoby</a> — Dutch translation</li>
 	</ul>
-	<p>
-		frogQuiz currently ships in English only, so those translations are not in this build. They
-		remain in ClassQuiz, and the credit stands regardless.
-	</p>
+	<p>frogQuiz currently ships in English. Translation credits refer to ClassQuiz.</p>
 
 	<h2>Frog avatars</h2>
 	<p>
@@ -73,15 +58,7 @@ SPDX-License-Identifier: MPL-2.0
 		>.
 	</p>
 	<p>
-		We changed it: each avatar is one frame of the sprite sheet cropped to a square around the
-		head and shoulders; four of them have a tongue put together from the sheet's own tongue
-		pieces; and every pose is also recoloured into five more colours, with the tongue, mouth and
-		hat band left as drawn. intellikat does not endorse frogQuiz.
-	</p>
-
-	<h2>frogQuiz</h2>
-	<p>
-		Built and maintained by François and Gonçalo. Source at
-		<a href="https://github.com/ogfrench/frogQuiz">github.com/ogfrench/frogQuiz</a>.
+		Avatar frames were cropped and recoloured; some combine tongue elements from the original
+		sprite sheet. intellikat does not endorse frogQuiz.
 	</p>
 </article>

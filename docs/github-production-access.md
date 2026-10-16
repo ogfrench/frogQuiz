@@ -4,8 +4,8 @@
 # Production access through GitHub Actions
 
 The **Production guest access** workflow connects to the existing Oracle VM over
-SSH. It runs only when manually dispatched from `master`; a push or pull request
-never deploys. Merge the workflow before it appears under Actions.
+SSH. Repairs run only when manually dispatched from `master`; read-only checks
+can run from a recovery branch. A push or pull request never deploys. Merge the workflow before it appears under Actions.
 
 ## One-time setup
 
@@ -43,8 +43,9 @@ keep this environment restricted, and revoke the key when it is no longer needed
 
 Open **Actions → Production guest access → Run workflow**. Select `master`, mode
 `check`, and the absolute deployment directory containing the existing `.env`
-and `docker-compose.yml` (for example `/home/ubuntu/frogQuiz`, only if that is
-the actual installation path). It checks SSH, Compose, the two services, and the
+and `docker-compose.yml`. The verified production directory is **`/opt/frogquiz`**,
+not `/home/ubuntu/frogQuiz`. The latter was a fresh clone with example settings;
+using it replaced healthy containers with incorrectly configured ones. It checks SSH, Compose, the two services, and the
 effective guest setting without changing the VM.
 
 The path currently supports letters, numbers, underscores, dots, slashes, and
@@ -61,6 +62,10 @@ the backend `master` image and refuses to proceed unless its revision label
 matches the tested #67 merge, `b72a3e25305ff34e67012a88961bb7d8490eb7a2`.
 If the tag has advanced, review the newer release and update the pinned revision
 in a reviewed change. Do not bypass the check.
+
+Before pulling or changing settings, the script checks that both existing backend
+containers belong to the selected deployment directory. A matching Compose
+project name alone is insufficient: two checkouts can target the same containers.
 
 The script preserves the existing Compose selection (including a Neon override
 selected by `COMPOSE_FILE` in `.env`). It backs up `.env` and the current API/worker
@@ -89,3 +94,21 @@ original Compose files and Neon settings. Old images are not pruned by this work
 An endpoint check is not an end-to-end test. Before closing #69, verify signed-out
 scratch creation, Excel import, editing, hosting, and Discover template copying
 in a fresh browser and capture the actual screens.
+
+## Verified Oracle configuration (15 October 2026)
+
+Production uses `/opt/frogquiz/.env`, with `COMPOSE_FILE` selecting
+`docker-compose.yml:docker-compose.neon.yml`. Neon is supplied through
+`DB_URL_OVERRIDE`; the application receives it as `DB_URL`. Setting only
+`DATABASE_URL` does not configure this application. Keep the existing database,
+signing key, mail settings and uploads; do not bootstrap production from `.env.example`.
+
+Managed Bastion SSH sessions authorize keys temporarily. For GitHub Actions,
+install the matching public deployment key permanently in the VM user's
+`~/.ssh/authorized_keys` (directory mode 700, file mode 600). Verify its fingerprint
+against the one derived from the private GitHub secret by the connection check.
+A fingerprint match confirms the key pair; never copy private-key contents into logs.
+
+The direct GitHub SSH check succeeded after installing the verified key. API,
+worker, database, Redis and search were healthy, the guest flag was true, and
+five public examples were accessible without an account.

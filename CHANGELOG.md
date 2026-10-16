@@ -4,6 +4,28 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Retained all possible pending rejoin credentials until acknowledgement, including a successful attempt followed by another interrupted attempt.
+
+- Ran the player-rejoin recovery regressions before the full browser suite so failures surface early in CI.
+
+- Preserved pending player-rejoin credentials across reloads and retried both possible server states after a lost request or acknowledgement; covered both cases in browser tests.
+
+- Kept attribution checks focused on the artist, license and described artwork changes rather than the old introductory sentence.
+
+- Consolidated the issue backlog into production operations, V1 quality and post-V1 feature trackers, and updated the living plan with current release status.
+
+- Shortened guest creation and Discover copy and updated Terms, Privacy and Attribution for email sign-in, current hosting, retention and concise credits.
+
+- Waited for confirmed player rejoining between reloads in the browser test, rather than treating an open socket as a completed rejoin.
+
+- Prevented server-rendered game sockets from connecting and firing browser-only player handlers during later Netlify requests.
+
+- Printed the SSH public-key fingerprint in production checks to diagnose credential mismatches without exposing private keys.
+
+- Blocked guest repair when existing containers belong to a different Compose directory, preventing a fresh clone from replacing production settings.
+
+- Added read-only production diagnostics to locate the original Compose configuration during Oracle recovery.
+
 - Added a manual GitHub Actions SSH check and guarded backend guest-access repair, with credential setup and rollback instructions.
 
 - Wait for finite control animations before auditing mobile touch targets, preserving hidden-control and size checks without mistaking answer fade-in for a hover-only control.

@@ -1,24 +1,15 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 frogQuiz contributors
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
-<script lang="ts">
-	import { onMount } from 'svelte';
-	import '$lib/hljs.css';
-
-	onMount(async () => {
-		const { default: hljs } = await import('highlight.js/lib/common');
-		hljs.highlightAll();
-	});
-</script>
-
 <svelte:head>
-	<title>frogQuiz/docs - Privacy policy</title>
+	<title>Privacy — frogQuiz</title>
 	<meta
 		name="description"
-		content="What data frogQuiz stores, why, and how to have it deleted."
+		content="What frogQuiz stores, who processes it and how to delete it."
 	/>
 </svelte:head>
 
@@ -26,44 +17,57 @@ SPDX-License-Identifier: MPL-2.0
 	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
 >
 	<h1>Privacy</h1>
-
-	<h2>We do not track you</h2>
 	<p>
-		No analytics. No error reporting to anyone else. No advertising cookies, and nothing that
-		follows you to other sites. Upstream shipped Plausible analytics and Sentry error reporting;
-		both were removed.
+		We use your data to run frogQuiz. We do not sell personal data or use advertising, analytics
+		or cross-site tracking.
 	</p>
 
 	<h2>What we store</h2>
 	<ul>
-		<li>Your email, username and hashed password, so you can sign in.</li>
-		<li>The quizzes you write and the images you put in them.</li>
-		<li>Nicknames, answers and scores from games you host.</li>
-		<li>A session and a rate-limit counter, which include your IP address.</li>
+		<li>Account details, including your email address, username and sign-in records.</li>
+		<li>Quizzes, uploaded images and game results saved by a host.</li>
+		<li>Temporary game data, including players' nicknames, answers and scores.</li>
+		<li>Session and rate-limit records, which can include your IP address.</li>
 	</ul>
 	<p>
-		The site is served by Netlify. Everything else runs on one server we operate: Postgres for
-		the data, Redis for sessions, Meilisearch for search, and disk or object storage for images.
+		Sign-in uses an emailed link or code. Cookies and browser storage remember your session,
+		guest quiz access, drafts and preferences. Clearing browser data can remove access to guest
+		quizzes that have not been added to an account.
+	</p>
+	<p>
+		Hosts can see players' nicknames, answers and scores. Quiz visibility and game settings
+		determine what other users and participants can see.
 	</p>
 
-	<h2>Getting rid of it</h2>
+	<h2>Where data is processed</h2>
+	<ul>
+		<li>Netlify hosts the website and handles web requests.</li>
+		<li>
+			Oracle Cloud runs the backend and stores uploaded images and temporary session and game
+			data.
+		</li>
+		<li>Neon stores account details, quizzes and saved game results.</li>
+		<li>Resend delivers sign-in emails and processes the recipient's address and message.</li>
+	</ul>
 	<p>
-		Deleting your account in settings takes your quizzes and uploads with it. You can make a quiz
-		without an account; those quizzes are unlisted, tied to this browser, and deleted after 30 days
-		unless claimed. An operator can require sign-in instead. If you would rather ask, email
+		Hosting providers may keep operational logs, including IP addresses. If a host enables
+		hCaptcha or Google reCAPTCHA for joining a game, that provider also processes the
+		verification request.
+	</p>
+
+	<h2>Retention and deletion</h2>
+	<p>
+		Guest quizzes expire after 30 days unless added to an account. Account quizzes have no
+		automatic expiry. Live game sessions are temporary; results saved by a host remain with the
+		host's account.
+	</p>
+	<p>
+		You can delete individual quizzes or delete your account in account settings. Account
+		deletion removes the account and its quizzes, uploads and saved results. Deletion from
+		provider backups follows their retention policies.
+	</p>
+	<p>
+		For privacy questions or a deletion request, email
 		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
-	</p>
-	<!-- TODO: interim contact. Replace with the team's shared channel (Slack/Teams/mailing list) once one exists. -->
-
-	<h2>Who else sees any of it</h2>
-	<p>
-		Confirmation and password-reset emails are sent through Resend. They handle the delivery, so
-		they see your address and the link in the message. That is all they get, and it is all they
-		are used for.
-	</p>
-	<p>
-		A host can switch on a captcha for joining a game, which loads hCaptcha or Google reCAPTCHA
-		depending on configuration. Neither is enabled by default, and with none configured nothing
-		is sent to either.
 	</p>
 </article>
