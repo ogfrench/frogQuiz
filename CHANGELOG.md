@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Fixed the lobby leaving its last row of names clipped and the "+N more" count stale when names changed width without the board resizing (the late Inter font swap): every name chip is now watched, not just the board. Hidden chips also disappear at once instead of fading over 150 ms.
 - Turned AI agents on in production (migrate, then agents-on), and updated HANDOVER, DEPLOY, docs/mcp.md, CLAUDE.md and the V1 plan to say so.
 - Built the MCP service image for arm64 as well as amd64: the production VM is arm64, and agents-on failed to pull it.
 - Added three modes to the Production ops workflow: migrate (a backend deploy with a migration, only after a Backup run from the last 3 hours, never rolling back past a migration that ran), agents-on and agents-off.
