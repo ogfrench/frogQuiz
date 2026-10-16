@@ -14,7 +14,7 @@ test('service banner recovers without losing an open editor', async ({ page }) =
 	down = false;
 	await page.getByRole('button', { name: 'Check connection' }).click();
 	await expect(page.getByTestId('service-banner')).toHaveCount(0);
-	await expect(title).toHaveValue('Unsaved outage check');
+	await expect(title).toHaveText('Unsaved outage check');
 });
 
 test('Discover reports an examples outage and retries successfully', async ({ page }) => {
