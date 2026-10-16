@@ -63,6 +63,9 @@ const config = {
 			'src/lib/**/*.svelte'
 		]
 	},
+	// Bundle the sanitizer's CommonJS-to-ESM boundary: Netlify's function runtime
+	// may be older than the Node 24 build runner and cannot require htmlparser2 12.
+	ssr: { noExternal: ['sanitize-html', 'htmlparser2'] },
 	build: {
 		sourcemap: true
 	}

@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Bundle the sanitizer for SSR so Netlify functions do not require an ESM-only parser from CommonJS on older runtimes.
+
 - Distinguish unavailable guest configuration from disabled creation, add retry states for Discover failures, and show a non-blocking service-health banner without reloading open editors.
 
 - Formatted the deployment verification scripts so the repository-wide backend lint check passes when backend files change.
