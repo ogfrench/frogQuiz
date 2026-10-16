@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Formatted the deployment verification scripts so the repository-wide backend lint check passes when backend files change.
+
 - Documented the guest credential storage tradeoff and security alert dispositions, and allowed only five confirmed public/test historical secret-scan fingerprints.
 
 - Replaced regex-based title HTML filtering with a parser-based allowlist and added malformed-markup regression tests.
