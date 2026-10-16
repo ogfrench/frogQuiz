@@ -487,8 +487,13 @@ the Neon database (`pg_dump`, custom format) and `./uploads` from `/opt/frogquiz
 same SSH access and `production` environment as the guest-access workflow. The runner
 encrypts each part with [age](https://age-encryption.org) as it arrives, to the public key
 in `deploy/backup-recipient.txt`, and keeps the result as the artifact
-`frogquiz-backup-<date>-<run>` for 14 days: `db.age`, `uploads.age` and `MANIFEST.txt`
-(sizes and checksums). The repo is public, and only the encryption keeps a backup private:
+`frogquiz-backup-<date>-<run>` for 14 days: `db.age`, `uploads.age`, `config.age` (`.env`
+and the Compose files, so the settings and the signing key survive losing the VM) and
+`MANIFEST.txt` (sizes and checksums). **`config.age` holds the live database password and
+signing key,** in an artifact anyone can download: the age private key therefore protects
+production credentials, not only data. Keep it as you would the `.env` itself, and if it is
+ever exposed, rotate both it and the credentials in `.env`. `restore.sh` restores the first two; read the third
+with `age -d -i KEY config.age | tar -tvf -` and copy what you need by hand. The repo is public, and only the encryption keeps a backup private:
 the private key is not on GitHub. Nothing is written in plaintext, on the VM or the runner.
 
 - **The database comes first.** An image uploaded between the two parts is an orphan the
@@ -535,5 +540,25 @@ To put a backup back into production, restore into a new Neon branch first, chec
 point `DB_URL_OVERRIDE` at that branch and copy `restored-uploads/` over `./uploads` with
 the api and worker stopped. That has not been rehearsed.
 
-**First real restore:** not yet run. When it is, write the date, the backup used and the
-time `restore.sh` printed here: ___.
+**First real restore: 16 Oct 2026**, from the first production backup (run 38889319981),
+into a scratch Postgres 18. 8 quizzes and 2 users came back, schema at `e4a1f9c2d7b0`;
+`restore.sh` took under a second, about five minutes end to end with the download.
+Production had no uploaded images yet (no `storage_items`), so the image half is proven
+only by the round-trip test.
+
+## Production ops: facts and deploys (#72)
+
+`.github/workflows/production-ops.yml`, run by hand from `master` (Actions, Production ops):
+
+- **facts** (read-only): the VM's shape, region and allocation from Oracle's metadata
+  service, CPUs, memory, disk, uploads, container revisions, and whether the running
+  signing key is at least 32 characters and differs from every `SECRET_KEY` value ever
+  committed to this repo (yes or no, never the key). Billing and trial status are not in
+  the metadata: check those in the OCI console.
+- **deploy**: moves the api and worker to one backend revision, which must be on master
+  and must be the revision of the registry's `ghcr.io/ogfrench/frogquiz-backend:master`.
+  It refuses when the new image's migration head differs from the database's, because the
+  image runs `alembic upgrade head` on start and putting the old image back would not undo
+  it: a deploy with a migration is done by hand, after a backup. It keeps the old image as
+  `frogquiz-backend:rollback` and puts it back if the new containers are not healthy, then
+  checks `/api/v1/health` from outside. Nothing else on the VM changes.

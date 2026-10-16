@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 frogQuiz contributors
 # SPDX-License-Identifier: MPL-2.0
 #
-# Restores one nightly backup (an unzipped artifact of .github/workflows/backup.yml) into
+# Restores the database and uploads of one nightly backup (an unzipped artifact of .github/workflows/backup.yml) into
 # a scratch database and a scratch uploads folder. The runbook is in DEPLOY.md, "Backups".
 #
 #   restore.sh BACKUP_DIR IDENTITY_FILE TARGET_DB_URL TARGET_UPLOADS_DIR
@@ -11,6 +11,8 @@
 # cannot be pointed at production by mistake: production is never empty. pg_restore must
 # be at least as new as the server that was dumped (Neon is on 18); PG_BIN names a
 # directory holding a newer one.
+# The backup's third part, config.age (.env and the Compose files), is not restored here:
+# read it with `age -d -i KEY config.age | tar -tvf -` and copy what you need by hand.
 set -euo pipefail
 
 backup=${1:?usage: restore.sh BACKUP_DIR IDENTITY_FILE TARGET_DB_URL TARGET_UPLOADS_DIR}
