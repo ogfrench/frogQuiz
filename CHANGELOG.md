@@ -4,9 +4,12 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Fixed the agent API taking a NUL character: in a title or description it was a 500, in a question or answer it was stored. It is now a 422.
+- Fixed the AI agent copy calling an agent's quiz private: it is unlisted (link only, not in Discover), as D13 defines, since owner-only Private (#34) is not built. Changed in the MCP instructions, the create tool, My Account and docs/mcp.md.
+- Reworded the My Account key footnote so it no longer mentions a password, which broke the check that My Account offers no password.
 - Fixed the MCP service's lock failing to install on Linux (CI and the Docker image): it was generated on Windows and pinned pywin32 and colorama for every platform. Both now carry a Windows-only marker.
-- Added AI agents over MCP: Claude, Cursor and other MCP clients can list, read and create private quizzes with a personal key (docs/mcp.md). Off unless AGENT_API_ENABLED is set.
-- Added the agent API at /api/v1/agent (list, read and create your own quizzes), with its own limits: private quizzes only, two question types, no images, 50 questions, 30 creates an hour.
+- Added AI agents over MCP: Claude, Cursor and other MCP clients can list, read and create unlisted quizzes with a personal key (docs/mcp.md). Off unless AGENT_API_ENABLED is set.
+- Added the agent API at /api/v1/agent (list, read and create your own quizzes), with its own limits: unlisted quizzes only, two question types, no images, 50 questions, 30 creates an hour.
 - Added the MCP service in mcp-server/, with its own lock, Dockerfile, tests and CI workflow, run by docker-compose under the `mcp` profile and routed by Caddy at /mcp.
 - Added the AI agents section on My Account: create a named key that is shown once with a ready-made `claude mcp add` command, list keys, and revoke them.
 - Changed the My Account command to `claude mcp add --scope user`, so the server is available in every folder rather than only the one the command ran in (the VS Code extension on Windows missed a folder-scoped entry).

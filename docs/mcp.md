@@ -80,7 +80,7 @@ would be its own piece of work.
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `list_my_quizzes` | Your quizzes, most recently changed first: id, title, number of questions, whether public, and links to the editor and the view page. |
 | `get_quiz`        | One of your quizzes, with every question and its right answers.                                                                       |
-| `create_quiz`     | A new **private** quiz in your account. Returns its id and links.                                                                     |
+| `create_quiz`     | A new **unlisted** quiz in your account: not in Discover or search, but anyone with its link can open it. Returns its id and links.   |
 
 `create_quiz` takes a title, an optional description and 1 to 50 questions. A question is
 `single` (exactly one right answer) or `multiple` (select all that apply, at least one
@@ -89,8 +89,9 @@ markup is stored escaped and shows as typed.
 
 ## What an agent cannot do, on purpose
 
-- **Publish.** A quiz an agent makes is private until you open it in the editor and
-  publish it yourself. Nothing an agent writes reaches Discover or the search index unseen.
+- **Publish.** A quiz an agent makes is unlisted until you open it in the editor and
+  publish it yourself. Unlisted is not private: anyone with the link can open it, as with
+  any unlisted quiz (MVP.md D13; owner-only Private is #34, after V1). Nothing an agent writes reaches Discover or the search index unseen.
 - **Edit or delete.** It can only add.
 - **Read anyone else's quiz**, published ones included. A quiz's text reaches the agent as
   input, so a stranger's text could carry instructions to it (prompt injection). The

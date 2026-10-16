@@ -10,7 +10,7 @@ on. What an agent may do is deliberately less than what the editor may:
 
 - read and list only its owner's quizzes. Another account's quiz, public or not, is a
   404: its text would reach the agent as input, which is a way to steer it;
-- make a private quiz of the two question types the editor offers, with no images. The
+- make an unlisted quiz of the two question types the editor offers, with no images. The
   owner looks it over and publishes it from the editor, so nothing an agent writes
   reaches Discover or the search index on its own;
 - never edit or delete.
@@ -25,7 +25,15 @@ from typing import Annotated, Literal
 
 import bleach
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    ValidationError,
+    model_validator,
+)
 
 from frogquiz.auth import get_agent_user
 from frogquiz.config import settings
@@ -124,7 +132,16 @@ class AgentQuizPage(BaseModel):
     has_more: bool
 
 
-PlainText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+def _no_nul(value: str) -> str:
+    # Postgres stores no NUL character: in the title it was a 500, in a question it was
+    # kept in the JSON and handed to every later reader.
+    if "\x00" in value:
+        raise ValueError("text cannot contain a NUL character")
+    return value
+
+
+NoNul = AfterValidator(_no_nul)
+PlainText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1), NoNul]
 
 
 class AgentAnswer(BaseModel):
@@ -160,7 +177,7 @@ class AgentQuizIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: Annotated[PlainText, StringConstraints(max_length=MAX_TITLE_LENGTH)]
-    description: Annotated[str, StringConstraints(strip_whitespace=True, max_length=MAX_DESCRIPTION_LENGTH)] = ""
+    description: Annotated[str, StringConstraints(strip_whitespace=True, max_length=MAX_DESCRIPTION_LENGTH), NoNul] = ""
     questions: list[AgentQuestion] = Field(min_length=1, max_length=MAX_AGENT_QUESTIONS)
 
 
@@ -233,7 +250,7 @@ async def get_quiz(quiz_id: uuid.UUID, user: User = Depends(agent_user)):
 
 @router.post("/quizzes", response_model=AgentQuizCreated, status_code=201)
 async def create_quiz(data: AgentQuizIn, user: User = Depends(agent_user)):
-    """A new private quiz in the caller's account."""
+    """A new unlisted quiz in the caller's account."""
     await rate_limit_key(f"agent_create_hour:{user.id}", limit=CREATES_PER_HOUR, window_seconds=3600)
     await rate_limit_key(f"agent_create_day:{user.id}", limit=CREATES_PER_DAY, window_seconds=86400)
     try:

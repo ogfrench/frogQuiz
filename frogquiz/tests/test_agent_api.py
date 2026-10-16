@@ -5,7 +5,7 @@
 """The agent API (/api/v1/agent), which the MCP service in mcp-server/ calls.
 
 What an agent may do is less than what the editor may, on purpose: its own quizzes only,
-private ones only, the editor's two question types, no images. docs/mcp.md has the why.
+unlisted ones only, the editor's two question types, no images. docs/mcp.md has the why.
 """
 
 import copy
@@ -78,7 +78,7 @@ def test_create_list_and_get_a_quiz(test_client, accounts):  # noqa: F811
     assert got["questions"][0]["time"] == "20"
     assert got["questions"][1]["answers"][1] == {"text": "Salamander", "right": True}
 
-    # It is a real quiz: the editor's own read sees it in the owner's account, private.
+    # It is a real quiz: the editor's own read sees it in the owner's account, unlisted.
     editor_view = test_client.get(f"/api/v1/quiz/get/{body['id']}", cookies=accounts["owner"])
     assert editor_view.status_code == 200
     assert editor_view.json()["public"] is False
@@ -247,3 +247,17 @@ def test_list_pages(test_client, accounts):  # noqa: F811
     first = test_client.get("/api/v1/agent/quizzes?page_size=1", headers=headers).json()
     assert len(first["quizzes"]) == 1 and first["has_more"] is True
     assert test_client.get("/api/v1/agent/quizzes?page_size=101", headers=headers).status_code == 422
+
+
+@pytest.mark.parametrize("field", ["title", "description", "question", "answer"])
+def test_a_nul_character_is_a_422_not_a_500(test_client, accounts, field):  # noqa: F811
+    # Postgres stores no NUL in text or jsonb, so it has to be refused before the save.
+    body = _quiz()
+    if field in ("title", "description"):
+        body[field] = "Frogs\x00"
+    elif field == "question":
+        body["questions"][0]["question"] = "Which\x00"
+    else:
+        body["questions"][0]["answers"][0]["text"] = "Common\x00frog"
+    made = test_client.post("/api/v1/agent/quizzes", json=body, headers=_auth(accounts["owner_key"]))
+    assert made.status_code == 422, made.text

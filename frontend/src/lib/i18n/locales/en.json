@@ -504,7 +504,7 @@
         "unverified_failed": "Couldn't send it just now. Try again in a moment.",
         "unverified_wait": "Send again in {{time}}",
         "agents_title": "AI agents",
-        "agents_description": "A key lets Claude, or another AI agent, list your quizzes and make new private ones in your account. It cannot publish, edit or delete anything.",
+        "agents_description": "A key lets Claude, or another AI agent, list your quizzes and make new unlisted ones in your account. It cannot publish, edit or delete anything.",
         "agents_name_label": "Key name",
         "agents_name_placeholder": "Claude on my laptop",
         "agents_create": "Create key",
@@ -526,7 +526,7 @@
         "agents_revoke_named": "Revoke {{name}}",
         "agents_revoke_title": "Revoke “{{name}}”?",
         "agents_revoke_body": "Any agent using this key stops working at once. This can't be undone; you can make a new key instead.",
-        "agents_footnote": "Treat a key like a password. Revoke it here if it leaks or you stop using it. Deleting your account revokes every key."
+        "agents_footnote": "Keep a key secret: anyone who has it can act as you. Revoke it here if it leaks or you stop using it. Deleting your account revokes every key."
     },
     "explore_page": {
         "made_by": "Made by",

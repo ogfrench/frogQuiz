@@ -32,7 +32,7 @@ def _text(value: str) -> str:
 
 
 def build_plain_quiz(title: str, description: str, questions: Iterable[Mapping]) -> QuizInput:
-    """A private QuizInput from plain text.
+    """An unlisted QuizInput from plain text.
 
     Each question is a mapping with `question`, `time` (seconds), `type` ("single" or
     "multiple") and `answers`, a list of mappings with `text` and `right`. Constructing
@@ -65,7 +65,7 @@ async def save_new_quiz(
     """Save a new quiz and drop the cached quiz count.
 
     Not for a public quiz: this does not index into Meilisearch, which is why both callers
-    make theirs private.
+    make theirs unlisted.
     """
     quiz = Quiz(
         **quiz_input.model_dump(),

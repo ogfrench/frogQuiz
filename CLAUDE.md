@@ -204,8 +204,8 @@ The MCP SDK needs a newer pydantic than the API's ormar allows. It forwards each
 `fq_` key to `/api/v1/agent` (`frogquiz/routers/agent.py`), where every rule lives. It is off
 unless `AGENT_API_ENABLED` is set; turning it on in production is a joint
 François/Gonçalo decision. Read [`docs/mcp.md`](docs/mcp.md) before changing what an agent
-may do. The narrow surface is deliberate: private quizzes only, the owner's quizzes only,
-no images.
+may do. The narrow surface is deliberate: unlisted quizzes only (agents never publish),
+the owner's quizzes only, no images.
 
 ## Upstream independence
 
