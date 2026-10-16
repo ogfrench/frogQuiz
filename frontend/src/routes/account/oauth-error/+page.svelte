@@ -9,6 +9,10 @@ SPDX-License-Identifier: MPL-2.0
 	const { error } = data;
 </script>
 
+<svelte:head>
+	<title>frogQuiz - Error authenticating</title>
+</svelte:head>
+
 <div>
 	<div class="flex justify-center w-full">
 		<h1 class="text-6xl">Error authenticating</h1>

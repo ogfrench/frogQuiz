@@ -4,6 +4,7 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Gave the OAuth error page a title; axe flagged it as the only screen without one in the V1 visual capture.
 - Added `frontend/e2e/overlays.e2e.ts` and `docs/ux-review-hidden-menus.md`: every live dialog, sheet and confirmation checked for its name, focus trap, Escape and focus return, plus touch sizes inside them at 390. Four findings are encoded as known bugs: the command palette is not a dialog, Ctrl+K leaves its field unfocused, the full-screen image cannot be opened from the keyboard, and the Game options row and every Switch are under 44 px.
 - Added `deploy/load-test.py`, which ramps games of simulated players and reports join time and answer latency. On the local stack 200 players held, with the slowest answer at 565 ms, and answer latency grows about linearly with the room.
 - Fixed the lobby leaving its last row of names clipped and the "+N more" count stale when names changed width without the board resizing (the late Inter font swap): every name chip is now watched, not just the board. Hidden chips also disappear at once instead of fading over 150 ms.
