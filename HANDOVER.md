@@ -45,6 +45,20 @@ suite's convention.
   already exist. Cloud sessions cannot write secrets anyway: their proxy refuses the Actions
   secrets and environments endpoints by policy.
 
+**Joining a game (#82, #84, D45).** One PIN box (`frontend/src/lib/components/PinEntry.svelte`)
+serves `/` and `/play`. A wrong PIN stays on screen with the error under it, the PIN is checked
+at six digits, and the player moves on with Join. The nickname step was redesigned around a
+mystery frog the lobby reveals. Merged as `1f11b54` and live.
+
+**AI agents over MCP (#83, D46).** Gonçalo's MVP merged on 16 Oct as `125c5ad`: list, read and
+create quizzes from Claude Code, Cursor or Claude Desktop with a personal `fq_` key. **It is
+off in production, and the backend there still runs the image from before it.** Its migration
+(`a7c3e5f1b9d2`, hashing API keys) means the next backend deploy is done by hand after a
+backup, and Production ops **deploy** refuses every backend deploy until then. Both steps,
+the migration and turning agents on, are in `DEPLOY.md`, "AI agents (MCP)". What V1 adds
+(edit, delete, copy, public quizzes, images, Excel, `/live` closed to agent keys) is D46 and
+#68. Gonçalo started on import the same evening; it goes on its own branch from master.
+
 **Uptime.** `.github/workflows/uptime.yml` checks the frontend pages and the API's health
 every 30 minutes. It is a stopgap until #72's monitor exists.
 
@@ -53,6 +67,8 @@ every 30 minutes. It is a stopgap until #72's monitor exists.
 2. #76's backend fix on the VM (steps in #72).
 3. #72's OCI checks.
 4. The v0.9 cut. `frontend/package.json` is still `0.8.0`, and `## Unreleased` is long.
+5. The #83 migration deploy (`DEPLOY.md`, "AI agents (MCP)", step 1). Until it is done no
+   backend change can ship through Production ops.
 
 ## Game polish, PR #63 (12 Oct, evening)
 

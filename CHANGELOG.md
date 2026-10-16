@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Wrote the turn-on runbook for AI agents in DEPLOY.md as two steps: the migration deploy #83 needs before any other backend deploy, then switching agents on.
+- Recorded the V1 scope for AI agents as D46 in MVP.md, and #83 and #84 in HANDOVER.md and docs/v1-plan.md.
 - Changed the PIN step on /play to wait for Join once the game is found (D45), as Kahoot, Mentimeter and Gimkit do; a PIN that arrives in the link, from the home page or the QR code, still goes straight on.
 - Redesigned the nickname step: a Change link back to the PIN, one "Your nickname" label instead of a heading and a label, a left-aligned field with a placeholder, a mystery frog that the lobby reveals, a length count from 12 characters, and one message row that no longer pushes the button down.
 - Reworded the note for a nickname that looks like the PIN; it said "You're already in!" before the player was.
