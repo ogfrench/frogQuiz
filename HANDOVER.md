@@ -64,10 +64,21 @@ off, are in `DEPLOY.md`, "AI agents (MCP)". What V1 adds
 every 30 minutes. It is a stopgap until #72's monitor exists.
 
 **Open, in order.**
-1. The first real restore, timed and written into `DEPLOY.md`.
+1. ~~The first real restore, timed and written into `DEPLOY.md`~~: done on 16 Oct
+   (`DEPLOY.md`, "First real restore").
 2. ~~#76's backend fix on the VM~~: done, the VM runs `125c5ad`, which carries it.
-3. #72's OCI checks.
+3. **The Oracle VM, before 31 Oct (François, in the console). Urgent.** #72 recorded
+   billing and the trial as "not a concern for now", but the facts run of 16 Oct 20:39 UTC
+   shows the VM at **4 OCPU / 24 GB**, and Oracle's Free Tier page (checked 16 Oct) says
+   an Always Free tenancy gets 2 OCPU / 12 GB of A1, and that over it "all existing OCI
+   Ampere A1 Compute instances are disabled and then deleted after 30 days, unless you
+   upgrade to a paid account". The trial ended on 2 Oct (#22), so that is about 31 Oct.
+   Either resize to 2 OCPU / 12 GB (a reboot; IP and disk kept) or upgrade to Pay As You
+   Go with a $1 budget alert. If the account was already upgraded, the facts mode cannot
+   tell; check the console and strike this. The nightly backup now covers the database
+   and `uploads/`, so a loss would be downtime and a rebuild, not data.
 4. The v0.9 cut. `frontend/package.json` is still `0.8.0`, and `## Unreleased` is long.
+   The plan for the rest of V1 is on #73.
 5. ~~The #83 migration deploy~~: done on 16 Oct with Production ops **migrate**. Backend
    deploys without a migration go through **deploy** again.
 
