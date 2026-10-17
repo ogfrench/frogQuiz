@@ -7,7 +7,8 @@ SPDX-License-Identifier: MPL-2.0
 # Handover, 2 to 6 October 2026 (archived)
 
 Moved out of `HANDOVER.md` on 17 Oct 2026. Kept for the decisions and commands it
-records; paths and counts in it may be out of date.
+records. Paths, counts and relative links in it may be out of date: it was written
+one folder up.
 
 ## Earlier: the `ccr-370df3e4-c44t1l` handover (2–6 Oct)
 

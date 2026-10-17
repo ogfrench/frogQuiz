@@ -479,12 +479,12 @@ Use Git Bash, from the repo root unless the table says otherwise. pnpm is in `%A
 | Types | `cd frontend && pnpm exec svelte-kit sync && pnpm check` | 0 errors, about 36 warnings |
 | Frontend lint | `cd frontend && pnpm lint` | 0 errors |
 | Backend lint | `flake8 .` | 0 |
-| Backend, full | `./run_tests.sh` (needs Podman or Docker for Postgres, Redis and Meilisearch) | Fresh database, Redis flushed first (§7) |
+| Backend, full | `./run_tests.sh` (needs Podman or Docker for Postgres, Redis and Meilisearch) | Fresh database, Redis flushed first (§7 of [`docs/archive/handover-2026-10.md`](docs/archive/handover-2026-10.md)) |
 | Backend, no containers | `pytest frogquiz/tests/test_set_question_number_bounds.py frogquiz/tests/test_join_game_payload.py frogquiz/tests/test_results_spreadsheet.py frogquiz/tests/test_avatar_seats_outlive_the_game.py`, with `.env.ci` loaded | 28 passed |
 | e2e, full | `bash e2e/run.sh` | 218 tests, about 22 min. Edge on Windows. The cloud ran Chromium, so Edge is a real second browser |
 | e2e, one spec | `bash e2e/run.sh e2e/game-reload.e2e.ts` | |
 | Stack left up | `KEEP_UP=1 bash e2e/run.sh --list`, then `bash e2e/stop.sh` | App on 3000, API on 8010 |
-| A phone on the stack | See "A phone against the local stack" in the 4 Oct section below | |
+| A phone on the stack | See "A phone against the local stack" in [`docs/archive/handover-2026-10.md`](docs/archive/handover-2026-10.md) | |
 
 **Known flake:** `practice.e2e.ts › practice runs a quiz end to end` failed once in each of two
 full runs (4 and 10 Oct), with a different symptom each time. It passes alone. `docs/archive/TODO-2026-10.md` has
@@ -511,7 +511,7 @@ both occurrences. Note a third with its symptom; don't explain it in advance.
 - **Context7** (`claude mcp add`) for shadcn-svelte docs, which CLAUDE.md points to.
 - **Remote Control** (`/remote-control`) to follow a laptop session from the phone.
 
-The 4 Oct section below has the details and doc links for each.
+The 4 Oct section, now in [`docs/archive/handover-2026-10.md`](docs/archive/handover-2026-10.md), has the details and doc links for each.
 
 ### Next, in order
 

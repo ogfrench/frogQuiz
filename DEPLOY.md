@@ -13,15 +13,15 @@ sections below say how to use them.
 
 | Workflow (`.github/workflows/`) | Runs on | What it does |
 |---|---|---|
-| `frontend_lint.yml` | push to master, PRs | ESLint, vitest, svelte-check and a production build |
-| `netlify_ssr.yml` | push to master, PRs | Builds the frontend and loads it in Netlify's server runtime (added after the #69 outage) |
+| `frontend_lint.yml` | frontend changes | ESLint, vitest, svelte-check and a production build |
+| `netlify_ssr.yml` | frontend changes | Builds the frontend and loads it in Netlify's server runtime (added after the #69 outage) |
 | `e2e.yml` | PRs touching app code | The whole Playwright suite on a local stack |
 | `pytest.yml`, `backend_lint.yml` | backend changes | The backend suite; flake8 |
 | `mcp_server.yml` | changes under `mcp-server/` | The MCP service's tests and image |
 | `codeql.yml`, `audit.yml` | push, PRs, weekly | Code scanning; dependency audit (pip-audit, pnpm audit) and gitleaks |
 | `build_backend.yml`, `build_caddy.yml` | push to master | Build and push `ghcr.io/ogfrench/frogquiz-backend` and `-caddy`, which the VM pulls |
 | `build_frontend.yml` | push to master | Builds and pushes a frontend image; production serves the frontend from Netlify instead |
-| `production-ops.yml` | by hand | facts, cleanup, deploy, migrate, agents-on, agents-off on the VM ("Production ops", below) |
+| `production-ops.yml` | by hand (and PRs touching it, as a dry check) | facts, cleanup, deploy, migrate, agents-on, agents-off on the VM ("Production ops", below) |
 | `production-guest-access.yml` | by hand | Checks or repairs guest access on production |
 | `backup.yml` | nightly, 02:17 UTC | Encrypted database and uploads backup, kept 30 days ("Backups", below) |
 | `uptime.yml` | every 30 minutes | Fails, and emails, when the site or `/api/v1/health` stops answering |
@@ -203,7 +203,6 @@ server scores an answer by when it is handled, minus a round trip measured at jo
 spent queued counts against the player. At 300 the last answers lose up to about 1.3 s.
 The 25-player figure is mostly the network between that machine and the VM. Answer delay
 grows about linearly with the room, as it did locally.
-
 
 ### Deploying to any Linux VM
 
