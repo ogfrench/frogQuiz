@@ -20,6 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state';
+	import { onDestroy } from 'svelte';
 
 	interface Props {
 		game_pin: string;
@@ -37,6 +38,34 @@ SPDX-License-Identifier: MPL-2.0
 
 	let fullscreen_open = $state(false);
 	const { t } = getLocalization();
+
+	// A click on a chip removes the player at once, as on Kahoot, with a few seconds to
+	// take it back (François, 17 Oct): one slip on a projector clicker used to throw a
+	// colleague out. The kick is only sent when the Undo runs out, or when the game starts.
+	const UNDO_MS = 5000;
+	let pending: { player: IGameState['players'][number]; index: number } | null = $state(null);
+	let pending_timer: ReturnType<typeof setTimeout> | undefined;
+	const send_pending = () => {
+		clearTimeout(pending_timer);
+		if (pending) socket_game_controls.kick_player(pending.player.username);
+		pending = null;
+	};
+	const remove = (username: string) => {
+		send_pending();
+		const index = game_state.players.findIndex((p) => p.username === username);
+		if (index === -1) return;
+		const [player] = game_state.players.splice(index, 1);
+		pending = { player, index };
+		pending_timer = setTimeout(send_pending, UNDO_MS);
+	};
+	const undo = () => {
+		clearTimeout(pending_timer);
+		if (!pending) return;
+		const at = Math.min(pending.index, game_state.players.length);
+		game_state.players.splice(at, 0, pending.player);
+		pending = null;
+	};
+	onDestroy(send_pending);
 
 	// A projector never scrolls (12 Oct). The names stop where the screen does: chips that
 	// do not fit are hidden and a pill says how many more. Once that happens the newest
@@ -181,7 +210,11 @@ SPDX-License-Identifier: MPL-2.0
 		size="lg"
 		class="h-14 rounded-xl px-10 text-lg font-semibold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100"
 		disabled={game_state.players.length < 1}
-		onclick={() => socket_game_controls.start_game()}
+		onclick={() => {
+			// A removal still waiting on its Undo goes first, so that player is not in the game.
+			send_pending();
+			socket_game_controls.start_game();
+		}}
 	>
 		{$t('admin_page.start_game')}
 	</Button>
@@ -209,11 +242,7 @@ SPDX-License-Identifier: MPL-2.0
 							type="button"
 							title={$t('words.kick')}
 							aria-label="{$t('words.kick')}: {player.username}"
-							onclick={() =>
-								socket_game_controls.kick_player(
-									player.username,
-									game_state.players
-								)}
+							onclick={() => remove(player.username)}
 							class="group flex items-center gap-2.5 rounded-full border border-border bg-card py-1.5 pr-4 pl-1.5 text-lg font-medium shadow-sm
 								transition-colors hover:border-destructive hover:text-destructive
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
@@ -242,6 +271,24 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 		{/if}
 	</div>
+</div>
+
+<!-- Said where the host is looking, with the way back: always in the page, so a screen
+     reader hears it when a name goes. -->
+<div
+	role="status"
+	class="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-4"
+>
+	{#if pending}
+		<p
+			class="bg-foreground text-background pointer-events-auto flex items-center gap-3 rounded-full py-2 pr-2 pl-5 text-base shadow-lg"
+		>
+			{$t('admin_page.removed_player', { name: pending.player.username })}
+			<Button size="sm" variant="secondary" class="rounded-full" onclick={undo}>
+				{$t('words.undo')}
+			</Button>
+		</p>
+	{/if}
 </div>
 
 <!-- The shadcn Dialog: Escape, a click anywhere, or Enter on the focused code closes it.

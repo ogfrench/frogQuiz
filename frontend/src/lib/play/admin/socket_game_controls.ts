@@ -48,16 +48,9 @@ export class SocketGameControls {
 		this.socket.emit('end_game', {});
 	}
 
-	kick_player(username: string, players: any[]) {
+	// Only the message: the lobby takes the chip off the board itself and sends this
+	// once the host's Undo has run out (game_not_started.svelte).
+	kick_player(username: string) {
 		this.socket.emit('kick_player', { username: username });
-
-		for (let i = 0; i < players.length; i++) {
-			console.log(players[i].username, username);
-			if (players[i].username === username) {
-				players.splice(i, 1);
-				break;
-			}
-		}
-		return players;
 	}
 }
