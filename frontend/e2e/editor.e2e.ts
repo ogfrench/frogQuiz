@@ -292,6 +292,9 @@ test('on a phone, the header says what is missing, in full', async ({ browser })
 	await startNewQuiz(page, `October team trivia ${Date.now()}`);
 	await page.getByRole('button', { name: /^Multiple choice/ }).click();
 	await questionBox(page).fill('No answers yet');
+	// A new question starts with two blank answers (#92); with both gone it has none.
+	await page.getByRole('button', { name: 'Delete answer' }).first().click();
+	await page.getByRole('button', { name: 'Delete answer' }).first().click();
 	await saveQuizButton(page).click();
 	// The status shared one row with the title, the theme switch and Save, and got 33px:
 	// this sentence read as a single letter. It also asked for a title and a question,

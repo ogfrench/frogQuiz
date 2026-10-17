@@ -167,12 +167,9 @@ test('the owner adds a question below the first, finishes it, and Done takes the
 		)
 		.toBe('1');
 	await page.keyboard.type('Capital of Italy?');
-	// A question with no answers cannot be saved yet (the server refuses it), and the
-	// header says so rather than a stale "Saved".
-	await expect(page.getByText('Unsaved changes', { exact: true }).first()).toBeVisible();
-	await page.getByRole('button', { name: 'Add an answer' }).click();
+	// It starts with two blank answers (#92), so it saves as soon as it is written.
+	await expect(page.getByRole('textbox', { name: /^Answer \d+$/ })).toHaveCount(2);
 	await page.getByRole('textbox', { name: 'Answer 1' }).fill('Rome');
-	await page.getByRole('button', { name: 'Add an answer' }).click();
 	await page.getByRole('textbox', { name: 'Answer 2' }).fill('Milan');
 	// Then it saves on its own: Saving…, then a draft, since no answer is marked correct.
 	await expect(page.getByText('Saving…', { exact: true })).toBeVisible();
@@ -322,4 +319,40 @@ test('on a phone, the quiz page menu fits, is touch-sized, and the notice is on 
 	const notice = page.getByText('Link copied', { exact: true });
 	await expect(notice).toBeInViewport();
 	await context.close();
+});
+
+test('a new question starts with two blank answers; with both deleted the quiz cannot save', async ({
+	browser,
+	request
+}) => {
+	const owner = await signedInContext(browser, request);
+	const saved = await saveQuiz(owner.context.request, quiz(`Blanks ${Date.now()}`));
+	const id = saved.body.id as string;
+	const page = owner.page;
+	await page.goto(`/edit?quiz_id=${id}`);
+	await expect(cards(page)).toHaveCount(2);
+	await page.getByRole('button', { name: /^Check choice/ }).click();
+	const answers = page.getByRole('textbox', { name: /^Answer \d+$/ });
+	await expect(answers).toHaveCount(2);
+	await expect(answers.first()).toHaveValue('');
+	await questionBox(page).fill('Which are capitals?');
+	// Saved straight away, as a draft: blank answers are allowed, unfinished ones flagged.
+	await expect(page.getByText('Saved as a draft', { exact: true })).toBeVisible({
+		timeout: 15_000
+	});
+	const stored = await (await owner.context.request.get(`/api/v1/quiz/get/${id}`)).json();
+	// Stored as blanks, not null: null made every read of the quiz answer 500.
+	expect(stored.questions[2].answers.map((a: { answer: string }) => a.answer)).toEqual(['', '']);
+	// The quiz page shows the draft without error.
+	const view = await owner.context.newPage();
+	await view.goto(`/view/${id}`);
+	await expect(view.getByText('Draft', { exact: true })).toBeVisible();
+	await expect(view.getByText('Which are capitals?')).toBeVisible();
+	await view.close();
+	// Deleting both blanks is the old empty state, and the header says it cannot save.
+	await page.getByRole('button', { name: 'Delete answer' }).first().click();
+	await page.getByRole('button', { name: 'Delete answer' }).first().click();
+	await expect(answers).toHaveCount(0);
+	await expect(page.getByText('Unsaved changes', { exact: true }).first()).toBeVisible();
+	await owner.context.close();
 });

@@ -137,10 +137,18 @@ class UserSession(ormar.Model):
     )
 
 
+def _blank_if_none(v):
+    # The save path used to store a blank answer as None, which `answer: str` then refused
+    # on every read (the quiz page answered 500). Rows stored that way still exist.
+    return "" if v is None else v
+
+
 class ABCDQuizAnswer(BaseModel):
     right: bool
     answer: str
     color: str | None = None
+
+    _answer_blank = field_validator("answer", mode="before")(_blank_if_none)
 
 
 class RangeQuizAnswer(BaseModel):
@@ -154,6 +162,8 @@ class VotingQuizAnswer(BaseModel):
     answer: str
     image: str | None = None
     color: str | None = None
+
+    _answer_blank = field_validator("answer", mode="before")(_blank_if_none)
 
 
 class QuizQuestionType(str, Enum):

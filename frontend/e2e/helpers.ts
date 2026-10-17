@@ -296,9 +296,11 @@ export async function addQuestion(
 	await page.getByRole('button', { name: kind }).first().click();
 	// Only the open card holds a rich-text field; the others are collapsed to plain text.
 	await questionBox(page).fill(title);
-	for (let i = 0; i < answers.length; i++)
-		await page.getByRole('button', { name: 'Add an answer' }).click();
+	// A new question starts with two blank answers (#92): fill those, add the rest.
 	const inputs = page.getByRole('textbox', { name: /^Answer \d+$/ });
+	await expect(inputs).toHaveCount(2);
+	for (let i = 2; i < answers.length; i++)
+		await page.getByRole('button', { name: 'Add an answer' }).click();
 	for (const [i, [text, right]] of answers.entries()) {
 		await inputs.nth(i).fill(text);
 		if (right)

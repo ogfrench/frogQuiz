@@ -6,8 +6,8 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Answer, Question } from '$lib/quiz_types';
-	import { QuizQuestionType } from '$lib/quiz_types';
+	import type { Question } from '$lib/quiz_types';
+	import { newQuestion, type NewQuestionKind } from './new_question';
 	import { getLocalization } from '$lib/i18n';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Button } from '$lib/components/ui/button';
@@ -39,51 +39,33 @@ SPDX-License-Identifier: MPL-2.0
 	// what people run a live quiz for. True/false needs no type of its own -- it is an ABCD
 	// question with two answers. Existing quizzes that already use a cut type still open and
 	// still play; this list only governs what can be created from here.
-	const question_types: {
-		name: string;
-		description: string;
-		answers: Answer[];
-		type: QuizQuestionType;
-	}[] = [
+	// Each type's starting answers live in new_question.ts, shared with "Add question
+	// below" (#92). True/False is not a type of its own anywhere: it is an ABCD question
+	// that arrives with its two answers written, neither marked (a pre-marked True shipped
+	// false statements with True as their answer).
+	const question_types: { name: string; description: string; kind: NewQuestionKind }[] = [
 		{
 			name: $t('words.multiple_choice'),
 			description: $t('editor.abcd_description'),
-			answers: [],
-			type: QuizQuestionType.ABCD
+			kind: 'abcd'
 		},
 		{
 			name: $t('words.check_choice'),
 			description: $t('editor.check_choice_description'),
-			answers: [],
-			type: QuizQuestionType.CHECK
+			kind: 'check'
 		},
-		// True/False is not a type of its own anywhere: it is an ABCD question that
-		// arrives with its two answers already written. Kahoot offers the same preset,
-		// and it needs no play, scoring or export path that ABCD does not already have.
-		// Neither starts marked correct. True used to, so a false statement left alone
-		// shipped with True as its answer and nothing flagged it, and an author who
-		// clicked True to mark it un-marked it instead. Unmarked, the question stays
-		// unfinished until the author picks one.
 		{
 			name: $t('words.true_false'),
 			description: $t('editor.true_false_description'),
-			answers: [
-				{ answer: $t('words.true'), right: false },
-				{ answer: $t('words.false'), right: false }
-			],
-			type: QuizQuestionType.ABCD
+			kind: 'true_false'
 		}
 	];
 
 	const add_question = (index: number) => {
-		const empty_question: Question = {
-			type: question_types[index].type,
-			time: '20',
-			question: '',
-			image: undefined,
-			// A fresh copy: the preset's answers are a template, not shared state.
-			answers: question_types[index].answers.map((a) => ({ ...a }))
-		};
+		const empty_question = newQuestion(question_types[index].kind, {
+			true: $t('words.true'),
+			false: $t('words.false')
+		});
 		const position =
 			at === null ? questions.length : Math.max(0, Math.min(at, questions.length));
 		questions = [

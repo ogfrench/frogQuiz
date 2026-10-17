@@ -19,7 +19,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { editorValidation } from '$lib/editor/validation.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { QuizQuestionType, type Question } from '$lib/quiz_types';
+	import { newQuestion } from '$lib/editor/new_question';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Check from '@lucide/svelte/icons/check';
 	import Play from '@lucide/svelte/icons/play';
@@ -169,13 +169,7 @@ SPDX-License-Identifier: MPL-2.0
 	// be a "+" between cards that only appeared on hover, so a phone could only add at
 	// the end. The type is changed on the new card; True / False is at the end of the list.
 	const addBelow = (index: number) => {
-		const empty_question: Question = {
-			type: QuizQuestionType.ABCD,
-			time: '20',
-			question: '',
-			image: undefined,
-			answers: []
-		};
+		const empty_question = newQuestion('abcd');
 		data.questions = [
 			...data.questions.slice(0, index + 1),
 			empty_question,
