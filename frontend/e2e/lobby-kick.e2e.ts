@@ -78,3 +78,44 @@ test('starting the game sends a removal still waiting on its Undo', async ({
 	await keep.context.close();
 	await gone.context.close();
 });
+
+// The window is five seconds of the server's list changing under the host. The removed
+// player used to be spliced out and put back on Undo, so a reload inside the window came
+// back as a second chip with the same key (which breaks the board), and one who left came
+// back as a ghost that counted towards Start.
+test('a player who reloads inside the window is still removed, and shown once', async ({
+	browser,
+	request
+}) => {
+	const { hostCtx, host, keep, gone } = await lobby(browser, request);
+	await host.getByRole('button', { name: 'Kick: gone', exact: true }).click();
+	await gone.page.reload();
+	await expect(host.getByText('1 player is waiting')).toBeVisible();
+	await expect(host.getByRole('button', { name: 'Kick: gone', exact: true })).toHaveCount(0);
+	await expect(gone.page.getByText('The host removed you from this game.')).toBeVisible({
+		timeout: 10_000
+	});
+	await expect(host.getByText('1 player is waiting')).toBeVisible();
+	await hostCtx.close();
+	await keep.context.close();
+	await gone.context.close();
+});
+
+test('Undo after the player left brings back no one', async ({ browser, request }) => {
+	const { hostCtx, host, keep, gone } = await lobby(browser, request);
+	const errors: string[] = [];
+	host.on('pageerror', (e) => errors.push(e.message));
+	await host.getByRole('button', { name: 'Kick: gone', exact: true }).click();
+	await gone.context.close();
+	// They are gone, so there is nothing to undo.
+	await expect(host.getByText('Removed gone')).toHaveCount(0);
+	await expect(host.getByRole('button', { name: 'Undo', exact: true })).toHaveCount(0);
+	await expect(host.getByText('1 player is waiting')).toBeVisible();
+	await host.getByRole('button', { name: 'Kick: keep', exact: true }).click();
+	await host.getByRole('button', { name: 'Undo', exact: true }).click();
+	await expect(host.getByText('1 player is waiting')).toBeVisible();
+	await expect(host.getByRole('button', { name: 'Kick: gone', exact: true })).toHaveCount(0);
+	expect(errors).toEqual([]);
+	await hostCtx.close();
+	await keep.context.close();
+});

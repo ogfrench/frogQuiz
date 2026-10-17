@@ -42,27 +42,32 @@ SPDX-License-Identifier: MPL-2.0
 	// A click on a chip removes the player at once, as on Kahoot, with a few seconds to
 	// take it back (François, 17 Oct): one slip on a projector clicker used to throw a
 	// colleague out. The kick is only sent when the Undo runs out, or when the game starts.
+	// Until then the player is hidden, not taken out of the list: the list is the server's,
+	// and a rejoin, a leave or a host reconnect inside the window changes it, which a
+	// local splice and re-insert duplicated or brought back as a ghost.
 	const UNDO_MS = 5000;
-	let pending: { player: IGameState['players'][number]; index: number } | null = $state(null);
+	let pending: string | null = $state(null);
 	let pending_timer: ReturnType<typeof setTimeout> | undefined;
+	const still_here = (username: string) =>
+		game_state.players.some((p) => p.username === username);
+	const waiting = $derived(game_state.players.filter((p) => p.username !== pending));
 	const send_pending = () => {
 		clearTimeout(pending_timer);
-		if (pending) socket_game_controls.kick_player(pending.player.username);
+		const name = pending;
 		pending = null;
+		// One who left meanwhile is gone already; kicking them only errors on the server.
+		if (!name || !still_here(name)) return;
+		socket_game_controls.kick_player(name);
+		// The server tells the host nothing back for a kick, so the list drops them here.
+		game_state.players = game_state.players.filter((p) => p.username !== name);
 	};
 	const remove = (username: string) => {
 		send_pending();
-		const index = game_state.players.findIndex((p) => p.username === username);
-		if (index === -1) return;
-		const [player] = game_state.players.splice(index, 1);
-		pending = { player, index };
+		pending = username;
 		pending_timer = setTimeout(send_pending, UNDO_MS);
 	};
 	const undo = () => {
 		clearTimeout(pending_timer);
-		if (!pending) return;
-		const at = Math.min(pending.index, game_state.players.length);
-		game_state.players.splice(at, 0, pending.player);
 		pending = null;
 	};
 	onDestroy(send_pending);
@@ -75,9 +80,7 @@ SPDX-License-Identifier: MPL-2.0
 	let board: HTMLUListElement | undefined = $state();
 	let hidden = $state(0);
 	let newest_first_from: number | null = $state(null);
-	const shown_players = $derived(
-		newest_first_from !== null ? [...game_state.players].reverse() : game_state.players
-	);
+	const shown_players = $derived(newest_first_from !== null ? [...waiting].reverse() : waiting);
 
 	function fit() {
 		if (!board) return;
@@ -96,7 +99,7 @@ SPDX-License-Identifier: MPL-2.0
 			if (li.style.visibility !== visibility) li.style.visibility = visibility;
 		}
 		hidden = off;
-		const count = game_state.players.length;
+		const count = waiting.length;
 		if (hidden > 0 && newest_first_from === null) newest_first_from = count;
 		if (newest_first_from !== null && hidden === 0 && count < newest_first_from)
 			newest_first_from = null;
@@ -209,7 +212,7 @@ SPDX-License-Identifier: MPL-2.0
 	<Button
 		size="lg"
 		class="h-14 rounded-xl px-10 text-lg font-semibold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100"
-		disabled={game_state.players.length < 1}
+		disabled={waiting.length < 1}
 		onclick={() => {
 			// A removal still waiting on its Undo goes first, so that player is not in the game.
 			send_pending();
@@ -223,10 +226,10 @@ SPDX-License-Identifier: MPL-2.0
 		<p class="shrink-0 text-xl text-muted-foreground" aria-live="polite">
 			<!-- i18next picks _one / _other from the count; the old _plural suffix was
 			     i18next v20's and printed the raw key on the projector. -->
-			{$t('play_page.players_waiting', { count: game_state.players.length ?? 0 })}
+			{$t('play_page.players_waiting', { count: waiting.length })}
 		</p>
 
-		{#if game_state.players.length > 0}
+		{#if waiting.length > 0}
 			<ul
 				bind:this={board}
 				class="relative flex min-h-[4.5rem] w-full flex-auto flex-wrap content-start items-center justify-center gap-2.5 overflow-hidden p-1"
@@ -279,11 +282,11 @@ SPDX-License-Identifier: MPL-2.0
 	role="status"
 	class="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-4"
 >
-	{#if pending}
+	{#if pending && still_here(pending)}
 		<p
 			class="bg-foreground text-background pointer-events-auto flex items-center gap-3 rounded-full py-2 pr-2 pl-5 text-base shadow-lg"
 		>
-			{$t('admin_page.removed_player', { name: pending.player.username })}
+			{$t('admin_page.removed_player', { name: pending })}
 			<Button size="sm" variant="secondary" class="rounded-full" onclick={undo}>
 				{$t('words.undo')}
 			</Button>
