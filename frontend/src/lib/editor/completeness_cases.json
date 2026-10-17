@@ -1,0 +1,659 @@
+[
+	{
+		"name": "multiple choice, finished",
+		"complete": true,
+		"question": {
+			"question": "<p>Largest frog?</p>",
+			"type": "ABCD",
+			"answers": [
+				{
+					"answer": "Goliath frog",
+					"right": true
+				},
+				{
+					"answer": "Tree frog",
+					"right": false
+				}
+			]
+		}
+	},
+	{
+		"name": "check choice, finished",
+		"complete": true,
+		"question": {
+			"question": "Amphibians?",
+			"type": "CHECK",
+			"answers": [
+				{
+					"answer": "Frog",
+					"right": true
+				},
+				{
+					"answer": "Newt",
+					"right": true
+				}
+			]
+		}
+	},
+	{
+		"name": "no type, saved before types existed",
+		"complete": true,
+		"question": {
+			"question": "Largest frog?",
+			"answers": [
+				{
+					"answer": "Goliath frog",
+					"right": true
+				},
+				{
+					"answer": "Tree frog",
+					"right": false
+				}
+			]
+		}
+	},
+	{
+		"name": "emptied rich-text title",
+		"complete": false,
+		"question": {
+			"question": "<p></p>",
+			"type": "ABCD",
+			"answers": [
+				{
+					"answer": "A",
+					"right": true
+				},
+				{
+					"answer": "B",
+					"right": false
+				}
+			]
+		}
+	},
+	{
+		"name": "title of spaces",
+		"complete": false,
+		"question": {
+			"question": "   ",
+			"type": "VOTING",
+			"answers": [
+				{
+					"answer": "A"
+				},
+				{
+					"answer": "B"
+				}
+			]
+		}
+	},
+	{
+		"name": "multiple choice, one answer",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "ABCD",
+			"answers": [
+				{
+					"answer": "Only",
+					"right": true
+				}
+			]
+		}
+	},
+	{
+		"name": "multiple choice, none right",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "ABCD",
+			"answers": [
+				{
+					"answer": "A",
+					"right": false
+				},
+				{
+					"answer": "B",
+					"right": false
+				}
+			]
+		}
+	},
+	{
+		"name": "multiple choice, a blank answer",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "ABCD",
+			"answers": [
+				{
+					"answer": "A",
+					"right": true
+				},
+				{
+					"answer": "  ",
+					"right": false
+				}
+			]
+		}
+	},
+	{
+		"name": "multiple choice, a null answer",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "ABCD",
+			"answers": [
+				{
+					"answer": "A",
+					"right": true
+				},
+				{
+					"answer": null,
+					"right": false
+				}
+			]
+		}
+	},
+	{
+		"name": "multiple choice, no answers",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "ABCD",
+			"answers": []
+		}
+	},
+	{
+		"name": "poll, finished",
+		"complete": true,
+		"question": {
+			"question": "Offsite?",
+			"type": "VOTING",
+			"answers": [
+				{
+					"answer": "Lisbon"
+				},
+				{
+					"answer": "Porto"
+				}
+			]
+		}
+	},
+	{
+		"name": "poll, ten options",
+		"complete": true,
+		"question": {
+			"question": "Pick",
+			"type": "VOTING",
+			"answers": [
+				{
+					"answer": "1"
+				},
+				{
+					"answer": "2"
+				},
+				{
+					"answer": "3"
+				},
+				{
+					"answer": "4"
+				},
+				{
+					"answer": "5"
+				},
+				{
+					"answer": "6"
+				},
+				{
+					"answer": "7"
+				},
+				{
+					"answer": "8"
+				},
+				{
+					"answer": "9"
+				},
+				{
+					"answer": "10"
+				}
+			]
+		}
+	},
+	{
+		"name": "poll, one option",
+		"complete": false,
+		"question": {
+			"question": "Offsite?",
+			"type": "VOTING",
+			"answers": [
+				{
+					"answer": "Lisbon"
+				}
+			]
+		}
+	},
+	{
+		"name": "poll, a blank option",
+		"complete": false,
+		"question": {
+			"question": "Offsite?",
+			"type": "VOTING",
+			"answers": [
+				{
+					"answer": "Lisbon"
+				},
+				{
+					"answer": "<p></p>"
+				}
+			]
+		}
+	},
+	{
+		"name": "poll, the same option twice",
+		"complete": false,
+		"question": {
+			"question": "Offsite?",
+			"type": "VOTING",
+			"answers": [
+				{
+					"answer": "Lisbon"
+				},
+				{
+					"answer": " lisbon "
+				}
+			]
+		}
+	},
+	{
+		"name": "poll, eleven options",
+		"complete": false,
+		"question": {
+			"question": "Pick",
+			"type": "VOTING",
+			"answers": [
+				{
+					"answer": "1"
+				},
+				{
+					"answer": "2"
+				},
+				{
+					"answer": "3"
+				},
+				{
+					"answer": "4"
+				},
+				{
+					"answer": "5"
+				},
+				{
+					"answer": "6"
+				},
+				{
+					"answer": "7"
+				},
+				{
+					"answer": "8"
+				},
+				{
+					"answer": "9"
+				},
+				{
+					"answer": "10"
+				},
+				{
+					"answer": "11"
+				}
+			]
+		}
+	},
+	{
+		"name": "type answer, finished",
+		"complete": true,
+		"question": {
+			"question": "Capital of Portugal?",
+			"type": "TEXT",
+			"answers": [
+				{
+					"answer": "Lisbon",
+					"case_sensitive": false
+				}
+			]
+		}
+	},
+	{
+		"name": "type answer, two spellings",
+		"complete": true,
+		"question": {
+			"question": "Capital of Portugal?",
+			"type": "TEXT",
+			"answers": [
+				{
+					"answer": "Lisbon",
+					"case_sensitive": false
+				},
+				{
+					"answer": "Lisboa",
+					"case_sensitive": false
+				}
+			]
+		}
+	},
+	{
+		"name": "type answer, a blank spelling",
+		"complete": false,
+		"question": {
+			"question": "Capital?",
+			"type": "TEXT",
+			"answers": [
+				{
+					"answer": "Lisbon",
+					"case_sensitive": false
+				},
+				{
+					"answer": " ",
+					"case_sensitive": false
+				}
+			]
+		}
+	},
+	{
+		"name": "type answer, only a blank spelling",
+		"complete": false,
+		"question": {
+			"question": "Capital?",
+			"type": "TEXT",
+			"answers": [
+				{
+					"answer": "",
+					"case_sensitive": false
+				}
+			]
+		}
+	},
+	{
+		"name": "slider, finished",
+		"complete": true,
+		"question": {
+			"question": "Frog species?",
+			"type": "RANGE",
+			"answers": {
+				"min": 0,
+				"max": 10000,
+				"min_correct": 7000,
+				"max_correct": 8000
+			}
+		}
+	},
+	{
+		"name": "slider, one right value",
+		"complete": true,
+		"question": {
+			"question": "Legs?",
+			"type": "RANGE",
+			"answers": {
+				"min": 0,
+				"max": 10,
+				"min_correct": 4,
+				"max_correct": 4
+			}
+		}
+	},
+	{
+		"name": "slider, negative range",
+		"complete": true,
+		"question": {
+			"question": "Coldest?",
+			"type": "RANGE",
+			"answers": {
+				"min": -50,
+				"max": 10,
+				"min_correct": -10,
+				"max_correct": -5
+			}
+		}
+	},
+	{
+		"name": "slider, min not below max",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "RANGE",
+			"answers": {
+				"min": 10,
+				"max": 10,
+				"min_correct": 10,
+				"max_correct": 10
+			}
+		}
+	},
+	{
+		"name": "slider, right range outside the slider",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "RANGE",
+			"answers": {
+				"min": 0,
+				"max": 10,
+				"min_correct": 20,
+				"max_correct": 30
+			}
+		}
+	},
+	{
+		"name": "slider, right range backwards",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "RANGE",
+			"answers": {
+				"min": 0,
+				"max": 10,
+				"min_correct": 6,
+				"max_correct": 4
+			}
+		}
+	},
+	{
+		"name": "slider, span over 10,000",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "RANGE",
+			"answers": {
+				"min": 0,
+				"max": 10001,
+				"min_correct": 1,
+				"max_correct": 2
+			}
+		}
+	},
+	{
+		"name": "order, finished",
+		"complete": true,
+		"question": {
+			"question": "Life of a frog",
+			"type": "ORDER",
+			"answers": [
+				{
+					"answer": "Egg"
+				},
+				{
+					"answer": "Tadpole"
+				},
+				{
+					"answer": "Frog"
+				}
+			]
+		}
+	},
+	{
+		"name": "order, one item",
+		"complete": false,
+		"question": {
+			"question": "Order",
+			"type": "ORDER",
+			"answers": [
+				{
+					"answer": "Egg"
+				}
+			]
+		}
+	},
+	{
+		"name": "order, a blank item",
+		"complete": false,
+		"question": {
+			"question": "Order",
+			"type": "ORDER",
+			"answers": [
+				{
+					"answer": "Egg"
+				},
+				{
+					"answer": ""
+				}
+			]
+		}
+	},
+	{
+		"name": "order, the same item twice",
+		"complete": false,
+		"question": {
+			"question": "Order",
+			"type": "ORDER",
+			"answers": [
+				{
+					"answer": "Egg"
+				},
+				{
+					"answer": "EGG"
+				}
+			]
+		}
+	},
+	{
+		"name": "order, seven items",
+		"complete": false,
+		"question": {
+			"question": "Order",
+			"type": "ORDER",
+			"answers": [
+				{
+					"answer": "1"
+				},
+				{
+					"answer": "2"
+				},
+				{
+					"answer": "3"
+				},
+				{
+					"answer": "4"
+				},
+				{
+					"answer": "5"
+				},
+				{
+					"answer": "6"
+				},
+				{
+					"answer": "7"
+				}
+			]
+		}
+	},
+	{
+		"name": "info slide, plain",
+		"complete": true,
+		"question": {
+			"question": "Round 2",
+			"type": "SLIDE",
+			"answers": "",
+			"body": "Eight questions."
+		}
+	},
+	{
+		"name": "info slide, title only",
+		"complete": true,
+		"question": {
+			"question": "Round 2",
+			"type": "SLIDE",
+			"answers": ""
+		}
+	},
+	{
+		"name": "info slide, old canvas",
+		"complete": true,
+		"question": {
+			"question": "Round 2",
+			"type": "SLIDE",
+			"answers": "{\"shapes\":[]}"
+		}
+	},
+	{
+		"name": "info slide, no title",
+		"complete": false,
+		"question": {
+			"question": "",
+			"type": "SLIDE",
+			"answers": ""
+		}
+	},
+	{
+		"name": "multiple choice, an emptied rich-text answer",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "ABCD",
+			"answers": [
+				{
+					"answer": "A",
+					"right": true
+				},
+				{
+					"answer": "<p></p>",
+					"right": true
+				}
+			]
+		}
+	},
+	{
+		"name": "info slide, old canvas with no title",
+		"complete": true,
+		"question": {
+			"question": "",
+			"type": "SLIDE",
+			"answers": "{\"shapes\":[]}"
+		}
+	},
+	{
+		"name": "slider, whole numbers written as decimals",
+		"complete": true,
+		"question": {
+			"question": "Q",
+			"type": "RANGE",
+			"answers": {
+				"min": 0.0,
+				"max": 10.0,
+				"min_correct": 4.0,
+				"max_correct": 6.0
+			}
+		}
+	},
+	{
+		"name": "slider, a real decimal",
+		"complete": false,
+		"question": {
+			"question": "Q",
+			"type": "RANGE",
+			"answers": {
+				"min": 0,
+				"max": 10,
+				"min_correct": 4.5,
+				"max_correct": 6
+			}
+		}
+	}
+]

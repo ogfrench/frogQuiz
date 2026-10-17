@@ -4,6 +4,13 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Groundwork for the five question types coming back (#93), none of them creatable yet:
+  - The draft rule now has a rule for each type (Poll, Type answer, Slider, Put in order, Info slide) instead of letting them through, and the editor and the server read their cases from one shared file (`editor/completeness_cases.json`), so they cannot drift. An old drawn slide with no title still counts as finished. Old quizzes whose poll, order or slider questions break the new rules (a duplicate option, a slider range off the slider) become drafts until fixed; production is counted before any type is turned on.
+  - One list says which types can be created, with an on/off switch per type (`editor/question_types.ts`).
+  - Every type has a starting shape the server accepts on the first autosave (`new_question.ts`).
+  - Changing a question's type keeps what carries over (`convert_question.ts`).
+  - The editor's schema picks answers by the question's type, not their shape; it used to throw on an empty answer list and block Start with no message.
+
 - Redesigned the host lobby (François's pick, 17 Oct): one card across the top holds the QR code, the address and the PIN in two groups of three; the players fill the space under it, with an empty state in the same place; Cancel game, Lock and Start game sit in the same top bar as during the game, with Start where Next will be. 28 of 30 names now fit at 1440x900. Checked at 1440, 1280, 834 and 390.
 - Space and Enter start the game from the lobby, as they take the next step during it. New spec `lobby-keys.e2e.ts`.
 - Fixed Space and Enter going through an open confirm dialog: pressing Space in "End game?" took the next step behind it, because the dialog focuses itself rather than a button. The host's key guard is now one shared helper (`play/admin/shortcut.ts`) that knows confirm dialogs, and a held Space no longer repeats into the next step (it could skip the title card right after Start).

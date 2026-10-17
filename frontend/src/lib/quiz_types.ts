@@ -65,6 +65,8 @@ export interface Question {
 	image?: string;
 	answers: Answers;
 	hide_results?: boolean;
+	/** An Info slide's text, under its title. Old canvas slides have none. */
+	body?: string;
 }
 
 export type Answers =

@@ -7,7 +7,8 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { Question } from '$lib/quiz_types';
-	import { newQuestion, type NewQuestionKind } from './new_question';
+	import { newQuestion } from './new_question';
+	import { creatableTypes } from './question_types';
 	import { getLocalization } from '$lib/i18n';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Button } from '$lib/components/ui/button';
@@ -34,32 +35,17 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 
-	// RANGE, TEXT, VOTING, ORDER and SLIDE were cut from the MVP: each one multiplies the
-	// editor, the play screen, the results screen and the scoring path, and none of them is
-	// what people run a live quiz for. True/false needs no type of its own -- it is an ABCD
-	// question with two answers. Existing quizzes that already use a cut type still open and
-	// still play; this list only governs what can be created from here.
-	// Each type's starting answers live in new_question.ts, shared with "Add question
-	// below" (#92). True/False is not a type of its own anywhere: it is an ABCD question
-	// that arrives with its two answers written, neither marked (a pre-marked True shipped
-	// false statements with True as their answer).
-	const question_types: { name: string; description: string; kind: NewQuestionKind }[] = [
-		{
-			name: $t('words.multiple_choice'),
-			description: $t('editor.abcd_description'),
-			kind: 'abcd'
-		},
-		{
-			name: $t('words.check_choice'),
-			description: $t('editor.check_choice_description'),
-			kind: 'check'
-		},
-		{
-			name: $t('words.true_false'),
-			description: $t('editor.true_false_description'),
-			kind: 'true_false'
-		}
-	];
+	// Which types can be created, and in what order, is one list with an on/off switch per
+	// type (question_types.ts, #93); quizzes that already use a type that is off still open
+	// and play. Each type's starting answers live in new_question.ts, shared with "Add
+	// question below" (#92). True/False is not a type of its own anywhere: it is an ABCD
+	// question that arrives with its two answers written, neither marked (a pre-marked True
+	// shipped false statements with True as their answer).
+	const question_types = creatableTypes().map((qt) => ({
+		name: $t(qt.label),
+		description: $t(qt.description),
+		kind: qt.kind
+	}));
 
 	const add_question = (index: number) => {
 		const empty_question = newQuestion(question_types[index].kind, {

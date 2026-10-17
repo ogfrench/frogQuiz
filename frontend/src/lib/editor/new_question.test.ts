@@ -5,7 +5,11 @@
 import { describe, expect, it } from 'vitest';
 import { QuizQuestionType } from '$lib/quiz_types';
 import { isQuestionComplete } from './question_complete';
-import { newQuestion } from './new_question';
+import * as yup from 'yup';
+import { dataSchema } from '$lib/yupSchemas';
+import { newQuestion, type NewQuestionKind } from './new_question';
+import { QUESTION_TYPES } from './question_types';
+import cases from './completeness_cases.json';
 
 describe('newQuestion', () => {
 	it('starts Multiple choice and Check choice with two blank answers', () => {
@@ -53,5 +57,54 @@ describe('newQuestion', () => {
 		expect(a.answers).not.toBe(b.answers);
 		(a.answers as { answer: string }[])[0].answer = 'changed';
 		expect((b.answers as { answer: string }[])[0].answer).toBe('');
+	});
+});
+
+describe('every kind of new question', () => {
+	const kinds: NewQuestionKind[] = [
+		'abcd',
+		'check',
+		'true_false',
+		'poll',
+		'slide',
+		'text',
+		'slider',
+		'order'
+	];
+
+	// The schema for one question: the inner type of the quiz's question list.
+	const question = (dataSchema.fields.questions as unknown as { innerType: yup.AnySchema })
+		.innerType;
+
+	it('passes the editor schema as a draft, so the draft rule alone holds Start', () => {
+		// Multiple choice keeps its old schema, which wants every answer written.
+		for (const kind of kinds.filter((k) => !['abcd', 'check', 'true_false'].includes(k))) {
+			const q = { ...newQuestion(kind), question: 'Title' };
+			expect(() => question.validateSync(q), kind).not.toThrow();
+		}
+	});
+
+	it('never refuses in the schema a question the draft rule calls finished', () => {
+		for (const c of cases.filter((c) => c.complete)) {
+			expect(
+				() => question.validateSync({ time: '20', ...c.question }),
+				c.name
+			).not.toThrow();
+		}
+	});
+
+	// A titled slider is finished at once: its starting values are a valid question, and
+	// the card shows the right answer in the open (#93).
+	it('is a draft until filled in, except a titled slide or slider', () => {
+		for (const kind of kinds) {
+			expect(isQuestionComplete(newQuestion(kind)), kind).toBe(false);
+			expect(isQuestionComplete({ ...newQuestion(kind), question: 'Title' }), kind).toBe(
+				kind === 'slide' || kind === 'slider'
+			);
+		}
+	});
+
+	it('has a label and a description in the type list', () => {
+		expect(QUESTION_TYPES.map((t) => t.kind).sort()).toEqual([...kinds].sort());
 	});
 });

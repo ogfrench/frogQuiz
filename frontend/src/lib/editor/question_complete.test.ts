@@ -59,16 +59,9 @@ describe('isQuestionComplete', () => {
 		).toBe(false);
 	});
 
-	it('does not flag the cut question types as unfinished', () => {
-		// RANGE and SLIDE do not store answers as an array. They can no longer be
-		// created, but old quizzes still open, and their rules are not these ones.
-		expect(isQuestionComplete(q({ answers: { min: 0, max: 10 } }))).toBe(true);
-		expect(isQuestionComplete(q({ answers: 'a slide body' }))).toBe(true);
-	});
-
 	it('does not judge TEXT, VOTING or ORDER by the ABCD rule', () => {
-		// The server refuses to start a quiz with an unfinished question, so flagging these
-		// would make every old quiz that has one unplayable.
+		// Each has its own rule (the shared cases below); none of them has a right answer to
+		// mark, so the ABCD rule would make every quiz that has one unplayable.
 		const text = [{ answer: 'frog', case_sensitive: false }];
 		expect(isQuestionComplete(q({ type: QuizQuestionType.TEXT, answers: text }))).toBe(true);
 		const options = [{ answer: 'A' }, { answer: 'B' }];
@@ -95,5 +88,15 @@ describe('isQuestionComplete', () => {
 	it('survives a malformed question rather than throwing', () => {
 		expect(isQuestionComplete(undefined)).toBe(false);
 		expect(isQuestionComplete({})).toBe(false);
+	});
+});
+
+// The same cases as frogquiz/tests/test_completeness.py: the editor and the server must
+// agree on which quizzes are drafts, and they had drifted before.
+import cases from './completeness_cases.json';
+
+describe('the shared draft-rule cases', () => {
+	it.each(cases.map((c) => [c.name, c] as const))('%s', (_, c) => {
+		expect(isQuestionComplete(c.question)).toBe(c.complete);
 	});
 });
