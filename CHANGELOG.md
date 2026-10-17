@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Tidied the repo (#68, François's approval on 17 Oct): deleted upstream leftovers nothing used (the root `load-test.py` and `simulate_players.py`, both replaced by `deploy/load-test.py`; `SocketIo.md`; `live_redis_data.md`; `.tokeignore`; `.deepsource.toml`); moved five one-off reports, the old `TODO.md` and the 2 to 6 Oct half of `HANDOVER.md` to `docs/archive/`; moved `BACKLOG.md` to `docs/backlog.md`; and added an index of every workflow and deploy script to the top of DEPLOY.md. The three dated reports that code comments cite by finding number stay where they are.
+
 - Made the five V1 design calls (François, 17 Oct): one disabled look for filled buttons (the pale muted chip the PIN box already used, now in the shared Button); the host's timer bar and the phone's ring stay neutral until the last 5 seconds, then turn red as the music speeds up; the podium's 2nd and 3rd blocks are a visible neutral step with a clear edge and the same ink, and the winner's points pill is neutral; the selected answer tile has a 5px ring in the foreground ink (the sheen stays); and one page gutter, 16 / 24 / 32 px, on the navbar, footer and every visible page.
 
 - Brought Privacy and Terms up to date: Privacy now names the nightly encrypted backups on GitHub (30 days) and what an AI agent key stores, says an agent's provider sees the quizzes it handles, and no longer describes a captcha hosts cannot turn on (the start dialog always sends it off). Terms say an agent key acts as you.

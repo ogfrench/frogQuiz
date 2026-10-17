@@ -6,7 +6,7 @@ Internal Kahoot-style quiz tool, forked from the open-source **ClassQuiz** proje
 
 - **Scope**: internal tool for now. Don't over-invest in things only public/multi-tenant products need (billing, heavy scalability, public docs) unless asked — but don't actively break the ability to widen scope later either.
 - **Stack** (inherited from ClassQuiz, see repo root for details): FastAPI + python-socketio backend (`frogquiz/`), SvelteKit 2/Svelte 5 + TypeScript frontend (`frontend/`), Postgres, Redis, Meilisearch, Alembic migrations.
-- **Redesign direction**: a frog-themed visual identity built with **shadcn-svelte** (see below). Done: the theme foundation, login, register, My Account, My Quizzes (`/my-quizzes`, which `/dashboard` now redirects to), the view page, the editor (rebuilt as one column of question cards, 2026-10-01), the join screen, and all four game surfaces (lobby, host question, per-question results, podium). `/explore` is headed Discover and was finished on 2026-10-03 (shadcn cards, upstream's verified-seal icon dropped, a themed search highlight). The docs and results-history routes are hidden rather than redesigned. A full visual pass of every route at 390/834/1440 in both themes is in [`docs/audit-2026-10-01.md`](docs/audit-2026-10-01.md).
+- **Redesign direction**: a frog-themed visual identity built with **shadcn-svelte** (see below). Done: the theme foundation, login, register, My Account, My Quizzes (`/my-quizzes`, which `/dashboard` now redirects to), the view page, the editor (rebuilt as one column of question cards, 2026-10-01), the join screen, and all four game surfaces (lobby, host question, per-question results, podium). `/explore` is headed Discover and was finished on 2026-10-03 (shadcn cards, upstream's verified-seal icon dropped, a themed search highlight). The docs and results-history routes are hidden rather than redesigned. A full visual pass of every route at 390/834/1440 in both themes is in [`docs/archive/audit-2026-10-01.md`](docs/archive/audit-2026-10-01.md).
 
 ## Redesign: shadcn-svelte
 
@@ -239,7 +239,7 @@ The general rule (hand a task to the cheapest model whose mistake would be caugh
 
 | Model | Work here |
 | --- | --- |
-| **haiku** | Run `pnpm test`, `svelte-check`, `flake8` and the backend suite, and report the failures. Read CI logs. Rebuild the visual gallery. Fix stale counts in `HANDOVER.md` and `TODO.md`. Draft CHANGELOG lines from a diff. |
+| **haiku** | Run `pnpm test`, `svelte-check`, `flake8` and the backend suite, and report the failures. Read CI logs. Rebuild the visual gallery. Fix stale counts in `HANDOVER.md`. Draft CHANGELOG lines from a diff. |
 | **sonnet** | The cheap review on every commit (Collaboration workflow, above). Bounded features with their test written first. First-pass triage of a visual capture. A read-only probe of a local stack (security, CRUD) with its own accounts. |
 | **The main model** | Auth, sessions, the claim and anonymous ownership. Anything that deletes files or rows (images, the expiry sweep). Migrations. The socket protocol. Integrating agents' work, and every step-end review. |
 

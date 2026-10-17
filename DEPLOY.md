@@ -6,6 +6,38 @@ SPDX-License-Identifier: MPL-2.0
 
 # Deploying frogQuiz
 
+## What runs where: workflows and scripts
+
+An index, so nobody has to open each file to find the right one (#68, 17 Oct). The
+sections below say how to use them.
+
+| Workflow (`.github/workflows/`) | Runs on | What it does |
+|---|---|---|
+| `frontend_lint.yml` | push to master, PRs | ESLint, vitest, svelte-check and a production build |
+| `netlify_ssr.yml` | push to master, PRs | Builds the frontend and loads it in Netlify's server runtime (added after the #69 outage) |
+| `e2e.yml` | PRs touching app code | The whole Playwright suite on a local stack |
+| `pytest.yml`, `backend_lint.yml` | backend changes | The backend suite; flake8 |
+| `mcp_server.yml` | changes under `mcp-server/` | The MCP service's tests and image |
+| `codeql.yml`, `audit.yml` | push, PRs, weekly | Code scanning; dependency audit (pip-audit, pnpm audit) and gitleaks |
+| `build_backend.yml`, `build_caddy.yml` | push to master | Build and push `ghcr.io/ogfrench/frogquiz-backend` and `-caddy`, which the VM pulls |
+| `build_frontend.yml` | push to master | Builds and pushes a frontend image; production serves the frontend from Netlify instead |
+| `production-ops.yml` | by hand | facts, cleanup, deploy, migrate, agents-on, agents-off on the VM ("Production ops", below) |
+| `production-guest-access.yml` | by hand | Checks or repairs guest access on production |
+| `backup.yml` | nightly, 02:17 UTC | Encrypted database and uploads backup, kept 30 days ("Backups", below) |
+| `uptime.yml` | every 30 minutes | Fails, and emails, when the site or `/api/v1/health` stops answering |
+
+| Script (`deploy/`) | Run by | What it does |
+|---|---|---|
+| `ops-facts.sh`, `ops-cleanup.sh` | Production ops | Read-only facts about the VM; frees disk |
+| `deploy-backend.sh` | Production ops deploy and migrate | Rolls the api and worker to one reviewed revision |
+| `agents.sh` | Production ops agents-on and agents-off | Turns the MCP service on or off |
+| `backup-run.sh`, `backup.sh`, `backup-recipient.txt` | Backup | The runner side, the VM side, and the public key backups are encrypted to |
+| `restore.sh` | a person | Restores one backup ("Backups", below) |
+| `test_backup_restore.sh` | Backup, on its own PRs | A full backup and restore on a throwaway cluster |
+| `enable-guests.sh`, `verify-guest-access.py`, `test_guest_repair.py` | Production guest access | Repair, read-only check, and its test |
+| `load-test.py` | a person | How many players one game holds ("Staying inside Always Free", below) |
+| `oracle-cloud-init.yaml` | a person, once | Cloud-init for a new Oracle VM |
+
 ## What can and cannot go on Netlify
 
 Netlify hosts the **SvelteKit frontend only**. The backend cannot run there: it is a
