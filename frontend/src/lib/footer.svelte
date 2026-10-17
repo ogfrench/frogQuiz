@@ -15,7 +15,7 @@
 			><span class="sr-only">love</span> by François &amp; Gonçalo
 		</p>
 		<nav aria-label="Legal" class="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
-			{#each [['/docs/tos', 'Terms of Service'], ['/docs/privacy-policy', 'Privacy'], ['/docs/attribution', 'Attribution']] as [href, label] (href)}
+			{#each [['/docs/tos', 'Terms'], ['/docs/privacy-policy', 'Privacy'], ['/docs/attribution', 'Attribution']] as [href, label] (href)}
 				<a
 					{href}
 					class="fq-touch-target hover:text-foreground relative inline-flex items-center underline-offset-4 transition-colors hover:underline"

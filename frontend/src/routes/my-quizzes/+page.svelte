@@ -353,7 +353,7 @@ SPDX-License-Identifier: MPL-2.0
 							onSelect={() => copy_quiz(quiz)}
 						>
 							<Copy />
-							{$t('copy.button')}
+							{$t('copy.make_copy')}
 						</DropdownMenu.Item>
 					{/if}
 					<!-- Analytics hidden with Results for the MVP (D4). Browser rows download with their secret. -->
@@ -387,9 +387,9 @@ SPDX-License-Identifier: MPL-2.0
 								: $t('my_quizzes.subtitle_sign_in')}
 				</p>
 			</div>
-			<!-- Signed out with the setting off, Create only leads to sign-in, which the empty
-			     state already offers: one strong button, not two. -->
-			{#if signed_in || anonymous_on}
+			<!-- One strong button, not two: over an empty list the empty state carries Create
+			     (or, signed out with the setting off, Sign in). -->
+			{#if signed_in ? account_quizzes.length > 0 : anonymous_on && (browser_quizzes?.length ?? 0) > 0}
 				<Button href="/create" size="lg" onclick={openCreateDialog}>
 					<Plus />
 					{$t('dashboard.create_quiz')}
@@ -439,11 +439,25 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 				{/if}
 
-				<ul class="mt-8 flex flex-col gap-3">
-					{#each shown_account_quizzes as quiz (quiz.id)}
-						{@render row(quiz, 'account')}
-					{/each}
-				</ul>
+				{#if search_term !== '' && shown_account_quizzes.length === 0}
+					<div
+						class="border-border mt-8 flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center"
+						role="status"
+					>
+						<p class="text-muted-foreground text-balance">
+							{$t('my_quizzes.no_match', { term: search_term })}
+						</p>
+						<Button variant="outline" onclick={() => (search_term = '')}>
+							{$t('my_quizzes.clear_search')}
+						</Button>
+					</div>
+				{:else}
+					<ul class="mt-8 flex flex-col gap-3">
+						{#each shown_account_quizzes as quiz (quiz.id)}
+							{@render row(quiz, 'account')}
+						{/each}
+					</ul>
+				{/if}
 			{/if}
 
 			{#if keep_all_error}

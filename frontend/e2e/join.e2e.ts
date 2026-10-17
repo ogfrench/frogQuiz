@@ -173,7 +173,7 @@ test('the host can add a join question, and players are asked it', async ({
 	const saved = await saveQuiz(request, QUIZ);
 	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
 	await page.goto(`/view/${saved.body.id}`);
-	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await page.getByRole('button', { name: 'Host game', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	// It was a bare "Custom field" switch, with a Title Case English placeholder, then
 	// "Ask players for one more detail", which did not say players see it.

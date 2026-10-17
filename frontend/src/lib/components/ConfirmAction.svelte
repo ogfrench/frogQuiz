@@ -73,8 +73,11 @@ SPDX-License-Identifier: MPL-2.0
 			<Button
 				variant={permanent ? 'danger' : 'destructive'}
 				onclick={() => {
-					open = false;
+					// Act first, then close: a caller that binds `open` to "which item" (My
+					// Quizzes' one dialog for every row) clears that item on close, and closing
+					// first handed onconfirm a null and deleted nothing.
 					onconfirm();
+					open = false;
 				}}
 			>
 				{confirmLabel}

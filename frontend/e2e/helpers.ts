@@ -123,7 +123,7 @@ export async function hostFromViewPage(
 	await page.goto(`/view/${quizId}`);
 	// Clicked before hydration, Play does nothing; it showed for a host who does not own the quiz.
 	await page.waitForLoadState('networkidle');
-	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await page.getByRole('button', { name: 'Host game', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	await expect(dialog).toBeVisible();
 	if (opts.showOnDevices) {
@@ -263,7 +263,8 @@ export async function advanceToFinalResults(page: Page) {
 
 export const titleBox = (page: Page) => page.getByRole('textbox', { name: 'Quiz title' });
 export const questionBox = (page: Page) => page.getByRole('textbox', { name: 'Question text' });
-export const saveQuizButton = (page: Page) => page.getByRole('button', { name: 'Save' });
+export const saveQuizButton = (page: Page) =>
+	page.getByRole('button', { name: 'Done', exact: true });
 export const cards = (page: Page) => page.locator('[data-question-card]');
 
 export async function addQuestion(
@@ -278,7 +279,7 @@ export async function addQuestion(
 	await questionBox(page).fill(title);
 	for (let i = 0; i < answers.length; i++)
 		await page.getByRole('button', { name: 'Add an answer' }).click();
-	const inputs = page.getByRole('textbox', { name: 'Enter an answer' });
+	const inputs = page.getByRole('textbox', { name: /^Answer \d+$/ });
 	for (const [i, [text, right]] of answers.entries()) {
 		await inputs.nth(i).fill(text);
 		if (right)

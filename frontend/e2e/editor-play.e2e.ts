@@ -24,7 +24,7 @@ import {
 	titleBox
 } from './helpers';
 
-const play = (page: Page) => page.getByRole('button', { name: 'Play', exact: true });
+const play = (page: Page) => page.getByRole('button', { name: 'Host game', exact: true });
 const startDialog = (page: Page) => page.getByRole('dialog', { name: 'Start game' });
 
 const complete = (title: string, question = 'Which one is the frog?') => ({
@@ -143,15 +143,21 @@ test('on a draft Play is disabled, and the reason is what describes it', async (
 	// Hold a real save response so finishing the question races with that save.
 	// Saving an incomplete draft must keep the editor open, even once it is complete.
 	let releaseSave!: () => void;
-	const heldSave = new Promise<void>((resolve) => { releaseSave = resolve; });
-	await page.route('**/api/v1/editor/save**', async (route) => {
-		const response = await route.fetch();
-		await heldSave;
-		await route.fulfill({ response });
-	}, { times: 1 });
+	const heldSave = new Promise<void>((resolve) => {
+		releaseSave = resolve;
+	});
+	await page.route(
+		'**/api/v1/editor/save**',
+		async (route) => {
+			const response = await route.fetch();
+			await heldSave;
+			await route.fulfill({ response });
+		},
+		{ times: 1 }
+	);
 	await questionBox(page).fill('Draft edited before Save');
 	const saving = page.waitForRequest((req) => req.url().includes('/api/v1/editor/save'));
-	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	await page.getByRole('button', { name: 'Done', exact: true }).click();
 	await saving;
 	await expect(page.locator('header [role=status]#play-hint')).toBeVisible();
 	await expect(page.locator('[id="play-hint"]')).toHaveCount(1);
@@ -168,7 +174,9 @@ test('on a draft Play is disabled, and the reason is what describes it', async (
 	expect(page.url()).toContain(`/edit?quiz_id=${saved.body.id}`);
 	const stored = await (await page.request.get(`/api/v1/quiz/get/${saved.body.id}`)).json();
 	expect(stored.questions[0].question).toBe('Draft edited before Save');
-	expect(stored.questions[0].answers.some((answer: { right: boolean }) => answer.right)).toBe(true);
+	expect(stored.questions[0].answers.some((answer: { right: boolean }) => answer.right)).toBe(
+		true
+	);
 	await context.close();
 });
 
@@ -238,7 +246,7 @@ test('a game that fails to start closes the tab it opened and says so in the dia
 	await context.close();
 });
 
-test('the header fits 390, 834 and 1440, light and dark, with Play beside Save', async ({
+test('the header fits 390, 834 and 1440, light and dark, with Host game beside Done', async ({
 	browser,
 	request
 }) => {
@@ -256,7 +264,7 @@ test('the header fits 390, 834 and 1440, light and dark, with Play beside Save',
 	for (const theme of ['light', 'dark']) {
 		const dark = await page.evaluate(() => document.documentElement.classList.contains('dark'));
 		if ((theme === 'dark') !== dark) {
-			await page.getByRole('button', { name: /Switch to (dark|light) mode/ }).click();
+			await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
 		}
 		expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(
 			theme === 'dark'
@@ -264,7 +272,7 @@ test('the header fits 390, 834 and 1440, light and dark, with Play beside Save',
 		for (const width of [390, 834, 1440]) {
 			await page.setViewportSize({ width, height: PHONE.height });
 			await expectNoHorizontalOverflow(page);
-			for (const name of ['Play', 'Save']) {
+			for (const name of ['Host game', 'Done']) {
 				const box = await page.getByRole('button', { name, exact: true }).boundingBox();
 				expect(box, `${name} at ${width} in ${theme}`).not.toBeNull();
 				expect(box!.x).toBeGreaterThanOrEqual(0);
@@ -272,10 +280,10 @@ test('the header fits 390, 834 and 1440, light and dark, with Play beside Save',
 					width
 				);
 			}
-			// Play sits left of Save, on the same row.
+			// Host game sits left of Done, on the same row.
 			const p = (await play(page).boundingBox())!;
 			const s = (await page
-				.getByRole('button', { name: 'Save', exact: true })
+				.getByRole('button', { name: 'Done', exact: true })
 				.boundingBox())!;
 			expect(p.x + p.width).toBeLessThanOrEqual(s.x);
 			expect(Math.abs(p.y - s.y)).toBeLessThan(2);

@@ -226,10 +226,19 @@ SPDX-License-Identifier: MPL-2.0
 					>
 				{:else}
 					<Upload class="size-7" aria-hidden="true" />
-					<span class="text-foreground text-base font-medium"
+					<!-- A phone has nothing to drop and nothing to click: say "choose" there. -->
+					<span class="text-foreground text-base font-medium pointer-coarse:hidden"
 						>{$t('create_dialog.drop_title')}</span
 					>
-					<span class="text-sm">{$t('create_dialog.drop_hint')}</span>
+					<span class="text-sm pointer-coarse:hidden"
+						>{$t('create_dialog.drop_hint')}</span
+					>
+					<span class="text-foreground hidden text-base font-medium pointer-coarse:inline"
+						>{$t('create_dialog.choose_title')}</span
+					>
+					<span class="hidden text-sm pointer-coarse:inline"
+						>{$t('create_dialog.choose_hint')}</span
+					>
 				{/if}
 			</label>
 

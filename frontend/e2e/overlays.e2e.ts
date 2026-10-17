@@ -301,15 +301,27 @@ test.describe('create a quiz dialog', () => {
 	});
 });
 
+// The row and view-page "More actions" menus, opened from the keyboard: the overlay
+// contract checks focus, and a click would hide where it went.
+const fromRowMenu = (page: Page, row: Locator, item: string) => async () => {
+	const more = row.getByRole('button', { name: /^More actions/ });
+	await more.focus();
+	await page.keyboard.press('Enter');
+	const menuitem = page.getByRole('menuitem', { name: item });
+	await expect(menuitem).toBeVisible();
+	await menuitem.focus();
+	await page.keyboard.press('Enter');
+};
+
 // ---- View page -------------------------------------------------------------------
 
 test.describe('view page', () => {
-	test('Play opens Start game', async ({ browser, request }) => {
+	test('Host game opens Start game', async ({ browser, request }) => {
 		const { context, page, id } = await ownerWithQuiz(browser, request, 'Overlay play');
 		await page.goto(`/view/${id}`);
 		await hydrated(page);
 		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Play', exact: true }),
+			trigger: page.getByRole('button', { name: 'Host game', exact: true }),
 			dialog: page.getByRole('dialog', { name: 'Start game', exact: true })
 		});
 		await context.close();
@@ -319,9 +331,11 @@ test.describe('view page', () => {
 		const { context, page, id } = await ownerWithQuiz(browser, request, 'Overlay download');
 		await page.goto(`/view/${id}`);
 		await hydrated(page);
+		const main = page.getByRole('main');
 		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Download', exact: true }),
-			dialog: page.getByRole('dialog', { name: 'Download this quiz' })
+			open: fromRowMenu(page, main, 'Download'),
+			dialog: page.getByRole('dialog', { name: 'Download this quiz' }),
+			returnTo: main.getByRole('button', { name: /^More actions/ })
 		});
 		await context.close();
 	});
@@ -334,10 +348,12 @@ test.describe('view page', () => {
 		await page.goto(`/view/${id}`);
 		await hydrated(page);
 		const dialog = page.getByRole('alertdialog', { name: 'Delete this quiz?' });
+		const main = page.getByRole('main');
 		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Delete', exact: true }),
+			open: fromRowMenu(page, main, 'Delete…'),
 			dialog,
-			confirm: dialog.getByRole('button', { name: 'Delete', exact: true })
+			confirm: dialog.getByRole('button', { name: 'Delete', exact: true }),
+			returnTo: main.getByRole('button', { name: /^More actions/ })
 		});
 		// Nothing was deleted by looking at it.
 		expect((await context.request.get(`/api/v1/quiz/get/${id}`)).status()).toBe(200);
@@ -351,16 +367,6 @@ test.describe('my quizzes', () => {
 	// Download, Copy and Delete sit behind a row's "More actions" menu since 17 Oct. The
 	// menu opens from the keyboard, the item is chosen with Enter, and Escape on the
 	// dialog has to land back on the menu's button, since the item is gone.
-	const fromRowMenu = (page: Page, row: Locator, item: string) => async () => {
-		const more = row.getByRole('button', { name: /^More actions/ });
-		await more.focus();
-		await page.keyboard.press('Enter');
-		const menuitem = page.getByRole('menuitem', { name: item });
-		await expect(menuitem).toBeVisible();
-		await menuitem.focus();
-		await page.keyboard.press('Enter');
-	};
-
 	test('a row’s Download opens the download dialog', async ({ browser, request }) => {
 		const { context, page, title } = await ownerWithQuiz(browser, request, 'Overlay row dl');
 		await page.goto('/my-quizzes');
@@ -513,14 +519,8 @@ test.describe('editor', () => {
 
 	// The end of the editor adds a type with one press since 17 Oct; the dialog is left
 	// for adding between two questions.
-	test('Add new question', async ({ browser, request }) => {
-		const { context, page } = await openEditor(browser, request);
-		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Add a question here' }).first(),
-			dialog: page.getByRole('dialog', { name: 'Add new question', exact: true })
-		});
-		await context.close();
-	});
+	// "Add new question" is no longer a dialog: the open card's "Add question below" adds
+	// one directly, and the end of the list has the type buttons in the page (17 Oct).
 
 	test('Delete question asks first, and Cancel has the focus', async ({ browser, request }) => {
 		const { context, page } = await openEditor(browser, request);
@@ -813,23 +813,27 @@ test.describe('touch targets inside the overlays, at 390 with a touch screen', (
 			page,
 			found,
 			'view: Start game',
-			page.getByRole('button', { name: 'Play', exact: true }),
+			page.getByRole('button', { name: 'Host game', exact: true }),
 			page.getByRole('dialog', { name: 'Start game' }),
 			// With the fold open, so the three switches are measured too.
 			() => openGameOptions(page.getByRole('dialog', { name: 'Start game' }))
 		);
+		const view_more = page.getByRole('main').getByRole('button', { name: /^More actions/ });
+		await measure(page, found, 'view: More actions', view_more, page.getByRole('menu'));
+		await view_more.tap();
 		await measure(
 			page,
 			found,
 			'view: Download',
-			page.getByRole('button', { name: 'Download', exact: true }),
+			page.getByRole('menuitem', { name: 'Download' }),
 			page.getByRole('dialog', { name: 'Download this quiz' })
 		);
+		await view_more.tap();
 		await measure(
 			page,
 			found,
 			'view: Delete',
-			page.getByRole('button', { name: 'Delete', exact: true }),
+			page.getByRole('menuitem', { name: 'Delete…' }),
 			page.getByRole('alertdialog', { name: 'Delete this quiz?' })
 		);
 		await page.goto('/my-quizzes');

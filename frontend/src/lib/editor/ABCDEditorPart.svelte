@@ -110,6 +110,7 @@ SPDX-License-Identifier: MPL-2.0
 					class="any-pointer-coarse:py-2 min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-lg font-medium wrap-anywhere outline-none placeholder:opacity-60"
 					style="color: {ink}"
 					placeholder={$t('editor.enter_answer')}
+					aria-label={$t('editor.answer_n', { n: index + 1 })}
 					oninput={(e) => grow(e.currentTarget)}
 					use:grow_on_mount
 				></textarea>

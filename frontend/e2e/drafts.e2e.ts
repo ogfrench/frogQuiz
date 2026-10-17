@@ -54,7 +54,7 @@ test('a draft quiz shows the Draft badge and a disabled Play on the view page', 
 	await expect(page.getByRole('heading', { name: title })).toBeVisible();
 	await expect(page.getByText('Draft', { exact: true })).toBeVisible();
 
-	const play = page.getByRole('button', { name: 'Play', exact: true });
+	const play = page.getByRole('button', { name: 'Host game', exact: true });
 	await expect(play).toBeDisabled();
 	await expectNoHorizontalOverflow(page);
 });
@@ -84,7 +84,7 @@ test('a draft quiz shows Draft and a disabled Play on My Quizzes', async ({ page
 	const row = page.getByRole('listitem').filter({ hasText: title });
 	await expect(row).toBeVisible();
 	await expect(row.getByText('Draft', { exact: true })).toBeVisible();
-	await expect(row.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
+	await expect(row.getByRole('button', { name: 'Host game', exact: true })).toBeDisabled();
 	await expectNoHorizontalOverflow(page);
 });
 

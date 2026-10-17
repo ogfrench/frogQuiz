@@ -39,7 +39,7 @@ SPDX-License-Identifier: MPL-2.0
 <button
 	type="button"
 	onclick={toggle}
-	aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+	aria-label="Dark mode"
 	aria-pressed={dark}
 	class="fq-touch-target text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:ring-ring relative inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none {className}"
 >

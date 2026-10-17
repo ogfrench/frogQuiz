@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	<meta name="description" content="Software and artwork credits for frogQuiz." />
 </svelte:head>
 <article
-	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate fq-gutter dark:prose-invert"
+	class="prose prose-zinc dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h1:tracking-tight fq-gutter mx-auto mt-10"
 >
 	<h1>Attribution</h1>
 

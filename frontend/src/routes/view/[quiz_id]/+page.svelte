@@ -138,9 +138,10 @@ SPDX-License-Identifier: MPL-2.0
 		quiz.questions.length === 0 || quiz.questions.some((q) => !isQuestionComplete(q))
 	);
 
-	// Signed in and still unable to host (somebody else's unlisted quiz): Practice is the
-	// one thing this visitor can do, so it is the strong button rather than a disabled one.
-	const practice_first = $derived(logged_in && !can_start && !is_draft);
+	// Unable to host somebody else's unlisted quiz: Practice is the one thing this visitor
+	// can do, so it is the strong button rather than a disabled one.
+	// Signed out on an unlisted quiz is the same: signing in only helps the person who made it.
+	const practice_first = $derived(!can_start && !is_draft && (logged_in || !quiz.public));
 
 	// An anonymous quiz is swept 30 days after creation. The holder of the secret
 	// is the only person who can act on that, so they are the one who has to be
@@ -442,11 +443,14 @@ SPDX-License-Identifier: MPL-2.0
 					     comes back here afterwards. -->
 					<Button
 						size="lg"
-						class="max-sm:w-full"
+						variant={practice_first ? 'outline' : 'default'}
+						class={practice_first ? undefined : 'max-sm:w-full'}
 						href="/account/login?returnTo={encodeURIComponent(page.url.pathname)}"
 					>
 						<LogIn />
-						{$t('view_quiz_page.log_in_to_host')}
+						{practice_first
+							? $t('view_quiz_page.owner_sign_in')
+							: $t('view_quiz_page.log_in_to_host')}
 					</Button>
 				{:else}
 					<Button
@@ -475,6 +479,7 @@ SPDX-License-Identifier: MPL-2.0
 					href="/practice?quiz_id={quiz.id}"
 					variant={practice_first ? 'default' : 'outline'}
 					size="lg"
+					class={practice_first ? 'order-first max-sm:w-full' : undefined}
 				>
 					<Repeat />
 					{$t('words.practice')}
@@ -509,7 +514,11 @@ SPDX-License-Identifier: MPL-2.0
 						{#if can_use_template || can_copy}
 							<DropdownMenu.Item disabled={copying} onSelect={copy_to_my_quizzes}>
 								<Copy />
-								{can_use_template ? $t('copy.use_template') : $t('copy.button')}
+								{can_use_template
+									? $t('copy.use_template')
+									: owns_on_account
+										? $t('copy.make_copy')
+										: $t('copy.button')}
 							</DropdownMenu.Item>
 						{/if}
 						<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`

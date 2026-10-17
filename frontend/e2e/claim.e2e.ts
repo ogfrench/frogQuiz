@@ -136,7 +136,12 @@ test('a connection failure during Add all to account retains the remaining quiz 
 	const browserList = page.getByRole('region', { name: 'On this browser' });
 	await expect(browserList.locator(`a[href="/view/${first.id}"]`)).toHaveCount(0);
 	await expect(browserList.locator(`a[href="/view/${second.id}"]`)).toBeVisible();
-	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toEqual([second.id]);
+	expect(
+		await page.evaluate(
+			(key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')),
+			ANON_KEY
+		)
+	).toEqual([second.id]);
 	await page.screenshot({
 		path: path.resolve(process.cwd(), '../e2e/.data/shots/claim-390-partial-offline.png'),
 		fullPage: true,
@@ -168,9 +173,17 @@ test('an expired session during Add all to account can sign in again and claim t
 	await page.goto('/my-quizzes');
 	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('alert')).toContainText('Sign in again');
-	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toEqual([second.id]);
+	expect(
+		await page.evaluate(
+			(key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')),
+			ANON_KEY
+		)
+	).toEqual([second.id]);
 	await page.screenshot({
-		path: path.resolve(process.cwd(), '../e2e/.data/shots/claim-390-partial-expired-session.png'),
+		path: path.resolve(
+			process.cwd(),
+			'../e2e/.data/shots/claim-390-partial-expired-session.png'
+		),
 		fullPage: true,
 		animations: 'disabled'
 	});
@@ -421,11 +434,14 @@ test('an editor open past the 30 days says the quiz expired and keeps the text',
 	});
 	await expect(titleBox(page)).toHaveText('Typed after the deadline');
 	await expect(page.getByRole('button', { name: 'Save as a new quiz' })).toBeVisible();
+	// The header's Done and Host game could only fail again, silently, so they are off.
+	await expect(page.getByRole('button', { name: 'Done', exact: true })).toBeDisabled();
 });
 
-
-
-test('Add all to account recovers when a successful claim response is lost', async ({ browser, request }) => {
+test('Add all to account recovers when a successful claim response is lost', async ({
+	browser,
+	request
+}) => {
 	const first = await anonQuiz(request, `Lost response ${Date.now()}`);
 	const second = await anonQuiz(request, `Still waiting ${Date.now()}`);
 	const { context, page } = await phone(browser, request);
@@ -438,7 +454,12 @@ test('Add all to account recovers when a successful claim response is lost', asy
 	await page.goto('/my-quizzes');
 	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('alert')).toContainText('The connection was lost');
-	expect(await page.evaluate((key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')), ANON_KEY)).toHaveLength(2);
+	expect(
+		await page.evaluate(
+			(key) => Object.keys(JSON.parse(localStorage.getItem(key) ?? '{}')),
+			ANON_KEY
+		)
+	).toHaveLength(2);
 	await page.unroute(`**/api/v1/quiz/claim/${first.id}`);
 	await page.getByRole('button', { name: 'Add all to account', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'On this browser' })).toHaveCount(0);

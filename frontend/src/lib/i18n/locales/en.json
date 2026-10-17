@@ -123,6 +123,7 @@
         "account_deleted": "Your account and everything in it has been deleted."
     },
     "words": {
+        "loading": "Loading",
         "question": "Question",
         "question_one": "Question",
         "question_other": "Questions",
@@ -302,6 +303,10 @@
         "new_quiz": "New quiz",
         "single_answer": "One correct answer",
         "multiple_answers": "Several correct answers",
+        "correct_answers": "Correct answers",
+        "answer_n": "Answer {{n}}",
+        "answers_one": "One correct",
+        "answers_several": "Several correct",
         "mark_correct": "Mark as correct",
         "question_incomplete": "Incomplete",
         "needs_attention": "{{count}} question needs attention",
@@ -471,13 +476,17 @@
         "change_password_submit": "Change password",
         "last_seen": "Last seen",
         "check_location": "Check location",
-        "delete_this_session": "Delete this session",
-        "delete_session_named": "Delete session: {{device}}",
+        "delete_this_session": "Sign out this session",
+        "delete_session_named": "Sign out session: {{device}}",
         "this_session?": "This session",
         "change_avatar": "Change avatar",
         "security_settings": "Security-Settings",
         "add_api_key": "Add API key",
         "sessions": "Sessions",
+        "load_failed": "Couldn't load your account. Check your connection and try again.",
+        "sessions_load_failed": "Couldn't load your sessions. Check your connection and try again.",
+        "sign_out_session": "Sign out",
+        "sign_out_session_failed": "Couldn't sign that session out. Try again.",
         "profile": "Profile",
         "public_profile": "Public profile",
         "sessions_description": "Devices and browsers currently signed in to your account.",
@@ -537,7 +546,10 @@
         "made_by": "Made by",
         "imported_by": "Imported by",
         "search_failed": "Search is unavailable right now. Try again in a moment.",
-        "nothing_here_detail": "No quiz matches that. Try another word, or make one.",
+        "nothing_yet": "No shared quizzes yet.",
+        "no_match": "No quizzes match “{{q}}”. Try another word.",
+        "results_for": "Results for “{{q}}” · {{count}}",
+        "search_placeholder": "Search quizzes",
         "create_one": "Create a quiz",
         "examples": "Examples",
         "examples_hint": "Ready-made quizzes. Play one as it is, or copy it and make it your own.",
@@ -546,7 +558,7 @@
         "newest": "Newest"
     },
     "search_page": {
-        "at_least_3_characters": "Enter at least 3 characters...",
+        "at_least_3_characters": "Type at least 3 characters to search.",
         "nothing_here": "There is nothing here..."
     },
     "play_page": {
@@ -711,11 +723,13 @@
         "scratch": "Start from scratch",
         "scratch_hint": "Open the editor and add your first question.",
         "import": "Import from Excel",
-        "import_hint": "Fill in our template, drop it here, check it, done.",
+        "import_hint": "Fill in our template, upload it, check it, done.",
         "sign_in_to_import": "Sign in to import",
         "download_template": "Download template",
         "drop_title": "Drop your .xlsx here",
         "drop_hint": "or click to choose a file. Up to 2 MB.",
+        "choose_title": "Choose a .xlsx file",
+        "choose_hint": "Up to 2 MB.",
         "checking": "Checking your file…",
         "back": "Back",
         "choose_another": "Choose another file",
@@ -788,6 +802,7 @@
         "delete_failed": "Couldn't delete this quiz. Try again.",
         "empty_signed_in": "No quizzes yet. Create one to get going.",
         "empty_signed_out": "No quizzes saved in this browser yet.",
+        "no_match": "No quizzes match \"{{term}}\".",
         "clear_search": "Clear search"
     },
     "claim": {
@@ -820,6 +835,7 @@
     "copy": {
         "button": "Copy to my quizzes",
         "use_template": "Use this template",
+        "make_copy": "Make a copy",
         "copying": "Copying…",
         "failed": "Couldn't copy this quiz. Try again in a moment.",
         "storage_full": "Not enough storage left to copy this quiz and its images. Delete something you no longer use, then try again."
@@ -856,6 +872,7 @@
         "delete_failed": "Could not delete this quiz. It may have already expired.",
         "start_signed_out_hint": "Sign in to host this quiz.",
         "log_in_to_host": "Sign in to host a game",
+        "owner_sign_in": "Made this quiz? Sign in",
         "download_signed_out_hint": "Sign in to download this quiz.",
         "unlisted_not_yours": "This quiz is unlisted, so only the person who made it can host it. You can still practice it.",
         "imported": "Imported from Kahoot",

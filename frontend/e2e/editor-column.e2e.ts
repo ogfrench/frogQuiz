@@ -56,15 +56,18 @@ test('every question is on the page, and one card is open at a time', async ({ p
 	await expect(page.getByRole('button', { name: 'Move down' })).toBeDisabled();
 });
 
-test('a question can be added between two others', async ({ page, request }) => {
+test('a question can be added between two others, from the open card', async ({
+	page,
+	request
+}) => {
 	await openQuiz(page, request);
-	await page.getByRole('button', { name: 'Add a question here' }).first().click();
-	await page
-		.getByRole('dialog')
-		.getByRole('button', { name: /^Multiple choice/ })
-		.click();
+	// One "Add question below", under the open card only: the hover "+" between cards was
+	// invisible on a phone (17 Oct).
+	const below = page.getByRole('button', { name: 'Add question below' });
+	await expect(below).toHaveCount(1);
+	await below.click();
 	await expect(cards(page)).toHaveCount(4);
-	// It landed in the gap it was added from, not at the end.
+	// It landed right after the card it was added from, open, not at the end.
 	await openCards(page).fill('Inserted');
 	const order = await cards(page).allInnerTexts();
 	expect(order[0]).toContain('First question?');
@@ -72,10 +75,23 @@ test('a question can be added between two others', async ({ page, request }) => 
 	expect(order[2]).toContain('Second question?');
 });
 
+test('on a phone, Add question below is a full-width, touch-sized button', async ({
+	browser,
+	request
+}) => {
+	const context = await browser.newContext({ viewport: PHONE, isMobile: true, hasTouch: true });
+	const page = await context.newPage();
+	await openQuiz(page, request);
+	const box = (await page.getByRole('button', { name: 'Add question below' }).boundingBox())!;
+	expect(box.height).toBeGreaterThanOrEqual(44);
+	expect(box.x + box.width).toBeLessThanOrEqual(PHONE.width);
+	await context.close();
+});
+
 test('True / False arrives with its answers already written', async ({ page, request }) => {
 	await openQuiz(page, request);
 	await page.getByRole('button', { name: /True \/ False/ }).click();
-	const answers = page.getByRole('textbox', { name: 'Enter an answer' });
+	const answers = page.getByRole('textbox', { name: /^Answer \d+$/ });
 	await expect(answers).toHaveCount(2);
 	await expect(answers.nth(0)).toHaveValue('True');
 	await expect(answers.nth(1)).toHaveValue('False');
@@ -148,7 +164,7 @@ test('on a touch screen, the card under your finger is the one you tap', async (
 	const page = await ctx.newPage();
 	await openQuiz(page, request);
 	await cards(page).first().click();
-	const answers = page.getByRole('textbox', { name: 'Enter an answer' });
+	const answers = page.getByRole('textbox', { name: /^Answer \d+$/ });
 	await expect(answers).toHaveCount(2);
 	await page.getByRole('button', { name: 'Add an answer' }).tap({ timeout: 5_000 });
 	await expect(answers).toHaveCount(3);
@@ -201,7 +217,7 @@ for (const viewport of [{ width: 1440, height: 900 }, PHONE]) {
 			.evaluate((h) => h.getBoundingClientRect().top);
 		// Broken, it sat hundreds of pixels above the screen; allow sub-pixel rounding.
 		expect(Math.abs(headerTop), 'the editor header was pushed off the top').toBeLessThan(1);
-		await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeInViewport();
+		await expect(page.getByRole('button', { name: 'Done', exact: true })).toBeInViewport();
 		await add.click();
 		await expect(cards(page)).toHaveCount(9);
 		await ctx.close();
@@ -213,14 +229,14 @@ test('switching to one correct answer keeps only the first one marked', async ({
 	request
 }) => {
 	await openQuiz(page, request);
-	await page.getByRole('button', { name: 'One correct answer' }).click();
+	await page.getByRole('radio', { name: 'Several correct' }).check();
 	const markA = page.getByRole('button', { name: 'Mark as correct: A', exact: true });
 	const markB = page.getByRole('button', { name: 'Mark as correct: B', exact: true });
 	await markB.click();
 	await expect(markA).toHaveAttribute('aria-pressed', 'true');
 	await expect(markB).toHaveAttribute('aria-pressed', 'true');
 	// Back to one: it used to keep both marked, and save "one correct answer" with two.
-	await page.getByRole('button', { name: 'Several correct answers' }).click();
+	await page.getByRole('radio', { name: 'One correct' }).check();
 	await expect(markA).toHaveAttribute('aria-pressed', 'true');
 	await expect(markB).toHaveAttribute('aria-pressed', 'false');
 });

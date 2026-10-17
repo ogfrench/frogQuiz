@@ -227,7 +227,7 @@ SPDX-License-Identifier: MPL-2.0
 			disabled={loading}
 		>
 			{#if loading}
-				<Spinner my_20={false} />
+				<Spinner my_20={false} class="text-primary-foreground" />
 			{:else}
 				{$t('start_game.start_game')}
 			{/if}

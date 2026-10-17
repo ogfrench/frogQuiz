@@ -204,6 +204,7 @@ SPDX-License-Identifier: MPL-2.0
 	let conflict_open = $state(false);
 	// Why the last save failed, when it is something the author can act on.
 	let failure: 'signed_out' | 'deleted' | 'expired' | null = $state(null);
+	const quiz_gone = $derived(failure === 'deleted' || failure === 'expired');
 	// This tab's unsaved version from before a reload, offered back.
 	let restorable: string | null = $state(null);
 	// Bumped to remount the cards: each rich-text field reads its text only when it mounts,
@@ -642,7 +643,7 @@ SPDX-License-Identifier: MPL-2.0
 							<Button
 								type="button"
 								variant="outline"
-								disabled={!playable}
+								disabled={!playable || quiz_gone}
 								aria-describedby={playable ? undefined : 'play-hint'}
 								class="max-sm:size-9 max-sm:px-0"
 								onclick={play}
@@ -654,7 +655,13 @@ SPDX-License-Identifier: MPL-2.0
 								<span id="play-hint" class="sr-only">{play_hint}</span>
 							{/if}
 						{/if}
-						<Button type="submit" disabled={saving} class="max-sm:size-9 max-sm:px-0">
+						<!-- Off while the quiz is gone: it can only fail again, and the banner's
+						     "Save as a new quiz" is the way on (V1 screens review, 17 Oct). -->
+						<Button
+							type="submit"
+							disabled={saving || quiz_gone}
+							class="max-sm:size-9 max-sm:px-0"
+						>
 							<!-- "Done", not "Save" (17 Oct): edits already save as you go, and this
 							     button saves the rest and leaves for the quiz page. -->
 							<Check />
@@ -751,6 +758,9 @@ SPDX-License-Identifier: MPL-2.0
 											i
 												? 'bg-muted font-medium'
 												: ''}"
+											aria-current={selected_question === i
+												? 'true'
+												: undefined}
 											onclick={() => {
 												focusCard(i);
 												scrollToCard(i, 'start');
@@ -767,7 +777,11 @@ SPDX-License-Identifier: MPL-2.0
 											{#if editorValidation.shown && !isQuestionComplete(question)}
 												<span
 													class="bg-destructive size-1.5 shrink-0 rounded-full"
+													title={$t('editor.question_incomplete')}
 												></span>
+												<span class="sr-only"
+													>{$t('editor.question_incomplete')}</span
+												>
 											{/if}
 										</button>
 									</li>

@@ -103,11 +103,13 @@ test('Download offers the Excel file and fetches a real spreadsheet', async ({
 	const saved = await saveQuiz(context.request, quiz(title));
 	await page.goto(`/view/${saved.body.id}`);
 
-	// Download is server-rendered enabled for a signed-in visitor, so a click that lands
+	// Download is in "More actions", whose button is server-rendered, so a click that lands
 	// before hydration is lost. Retry until the dialog opens.
 	const dialog = page.getByRole('dialog');
 	await expect(async () => {
-		await page.getByRole('button', { name: 'Download' }).click();
+		if ((await page.getByRole('menu').count()) === 0)
+			await page.getByRole('button', { name: /^More actions/ }).click();
+		await page.getByRole('menuitem', { name: 'Download' }).click({ timeout: 1000 });
 		await expect(dialog.getByRole('heading', { name: 'Download this quiz' })).toBeVisible({
 			timeout: 1000
 		});
@@ -141,9 +143,11 @@ test("Download is not offered on, or reachable for, somebody else's quiz", async
 
 	const other = await signedInContext(browser, request);
 	await other.page.goto(`/view/${saved.body.id}`);
-	// Public, so the page itself opens and offers Play. Download is simply absent.
-	await expect(other.page.getByRole('button', { name: 'Play' })).toBeVisible();
-	await expect(other.page.getByRole('button', { name: 'Download' })).toHaveCount(0);
+	// Public, so the page itself opens and offers Host game. Download is simply absent.
+	await expect(other.page.getByRole('button', { name: 'Host game' })).toBeVisible();
+	await other.page.getByRole('button', { name: /^More actions/ }).click();
+	await expect(other.page.getByRole('menuitem', { name: 'Copy link' })).toBeVisible();
+	await expect(other.page.getByRole('menuitem', { name: 'Download' })).toHaveCount(0);
 
 	// And the endpoint behind it refuses, so hiding the button is not the only guard.
 	const res = await other.context.request.get(`/api/v1/eximport/excel/${saved.body.id}`);

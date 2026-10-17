@@ -231,12 +231,13 @@ test.describe('every screen', () => {
 
 				await page.goto(`/view/${id}`);
 				await page.waitForLoadState('networkidle');
-				await page.getByRole('button', { name: 'Play', exact: true }).click();
+				await page.getByRole('button', { name: 'Host game', exact: true }).click();
 				await expect(page.getByRole('dialog', { name: 'Start game' })).toBeVisible();
 				await capture(page, 'dialog-start-game', theme);
 				await page.keyboard.press('Escape');
 
-				await page.getByRole('button', { name: 'Download' }).click();
+				await page.getByRole('button', { name: /^More actions/ }).click();
+				await page.getByRole('menuitem', { name: 'Download' }).click();
 				await expect(page.getByRole('dialog')).toBeVisible();
 				await capture(page, 'dialog-download', theme);
 				await page.keyboard.press('Escape');

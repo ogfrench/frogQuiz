@@ -17,6 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import RangeEditor from '$lib/editor/RangeSelectorEditorPart.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Label } from '$lib/components/ui/label';
@@ -185,15 +186,30 @@ SPDX-License-Identifier: MPL-2.0
 							<span>s</span>
 						</label>
 						{#if type === QuizQuestionType.ABCD || type === QuizQuestionType.CHECK}
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onclick={() => {
+							<!-- A choice in view rather than a button labeled with its current state,
+							     which read as confirming it (V1 screens review, 17 Oct). -->
+							<SegmentedControl
+								legend={$t('editor.correct_answers')}
+								legendHidden
+								name="answers-{index}"
+								options={[
+									{
+										value: 'one',
+										label: $t('editor.answers_one'),
+										icon: CircleDot
+									},
+									{
+										value: 'several',
+										label: $t('editor.answers_several'),
+										icon: ListChecks
+									}
+								]}
+								value={type === QuizQuestionType.CHECK ? 'several' : 'one'}
+								onchange={(v) => {
 									// "One correct answer" is only enforced when an answer is
 									// marked, so switching to it used to keep every answer marked
 									// under "Several". Keep the first and unmark the rest.
-									if (type === QuizQuestionType.CHECK) {
+									if (v === 'one') {
 										let kept = false;
 										for (const answer of data.questions[index]
 											.answers as Answer[]) {
@@ -202,19 +218,11 @@ SPDX-License-Identifier: MPL-2.0
 										}
 									}
 									data.questions[index].type =
-										type === QuizQuestionType.CHECK
+										v === 'one'
 											? QuizQuestionType.ABCD
 											: QuizQuestionType.CHECK;
 								}}
-							>
-								{#if type === QuizQuestionType.CHECK}
-									<ListChecks />
-									{$t('editor.multiple_answers')}
-								{:else}
-									<CircleDot />
-									{$t('editor.single_answer')}
-								{/if}
-							</Button>
+							/>
 						{/if}
 					</div>
 				</div>
@@ -247,7 +255,7 @@ SPDX-License-Identifier: MPL-2.0
 						{#if question.image}
 							<div class="relative mx-auto w-fit">
 								<button
-									class="border-border bg-card text-muted-foreground hover:text-destructive focus-visible:ring-ring absolute -top-2 -right-2 z-10 rounded-full border p-1 shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
+									class="fq-touch-target border-border bg-card text-muted-foreground hover:text-destructive focus-visible:ring-ring absolute -top-2 -right-2 z-10 rounded-full border p-1 shadow-sm transition focus-visible:ring-2 focus-visible:outline-none"
 									type="button"
 									title={$t('words.delete')}
 									aria-label={$t('words.delete')}

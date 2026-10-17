@@ -62,7 +62,7 @@ test('a new colleague makes a quiz and runs it for two people, with no account',
 
 	let pin = '';
 	await test.step('they start a game', async () => {
-		await page.getByRole('button', { name: 'Play', exact: true }).click();
+		await page.getByRole('button', { name: 'Host game', exact: true }).click();
 		const dialog = page.getByRole('dialog', { name: 'Start game' });
 		await expect(dialog).toBeVisible();
 		await dialog.getByRole('button', { name: 'Start game' }).click();

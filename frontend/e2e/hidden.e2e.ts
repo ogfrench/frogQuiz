@@ -59,7 +59,7 @@ test('no navbar, footer or toolbar link points at a hidden page', async ({ brows
 			);
 		}
 		const footer = page.getByRole('contentinfo');
-		await expect(footer.getByRole('link', { name: 'Terms of Service' })).toBeVisible();
+		await expect(footer.getByRole('link', { name: 'Terms', exact: true })).toBeVisible();
 	}
 	await user.page.goto('/account/settings');
 	await expect(user.page.getByRole('link', { name: /avatar|public profile/i })).toHaveCount(0);
