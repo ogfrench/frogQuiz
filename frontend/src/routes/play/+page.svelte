@@ -289,7 +289,8 @@ SPDX-License-Identifier: MPL-2.0
 		solution = data;
 	});
 	socket.on('correct_answers', (data) => {
-		correct_answers = data.answers;
+		// For the question on screen only; a stray one for another index is not this answer.
+		if (String(data.question_index) === String(question_index)) correct_answers = data.answers;
 	});
 	// Everybody's frog, not only this player's: the podium names the whole top eight.
 	socket.on('avatars', setSeats);

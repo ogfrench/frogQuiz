@@ -454,18 +454,22 @@ async def get_question_results(sid: str, data: dict):
     # The right answers' text, for a phone that got it wrong (François, 17 Oct). Sent only
     # once the question is over, and ahead of the results so the card that opens on them
     # has it. "solutions" only went out when the host stopped the clock by hand.
+    # Only for the question that was just played: the index is the host's to send, and a
+    # negative or future one would hand out answers to a question nobody has seen.
     game = await PlayGame.get_from_redis(game_pin)
     try:
-        question = game.questions[int(data["question_number"])]
-    except (IndexError, ValueError, TypeError):
-        question = None
+        index = int(data["question_number"])
+    except (ValueError, TypeError):
+        index = None
+    question = game.questions[index] if index is not None and index == game.current_question else None
     scored = (QuizQuestionType.ABCD, QuizQuestionType.CHECK)
     if question is not None and (question.type or QuizQuestionType.ABCD) in scored:
         await sio.emit(
             "correct_answers",
             {
-                "question_index": int(data["question_number"]),
-                "answers": [a.answer for a in question.answers if a.right],
+                "question_index": index,
+                # A right answer left blank has nothing to show.
+                "answers": [a.answer for a in question.answers if a.right and a.answer.strip()],
             },
             room=game_pin,
         )
@@ -689,6 +693,8 @@ async def _kick(game_pin: str, username: str) -> None:
     await sio.leave_room(player_sid, game_pin)
     await sio.emit("kick", room=player_sid)
     await sio.emit("player_removed", {"username": username}, room=f"admin:{game_pin}")
+    # As for a leave: a game in progress may have been waiting only on this player.
+    await end_question_if_everyone_answered(game_pin)
 
 
 async def _admin_pin_and_player(sid: str, data: dict) -> tuple[str, str] | None:
@@ -730,9 +736,15 @@ async def remove_player(sid: str, data: dict):
 
 async def _remove_after_grace(game_pin: str, username: str, token: str) -> None:
     await sio.sleep(REMOVE_GRACE_SECONDS)
-    # Undone, finished early by a join or a Start, or removed again with a newer wait.
-    if await redis.get(_removing_key(game_pin, username)) == token:
+    # Taken and deleted in one step: a check then a kick left a gap in which a join could
+    # end this removal, claim the name, and be kicked by it as the old player.
+    key = _removing_key(game_pin, username)
+    found = await redis.getdel(key)
+    if found == token:
         await _kick(game_pin, username)
+    elif found is not None:
+        # A newer removal of the same name: put its wait back.
+        await redis.set(key, found, ex=REMOVE_GRACE_SECONDS + 60)
 
 
 @sio.event
