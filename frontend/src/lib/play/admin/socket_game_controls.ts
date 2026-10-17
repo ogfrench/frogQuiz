@@ -48,8 +48,16 @@ export class SocketGameControls {
 		this.socket.emit('end_game', {});
 	}
 
-	// Only the message: the lobby takes the chip off the board itself and sends this
-	// once the host's Undo has run out (game_not_started.svelte).
+	// The lobby hides the chip itself and offers an Undo (game_not_started.svelte). The
+	// server waits out the Undo and then removes the player, or at once with kick_player.
+	remove_player(username: string) {
+		this.socket.emit('remove_player', { username });
+	}
+
+	undo_remove_player(username: string) {
+		this.socket.emit('undo_remove_player', { username });
+	}
+
 	kick_player(username: string) {
 		this.socket.emit('kick_player', { username: username });
 	}

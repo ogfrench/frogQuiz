@@ -35,9 +35,12 @@ SPDX-License-Identifier: MPL-2.0
 			score: number;
 		}>;
 		username: any;
+		// Given only when the phones show the answers' text (game_mode 'normal'): with the
+		// answers on the projector alone, the text would be new on the phone.
+		correct_answers?: string[];
 	}
 
-	let { scores = $bindable(), question_results, username }: Props = $props();
+	let { scores = $bindable(), question_results, username, correct_answers }: Props = $props();
 	let score_by_username = $state({});
 
 	if (JSON.stringify(scores) === '{}') {
@@ -60,6 +63,8 @@ SPDX-License-Identifier: MPL-2.0
 	const my_result = $derived(question_results.find((r) => r.username === username));
 	const answered = $derived(my_result !== undefined);
 	const right = $derived(my_result?.right === true);
+	// What the right answer was, for a player who missed it (François, 17 Oct).
+	const show_correct = $derived(!right && (correct_answers?.length ?? 0) > 0);
 
 	// One sound for the result, as it appears: right, wrong, or nothing for a player who did
 	// not answer (they already know).
@@ -91,7 +96,7 @@ SPDX-License-Identifier: MPL-2.0
      with no focus move, and a screen reader said nothing (V1 game-screen review). -->
 <div
 	role="status"
-	class="mx-auto flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-8 py-7 text-center text-neutral-900 shadow-sm"
+	class="mx-auto flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-6 py-7 sm:px-8 text-center text-neutral-900 shadow-sm"
 >
 	<!-- Shape as well as color: about one man in twelve cannot tell the green from the
 	     red, and this is the one moment of the game that has to land. -->
@@ -127,6 +132,29 @@ SPDX-License-Identifier: MPL-2.0
 			{$t('play_page.answer_wrong')}
 		{/if}
 	</p>
+
+	{#if show_correct && correct_answers}
+		<div class="w-full rounded-xl bg-emerald-50 px-4 py-3 text-left text-emerald-950">
+			<p class="text-xs font-semibold tracking-wide text-emerald-800 uppercase">
+				{$t('play_page.correct_answer', { count: correct_answers.length })}
+			</p>
+			<ul class="mt-1.5 flex flex-col gap-1.5">
+				{#each correct_answers as answer, i (i)}
+					<li
+						class="flex gap-2 leading-snug font-medium {correct_answers.length > 1
+							? 'text-sm'
+							: 'text-base'}"
+					>
+						<Check
+							class="mt-[0.15em] size-4 shrink-0 text-emerald-700"
+							aria-hidden="true"
+						/>
+						<span class="min-w-0 wrap-anywhere">{answer}</span>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 
 	<p class="text-4xl font-bold tabular-nums">
 		+{score_by_username[username] ?? '0'}

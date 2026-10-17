@@ -34,7 +34,15 @@ def test_a_join_without_a_pin_is_refused_not_raised(monkeypatch, payload):
     assert emitted == ["error"]
 
 
-HANDLERS = ["register_as_admin", "submit_answer", "kick_player", "register_as_remote", "set_control_visibility"]
+HANDLERS = [
+    "register_as_admin",
+    "submit_answer",
+    "kick_player",
+    "remove_player",
+    "undo_remove_player",
+    "register_as_remote",
+    "set_control_visibility",
+]
 
 
 @pytest.mark.parametrize("handler", HANDLERS)

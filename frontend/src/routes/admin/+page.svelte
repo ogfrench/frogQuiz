@@ -204,6 +204,12 @@ SPDX-License-Identifier: MPL-2.0
 			game_state.players = game_state.players.filter((p) => p.username !== int_data.username);
 		});
 	});
+	// A removal the server finished: the host's Undo ran out, or someone asked for the name.
+	socket.on('player_removed', (int_data) => {
+		hold(() => {
+			game_state.players = game_state.players.filter((p) => p.username !== int_data.username);
+		});
+	});
 	// The server says the lobby is closed; only then leave, so a cancel that never
 	// reached it doesn't strand players on a game the host has walked away from.
 	socket.on('game_ended', () => {

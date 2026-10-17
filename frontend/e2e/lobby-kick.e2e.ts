@@ -7,7 +7,7 @@
 // starts, so a player the host meant to keep is never thrown out, and one the host removed
 // is never in the game.
 
-import { expect, test, type Browser } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { hostFromViewPage, joinAsPlayer, mc, rememberAnonQuiz, saveQuiz } from './helpers';
 
 const QUIZ = {
@@ -45,8 +45,8 @@ test('Undo puts the player back, and they were never removed', async ({ browser,
 	await host.getByRole('button', { name: 'Undo', exact: true }).click();
 	await expect(host.getByRole('button', { name: 'Kick: keep', exact: true })).toBeVisible();
 	await expect(host.getByText('2 players are waiting')).toBeVisible();
-	// Past the five seconds, the phone is still in the lobby: nothing was sent.
-	await host.waitForTimeout(6000);
+	// Past the server's own wait (six seconds), the phone is still in the lobby.
+	await host.waitForTimeout(7500);
 	await expect(keep.page.getByText('The host removed you from this game.')).toHaveCount(0);
 	await hostCtx.close();
 	await keep.context.close();
@@ -119,3 +119,44 @@ test('Undo after the player left brings back no one', async ({ browser, request 
 	await hostCtx.close();
 	await keep.context.close();
 });
+
+// The name of a player being removed used to stay taken for the five seconds, so the next
+// person to pick it was told it existed. Asking for it now ends the removal at once.
+test('someone else can take a removed name inside the window', async ({ browser, request }) => {
+	const { hostCtx, host, keep, gone } = await lobby(browser, request);
+	await host.getByRole('button', { name: 'Kick: gone', exact: true }).click();
+	await expect(host.getByText('Removed gone')).toBeVisible();
+	const again = await joinAsPlayer(browser, (await pinOf(host))!, 'gone');
+	await expect(gone.page.getByText('The host removed you from this game.')).toBeVisible();
+	await expect(host.getByText('Removed gone')).toHaveCount(0);
+	await expect(host.getByRole('button', { name: 'Kick: gone', exact: true })).toBeVisible();
+	await expect(host.getByText('2 players are waiting')).toBeVisible();
+	// The removal is over, so the newcomer is not caught by it later.
+	await host.waitForTimeout(7500);
+	await expect(again.page.getByText('The host removed you from this game.')).toHaveCount(0);
+	await expect(host.getByText('2 players are waiting')).toBeVisible();
+	await hostCtx.close();
+	await keep.context.close();
+	await gone.context.close();
+	await again.context.close();
+});
+
+// The wait was the host tab's, so closing it inside the window dropped the removal and the
+// player came back with the host. The server waits now.
+test('a host who closes the tab inside the window still removes the player', async ({
+	browser,
+	request
+}) => {
+	const { hostCtx, host, keep, gone } = await lobby(browser, request);
+	await host.getByRole('button', { name: 'Kick: gone', exact: true }).click();
+	await expect(host.getByText('Removed gone')).toBeVisible();
+	await hostCtx.close();
+	await expect(gone.page.getByText('The host removed you from this game.')).toBeVisible({
+		timeout: 15_000
+	});
+	await expect(keep.page.getByText('The host removed you from this game.')).toHaveCount(0);
+	await keep.context.close();
+	await gone.context.close();
+});
+
+const pinOf = async (host: Page) => new URL(host.url()).searchParams.get('pin');

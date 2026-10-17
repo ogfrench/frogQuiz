@@ -586,6 +586,8 @@
         "answer_none": "No answer",
         "answer_none_hint": "Nothing was submitted before the timer ran out.",
         "total_score": "Total score: {{score}}",
+        "correct_answer_one": "Correct answer",
+        "correct_answer_other": "Correct answers",
         "place_of": "{{place}} of {{total}} players",
         "your_place": "You're on place {{place}}!",
         "players_waiting": "{{count}} players are waiting",

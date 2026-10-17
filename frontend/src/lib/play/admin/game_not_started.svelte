@@ -20,7 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ThemeToggle from '$lib/theme-toggle.svelte';
 	import { SocketGameControls } from '$lib/play/admin/socket_game_controls.ts';
 	import type { IGameState } from '$lib/play/admin/game_state';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	interface Props {
 		game_pin: string;
@@ -41,7 +41,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	// A click on a chip removes the player at once, as on Kahoot, with a few seconds to
 	// take it back (François, 17 Oct): one slip on a projector clicker used to throw a
-	// colleague out. The kick is only sent when the Undo runs out, or when the game starts.
+	// colleague out. The server holds the removal for the window (remove_player) and ends
+	// it itself, so a host who closes the tab inside it no longer drops it, and someone
+	// else asking for the name ends it at once instead of being told the name is taken.
 	// Until then the player is hidden, not taken out of the list: the list is the server's,
 	// and a rejoin, a leave or a host reconnect inside the window changes it, which a
 	// local splice and re-insert duplicated or brought back as a ghost.
@@ -51,26 +53,47 @@ SPDX-License-Identifier: MPL-2.0
 	const still_here = (username: string) =>
 		game_state.players.some((p) => p.username === username);
 	const waiting = $derived(game_state.players.filter((p) => p.username !== pending));
+	const drop = (name: string) => {
+		game_state.players = game_state.players.filter((p) => p.username !== name);
+	};
+	// The Undo ran out. The server's wait ends a second later and says so with
+	// player_removed, which the admin page applies as well.
+	const expire = () => {
+		const name = pending;
+		pending = null;
+		if (name) drop(name);
+	};
+	// Now rather than when the wait ends: Start, a second removal, leaving the lobby.
 	const send_pending = () => {
 		clearTimeout(pending_timer);
 		const name = pending;
 		pending = null;
 		if (!name) return;
-		// Sent even when they have left meanwhile: a dropped phone keeps its rejoin key, and
-		// only the kick deletes it, so without it they could walk back into the lobby.
 		socket_game_controls.kick_player(name);
-		// The server tells the host nothing back for a kick, so the list drops them here.
-		game_state.players = game_state.players.filter((p) => p.username !== name);
+		drop(name);
 	};
 	const remove = (username: string) => {
 		send_pending();
+		socket_game_controls.remove_player(username);
 		pending = username;
-		pending_timer = setTimeout(send_pending, UNDO_MS);
+		pending_timer = setTimeout(expire, UNDO_MS);
 	};
 	const undo = () => {
 		clearTimeout(pending_timer);
+		if (pending) socket_game_controls.undo_remove_player(pending);
 		pending = null;
 	};
+	// The server ended the wait early because someone else asked for this name. Cleared in
+	// the same event, before that person's join arrives and is hidden as the old player.
+	const on_removed = (data: { username: string }) => {
+		if (data.username !== pending) return;
+		clearTimeout(pending_timer);
+		pending = null;
+	};
+	onMount(() => {
+		socket_game_controls.socket.on('player_removed', on_removed);
+		return () => socket_game_controls.socket.off('player_removed', on_removed);
+	});
 	onDestroy(send_pending);
 
 	// A projector never scrolls (12 Oct). The names stop where the screen does: chips that
