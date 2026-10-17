@@ -53,19 +53,34 @@ SPDX-License-Identifier: MPL-2.0
 	function fit() {
 		if (!board) return;
 		const items = [...board.children] as HTMLElement[];
-		const over = (limit: number) =>
-			items.filter((li) => li.offsetTop + li.offsetHeight > limit);
 		// The "+N more" pill sits below the board in the flow, so the board shrinks to make
 		// room for it and the observer refits. Never hide the first chip: the board's minimum
 		// height is one row, and a cramped screen still shows somebody.
 		const first = items[0] ? items[0].offsetTop + items[0].offsetHeight : 0;
-		const off = over(Math.max(board.clientHeight, first));
-		for (const li of items) li.style.visibility = off.includes(li) ? 'hidden' : '';
-		hidden = off.length;
+		const limit = Math.max(board.clientHeight, first);
+		let off = 0;
+		for (const li of items) {
+			const out = li.offsetTop + li.offsetHeight > limit;
+			if (out) off++;
+			// Only what changed: 120 style writes on every refit restyled the whole board.
+			const visibility = out ? 'hidden' : '';
+			if (li.style.visibility !== visibility) li.style.visibility = visibility;
+		}
+		hidden = off;
 		const count = game_state.players.length;
 		if (hidden > 0 && newest_first_from === null) newest_first_from = count;
 		if (newest_first_from !== null && hidden === 0 && count < newest_first_from)
 			newest_first_from = null;
+	}
+
+	// The board and every chip are watched. A chip can change width while the board keeps
+	// its size (Inter swapping in for the fallback face once it loads), which rewraps the
+	// rows; watching only the board left the last row clipped and the count stale (#73).
+	// Changing visibility resizes nothing, so fit() cannot feed itself.
+	const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(fit);
+	function watched(li: HTMLElement) {
+		observer?.observe(li);
+		return { destroy: () => observer?.unobserve(li) };
 	}
 
 	$effect(() => {
@@ -73,11 +88,12 @@ SPDX-License-Identifier: MPL-2.0
 		fit();
 	});
 	$effect(() => {
-		if (!board) return;
-		const observer = new ResizeObserver(fit);
-		observer.observe(board);
-		return () => observer.disconnect();
+		const el = board;
+		if (!el) return;
+		observer?.observe(el);
+		return () => observer?.unobserve(el);
 	});
+	$effect(() => () => observer?.disconnect());
 
 	if (cqc_code === 'null') {
 		cqc_code = null;
@@ -183,7 +199,10 @@ SPDX-License-Identifier: MPL-2.0
 				{#each shown_players as player (player.username)}
 					<!-- Newest first, every join moves every chip one place; sliding them all at
 					     once overlapped half the board while a room was joining. -->
-					<li animate:flip={{ duration: newest_first_from !== null ? 0 : 250 }}>
+					<li
+						use:watched
+						animate:flip={{ duration: newest_first_from !== null ? 0 : 250 }}
+					>
 						<button
 							type="button"
 							title={$t('words.kick')}
@@ -194,7 +213,7 @@ SPDX-License-Identifier: MPL-2.0
 									game_state.players
 								)}
 							class="group flex items-center gap-2.5 rounded-full border border-border bg-card py-1.5 pr-4 pl-1.5 text-lg font-medium shadow-sm
-								transition-all hover:border-destructive hover:text-destructive
+								transition-colors hover:border-destructive hover:text-destructive
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
 								motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
 							in:fly|global={{ y: 8, duration: 220 }}

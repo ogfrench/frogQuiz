@@ -56,9 +56,8 @@ test('a lobby with more names than fit stops at the edge, newest first, and says
 		// Every name that shows sits wholly inside the board and above the pill, which is
 		// only true once the board has refit to this size.
 		await expect.poll(() => chipsFit(page), { message: at }).toBe(true);
-		// What shows and what the pill counts add up to everyone. Polled: the kick buttons
-		// have transition-all, and visibility is animatable, so a chip hidden a moment ago
-		// still counts as shown for 150ms.
+		// What shows and what the pill counts add up to everyone. Polled: the count follows
+		// the refit a frame later.
 		const shown = () => page.getByRole('button', { name: /^Kick: / }).count();
 		const hiddenCount = async () => Number((await more.innerText()).match(/\d+/)![0]);
 		await expect
@@ -73,6 +72,25 @@ test('a lobby with more names than fit stops at the edge, newest first, and says
 	}
 	// A taller screen shows more names: the board follows the space, not a fixed number.
 	expect(shownAt[834]).toBeGreaterThan(shownAt[1280]);
+
+	// Names can change width while the board keeps its size: Inter swaps in for the
+	// fallback face whenever it arrives (font-display: swap). The board used to be the only
+	// thing watched, so the rows rewrapped under it and the last one stayed clipped
+	// (#73, CI run 38887285801). Wider names here stand in for the late font.
+	await page.setViewportSize({ width: 834, height: 1112 });
+	await expect.poll(() => chipsFit(page)).toBe(true);
+	const wider = await page.addStyleTag({
+		content: 'ul.overflow-hidden li span { letter-spacing: 0.2em }'
+	});
+	await expect.poll(() => chipsFit(page), { message: 'after the names widened' }).toBe(true);
+	await expect
+		.poll(
+			async () =>
+				Number((await page.getByText(/^\+\d+ more$/).innerText()).match(/\d+/)![0]) +
+				(await page.getByRole('button', { name: /^Kick: / }).count())
+		)
+		.toBe(120);
+	await wider.evaluate((tag) => tag.remove());
 
 	// Screens too short for the board: the PIN is never cut off at the top, and the newest
 	// name still shows. A landscape phone may scroll, below, to reach the rest.

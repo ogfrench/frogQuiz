@@ -64,10 +64,15 @@ off, are in `DEPLOY.md`, "AI agents (MCP)". What V1 adds
 every 30 minutes. It is a stopgap until #72's monitor exists.
 
 **Open, in order.**
-1. The first real restore, timed and written into `DEPLOY.md`.
+1. ~~The first real restore, timed and written into `DEPLOY.md`~~: done on 16 Oct
+   (`DEPLOY.md`, "First real restore").
 2. ~~#76's backend fix on the VM~~: done, the VM runs `125c5ad`, which carries it.
-3. #72's OCI checks.
+3. ~~The Oracle VM was over the free A1 limit~~: resized to 2 OCPU / 12 GB on 17 Oct
+   (François, in the console). The facts run after the reboot shows 2.0 / 12, every
+   container healthy and `/api/v1/health` ok. What stays a risk, idle reclamation, is in
+   `DEPLOY.md`, "Staying inside Always Free".
 4. The v0.9 cut. `frontend/package.json` is still `0.8.0`, and `## Unreleased` is long.
+   The plan for the rest of V1 is on #73.
 5. ~~The #83 migration deploy~~: done on 16 Oct with Production ops **migrate**. Backend
    deploys without a migration go through **deploy** again.
 

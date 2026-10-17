@@ -81,3 +81,29 @@ The editor's four new states were added to the capture (`editor states` in `visu
 | Host scoreboard and answers | 1440, 1920 | dark | A white card on the dark projector. Older than V1: both cards are hard-coded white with dark text, probably so they read over a quiz's own background colour or image | Step 5 decides |
 | Editor, question card | 390, 834 | both | The card's inner padding is uneven, and its fields do not line up with the ones above it. Older than V1 | Step 5 |
 
+
+### Step 5 (v0.9): the full capture, 16 Oct
+
+Every screen at 390, 834 and 1440 (and the host's 1920), both themes: 192 shots
+(`VISUAL_LABEL=v09`). The automated checks were clean on all of them (no horizontal
+overflow, the theme class matches, the ground is a token) except axe on one page. A
+first-pass triage by a cheaper model listed 25 items; each was checked against the shots,
+the code or a live page before acting on it.
+
+| Screen | Size | Theme | Finding | Outcome |
+| --- | --- | --- | --- | --- |
+| OAuth error | all | both | No `<title>` (axe, serious) | Fixed, and the rerun is clean |
+| OAuth error | all | both | Still upstream's page: no gutter at 390, a display heading under the navbar, a raw grey "Back to login" chip with a blue tint in dark | Deferred: reached only after a failed OAuth sign-in, and V1 signs in by email. Redesign if OAuth comes back |
+| Host results and scoreboard, player feedback | 390 to 1920 | dark | White cards on the dark ground | Kept: D34 |
+| Privacy, Attribution | 834, 1440 | both | Blank space under the footer | Not a bug: the live page ends at its footer (scroll height 1534, footer bottom 1534 at 834). A full-page capture artifact |
+| Start game, Download dialogs | all | both | The backdrop stops at the fold | Same artifact: a fixed overlay in a full-page shot |
+| My Quizzes | all | both | The Ctrl+K notice covers the footer, and shows on a phone | Not on a phone: the notice skips `pointer: coarse`; the capture runs a desktop pointer at 390. On a laptop it is a one-time, dismissible toast |
+| Editor | 390 | both | Play and Save about 34px | The capture's desktop pointer; `touch-targets.e2e.ts` passes with touch emulation |
+| Editor, question card | 390 | both | About 40px of the card goes to the drag-handle column, so content gets about 300px | Open, low. Same as the 11 Oct row above |
+| Login, settings | all | both | Two disabled styles: a mid-grey block (sign-in, Create key) and a pale chip (Join) | Open, low: one disabled style is a design call |
+| Host question | 1440, 1920 | both | The timer bar is red from the start | Open, low: a design call |
+| Podium | all | light | 2nd and 3rd blocks are near-white on white; gold appears in several places | Open, low: a design call |
+| Player answer tiles | 390 | both | A vertical gradient on the phone where host and view pages are flat; the selected ring is faint in light | Open, low: a design call |
+| Discover, settings, view page | various | both | Gutters vary from 16 to 48px between pages | Open, low |
+
+The "Open, low" rows are polish, not V1 blockers. The design calls are François's.

@@ -67,7 +67,7 @@ Concretely:
   makes a quiz tool into a presentation tool.
 
 **True/false needs no type of its own.** It is an `ABCD` question with two answers.
-The seed quiz in `shots/review/seed.mjs` includes one.
+
 
 ### What is still reachable
 
@@ -142,7 +142,8 @@ remove it — a lockout we would have created ourselves. So:
 - `GET .../totp` (read the status) and `DELETE .../totp` (switch it off) work
   regardless of the flag. Both already require the account password.
 
-The UI half is gone: `/account/settings/security` 404s in `hooks.server.ts`, because
+The UI half is gone: `/account/settings/security` 404s through `DISABLED_ROUTES`
+(`frontend/src/lib/hidden_routes.ts`, applied by `reroute` in `frontend/src/hooks.ts`), because
 TOTP and backup codes were the only things on that page, and the "use a backup code"
 button is gone from the login password step. **So the escape hatch is API-only.**
 Someone stuck behind a stale TOTP prompt needs either a `DELETE` against that
@@ -166,7 +167,8 @@ PR #5 removed their entry points from the UI but left the API routers registered
 every endpoint stayed live and callable by anyone who typed the URL — obscurity
 rather than access control. Both routers are now conditionally mounted in
 `frogquiz/__init__.py` and disappear from the OpenAPI schema too. The matching
-frontend half is `DISABLED_ROUTES` in `frontend/src/hooks.server.ts`, which 404s
+frontend half is `DISABLED_ROUTES` in `frontend/src/lib/hidden_routes.ts`, applied by
+`frontend/src/hooks.ts`, which 404s
 `/quiztivity`, `/controller` and `/account/controllers`.
 
 **Existing QuizTivity data is unreachable while the flag is off, but not orphaned.**
@@ -194,7 +196,7 @@ live" suggests:
 | QuizTivity          | route 404s                                                                                                    | router unmounted behind flag                                                                                                                                                | closed                                                                                                                                                      |
 | Box controller      | route 404s                                                                                                    | router unmounted behind flag                                                                                                                                                | closed                                                                                                                                                      |
 | WebAuthn / passkeys | removed from the login method chooser and settings                                                            | router still mounted; `login.py` still offers `PASSKEY` to a user who has a credential                                                                                      | **open** — nobody can register a new passkey through the UI, and password login still works, so there is no lockout; but the surface is live and undesigned |
-| Ratings             | removed from the quiz view page                                                                               | rating endpoints still live                                                                                                                                                 | **open** — low risk, user-scoped                                                                                                                            |
+| Ratings             | removed from the quiz view page                                                                               | `POST /rate/{quiz_id}` answers 404 unless `ENABLE_RATINGS` is on (`routers/community.py`)                                                                                    | closed                                                                                                                                                      |
 | Docs pages          | index trimmed (tos, privacy, self-host, roadmap, develop)                                                     | n/a                                                                                                                                                                         | the pages still exist at their URLs; the ToS in particular is linked from registration                                                                      |
 
 The two **open** rows are not urgent and not security holes. They are surface that
@@ -399,11 +401,11 @@ Collected so they can be settled in one pass rather than rediscovered:
    Postgres defaulted them to NO ACTION and deleting an account that had rated a quiz or
    registered a controller hit a foreign-key violation. `rating.quiz` is the same bug one
    level down: a quiz carrying a rating could not be deleted either. Migration
-   `b7c4a1f9e2d3` recreates all three as CASCADE, the ormar models now declare the same,
+   `c3f8a1d47b62` recreates all three as CASCADE, the ormar models now declare the same,
    and `DELETE /api/v1/users/me` deletes the user's `StorageItem` rows and their files
    rather than orphaning them (`StorageItem.user` is SET_NULL by design, so the rows
-   outlived the account and the uploads leaked). `frogquiz/tests/test_account_deletion.py`
-   covers both paths. **None of it has been run against a real database** -- it was
+   outlived the account and the uploads leaked). `test_server.py`
+   (`test_delete_user_is_not_blocked_by_a_rating`) and `test_storage_cleanup.py` cover both paths. **None of it has been run against a real database** -- it was
    written in an environment with no Postgres, so `alembic upgrade head` and the suite
    must both pass before this is merged. The third cause in issue #13 -- an OAuth-only
    account can never satisfy the password check -- is untouched and affects nobody, since

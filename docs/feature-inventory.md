@@ -9,6 +9,22 @@ SPDX-License-Identifier: MPL-2.0
 Every socket event, HTTP route, feature flag and small UI affordance in the app, with
 what state it is actually in. Swept 1 Oct 2026.
 
+**Checked again on 16 Oct; the rows below are the 1 Oct snapshot.** Fixed since, so read
+these rows as history:
+- The socket server has a `disconnect` handler (`socket_server/__init__.py`): it drops
+  the player from the "everyone answered" count, and a rejoin adds them back.
+- `question_not_active` has a listener (`lib/play/question.svelte`). `already_replied`
+  still has none, on purpose: the comments there explain why it is not an error.
+- The results route's dead string literal is gone; the route still does not exist.
+- Both export routes are owner-only: `.cqa` filters by `user_id`, Excel uses
+  `_find_own_quiz` and answers 404 to anyone else (D18).
+- `check_captcha` returns `False` when no captcha is configured.
+- `DISABLED_ROUTES` has 20 entries, plus `DISABLED_EXACT = ['/docs']`.
+- `start_game.svelte` sets `game_mode` from the "show on devices" switch (D16);
+  `captcha_enabled: 'False'` is still hard-coded.
+- The frontend captcha flags are `VITE_HCAPTCHA`, `VITE_RECAPTCHA` and
+  `VITE_CAPTCHA_ENABLED` (`lib/config.ts`).
+
 **State**: `live` reachable and works · `hidden` behind `lib/hidden_routes.ts` or a
 backend flag · `orphaned` the code exists and nothing reaches it · `broken` reachable
 and does not work.

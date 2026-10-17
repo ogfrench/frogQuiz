@@ -87,13 +87,39 @@ SPDX-License-Identifier: MPL-2.0
 	<img src={thumbhash_data} alt="" class={`${css_classes} ${added_thumbhash_classes}`} />
 {:then}
 	{#if type === 'img'}
-		<img
-			in:fade|global={{ duration: 300 }}
-			src={img_data.data}
-			alt={img_data.alt_text}
-			class="{css_classes} {allow_fullscreen ? 'cursor-zoom-in' : ''}"
-			onclick={() => open_fullscreen()}
-		/>
+		<!-- The image itself is the control, so the layouts that size it with h-full or
+		     absolute inset-0 keep working; a wrapping <button> would break them. It had a
+		     click handler only, so the keyboard could not open it. -->
+		{#if allow_fullscreen}
+			<!-- ARIA in HTML allows role=button on an <img> that has alt text, which this one
+			     always has. -->
+			<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
+			<img
+				in:fade|global={{ duration: 300 }}
+				src={img_data.data}
+				alt={img_data.alt_text || $t('words.image')}
+				aria-label={$t('play_page.show_image_full_screen')}
+				class="{css_classes} cursor-zoom-in focus-visible:outline-ring focus-visible:outline-2 focus-visible:-outline-offset-2"
+				role="button"
+				tabindex="0"
+				onclick={() => open_fullscreen()}
+				onkeydown={(e) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						// The host page binds both keys on window to the next step.
+						e.preventDefault();
+						e.stopPropagation();
+						open_fullscreen();
+					}
+				}}
+			/>
+		{:else}
+			<img
+				in:fade|global={{ duration: 300 }}
+				src={img_data.data}
+				alt={img_data.alt_text}
+				class={css_classes}
+			/>
+		{/if}
 	{:else if type === 'video'}
 		<video
 			class={css_classes}
