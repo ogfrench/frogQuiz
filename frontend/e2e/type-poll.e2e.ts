@@ -120,5 +120,22 @@ test('a poll is made in the editor, and a choice question turns into one and bac
 	await typeMenu(page).click();
 	await page.getByRole('menuitemradio', { name: 'Poll' }).click();
 	await expect(page.getByRole('textbox', { name: 'Answer 2' })).toHaveValue('Porto');
+
+	// To Info slide would drop the options, so it asks; Cancel keeps the poll as it was.
+	await typeMenu(page).click();
+	await page.getByRole('menuitemradio', { name: 'Info slide' }).click();
+	const dialog = page.getByRole('alertdialog', { name: 'Change to info slide?' });
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole('button', { name: 'Cancel' }).click();
+	await expect(typeMenu(page)).toHaveAccessibleName('Question type: Poll');
+	await expect(page.getByRole('textbox', { name: 'Answer 1' })).toHaveValue('Lisbon');
+	// Confirmed, it changes in place: the card stays open and the page stays usable.
+	await typeMenu(page).click();
+	await page.getByRole('menuitemradio', { name: 'Info slide' }).click();
+	await dialog.getByRole('button', { name: 'Change type' }).click();
+	await expect(typeMenu(page)).toHaveAccessibleName('Question type: Info slide');
+	await expect(page.getByRole('textbox', { name: /^Answer \d$/ })).toHaveCount(0);
+	await page.getByRole('textbox', { name: 'Slide text' }).fill('Still editable');
+	await expect(page.getByRole('textbox', { name: 'Slide text' })).toHaveValue('Still editable');
 	await expectNoHorizontalOverflow(page);
 });

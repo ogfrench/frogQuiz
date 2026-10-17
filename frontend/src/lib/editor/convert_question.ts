@@ -49,7 +49,8 @@ export const convertQuestion = (q: Question, to: QuizQuestionType): Question => 
 		type: to,
 		answers: startingAnswers(KIND_OF[to] ?? 'abcd')
 	};
-	if (to === QuizQuestionType.SLIDE) return { ...base, body: '' };
+	// A slide has no timer field to fix a bad time in, so it starts from the default.
+	if (to === QuizQuestionType.SLIDE) return { ...base, time: '20', body: '' };
 	const texts = optionTexts(q);
 	if (isChoice(to) && from === QuizQuestionType.TEXT && texts.length > 0) {
 		// Accepted spellings are right answers; a second blank option makes it a choice.

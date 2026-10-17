@@ -519,10 +519,11 @@ async def set_question_number(sid: str, data: str):
     if game_data is None:
         return
     if game_data.questions[index].type == QuizQuestionType.SLIDE:
-        await sio.emit("set_question_number", {"question_index": index}, room=sid)
         # Phones got nothing at a slide and kept the last screen, a result card asking to be
-        # read while the room looked up (#93). They are told it is a slide, and no more.
+        # read while the room looked up (#93). They are told it is a slide, and no more;
+        # before the host, so a next press cannot reach them ahead of it.
         await sio.emit("slide", {"question_index": index}, room=game_pin, skip_sid=sid)
+        await sio.emit("set_question_number", {"question_index": index}, room=sid)
         return
     await sio.emit(
         "set_question_number",

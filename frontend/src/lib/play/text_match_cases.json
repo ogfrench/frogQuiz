@@ -1,0 +1,84 @@
+[
+	{ "name": "exact", "answer": "Lisbon", "spelling": "Lisbon", "match": true },
+	{ "name": "case ignored", "answer": "lISBON", "spelling": "Lisbon", "match": true },
+	{
+		"name": "spaces trimmed and collapsed",
+		"answer": "  New   York ",
+		"spelling": "New York",
+		"match": true
+	},
+	{ "name": "end punctuation ignored", "answer": "Paris.", "spelling": "Paris", "match": true },
+	{ "name": "quotes ignored", "answer": "\"Paris\"", "spelling": "Paris", "match": true },
+	{
+		"name": "a missing inner full stop is one typo",
+		"answer": "St Louis",
+		"spelling": "St. Louis",
+		"match": true
+	},
+	{ "name": "accents folded", "answer": "Goncalo", "spelling": "Gonçalo", "match": true },
+	{
+		"name": "accents folded the other way",
+		"answer": "Gonçalo",
+		"spelling": "Goncalo",
+		"match": true
+	},
+	{
+		"name": "one letter dropped on a long word",
+		"answer": "Lisbn",
+		"spelling": "Lisbon",
+		"match": true
+	},
+	{
+		"name": "one letter added on a long word",
+		"answer": "Lisbonn",
+		"spelling": "Lisbon",
+		"match": true
+	},
+	{
+		"name": "one letter changed on a long word",
+		"answer": "Lusbon",
+		"spelling": "Lisbon",
+		"match": true
+	},
+	{
+		"name": "two letters swapped on a long word",
+		"answer": "Lsibon",
+		"spelling": "Lisbon",
+		"match": true
+	},
+	{ "name": "two typos", "answer": "Lusbin", "spelling": "Lisbon", "match": false },
+	{ "name": "a typo on a short word", "answer": "Rme", "spelling": "Rome", "match": false },
+	{ "name": "a typo on a year", "answer": "1946", "spelling": "1945", "match": false },
+	{
+		"name": "a typo next to a digit",
+		"answer": "Apollo 12",
+		"spelling": "Apollo 11",
+		"match": false
+	},
+	{
+		"name": "case sensitive, same case",
+		"answer": "pH",
+		"spelling": "pH",
+		"case_sensitive": true,
+		"match": true
+	},
+	{
+		"name": "case sensitive, other case",
+		"answer": "PH",
+		"spelling": "pH",
+		"case_sensitive": true,
+		"match": false
+	},
+	{ "name": "empty answer", "answer": "", "spelling": "Lisbon", "match": false },
+	{ "name": "spaces only", "answer": "   ", "spelling": "Lisbon", "match": false },
+	{ "name": "blank spelling never matches", "answer": "", "spelling": "", "match": false },
+	{ "name": "full-width letters", "answer": "Ｌｉｓｂｏｎ", "spelling": "Lisbon", "match": true },
+	{ "name": "an emoji answer", "answer": "🐸", "spelling": "🐸", "match": true },
+	{ "name": "a different emoji", "answer": "🐢", "spelling": "🐸", "match": false },
+	{
+		"name": "a different word of the same length",
+		"answer": "Madrid",
+		"spelling": "Lisbon",
+		"match": false
+	}
+]

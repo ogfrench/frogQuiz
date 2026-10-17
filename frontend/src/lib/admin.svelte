@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { ANSWER_COLORS } from '$lib/play/answer_colors';
 	import { socket } from './socket';
-	import { QuizQuestionType } from '$lib/quiz_types';
+	import { QuizQuestionType, isDrawnSlide } from '$lib/quiz_types';
 	import Spinner from '$lib/Spinner.svelte';
 	import Controls from '$lib/play/admin/controls.svelte';
 	import Question from '$lib/play/admin/question.svelte';
@@ -177,7 +177,7 @@ SPDX-License-Identifier: MPL-2.0
 {/if}
 <!-- Slides only: a question shows its time as the bar above its answers (question.svelte). -->
 <!-- A drawn slide only: a plain slide has no countdown, the host moves on with Next (#93). -->
-{#if game_state.timer_res !== '0' && game_state.selected_question >= 0 && game_state.quiz_data.questions[game_state.selected_question]?.type === QuizQuestionType.SLIDE && game_state.quiz_data.questions[game_state.selected_question].answers !== ''}
+{#if game_state.timer_res !== '0' && game_state.selected_question >= 0 && game_state.quiz_data.questions[game_state.selected_question]?.type === QuizQuestionType.SLIDE && isDrawnSlide(game_state.quiz_data.questions[game_state.selected_question])}
 	<!-- Just under the controls bar: top-3 plus its h-12, and a hair of air. It was mt-12
 	     when the bar sat flush at the top. -->
 	<span
@@ -200,13 +200,17 @@ SPDX-License-Identifier: MPL-2.0
 	{#if game_state.timer_res !== undefined && !final_results_clicked && !game_state.question_results}
 		<!-- Question is shown -->
 		{#if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.SLIDE}
-			{#await import('$lib/play/admin/slide.svelte')}
-				<Spinner my_20={false} />
-			{:then c}
-				<c.default
-					question={game_state.quiz_data.questions[game_state.selected_question]}
-				/>
-			{/await}
+			<!-- Keyed: two slides in a row kept one component, so the second showed the first
+			     one's drawing, or a drawn slide after a plain one never loaded its canvas. -->
+			{#key game_state.selected_question}
+				{#await import('$lib/play/admin/slide.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<c.default
+						question={game_state.quiz_data.questions[game_state.selected_question]}
+					/>
+				{/await}
+			{/key}
 		{:else}
 			<Question
 				quiz_data={game_state.quiz_data}

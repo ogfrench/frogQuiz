@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { QuizQuestionType, type Question } from '$lib/quiz_types';
-import { isCorrect, isPracticable, isScored } from './score';
+import { isCorrect, isPracticable, isScored, isTextCorrect } from './score';
 
 const q = (type: QuizQuestionType | undefined, rights: boolean[]): Question =>
 	({
@@ -37,12 +37,28 @@ describe('practice scoring matches the live game', () => {
 		);
 	});
 
-	it('VOTING runs but is not scored; the other types are not practicable', () => {
+	it('VOTING runs but is not scored; Slider and Order are not practicable yet', () => {
 		expect(isPracticable(q(QuizQuestionType.VOTING, [false, false]))).toBe(true);
 		expect(isScored(q(QuizQuestionType.VOTING, [false, false]))).toBe(false);
-		for (const t of [QuizQuestionType.RANGE, QuizQuestionType.ORDER, QuizQuestionType.TEXT]) {
+		for (const t of [QuizQuestionType.RANGE, QuizQuestionType.ORDER]) {
 			expect(isPracticable(q(t, []))).toBe(false);
 		}
+	});
+
+	it('Type answer is marked as the game marks it (#93)', () => {
+		const text = {
+			type: QuizQuestionType.TEXT,
+			time: '20',
+			question: 'Capital of Portugal?',
+			answers: [{ answer: 'Lisbon', case_sensitive: false }]
+		};
+		expect(isPracticable(text)).toBe(true);
+		expect(isScored(text)).toBe(true);
+		expect(isTextCorrect(text, '  lisbon. ')).toBe(true);
+		expect(isTextCorrect(text, 'Porto')).toBe(false);
+		expect(isScored({ ...text, answers: [{ answer: ' ', case_sensitive: false }] })).toBe(
+			false
+		);
 	});
 
 	it('a draft question with no answer marked right is not scored', () => {

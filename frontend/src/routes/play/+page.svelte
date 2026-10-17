@@ -253,6 +253,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	// An Info slide is up on the projector (#93): nothing to answer here.
 	socket.on('slide', (data) => {
+		// A slide for a question already passed (a late event) must not cover the live one.
+		if (question_index !== '' && Number(data.question_index) < Number(question_index)) return;
 		solution = undefined;
 		correct_answers = undefined;
 		restart();

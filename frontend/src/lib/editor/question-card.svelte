@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import type { Answer, EditorData } from '$lib/quiz_types';
-	import { QuizQuestionType } from '$lib/quiz_types';
+	import { QuizQuestionType, isDrawnSlide } from '$lib/quiz_types';
 	import { dataSchema, fieldIsValid, SLIDE_BODY_MAX_LENGTH } from '$lib/yupSchemas';
 	import { editorValidation } from '$lib/editor/validation.svelte';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
@@ -79,8 +79,14 @@ SPDX-License-Identifier: MPL-2.0
 		if (conversionLosesText($state.snapshot(data.questions[index]), to)) pending_type = to;
 		else apply_type(to);
 	};
+	// In place, not a new object: the editor keys each card by its question object
+	// (editor.svelte), so a new one rebuilt the card, dropped focus to the page and
+	// restarted the rich-text field.
 	const apply_type = (to: QuizQuestionType) => {
-		data.questions[index] = convertQuestion($state.snapshot(data.questions[index]), to);
+		const q = data.questions[index] as unknown as Record<string, unknown>;
+		const next = convertQuestion($state.snapshot(data.questions[index]), to);
+		for (const k of Object.keys(q)) if (!(k in next)) delete q[k];
+		Object.assign(q, next);
 		pending_type = null;
 	};
 	const type_label = (ty: QuizQuestionType | null) =>
@@ -94,11 +100,7 @@ SPDX-License-Identifier: MPL-2.0
 	const type = $derived(question.type);
 	// An old drawn slide keeps its drawing in `answers`; a plain slide (#93) has none, and
 	// edits like a question: title, text, image. It has no timer, answers or results.
-	const drawn_slide = $derived(
-		type === QuizQuestionType.SLIDE &&
-			typeof question.answers === 'string' &&
-			question.answers !== ''
-	);
+	const drawn_slide = $derived(isDrawnSlide(question));
 	const plain_slide = $derived(type === QuizQuestionType.SLIDE && !drawn_slide);
 
 	// The timer is a free-text number field, so it can hold anything the keyboard
@@ -352,7 +354,7 @@ SPDX-License-Identifier: MPL-2.0
 								{/key}
 							{/await}
 						{:else if type === QuizQuestionType.TEXT}
-							{#await import('$lib/editor/TextEditorPart.svelte')}
+							{#await import('$lib/editor/TextAnswerEditor.svelte')}
 								<Spinner my_20={false} />
 							{:then c}
 								<c.default bind:data selected_question={index} />

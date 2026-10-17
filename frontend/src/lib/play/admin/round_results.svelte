@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { DUR, dur, reduced, stagger } from '$lib/motion';
 	import { sfx, stopSfx } from '$lib/play/sfx';
+	import TextResults from '$lib/play/admin/text_results.svelte';
 	import VotingResults from './voting_results.svelte';
 	import type { Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
@@ -125,7 +126,11 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					{@html sanitizeTitleHtml(question.question)}
 				</h1>
-				<VotingResults data={new_data} {question} />
+				{#if question.type === QuizQuestionType.TEXT}
+					<TextResults data={new_data} {question} />
+				{:else}
+					<VotingResults data={new_data} {question} />
+				{/if}
 			</section>
 		{/if}
 		{#if show_standings}

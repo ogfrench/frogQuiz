@@ -9,10 +9,12 @@
 //   either).
 // - CHECK: all or nothing -- the ticked set must equal the right set exactly
 //   (check_check_question in frogquiz/socket_server/helpers.py).
+// - TEXT: any accepted spelling, matched tolerantly as in the game (text_match.ts).
 // - VOTING has no right answer and is not scored. Nor is a draft's question that has no
 //   answer marked right yet: every pick used to read "Not quite" and count against you
 //   (E13 in docs/edge-cases-2026-10.md).
 import { QuizQuestionType, type Question } from '$lib/quiz_types';
+import { matches } from '$lib/play/text_match';
 
 type Tile = { right?: boolean };
 
@@ -21,13 +23,22 @@ export const isPracticable = (q: Question): boolean =>
 	q.type === undefined ||
 	q.type === QuizQuestionType.ABCD ||
 	q.type === QuizQuestionType.CHECK ||
-	q.type === QuizQuestionType.VOTING;
+	q.type === QuizQuestionType.VOTING ||
+	q.type === QuizQuestionType.TEXT;
 
 export const isScored = (q: Question): boolean =>
-	(q.type === undefined ||
-		q.type === QuizQuestionType.ABCD ||
-		q.type === QuizQuestionType.CHECK) &&
-	(q.answers as Tile[]).some((a) => a.right);
+	q.type === QuizQuestionType.TEXT
+		? (q.answers as { answer: string }[]).some((a) => a.answer?.trim())
+		: (q.type === undefined ||
+				q.type === QuizQuestionType.ABCD ||
+				q.type === QuizQuestionType.CHECK) &&
+			(q.answers as Tile[]).some((a) => a.right);
+
+/** Type answer, marked as the live game marks it (text_match.ts, #93). */
+export const isTextCorrect = (q: Question, typed: string): boolean =>
+	(q.answers as { answer: string; case_sensitive: boolean }[]).some((a) =>
+		matches(typed, a.answer, a.case_sensitive)
+	);
 
 export function isCorrect(q: Question, picked: boolean[]): boolean {
 	const answers = q.answers as Tile[];

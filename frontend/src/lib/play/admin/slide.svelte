@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Question } from '$lib/quiz_types';
+	import { isDrawnSlide, type Question } from '$lib/quiz_types';
 	import { onMount } from 'svelte';
 	import Pikaso from 'pikaso';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
@@ -24,7 +24,7 @@ SPDX-License-Identifier: MPL-2.0
 	let canvas: Pikaso;
 	let img_src = $state('');
 	// A plain slide (#93) has no drawing: its title, text and image are shown as a question's.
-	const drawn = typeof question.answers === 'string' && question.answers !== '';
+	const drawn = $derived(isDrawnSlide(question));
 
 	onMount(() => {
 		if (!drawn) return;

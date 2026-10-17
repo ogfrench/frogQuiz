@@ -42,7 +42,7 @@ export const QUESTION_TYPES: {
 		kind: 'text',
 		label: 'words.type_answer',
 		description: 'editor.type_answer_description',
-		enabled: false
+		enabled: true
 	},
 	{
 		kind: 'slider',

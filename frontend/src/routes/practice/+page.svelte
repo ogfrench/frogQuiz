@@ -18,10 +18,11 @@ SPDX-License-Identifier: MPL-2.0
 	import { get_foreground_color } from '$lib/helpers.ts';
 	import { answerColor } from '$lib/play/answer_colors';
 	import { QuizQuestionType, type QuizData, type Question } from '$lib/quiz_types';
-	import { isCorrect, isPracticable, isScored } from '$lib/practice/score';
+	import { isCorrect, isPracticable, isScored, isTextCorrect } from '$lib/practice/score';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import * as Card from '$lib/components/ui/card';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Check from '@lucide/svelte/icons/check';
@@ -66,13 +67,16 @@ SPDX-License-Identifier: MPL-2.0
 			color?: string;
 		}[]
 	);
-	const got_it_right = $derived(
-		question && revealed && isScored(question) ? isCorrect(question, picked) : null
-	);
+	const is_text = $derived(question?.type === QuizQuestionType.TEXT);
+	let typed = $state('');
+	const right_now = () =>
+		question && is_text ? isTextCorrect(question, typed) : isCorrect(question!, picked);
+	const got_it_right = $derived(question && revealed && isScored(question) ? right_now() : null);
 
 	const load_question = (i: number) => {
 		index = i;
 		revealed = false;
+		typed = '';
 		picked = new Array(tiles.length).fill(false);
 	};
 
@@ -88,7 +92,7 @@ SPDX-License-Identifier: MPL-2.0
 		revealed = true;
 		if (isScored(question)) {
 			scored_count += 1;
-			if (isCorrect(question, picked)) score += 1;
+			if (right_now()) score += 1;
 		}
 	};
 
@@ -205,6 +209,40 @@ SPDX-License-Identifier: MPL-2.0
 					<p class="text-muted-foreground text-center">
 						{$t('practice_page.unsupported')}
 					</p>
+				{:else if is_text}
+					<!-- Type answer (#93): typed, then marked the way the game marks it. -->
+					<form
+						class="flex w-full flex-col gap-3"
+						onsubmit={(e) => {
+							e.preventDefault();
+							if (typed.trim()) reveal();
+						}}
+					>
+						<Input
+							bind:value={typed}
+							disabled={revealed}
+							maxlength={100}
+							autocomplete="off"
+							aria-label={$t('play_page.type_your_answer')}
+							placeholder={$t('play_page.type_your_answer')}
+							class="h-12 text-center text-lg"
+						/>
+						{#if !revealed}
+							<Button type="submit" size="lg" disabled={!typed.trim()}
+								>{$t('words.submit')}</Button
+							>
+						{:else}
+							<p class="text-muted-foreground text-center text-sm">
+								{$t('play_page.correct_answer', { count: 1 })}:
+								<span class="text-foreground font-semibold"
+									>{(question.answers as { answer: string }[])
+										.map((a) => a.answer)
+										.filter((a) => a.trim())
+										.join(', ')}</span
+								>
+							</p>
+						{/if}
+					</form>
 				{:else}
 					{#if is_check && !revealed}
 						<p class="text-muted-foreground text-center text-sm">

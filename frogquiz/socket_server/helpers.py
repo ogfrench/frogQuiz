@@ -11,6 +11,7 @@ import aiohttp
 from redis.exceptions import WatchError
 
 from frogquiz.config import settings, redis
+from frogquiz.helpers import text_match
 from frogquiz.db.models import (
     PlayGame,
     QuizQuestion,
@@ -196,14 +197,8 @@ def check_order_question(
 
 
 def check_text_question(answer: str, answers: list[TextQuizAnswer]) -> bool:
-    for q in answers:
-        if q.case_sensitive:
-            if answer == q.answer:
-                return True
-        else:
-            if answer.lower() == q.answer.lower():
-                return True
-    return False
+    # Tolerant, not exact: "lisbon " and "Goncalo" lost points to a keyboard (#93).
+    return any(text_match.matches(answer, q.answer, q.case_sensitive) for q in answers)
 
 
 def check_check_question(answer: str, answers: list[ABCDQuizAnswer]) -> bool:

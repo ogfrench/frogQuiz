@@ -21,6 +21,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { flip } from 'svelte/animate';
 	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { get_foreground_color } from '../helpers';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
@@ -351,37 +352,50 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			{/await}
 		{:else if question.type === QuizQuestionType.TEXT}
-			<div>
-				<span
-					class="fixed top-0 bg-red-500 h-8 transition-all"
-					style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
-				></span>
-				<div class="flex justify-center mt-10">
-					<p class="text-black dark:text-white">Enter your answer</p>
-				</div>
-				<div class="flex justify-center m-2">
-					<input
-						type="text"
+			<!-- Type answer (#93): the same timer as the tiles, one field, Enter or Submit.
+			     It was a red bar across the top, a hardcoded English prompt and a field in
+			     gray-50 that disappeared in one theme. -->
+			<form
+				class="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-5 px-6 pb-8"
+				onsubmit={(e) => {
+					e.preventDefault();
+					if (text_input.trim() && !submitted) selectAnswer(text_input.trim());
+				}}
+			>
+				<CircularTimer
+					text={timer_res}
+					progress={circular_progress}
+					color={in_last_seconds(timer_res) ? 'var(--destructive)' : 'var(--foreground)'}
+				/>
+				<label class="flex w-full max-w-sm flex-col gap-2">
+					<span class="text-center text-lg font-semibold"
+						>{$t('play_page.type_your_answer')}</span
+					>
+					<Input
 						bind:value={text_input}
-						disabled={selected_answer !== undefined}
-						class="bg-gray-50 focus:ring text-gray-900 rounded-lg focus:ring-blue-500 block w-full p-2 dark:bg-gray-700 dark:text-white dark:focus:ring-blue-500 outline-hidden transition text-center disabled:opacity-50 disabled:cursor-not-allowed"
+						disabled={submitted}
+						maxlength={100}
+						autocomplete="off"
+						autocapitalize="off"
+						spellcheck={false}
+						class="h-12 text-center text-lg"
 					/>
-				</div>
-
-				<div class="flex justify-center mt-2">
-					<div class="w-1/3">
-						<BrownButton
-							type="button"
-							disabled={!text_input || text_input.length === 0}
-							onclick={() => {
-								selectAnswer(text_input);
-							}}
-						>
-							{$t('words.submit')}
-						</BrownButton>
-					</div>
-				</div>
-			</div>
+				</label>
+				<Button
+					type="submit"
+					size="lg"
+					class="h-12 w-full max-w-sm text-base"
+					disabled={submitted || !text_input.trim()}
+				>
+					{$t('words.submit')}
+				</Button>
+				<p role="status" class="flex h-8 items-center gap-2 text-base font-medium">
+					{#if submitted}
+						<Check class="size-5" aria-hidden="true" />
+						{$t('words.answer_locked_in')}
+					{/if}
+				</p>
+			</form>
 		{:else if question.type === QuizQuestionType.ORDER}
 			<!--			{#if solution === undefined}
                             <Spinner />

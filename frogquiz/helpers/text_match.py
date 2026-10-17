@@ -56,7 +56,9 @@ def _one_edit_apart(a: str, b: str) -> bool:
         diffs = [i for i in range(len(a)) if a[i] != b[i]]
         if len(diffs) == 1:
             return True
-        return len(diffs) == 2 and diffs[1] == diffs[0] + 1 and a[diffs[0]] == b[diffs[1]] and a[diffs[1]] == b[diffs[0]]
+        return (
+            len(diffs) == 2 and diffs[1] == diffs[0] + 1 and a[diffs[0]] == b[diffs[1]] and a[diffs[1]] == b[diffs[0]]
+        )
     short, long_ = (a, b) if len(a) < len(b) else (b, a)
     i = 0
     while i < len(short) and short[i] == long_[i]:
