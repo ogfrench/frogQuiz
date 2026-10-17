@@ -33,16 +33,15 @@ SPDX-License-Identifier: MPL-2.0
 	// Grouped as the matcher sees them, so "Porto" and "porto " are one line; shown as the
 	// first person typed it.
 	const wrong = (() => {
-		const groups = new Map<string, { text: string; count: number }>();
+		const groups: Record<string, { text: string; count: number }> = {};
 		for (const d of data) {
 			if (d.right) continue;
 			const key = normalize(d.answer ?? '');
 			if (!key) continue;
-			const g = groups.get(key);
-			if (g) g.count++;
-			else groups.set(key, { text: (d.answer ?? '').trim(), count: 1 });
+			groups[key] ??= { text: (d.answer ?? '').trim(), count: 0 };
+			groups[key].count++;
 		}
-		return [...groups.values()].sort((a, b) => b.count - a.count);
+		return Object.values(groups).sort((a, b) => b.count - a.count);
 	})();
 </script>
 

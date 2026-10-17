@@ -4,6 +4,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Type answer is back (#93) with tolerant matching, the same in the game and in practice (`text_match.py`, `text_match.ts`, one shared case file): case, extra spaces, end punctuation and accents are ignored, and one typo is forgiven on a word of six characters or more with no digit. The editor lists accepted answers with an "Exact case" switch each (the old one reset it on every open). Phones get the game's timer and a proper field; the projector says how many got it and groups what else people typed, and no longer shows the accepted answer before the results. Practice runs it. New spec `type-text.e2e.ts`.
+- Changing a question's type changes it in place: the card was rebuilt, which dropped keyboard focus and restarted the title field. Converting to a slide resets its time.
+- The projector shows each slide in turn: two slides in a row kept the first one's drawing.
 - Poll is back in the editor (#93): the same tiles as Multiple choice with nothing to mark right. Phones say "Vote counted" instead of "Not this time" and "+0", and the projector shows the votes in its round card under the question, where it used to draw them bare on the background in ink meant for the white card. New spec `type-poll.e2e.ts`.
 - A question card has a type menu: changing type keeps what carries over, and asks before throwing away typed text.
 - Info slide is back as a plain slide (#93): a title, some text and an image, edited like a question, with no timer. Phones show "Look at the screen" with their frog, including a phone that joins during the slide; they used to keep the last result card up. Old drawn slides still show. Practice and the quiz page show plain slides too. New spec `type-slide.e2e.ts`.

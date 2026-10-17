@@ -23,6 +23,9 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { type, onchange }: Props = $props();
+	// Closed by hand on a choice: the card is no longer rebuilt when its type changes, so
+	// nothing else closed it, and the open menu left the page behind it inert.
+	let open = $state(false);
 
 	const family = (t: QuizQuestionType | undefined) =>
 		t === undefined || t === QuizQuestionType.CHECK ? QuizQuestionType.ABCD : t;
@@ -38,7 +41,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 {#if options.length > 1}
-	<DropdownMenu.Root>
+	<DropdownMenu.Root bind:open>
 		<DropdownMenu.Trigger
 			type="button"
 			class={buttonVariants({ variant: 'outline', size: 'sm', class: 'gap-1.5' })}
@@ -51,6 +54,7 @@ SPDX-License-Identifier: MPL-2.0
 			<DropdownMenu.RadioGroup
 				value={current.type}
 				onValueChange={(v) => {
+					open = false;
 					if (v && v !== current.type) onchange(v as QuizQuestionType);
 				}}
 			>

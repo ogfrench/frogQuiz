@@ -40,7 +40,8 @@ test('typed answers are matched tolerantly, counted on the projector, and the an
 	const hostCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 	const host = await hostCtx.newPage();
 	await rememberAnonQuiz(host, saved.body.id, saved.secret!);
-	const pin = await hostFromViewPage(host, saved.body.id);
+	// With questions on the phones: only then is a wrong phone shown the answer (D16).
+	const pin = await hostFromViewPage(host, saved.body.id, { showOnDevices: true });
 	const phone = async (name: string) => {
 		const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 		const p = await ctx.newPage();
