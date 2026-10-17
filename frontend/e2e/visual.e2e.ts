@@ -174,7 +174,6 @@ test.describe('every screen', () => {
 					['tos', '/docs/tos'],
 					['privacy', '/docs/privacy-policy'],
 					['attribution', '/docs/attribution'],
-					['oauth-error', '/account/oauth-error'],
 					['not-found', '/no-such-page']
 				];
 				for (const [name, url] of routes) {

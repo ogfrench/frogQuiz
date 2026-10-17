@@ -27,6 +27,7 @@ SPDX-License-Identifier: MPL-2.0
 		loadAnonQuiz
 	} from '$lib/anon_quiz';
 	import { copyQuiz } from '$lib/copy_quiz';
+	import { copyQuizLink } from '$lib/share_link.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import StartGamePopup from '$lib/dashboard/start_game.svelte';
@@ -43,6 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Clock from '@lucide/svelte/icons/clock';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Download from '@lucide/svelte/icons/download';
+	import Link from '@lucide/svelte/icons/link';
 	import Ellipsis from '@lucide/svelte/icons/ellipsis';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Pencil from '@lucide/svelte/icons/pencil';
@@ -217,7 +219,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - {$t('my_quizzes.title')}</title>
+	<title>{$t('my_quizzes.title')} — frogQuiz</title>
 </svelte:head>
 
 <!-- The Ctrl+K notice is off (V1 menus review, 17 Oct): every palette command is one
@@ -285,14 +287,17 @@ SPDX-License-Identifier: MPL-2.0
 		</div>
 
 		<div class="any-pointer-coarse:gap-2 flex shrink-0 flex-wrap items-center gap-1.5">
+			<!-- Outline, like Edit: one solid button per row made a column of black blocks,
+			     and the page's one strong action is Create. -->
 			<Button
+				variant="outline"
 				disabled={draft}
 				title={draft ? $t('draft.hint_owner') : undefined}
 				aria-describedby={draft ? `draft-hint-${quiz.id}` : undefined}
 				onclick={() => (start_game = quiz.id)}
 			>
 				<Play />
-				{$t('words.play')}
+				{$t('words.host_game')}
 			</Button>
 			{#if source === 'browser' && signed_in}
 				<Button
@@ -332,6 +337,16 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content align="end" class="min-w-48">
+					<DropdownMenu.Item
+						onSelect={() =>
+							copyQuizLink(quiz.id, {
+								copied: $t('share.copied'),
+								failed: (url) => $t('share.copy_failed', { url })
+							})}
+					>
+						<Link />
+						{$t('share.copy_link')}
+					</DropdownMenu.Item>
 					{#if source === 'account'}
 						<DropdownMenu.Item
 							disabled={copying !== null}

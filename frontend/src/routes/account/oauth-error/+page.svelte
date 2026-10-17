@@ -10,7 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Error authenticating</title>
+	<title>Error authenticating — frogQuiz</title>
 </svelte:head>
 
 <div>

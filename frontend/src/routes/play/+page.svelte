@@ -304,7 +304,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:window onbeforeunload={confirmUnload} onpagehide={() => alive_timer && stopAlive()} />
 <svelte:head>
-	<title>frogQuiz - Play</title>
+	<title>Join a game — frogQuiz</title>
 </svelte:head>
 <div
 	class="min-h-dvh w-full"

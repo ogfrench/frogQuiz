@@ -20,7 +20,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Results</title>
+	<title>Results — frogQuiz</title>
 </svelte:head>
 
 <!-- The table used gray-300/gray-500 borders and had no scroll container, and the

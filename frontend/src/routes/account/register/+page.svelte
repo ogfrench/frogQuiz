@@ -153,7 +153,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Register</title>
+	<title>Register — frogQuiz</title>
 </svelte:head>
 
 <!-- Rebuilt on the same Card/Label/Input/Button primitives as the login page, which

@@ -14,7 +14,7 @@ const API_BASE = process.env.API_URL ?? import.meta.env.VITE_API_ORIGIN;
 export const handle: Handle = async ({ event, resolve }) => {
 	// Hidden routes are not guarded here any more. Throwing from `handle` runs before
 	// the router, so SvelteKit answered with its built-in fallback page: bare "404 | Not
-	// found", no navbar, no way home, no theme -- on exactly the sixteen URLs we hide.
+	// found", no navbar, no way home, no theme -- on exactly the URLs we hide.
 	// `reroute` in hooks.ts sends them to a path with no route instead, so they 404
 	// through the app and get the same page as any other wrong URL.
 	const access_token = event.cookies.get('access_token');

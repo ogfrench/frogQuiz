@@ -208,7 +208,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - {$t('words.my_account')}</title>
+	<title>{$t('words.my_account')} — frogQuiz</title>
 </svelte:head>
 
 <!-- Was a grid-cols-6 with the avatar pinned to a one-sixth column and the rest in a

@@ -34,7 +34,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Results</title>
+	<title>Results — frogQuiz</title>
 </svelte:head>
 
 <div class="w-full">

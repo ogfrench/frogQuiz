@@ -189,7 +189,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Remote</title>
+	<title>Remote — frogQuiz</title>
 </svelte:head>
 
 <svelte:window onbeforeunload={confirmUnload} />

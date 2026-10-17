@@ -21,11 +21,12 @@ SPDX-License-Identifier: MPL-2.0
 	import { Button } from '$lib/components/ui/button';
 	import { QuizQuestionType, type Question } from '$lib/quiz_types';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
-	import Save from '@lucide/svelte/icons/save';
+	import Check from '@lucide/svelte/icons/check';
 	import Play from '@lucide/svelte/icons/play';
 	import Plus from '@lucide/svelte/icons/plus';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import CloudCheck from '@lucide/svelte/icons/cloud-check';
+	import CloudUpload from '@lucide/svelte/icons/cloud-upload';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import { getAnonSecret, setAnonSecret } from '$lib/anon_quiz';
 	import { htmlToPlainText, sanitizeTitleHtml } from '$lib/sanitize';
@@ -498,7 +499,6 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-
 <!-- ononline: a save that failed for want of a network stayed failed until the next
      keystroke, with the header red after the connection was back (E15). -->
 <svelte:window onbeforeunload={confirmUnload} ononline={() => flush()} />
@@ -615,6 +615,13 @@ SPDX-License-Identifier: MPL-2.0
 									<span class="truncate max-sm:sr-only">
 										{playable ? $t('editor.saved') : $t('editor.saved_draft')}
 									</span>
+								{:else}
+									<!-- The autosave waits for a pause in typing, and in that gap the
+									     header said nothing, so "Saved" from before still read as true. -->
+									<CloudUpload class="size-4 shrink-0" />
+									<span class="truncate max-sm:sr-only">
+										{$t('editor.unsaved_title')}
+									</span>
 								{/if}
 							</p>
 						{/if}
@@ -641,15 +648,17 @@ SPDX-License-Identifier: MPL-2.0
 								onclick={play}
 							>
 								<Play />
-								<span class="max-sm:sr-only">{$t('words.play')}</span>
+								<span class="max-sm:sr-only">{$t('words.host_game')}</span>
 							</Button>
 							{#if !playable && !status_says_why}
 								<span id="play-hint" class="sr-only">{play_hint}</span>
 							{/if}
 						{/if}
 						<Button type="submit" disabled={saving} class="max-sm:size-9 max-sm:px-0">
-							<Save />
-							<span class="max-sm:sr-only">{$t('words.save')}</span>
+							<!-- "Done", not "Save" (17 Oct): edits already save as you go, and this
+							     button saves the rest and leaves for the quiz page. -->
+							<Check />
+							<span class="max-sm:sr-only">{$t('words.done')}</span>
 						</Button>
 					</header>
 					<!-- #35: why a save failed, when it is something to act on. The text is never

@@ -26,6 +26,7 @@ SPDX-License-Identifier: MPL-2.0
 	import AmbientBackground from '$lib/components/AmbientBackground.svelte';
 	import ClaimPrompt from '$lib/components/ClaimPrompt.svelte';
 	import CreateQuizDialog from '$lib/components/CreateQuizDialog.svelte';
+	import ShareNotice from '$lib/components/ShareNotice.svelte';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -89,6 +90,7 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 <CommandPalette />
 <CreateQuizDialog />
+<ShareNotice />
 <ClaimPrompt active={chrome && !(page.route.id ?? '').startsWith('/account')} />
 
 <style lang="scss">

@@ -64,7 +64,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Edit</title>
+	<title>Edit — frogQuiz</title>
 </svelte:head>
 {#await get_quiz()}
 	<div class="text-muted-foreground my-20 flex justify-center">

@@ -32,7 +32,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - {$t('index_page.meta.title')}</title>
+	<title>{$t('index_page.meta.title')} — frogQuiz</title>
 	<meta name="description" content={$t('index_page.meta.description')} />
 
 	<meta property="og:url" content={share_url} />

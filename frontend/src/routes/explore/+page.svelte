@@ -60,7 +60,7 @@ SPDX-License-Identifier: MPL-2.0
 {/snippet}
 
 <svelte:head>
-	<title>frogQuiz - {$t('words.discover')}</title>
+	<title>{$t('words.discover')} — frogQuiz</title>
 </svelte:head>
 
 <!-- fq-section, not fq-stage: fq-stage is min-height:100dvh plus justify-center, which

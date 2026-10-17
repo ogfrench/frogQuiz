@@ -346,7 +346,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:window onbeforeunload={confirmUnload} />
 <svelte:head>
-	<title>frogQuiz - Host</title>
+	<title>Host — frogQuiz</title>
 </svelte:head>
 <!-- min-h-dvh, not min-h-screen: 100vh counts browser chrome that is not there on a
      phone, pushing the bottom of the host shell below the fold. -->

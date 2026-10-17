@@ -34,7 +34,10 @@ export const DISABLED_ROUTES = [
 	'/edit/videos',
 	'/remote',
 	'/user',
-	'/account/settings/avatar'
+	'/account/settings/avatar',
+	// Only an OAuth provider's failed callback lands here, and sign-in is by email link
+	// with every provider off (V1 screens review, 17 Oct).
+	'/account/oauth-error'
 ];
 
 /** Hidden themselves, but with children that stay: matched exactly, not as a prefix. */
@@ -44,7 +47,7 @@ export const DISABLED_EXACT = ['/docs'];
  * Where a hidden route is sent. Nothing routes here, so SvelteKit's own router answers
  * 404 and the app's `+error.svelte` renders it -- with the navbar, the theme and a way
  * home. Guarding in `handle` instead threw before the router ran, which got the
- * built-in fallback page: bare "404 | Not found" and no way out, on the sixteen URLs we
+ * built-in fallback page: bare "404 | Not found" and no way out, on the URLs we
  * hide and nowhere else.
  */
 export const HIDDEN_PATH = '/__hidden';

@@ -104,7 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Import</title>
+	<title>Import — frogQuiz</title>
 </svelte:head>
 
 <div class="flex items-center justify-center h-full px-4">

@@ -63,7 +63,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Choose a new password</title>
+	<title>Choose a new password — frogQuiz</title>
 </svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">

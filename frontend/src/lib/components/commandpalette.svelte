@@ -57,7 +57,7 @@ This should be okay, right?
 		},
 		{
 			id: 6,
-			title: 'My Quizzes',
+			title: 'My quizzes',
 			description: 'Your quizzes, and the ones made on this browser',
 			command: 'quizzes',
 			action: () => window.location.assign('/my-quizzes')
@@ -65,8 +65,8 @@ This should be okay, right?
 		// id 7, Docs (/docs), is hidden for the MVP along with the page (MVP.md §4.2).
 		{
 			id: 8,
-			title: 'My Account',
-			description: 'Your account, sessions and Log out',
+			title: 'My account',
+			description: 'Your account, sessions and sign-out',
 			command: 'settings',
 			action: () => window.location.assign('/account/settings')
 		}
