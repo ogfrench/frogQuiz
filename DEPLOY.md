@@ -123,6 +123,37 @@ docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d   api work
 docker compose logs -f api
 ```
 
+### Staying inside Always Free (checked 17 Oct 2026)
+
+Production was 4 OCPU / 24 GB until 17 Oct, twice the allowance after Oracle halved it, and
+was resized to 2 / 12 in the console (Instance > Edit > shape). The console shows the limit
+next to the fields: "4 (2 max)", "24 (12 max)". Oracle's
+[Always Free page](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
+is the source; it has changed once without notice, so check it again before relying on it.
+
+| Limit, per tenancy | Allowance | Production |
+|---|---|---|
+| Ampere A1 | 2 OCPU and 12 GB in total, across every A1 instance | one instance, 2 / 12. A second A1 instance, or any resize up, goes over |
+| Boot and block volumes | 200 GB in total | one 45 GB boot volume |
+| Outbound data | 10 TB a month | far below |
+
+Over the A1 limit on a free account, Oracle disables every A1 instance and deletes it 30
+days later. On Pay As You Go it bills the excess instead, about $0.01 per OCPU-hour and
+$0.0015 per GB-hour.
+
+**Idle reclamation is the live risk.** Oracle may reclaim an Always Free instance that is
+idle for 7 days: CPU under 20% at the 95th percentile, network under 20%, and, for A1
+only, memory under 20%. frogQuiz idles at about 1 GB of 12 (9%) and near-zero CPU, so it
+meets all three. It has not happened since September, which is evidence, not a promise.
+If it happens, the uptime check fails within 30 minutes; start the instance again from the
+console (Compute > Instances > Start). The data is on Neon and in the nightly backup.
+Upgrading to Pay As You Go, with a $1 budget alert, is the usual way people avoid
+reclamation; Oracle's page does not say whether the rule applies to paid accounts.
+
+The app does not need more: the API runs one process (`MAX_WORKERS: "1"` in
+`docker-compose.yml`, which socket.io needs), so it uses one core whatever the shape.
+`deploy/load-test.py` measures how many players one game holds on it.
+
 ### Deploying to any Linux VM
 
 ```bash

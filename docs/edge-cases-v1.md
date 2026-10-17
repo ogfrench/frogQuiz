@@ -100,7 +100,7 @@ those are the rows marked **not yet**.
 | Netlify's server runtime rejects a module CI accepts | `netlify_ssr.yml` (added after the #69 outage) | passes |
 | A backup restores | `deploy/test_backup_restore.sh` in CI; one real restore on 16 Oct | passes |
 | The site or the API stops answering | `uptime.yml`, every 30 minutes | runs; it alerts by a failed run, not a page |
-| The Oracle VM is reclaimed | | **open**: the VM is over the free A1 limit, deletion about 31 Oct (HANDOVER, #73). François, in the Oracle console |
+| The Oracle VM is reclaimed | Over the A1 limit: fixed, resized to 2 / 12 on 17 Oct. Idle reclamation: Oracle's rule fits our idle load (`DEPLOY.md`, "Staying inside Always Free") | **open, low**: the uptime check would catch it within 30 minutes, and the fix is Start in the console. Pay As You Go would remove it (François) |
 | Meilisearch down | | **not yet**: search fails, and quiz saves write to the index (CLAUDE.md); untested |
 
 ## Deferred, with an owner
