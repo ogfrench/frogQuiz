@@ -318,7 +318,9 @@ SPDX-License-Identifier: MPL-2.0
 			</Button>
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger
-					bind:ref={more_buttons[quiz.id]}
+					bind:ref={
+						() => more_buttons[quiz.id] ?? null, (el) => (more_buttons[quiz.id] = el)
+					}
 					class={buttonVariants({ variant: 'ghost', size: 'icon' })}
 					aria-label={$t('my_quizzes.more_actions', { title: quiz.title })}
 					title={$t('my_quizzes.more_actions_short')}
