@@ -103,8 +103,8 @@ SPDX-License-Identifier: MPL-2.0
      opened it -- none of which the hand-rolled version did. Its own close button is
      turned off because its label is hardcoded English; ours is translated. -->
 <!-- Inline at the end of the editor (V1 menus review, 17 Oct): one press adds the type
-     you want, where the dialog took two for every question. The dialog stays for adding in
-     the middle, from the + between two cards. -->
+     you want, where the dialog took two for every question. Adding in the middle is the
+     open card's "Add question below" now; the dialog branch has no caller left. -->
 {#if inline}
 	<div class="flex flex-col gap-2">
 		<p class="text-muted-foreground text-sm font-medium">{$t('editor.add_a_question')}</p>

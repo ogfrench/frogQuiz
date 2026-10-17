@@ -1,13 +1,15 @@
 <!-- SPDX-FileCopyrightText: 2026 frogQuiz contributors
      SPDX-License-Identifier: MPL-2.0 -->
 <!-- What Copy link did, said once for the whole app. The live region is always in the
-     page, so a screen reader hears the text when it lands. -->
+     page, so a screen reader hears the text when it lands. aria-live rather than
+     role="status": an empty status on every page shadowed each page's own one. -->
 <script lang="ts">
 	import { share_notice } from '$lib/share_link.svelte';
 </script>
 
 <div
-	role="status"
+	aria-live="polite"
+	aria-atomic="true"
 	class="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-4"
 >
 	{#if share_notice.text}

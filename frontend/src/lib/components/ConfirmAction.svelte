@@ -60,7 +60,10 @@ SPDX-License-Identifier: MPL-2.0
 		onCloseAutoFocus={(e) => {
 			if (!children && returnFocus) {
 				e.preventDefault();
-				returnFocus.focus();
+				// A deleted row takes its button with it: then the page itself takes focus,
+				// rather than the browser dropping it on <body>.
+				if (returnFocus.isConnected) returnFocus.focus();
+				else document.getElementById('main-content')?.focus();
 			}
 		}}
 	>

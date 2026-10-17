@@ -229,14 +229,17 @@ test('switching to one correct answer keeps only the first one marked', async ({
 	request
 }) => {
 	await openQuiz(page, request);
-	await page.getByRole('radio', { name: 'Several correct' }).check();
+	// The label is what a person presses; the radio inside it is visually hidden.
+	await page.locator('label', { hasText: 'Several correct' }).click();
+	await expect(page.getByRole('radio', { name: 'Several correct' })).toBeChecked();
 	const markA = page.getByRole('button', { name: 'Mark as correct: A', exact: true });
 	const markB = page.getByRole('button', { name: 'Mark as correct: B', exact: true });
 	await markB.click();
 	await expect(markA).toHaveAttribute('aria-pressed', 'true');
 	await expect(markB).toHaveAttribute('aria-pressed', 'true');
 	// Back to one: it used to keep both marked, and save "one correct answer" with two.
-	await page.getByRole('radio', { name: 'One correct' }).check();
+	await page.locator('label', { hasText: 'One correct' }).click();
+	await expect(page.getByRole('radio', { name: 'One correct' })).toBeChecked();
 	await expect(markA).toHaveAttribute('aria-pressed', 'true');
 	await expect(markB).toHaveAttribute('aria-pressed', 'false');
 });

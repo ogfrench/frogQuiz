@@ -17,7 +17,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { apiLogin, registerUser, signedInContext } from './accounts';
-import { expectNoHorizontalOverflow, mc, PHONE, saveQuiz, titleBox } from './helpers';
+import { expectNoHorizontalOverflow, mc, openViewMenu, PHONE, saveQuiz, titleBox } from './helpers';
 
 const ROOT = path.join(import.meta.dirname, '..', '..');
 const FOLDER = path.join(ROOT, 'frogquiz', 'examples');
@@ -32,16 +32,8 @@ const COPY = 'Copy to my quizzes';
 // Your own quiz says "Make a copy" (17 Oct): "to my quizzes" read as doing nothing there.
 const MAKE_COPY = 'Make a copy';
 
-// Copy is in the view page's "More actions" menu since 17 Oct. Retried, because a click that
-// lands before hydration opens nothing.
-const viewMenu = async (page: Page) => {
-	const more = page.getByRole('main').getByRole('button', { name: /^More actions/ });
-	await expect(async () => {
-		if ((await page.getByRole('menu').count()) === 0) await more.click();
-		await expect(page.getByRole('menu')).toBeVisible({ timeout: 1000 });
-	}).toPass();
-	return page.getByRole('menu');
-};
+// Copy is in the view page's "More actions" menu since 17 Oct.
+const viewMenu = openViewMenu;
 
 test.beforeAll(() => {
 	test.skip(!process.env.E2E_PY, 'needs e2e/run.sh, which sets E2E_PY');
@@ -158,7 +150,7 @@ test('a signed-out visitor can use an example as an anonymous quiz', async ({ br
 	await expect(page.getByRole('button', { name: 'Host game' })).toBeEnabled();
 	await expect(page.getByRole('link', { name: 'Sign in to host' })).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Use this template' }).click();
+	await (await viewMenu(page)).getByRole('menuitem', { name: 'Use this template' }).click();
 	await expect(page).toHaveURL(/\/edit\?quiz_id=[0-9a-f-]{32,36}$/);
 	await expect(titleBox(page)).toContainText(`${title} (copy)`);
 	const quizId = new URL(page.url()).searchParams.get('quiz_id')!;

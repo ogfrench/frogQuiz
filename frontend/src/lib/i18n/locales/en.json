@@ -56,7 +56,7 @@
         "title": "Sign in",
         "blurb": "Enter your frog or Capgemini email and we'll send you a link and a code.",
         "email": "Work email",
-        "new_here": "New here? The same link sets up your account.",
+        "new_here": "First time here? Signing in creates your account.",
         "send": "Email me a link",
         "check_inbox": "Check your inbox",
         "sent_to": "We sent a link and a six-digit code to {{email}}. Open the link, or type the code here. Both work for 15 minutes.",
@@ -723,7 +723,7 @@
         "scratch": "Start from scratch",
         "scratch_hint": "Open the editor and add your first question.",
         "import": "Import from Excel",
-        "import_hint": "Fill in our template, upload it, check it, done.",
+        "import_hint": "Fill in the template and upload it. You check the questions before they're added.",
         "sign_in_to_import": "Sign in to import",
         "download_template": "Download template",
         "drop_title": "Drop your .xlsx here",
@@ -830,7 +830,7 @@
     "share": {
         "copy_link": "Copy link",
         "copied": "Link copied",
-        "copy_failed": "Couldn't copy. The link is {{url}}"
+        "copy_failed": "Couldn't copy. Here's the link: {{url}}"
     },
     "copy": {
         "button": "Copy to my quizzes",

@@ -83,6 +83,9 @@ SPDX-License-Identifier: MPL-2.0
 	// #43 cases 2 and 3: signed in, looking at a quiz made without an account, in a browser
 	// without its secret. No Claim can work here, so say where it can.
 	let secret_checked = $state(false);
+	// Both ownership checks have answered. Until then an owner's unlisted quiz would offer
+	// Practice first and then swap to Host game under the pointer.
+	let owner_checked = $state(false);
 	const made_in_other_browser = $derived(
 		secret_checked && logged_in && quiz.user_id === null && !owns_anonymously
 	);
@@ -101,6 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 				// Edit and Delete just stay hidden; nothing else on the page needs this.
 			}
 		}
+		owner_checked = true;
 	});
 
 	// Only the owner sees the answer key. Anyone else viewing a public quiz may well
@@ -141,7 +145,9 @@ SPDX-License-Identifier: MPL-2.0
 	// Unable to host somebody else's unlisted quiz: Practice is the one thing this visitor
 	// can do, so it is the strong button rather than a disabled one.
 	// Signed out on an unlisted quiz is the same: signing in only helps the person who made it.
-	const practice_first = $derived(!can_start && !is_draft && (logged_in || !quiz.public));
+	const practice_first = $derived(
+		owner_checked && !can_start && !is_draft && (logged_in || !quiz.public)
+	);
 
 	// An anonymous quiz is swept 30 days after creation. The holder of the secret
 	// is the only person who can act on that, so they are the one who has to be

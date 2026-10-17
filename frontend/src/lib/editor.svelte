@@ -127,6 +127,17 @@ SPDX-License-Identifier: MPL-2.0
 				?.scrollIntoView({ behavior: 'smooth', block })
 		);
 	};
+	// The pressed "Add question below" goes away with the selection, which dropped keyboard
+	// focus on <body>. Put it in the new question's text instead, once its editor has loaded.
+	const focusQuestionText = (index: number, tries = 30) => {
+		requestAnimationFrame(() => {
+			const field = document.querySelector<HTMLElement>(
+				`[data-question-index="${index}"] [contenteditable="true"]`
+			);
+			if (field) field.focus();
+			else if (tries > 0) focusQuestionText(index, tries - 1);
+		});
+	};
 	const moveQuestion = (from: number, to: number) => {
 		if (to < 0 || to >= data.questions.length || from === to) return;
 		data.questions = moveItem(data.questions, from, to);
@@ -150,6 +161,7 @@ SPDX-License-Identifier: MPL-2.0
 		];
 		selected_question = index + 1;
 		scrollToCard(index + 1);
+		focusQuestionText(index + 1);
 	};
 	// Adds a multiple-choice question right after the open card and opens it, the way
 	// Google Forms adds below the selected question (V1 menus review, 17 Oct). It used to

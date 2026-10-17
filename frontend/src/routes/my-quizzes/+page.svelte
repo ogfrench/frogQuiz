@@ -27,6 +27,7 @@ SPDX-License-Identifier: MPL-2.0
 		loadAnonQuiz
 	} from '$lib/anon_quiz';
 	import { copyQuiz } from '$lib/copy_quiz';
+	import { htmlToPlainText } from '$lib/sanitize';
 	import { copyQuizLink } from '$lib/share_link.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
@@ -83,13 +84,20 @@ SPDX-License-Identifier: MPL-2.0
 	let start_game: string | null = $state(null);
 	let download_id: string | null = $state(null);
 	// One delete confirmation for the page, opened from a row's menu; focus goes back to
-	// that row's menu button when it closes.
-	let delete_id: string | null = $state(null);
+	// that row's menu button when it closes. The quiz is kept apart from `delete_open`, so
+	// the fade-out still names it and the focus still has somewhere to go once it shuts.
+	let delete_open = $state(false);
+	let delete_target: { id: string; title: string; button: HTMLElement | null } | null =
+		$state(null);
 	let more_buttons: Record<string, HTMLElement | null> = $state({});
-	const delete_title = $derived(
-		[...account_quizzes, ...(browser_quizzes ?? [])].find((q) => q.id === delete_id)?.title ??
-			''
-	);
+	const askDelete = (quiz: Row) => {
+		delete_target = {
+			id: quiz.id,
+			title: htmlToPlainText(quiz.title),
+			button: more_buttons[quiz.id] ?? null
+		};
+		delete_open = true;
+	};
 
 	const question_count = (quiz: Row): number =>
 		Array.isArray(quiz.questions) ? quiz.questions.length : 0;
@@ -327,7 +335,9 @@ SPDX-License-Identifier: MPL-2.0
 						() => more_buttons[quiz.id] ?? null, (el) => (more_buttons[quiz.id] = el)
 					}
 					class={buttonVariants({ variant: 'ghost', size: 'icon' })}
-					aria-label={$t('my_quizzes.more_actions', { title: quiz.title })}
+					aria-label={$t('my_quizzes.more_actions', {
+						title: htmlToPlainText(quiz.title)
+					})}
 					title={$t('my_quizzes.more_actions_short')}
 				>
 					{#if copying === quiz.id}
@@ -362,7 +372,7 @@ SPDX-License-Identifier: MPL-2.0
 						{$t('words.download')}
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
-					<DropdownMenu.Item variant="destructive" onSelect={() => (delete_id = quiz.id)}>
+					<DropdownMenu.Item variant="destructive" onSelect={() => askDelete(quiz)}>
 						<Trash2 />
 						{$t('words.delete')}…
 					</DropdownMenu.Item>
@@ -567,17 +577,12 @@ SPDX-License-Identifier: MPL-2.0
 <StartGamePopup bind:quiz_id={start_game} />
 <DownloadQuiz bind:quiz_id={download_id} />
 <ConfirmAction
-	bind:open={
-		() => delete_id !== null,
-		(o) => {
-			if (!o) delete_id = null;
-		}
-	}
+	bind:open={delete_open}
 	permanent
-	returnFocus={delete_id ? more_buttons[delete_id] : null}
+	returnFocus={delete_target?.button ?? null}
 	title={$t('view_quiz_page.delete_confirm_title')}
-	body={$t('view_quiz_page.delete_confirm_named', { title: delete_title })}
+	body={$t('view_quiz_page.delete_confirm_named', { title: delete_target?.title ?? '' })}
 	confirmLabel={$t('words.delete')}
 	cancelLabel={$t('words.cancel')}
-	onconfirm={() => delete_id && delete_quiz(delete_id)}
+	onconfirm={() => delete_target && delete_quiz(delete_target.id)}
 />

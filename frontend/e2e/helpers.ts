@@ -263,6 +263,19 @@ export async function advanceToFinalResults(page: Page) {
 
 export const titleBox = (page: Page) => page.getByRole('textbox', { name: 'Quiz title' });
 export const questionBox = (page: Page) => page.getByRole('textbox', { name: 'Question text' });
+/**
+ * Opens the quiz page's "More actions" menu (17 Oct). Retried: its button is server-
+ * rendered, so a click that lands before hydration opens nothing.
+ */
+export async function openViewMenu(page: Page) {
+	const more = page.getByRole('main').getByRole('button', { name: /^More actions/ });
+	await expect(async () => {
+		if ((await page.getByRole('menu').count()) === 0) await more.click();
+		await expect(page.getByRole('menu')).toBeVisible({ timeout: 1000 });
+	}).toPass();
+	return page.getByRole('menu');
+}
+
 export const saveQuizButton = (page: Page) =>
 	page.getByRole('button', { name: 'Done', exact: true });
 export const cards = (page: Page) => page.locator('[data-question-card]');
