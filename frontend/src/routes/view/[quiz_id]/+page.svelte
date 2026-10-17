@@ -696,7 +696,7 @@ SPDX-License-Identifier: MPL-2.0
 								<Spinner my_20={false} />
 							{:then c}
 								<div class="max-w-full overflow-hidden">
-									<c.default question={quiz.questions[index_question]} />
+									<c.default question={quiz.questions[index_question]} compact />
 								</div>
 							{/await}
 						{:else}

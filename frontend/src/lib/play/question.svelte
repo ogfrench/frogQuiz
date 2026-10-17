@@ -11,6 +11,8 @@ SPDX-License-Identifier: MPL-2.0
 	import type { OrderQuizAnswer, Question, RangeQuizAnswer } from '$lib/quiz_types';
 	import { answerColor } from '$lib/play/answer_colors';
 	import Check from '@lucide/svelte/icons/check';
+	import ChevronUp from '@lucide/svelte/icons/chevron-up';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Clock from '@lucide/svelte/icons/clock';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import { socket } from '$lib/socket';
@@ -19,8 +21,8 @@ SPDX-License-Identifier: MPL-2.0
 	import AnswerShape from './kahoot_mode_assets/AnswerShape.svelte';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { flip } from 'svelte/animate';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { get_foreground_color } from '../helpers';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { sanitizeTitleHtml } from '$lib/sanitize';
@@ -142,15 +144,19 @@ SPDX-License-Identifier: MPL-2.0
 	let text_input = $state('');
 
 	let slider_value = $state([0]);
+	// The handle starts in the middle, on a whole number (0 to 5 started at 2.5). A
+	// player who moved it but did not press Submit has it sent when time runs out; one who
+	// never touched it sends nothing, since the middle can be the right answer (#93).
+	let slider_touched = $state(false);
 	if (question.type === QuizQuestionType.RANGE) {
 		const initial = question.answers as RangeQuizAnswer;
-		slider_value[0] = (initial.max - initial.min) / 2 + initial.min;
+		slider_value[0] = Math.round((initial.max - initial.min) / 2 + initial.min);
 	}
 	const set_answer_if_not_set_range = (time) => {
 		if (question.type !== QuizQuestionType.RANGE) {
 			return;
 		}
-		if (selected_answer === undefined && time === '0') {
+		if (selected_answer === undefined && time === '0' && slider_touched) {
 			selected_answer = `${slider_value[0]}`;
 			selectAnswer(selected_answer);
 		}
@@ -324,146 +330,180 @@ SPDX-License-Identifier: MPL-2.0
 				{/if}
 			</p>
 		{:else if question.type === QuizQuestionType.RANGE}
-			<span
-				class="fixed top-0 bg-red-500 h-8 transition-all"
-				style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
-			></span>
-			{#await import('svelte-range-slider-pips')}
-				<Spinner />
-			{:then c}
-				<div class:pointer-events-none={selected_answer !== undefined} class="mt-24">
-					<c.default
-						bind:values={slider_value}
-						bind:min={range.min}
-						bind:max={range.max}
-						id="pips-slider"
-						pips
-						float
-						all="label"
-					/>
-				</div>
-				<div class="flex justify-center">
-					<div class="w-1/2">
-						<BrownButton onclick={() => selectAnswer(`${slider_value[0]}`)}
-							>{$t('words.submit')}
-						</BrownButton>
-					</div>
-				</div>
-			{/await}
-		{:else if question.type === QuizQuestionType.TEXT}
-			<div>
-				<span
-					class="fixed top-0 bg-red-500 h-8 transition-all"
-					style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
-				></span>
-				<div class="flex justify-center mt-10">
-					<p class="text-black dark:text-white">Enter your answer</p>
-				</div>
-				<div class="flex justify-center m-2">
+			<!-- Slider (#93): the game's timer, the value in large type, a native range input
+			     (one stop per whole number, keyboard and screen reader for free) and Submit.
+			     It was a red bar across the top, a pips library drawing one label per step
+			     and an auto-submit of wherever the untouched handle sat. -->
+			<form
+				class="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-6 px-6 pb-8"
+				onsubmit={(e) => {
+					e.preventDefault();
+					if (!submitted) selectAnswer(`${slider_value[0]}`);
+				}}
+			>
+				<CircularTimer
+					text={timer_res}
+					progress={circular_progress}
+					color={in_last_seconds(timer_res) ? 'var(--destructive)' : 'var(--foreground)'}
+				/>
+				<output
+					for="slider-{question_index}"
+					class="text-6xl font-bold tracking-tight tabular-nums"
+					aria-live="polite">{slider_value[0].toLocaleString()}</output
+				>
+				<div class="flex w-full max-w-sm flex-col gap-2">
 					<input
-						type="text"
-						bind:value={text_input}
-						disabled={selected_answer !== undefined}
-						class="bg-gray-50 focus:ring text-gray-900 rounded-lg focus:ring-blue-500 block w-full p-2 dark:bg-gray-700 dark:text-white dark:focus:ring-blue-500 outline-hidden transition text-center disabled:opacity-50 disabled:cursor-not-allowed"
+						id="slider-{question_index}"
+						type="range"
+						min={range.min}
+						max={range.max}
+						step="1"
+						bind:value={slider_value[0]}
+						oninput={() => (slider_touched = true)}
+						disabled={submitted}
+						aria-label={$t('play_page.pick_a_number')}
+						class="accent-primary h-11 w-full cursor-pointer disabled:cursor-not-allowed"
 					/>
-				</div>
-
-				<div class="flex justify-center mt-2">
-					<div class="w-1/3">
-						<BrownButton
-							type="button"
-							disabled={!text_input || text_input.length === 0}
-							onclick={() => {
-								selectAnswer(text_input);
-							}}
+					<div class="text-muted-foreground flex justify-between text-sm tabular-nums">
+						<span>{range.min.toLocaleString()}</span><span
+							>{range.max.toLocaleString()}</span
 						>
-							{$t('words.submit')}
-						</BrownButton>
 					</div>
 				</div>
-			</div>
+				<Button
+					type="submit"
+					size="lg"
+					class="h-12 w-full max-w-sm text-base"
+					disabled={submitted}
+				>
+					{$t('words.submit')}
+				</Button>
+				<p role="status" class="flex h-8 items-center gap-2 text-base font-medium">
+					{#if submitted}
+						<Check class="size-5" aria-hidden="true" />
+						{$t('words.answer_locked_in')}
+					{/if}
+				</p>
+			</form>
+		{:else if question.type === QuizQuestionType.TEXT}
+			<!-- Type answer (#93): the same timer as the tiles, one field, Enter or Submit.
+			     It was a red bar across the top, a hardcoded English prompt and a field in
+			     gray-50 that disappeared in one theme. -->
+			<form
+				class="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-5 px-6 pb-8"
+				onsubmit={(e) => {
+					e.preventDefault();
+					if (text_input.trim() && !submitted) selectAnswer(text_input.trim());
+				}}
+			>
+				<CircularTimer
+					text={timer_res}
+					progress={circular_progress}
+					color={in_last_seconds(timer_res) ? 'var(--destructive)' : 'var(--foreground)'}
+				/>
+				<label class="flex w-full max-w-sm flex-col gap-2">
+					<span class="text-center text-lg font-semibold"
+						>{$t('play_page.type_your_answer')}</span
+					>
+					<Input
+						bind:value={text_input}
+						disabled={submitted}
+						maxlength={100}
+						autocomplete="off"
+						autocapitalize="off"
+						spellcheck={false}
+						class="h-12 text-center text-lg"
+					/>
+				</label>
+				<Button
+					type="submit"
+					size="lg"
+					class="h-12 w-full max-w-sm text-base"
+					disabled={submitted || !text_input.trim()}
+				>
+					{$t('words.submit')}
+				</Button>
+				<p role="status" class="flex h-8 items-center gap-2 text-base font-medium">
+					{#if submitted}
+						<Check class="size-5" aria-hidden="true" />
+						{$t('words.answer_locked_in')}
+					{/if}
+				</p>
+			</form>
 		{:else if question.type === QuizQuestionType.ORDER}
-			<!--			{#if solution === undefined}
-                            <Spinner />
-                        {:else}-->
-			<span
-				class="fixed top-0 bg-red-500 h-8 transition-all"
-				style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
-			></span>
-			<div class="flex min-h-0 w-full flex-1 flex-col gap-4 px-4 py-6 mt-10">
-				{#each answers as answer, i (answer.id)}
-					<div
-						class="w-full h-fit flex-row rounded-lg p-2 align-middle"
-						animate:flip={{ duration: 100 }}
-						style="background-color: {answer.color ?? '#b07156'}"
-					>
-						<button
-							onclick={() => {
-								question.answers = swapArrayElements(answers, i, i - 1);
-							}}
-							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
-							type="button"
-							aria-label="Move item up"
-							disabled={i === 0 || Boolean(selected_answer)}
+			<!-- Put in order (#93): the game's timer, the items as the game's own tiles, and a
+			     44 px up and down on each (the accessible path; WCAG 2.5.7 asks for one that
+			     needs no dragging). Each item keeps its colour and shape as it moves, so a
+			     player can follow it. It was a red bar, brown boxes and arrows only. -->
+			<form
+				class="flex min-h-0 w-full flex-1 flex-col items-center gap-4 px-4 pb-6"
+				onsubmit={(e) => {
+					e.preventDefault();
+					if (!submitted) select_complex_answer(answers);
+				}}
+			>
+				<CircularTimer
+					text={timer_res}
+					progress={circular_progress}
+					color={in_last_seconds(timer_res) ? 'var(--destructive)' : 'var(--foreground)'}
+				/>
+				<ol class="flex w-full max-w-sm flex-col gap-2">
+					{#each answers as answer, i (answer.id)}
+						{@const bg = answerColor(answer.id ?? i)}
+						{@const ink = get_foreground_color(bg)}
+						<li
+							animate:flip={{ duration: 150 }}
+							class="flex min-h-14 items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-3"
+							style="background-color: {bg}; color: {ink}"
 						>
-							<svg
-								class="w-8 h-8"
-								stroke-width="2"
-								viewBox="0 0 24 24"
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
-								color="currentColor"
+							<AnswerShape index={answer.id ?? i} class="size-5 shrink-0" />
+							<span class="min-w-0 flex-1 text-lg font-semibold wrap-anywhere"
+								>{answer.answer}</span
 							>
-								<path
-									d="M12 22a2 2 0 110-4 2 2 0 010 4zM12 15V2m0 0l3 3m-3-3L9 5"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</button>
-						<p class="w-full text-center p-2 text-2xl">{answer.answer}</p>
-
-						<button
-							onclick={() => {
-								question.answers = swapArrayElements(answers, i, i + 1);
-							}}
-							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
-							type="button"
-							aria-label="Move item down"
-							disabled={i === answers.length - 1 || Boolean(selected_answer)}
-						>
-							<svg
-								class="w-8 h-8"
-								stroke-width="2"
-								viewBox="0 0 24 24"
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
-								color="currentColor"
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								class="size-11 shrink-0 hover:bg-black/10"
+								style="color: {ink}"
+								disabled={submitted || i === 0}
+								aria-label={$t('play_page.move_up', { item: answer.answer })}
+								onclick={() =>
+									(question.answers = swapArrayElements(answers, i, i - 1))}
 							>
-								<path
-									d="M12 6a2 2 0 110-4 2 2 0 010 4zM12 9v13m0 0l3-3m-3 3l-3-3"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</button>
-					</div>
-				{/each}
-				<div class="w-full mt-2">
-					<BrownButton
-						type="button"
-						disabled={Boolean(selected_answer)}
-						onclick={() => {
-							select_complex_answer(answers);
-						}}>{$t('words.submit')}</BrownButton
-					>
-				</div>
-			</div>
-			<!--{/if}-->
+								<ChevronUp />
+							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								class="size-11 shrink-0 hover:bg-black/10"
+								style="color: {ink}"
+								disabled={submitted || i === answers.length - 1}
+								aria-label={$t('play_page.move_down', { item: answer.answer })}
+								onclick={() =>
+									(question.answers = swapArrayElements(answers, i, i + 1))}
+							>
+								<ChevronDown />
+							</Button>
+						</li>
+					{/each}
+				</ol>
+				<Button
+					type="submit"
+					size="lg"
+					class="h-12 w-full max-w-sm text-base"
+					disabled={submitted}
+				>
+					{$t('words.submit')}
+				</Button>
+				<p role="status" class="flex h-8 items-center gap-2 text-base font-medium">
+					{#if submitted}
+						<Check class="size-5" aria-hidden="true" />
+						{$t('words.answer_locked_in')}
+					{/if}
+				</p>
+			</form>
 		{:else if question.type === QuizQuestionType.CHECK}
 			{#await import('./questions/check.svelte')}
 				<Spinner />

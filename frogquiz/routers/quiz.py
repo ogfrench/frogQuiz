@@ -108,6 +108,20 @@ def _captcha_configured() -> bool:
     return True
 
 
+# A slider's answers are not a list, a slide's are not answers, and a Put in order
+# question's stored order is its answer key: shuffling it made "Randomize answers" score a
+# random order as right (#93).
+_KEEP_ORDER = {QuizQuestionType.RANGE, QuizQuestionType.SLIDE, QuizQuestionType.ORDER}
+
+
+def shuffle_answers(questions: list[dict]) -> None:
+    """The host's "Randomize answers": shuffle each question's options in place."""
+    for question in questions:
+        if question.get("type") in _KEEP_ORDER or not isinstance(question.get("answers"), list):
+            continue
+        random.shuffle(question["answers"])
+
+
 @router.get("/get/{quiz_id}")
 async def get_quiz_from_id(
     quiz_id: str,
@@ -214,12 +228,7 @@ async def start_quiz(
         game = await redis.get(f"game:{game_pin}")
 
     if randomize_answers:
-        for question in quiz.questions:
-            if question["type"] == QuizQuestionType.RANGE:
-                continue
-            if question["type"] == QuizQuestionType.SLIDE:
-                continue
-            random.shuffle(question["answers"])
+        shuffle_answers(quiz.questions)
 
     game = PlayGame(
         quiz_id=quiz_id,

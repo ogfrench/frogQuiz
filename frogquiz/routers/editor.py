@@ -92,6 +92,15 @@ async def _refuse_other_accounts_images(quiz_input: QuizInput, old_quiz: Quiz | 
             raise HTTPException(status_code=400, detail="An image in this quiz belongs to another account")
 
 
+_TEXT_ANSWER_TYPES = (
+    QuizQuestionType.ABCD,
+    QuizQuestionType.CHECK,
+    QuizQuestionType.VOTING,
+    QuizQuestionType.TEXT,
+    QuizQuestionType.ORDER,
+)
+
+
 @router.post("/start", response_model=InitEditorResponse)
 async def init_editor(
     request: Request,
@@ -214,10 +223,16 @@ async def _persist(
         quiz_input.background_color = bleach.clean(quiz_input.background_color, tags=[], strip=True)
 
     for i, question in enumerate(quiz_input.questions):
-        # CHECK was missing here, so its answers were stored exactly as sent.
-        if question.type in (QuizQuestionType.ABCD, QuizQuestionType.CHECK, QuizQuestionType.VOTING):
+        if question.body:
+            quiz_input.questions[i].body = bleach.clean(question.body, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True)
+        # CHECK was missing here, so its answers were stored exactly as sent, and so were
+        # Type answer's spellings and Put in order's items (#93).
+        if question.type in _TEXT_ANSWER_TYPES:
             for i2, answer in enumerate(question.answers):
-                if answer.color is not None:
+                # Order's colour is not read since the palette went by position.
+                if question.type == QuizQuestionType.ORDER:
+                    quiz_input.questions[i].answers[i2].color = None
+                elif getattr(answer, "color", None) is not None:
                     quiz_input.questions[i].answers[i2].color = bleach.clean(answer.color, tags=[], strip=True)
                 # A blank answer stays "" (#92). It used to be stored as None, which the
                 # answer models refuse on read, so the quiz page answered 500.

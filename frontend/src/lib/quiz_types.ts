@@ -65,6 +65,8 @@ export interface Question {
 	image?: string;
 	answers: Answers;
 	hide_results?: boolean;
+	/** An Info slide's text, under its title. Old canvas slides have none. */
+	body?: string;
 }
 
 export type Answers =
@@ -112,3 +114,8 @@ export interface PrivateImageData {
 	quizzes: { id: string }[];
 	quiztivities: { id: string }[];
 }
+
+/** An old slide drawn on the canvas: its drawing is a non-empty string in `answers`. A
+ * plain slide (#93) has an empty one and keeps its text in `body`. */
+export const isDrawnSlide = (q: { type?: QuizQuestionType; answers?: unknown }): boolean =>
+	q.type === QuizQuestionType.SLIDE && typeof q.answers === 'string' && q.answers !== '';

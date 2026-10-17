@@ -31,7 +31,9 @@ from datetime import datetime
 
 from frogquiz.socket_server.helpers import (
     assign_avatar,
+    answer_is_valid,
     check_answer,
+    correct_answer_texts,
     check_captcha,
     get_avatars,
     has_already_answered,
@@ -135,7 +137,14 @@ def question_for_players(game_data: PlayGame, index: int) -> dict:
             temp_return["answers"][i] = VotingQuizAnswer(**temp_return["answers"][i])
     temp_return["type"] = question_type
     if question_type == QuizQuestionType.ORDER:
-        random.shuffle(temp_return["answers"])
+        items = temp_return["answers"]
+        key = [a["answer"] for a in items]
+        random.shuffle(items)
+        # A shuffle can land on the right order -- with two items, half the time -- which
+        # hands every phone the answer. Turned by one place instead: with distinct items
+        # (the draft rule), that is never the right order.
+        if [a["answer"] for a in items] == key:
+            items.append(items.pop(0))
     if question_type == QuizQuestionType.TEXT:
         # A text question's answers are the ones it accepts: the solution itself. They
         # went to every phone (security audit, 11 Oct), and the phone never uses them --
@@ -221,6 +230,9 @@ async def rejoin_game(sid: str, data: dict):
 async def send_open_question(sid: str, game_data: PlayGame, username: str) -> None:
     """Send a player who arrives mid-question (a reload, or a late join) the question that is up."""
     index = game_data.current_question
+    if game_data.started and index >= 0 and game_data.questions[index].type == QuizQuestionType.SLIDE:
+        await sio.emit("slide", {"question_index": index}, room=sid)
+        return
     if (
         game_data.started
         and game_data.question_show
@@ -463,17 +475,9 @@ async def get_question_results(sid: str, data: dict):
     except (ValueError, TypeError):
         index = None
     question = game.questions[index] if index is not None and index == game.current_question else None
-    scored = (QuizQuestionType.ABCD, QuizQuestionType.CHECK)
-    if question is not None and (question.type or QuizQuestionType.ABCD) in scored:
-        await sio.emit(
-            "correct_answers",
-            {
-                "question_index": index,
-                # A right answer left blank has nothing to show.
-                "answers": [a.answer for a in question.answers if a.right and a.answer.strip()],
-            },
-            room=game_pin,
-        )
+    shown = correct_answer_texts(question) if question is not None else None
+    if shown is not None:
+        await sio.emit("correct_answers", {"question_index": index, "answers": shown}, room=game_pin)
     await sio.emit("question_results", answer_data_list.model_dump(), room=game_pin)
 
 
@@ -515,6 +519,10 @@ async def set_question_number(sid: str, data: str):
     if game_data is None:
         return
     if game_data.questions[index].type == QuizQuestionType.SLIDE:
+        # Phones got nothing at a slide and kept the last screen, a result card asking to be
+        # read while the room looked up (#93). They are told it is a slide, and no more;
+        # before the host, so a next press cannot reach them ahead of it.
+        await sio.emit("slide", {"question_index": index}, room=game_pin, skip_sid=sid)
         await sio.emit("set_question_number", {"question_index": index}, room=sid)
         return
     await sio.emit(
@@ -563,6 +571,16 @@ async def submit_answer(sid: str, data: dict):
     # added all the same: a correct answer 2 s late scored -988.
     if elapsed > question_seconds * 1000 + ANSWER_GRACE_MS:
         await sio.emit("question_not_active", room=sid)
+        return
+
+    question = game_data.questions[question_index]
+    # Nothing is answered on a slide; anything else must be an answer this question could
+    # have been given (answer_is_valid). Refused before it is recorded, as if never sent.
+    if question.type == QuizQuestionType.SLIDE:
+        await sio.emit("question_not_active", room=sid)
+        return
+    if not answer_is_valid(question, data):
+        await sio.emit("error", room=sid)
         return
 
     answer_right, answer = check_answer(game_data, data)

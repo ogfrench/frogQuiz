@@ -10,10 +10,12 @@ SPDX-License-Identifier: MPL-2.0
 	import { socket } from '$lib/socket';
 	import JoinGame from '$lib/play/join.svelte';
 	import type { Question as QuestionType } from '$lib/quiz_types';
+	import { QuizQuestionType } from '$lib/quiz_types';
 	import ShowTitle from '$lib/play/title.svelte';
 	import Question from '$lib/play/question.svelte';
 	import ShowEndScreen from '$lib/play/admin/final_results.svelte';
 	import KahootResults from '$lib/play/results_kahoot.svelte';
+	import LookUp from '$lib/play/look_up.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import Cookies from 'js-cookie';
 	import { Button } from '$lib/components/ui/button';
@@ -249,6 +251,18 @@ SPDX-License-Identifier: MPL-2.0
 		answer_results = undefined;
 	});
 
+	// An Info slide is up on the projector (#93): nothing to answer here.
+	socket.on('slide', (data) => {
+		// A slide for a question already passed (a late event) must not cover the live one.
+		if (question_index !== '' && Number(data.question_index) < Number(question_index)) return;
+		solution = undefined;
+		correct_answers = undefined;
+		restart();
+		question = { type: QuizQuestionType.SLIDE } as QuestionType;
+		question_index = data.question_index;
+		answer_results = undefined;
+	});
+
 	socket.on('start_game', () => {
 		gameMeta.started = true;
 	});
@@ -386,6 +400,8 @@ SPDX-License-Identifier: MPL-2.0
 				cover_image={gameData.cover_image}
 				{username}
 			/>
+		{:else if gameMeta.started && question?.type === QuizQuestionType.SLIDE && answer_results === undefined}
+			<LookUp {username} />
 		{:else if gameMeta.started && gameData !== undefined && question_index !== '' && answer_results === undefined}
 			{#key unique}
 				<!-- This wrapper forced black text on the whole question screen, which made the
@@ -418,6 +434,7 @@ SPDX-License-Identifier: MPL-2.0
 							question_results={answer_results}
 							bind:scores
 							correct_answers={game_mode === 'normal' ? correct_answers : undefined}
+							poll={question?.type === QuizQuestionType.VOTING}
 						/>
 					{/key}
 				</div>

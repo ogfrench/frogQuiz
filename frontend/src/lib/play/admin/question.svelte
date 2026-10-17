@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { in_last_seconds } from '$lib/play/last_seconds';
 	import { QuizQuestionType } from '$lib/quiz_types';
-	import type { QuizData } from '$lib/quiz_types';
+	import type { QuizData, RangeQuizAnswer } from '$lib/quiz_types';
 	import { get_foreground_color } from '$lib/helpers.js';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
@@ -143,22 +143,23 @@ SPDX-License-Identifier: MPL-2.0
 			{/each}
 		</div>
 	{:else if quiz_data.questions[selected_question].type === QuizQuestionType.TEXT}
-		{#if timer_res === '0'}
-			<div class="grid grid-cols-2 gap-2 w-full p-4">
-				{#each answers as answer}
-					<div class="rounded-2xl h-fit flex border border-neutral-200 bg-white">
-						<span
-							class="fq-answer text-center px-2 py-4 w-full text-black wrap-anywhere"
-							>{answer.answer}</span
-						>
-						<span class="pl-4 w-10"></span>
-					</div>
-				{/each}
-			</div>
-		{:else}
-			<div class="flex justify-center">
-				<p class="fq-meta">{$t('admin_page.enter_answer_into_field')}</p>
-			</div>
-		{/if}
+		<!-- The accepted answers are not listed: they are the solution, and they went up
+		     the moment time ran out, before the results (#93). -->
+		<p class="fq-answer text-muted-foreground text-center">
+			{$t('admin_page.players_type_answer')}
+		</p>
+	{:else if quiz_data.questions[selected_question].type === QuizQuestionType.RANGE}
+		<!-- The scale only, never the right range (#93): there was no branch, so a slider
+		     question showed the title over nothing. -->
+		<p class="fq-answer text-muted-foreground text-center tabular-nums">
+			{$t('admin_page.players_pick_number', {
+				min: (
+					quiz_data.questions[selected_question].answers as RangeQuizAnswer
+				).min.toLocaleString(),
+				max: (
+					quiz_data.questions[selected_question].answers as RangeQuizAnswer
+				).max.toLocaleString()
+			})}
+		</p>
 	{/if}
 </div>

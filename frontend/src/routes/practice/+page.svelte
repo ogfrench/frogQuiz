@@ -17,11 +17,23 @@ SPDX-License-Identifier: MPL-2.0
 	import { sanitizeTitleHtml } from '$lib/sanitize';
 	import { get_foreground_color } from '$lib/helpers.ts';
 	import { answerColor } from '$lib/play/answer_colors';
-	import { QuizQuestionType, type QuizData, type Question } from '$lib/quiz_types';
-	import { isCorrect, isPracticable, isScored } from '$lib/practice/score';
+	import {
+		QuizQuestionType,
+		type QuizData,
+		type Question,
+		type RangeQuizAnswer
+	} from '$lib/quiz_types';
+	import {
+		isCorrect,
+		isPracticable,
+		isRangeCorrect,
+		isScored,
+		isTextCorrect
+	} from '$lib/practice/score';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import * as Card from '$lib/components/ui/card';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Check from '@lucide/svelte/icons/check';
@@ -66,13 +78,27 @@ SPDX-License-Identifier: MPL-2.0
 			color?: string;
 		}[]
 	);
-	const got_it_right = $derived(
-		question && revealed && isScored(question) ? isCorrect(question, picked) : null
-	);
+	const is_text = $derived(question?.type === QuizQuestionType.TEXT);
+	const is_range = $derived(question?.type === QuizQuestionType.RANGE);
+	let typed = $state('');
+	let slid = $state(0);
+	const right_now = () =>
+		question && is_text
+			? isTextCorrect(question, typed)
+			: question && is_range
+				? isRangeCorrect(question, slid)
+				: isCorrect(question!, picked);
+	const got_it_right = $derived(question && revealed && isScored(question) ? right_now() : null);
 
 	const load_question = (i: number) => {
 		index = i;
 		revealed = false;
+		typed = '';
+		const q = questions[i];
+		if (q?.type === QuizQuestionType.RANGE) {
+			const r = q.answers as RangeQuizAnswer;
+			slid = Math.round((r.max - r.min) / 2 + r.min);
+		}
 		picked = new Array(tiles.length).fill(false);
 	};
 
@@ -88,7 +114,7 @@ SPDX-License-Identifier: MPL-2.0
 		revealed = true;
 		if (isScored(question)) {
 			scored_count += 1;
-			if (isCorrect(question, picked)) score += 1;
+			if (right_now()) score += 1;
 		}
 	};
 
@@ -192,10 +218,98 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 				{/if}
 
-				{#if !isPracticable(question)}
+				{#if question.type === QuizQuestionType.SLIDE && question.answers === ''}
+					<!-- A plain slide (#93): its title and image are above; its text, then Next. -->
+					{#if question.body}
+						<p
+							class="text-muted-foreground text-center whitespace-pre-line wrap-anywhere"
+						>
+							{question.body}
+						</p>
+					{/if}
+				{:else if !isPracticable(question)}
 					<p class="text-muted-foreground text-center">
 						{$t('practice_page.unsupported')}
 					</p>
+				{:else if is_range}
+					{@const r = question.answers as RangeQuizAnswer}
+					<!-- Slider (#93), marked as the game marks it. -->
+					<form
+						class="flex w-full flex-col items-center gap-3"
+						onsubmit={(e) => {
+							e.preventDefault();
+							reveal();
+						}}
+					>
+						<output class="text-5xl font-bold tabular-nums"
+							>{slid.toLocaleString()}</output
+						>
+						<input
+							type="range"
+							min={r.min}
+							max={r.max}
+							step="1"
+							bind:value={slid}
+							disabled={revealed}
+							aria-label={$t('play_page.pick_a_number')}
+							class="accent-primary h-11 w-full"
+						/>
+						<div
+							class="text-muted-foreground flex w-full justify-between text-sm tabular-nums"
+						>
+							<span>{r.min.toLocaleString()}</span><span
+								>{r.max.toLocaleString()}</span
+							>
+						</div>
+						{#if !revealed}
+							<Button type="submit" size="lg" class="w-full"
+								>{$t('words.submit')}</Button
+							>
+						{:else}
+							<p class="text-muted-foreground text-center text-sm">
+								{$t('play_page.correct_answer', { count: 1 })}:
+								<span class="text-foreground font-semibold tabular-nums"
+									>{r.min_correct === r.max_correct
+										? r.min_correct.toLocaleString()
+										: `${r.min_correct.toLocaleString()}\u2013${r.max_correct.toLocaleString()}`}</span
+								>
+							</p>
+						{/if}
+					</form>
+				{:else if is_text}
+					<!-- Type answer (#93): typed, then marked the way the game marks it. -->
+					<form
+						class="flex w-full flex-col gap-3"
+						onsubmit={(e) => {
+							e.preventDefault();
+							if (typed.trim()) reveal();
+						}}
+					>
+						<Input
+							bind:value={typed}
+							disabled={revealed}
+							maxlength={100}
+							autocomplete="off"
+							aria-label={$t('play_page.type_your_answer')}
+							placeholder={$t('play_page.type_your_answer')}
+							class="h-12 text-center text-lg"
+						/>
+						{#if !revealed}
+							<Button type="submit" size="lg" disabled={!typed.trim()}
+								>{$t('words.submit')}</Button
+							>
+						{:else}
+							<p class="text-muted-foreground text-center text-sm">
+								{$t('play_page.correct_answer', { count: 1 })}:
+								<span class="text-foreground font-semibold"
+									>{(question.answers as { answer: string }[])
+										.map((a) => a.answer)
+										.filter((a) => a.trim())
+										.join(', ')}</span
+								>
+							</p>
+						{/if}
+					</form>
 				{:else}
 					{#if is_check && !revealed}
 						<p class="text-muted-foreground text-center text-sm">

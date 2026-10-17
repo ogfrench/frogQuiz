@@ -6,6 +6,7 @@
 // skipcq: JS-C1003
 import * as yup from 'yup';
 import { htmlToPlainText } from './sanitize';
+import { QuizQuestionType } from './quiz_types';
 
 // The title is HTML (bold/italic/etc. from its rich-text editor), so its length has
 // to be measured on the visible text, not the markup -- otherwise the budget gets
@@ -21,6 +22,8 @@ export const DESCRIPTION_MAX_LENGTH = 500;
 // and MAX_ANSWER_LENGTH in frogquiz/db/models.py -- keep the four numbers in step.
 export const QUESTION_MAX_LENGTH = 250;
 export const ANSWER_MAX_LENGTH = 100;
+// An Info slide's text, as the server caps it (MAX_SLIDE_BODY_LENGTH, models.py).
+export const SLIDE_BODY_MAX_LENGTH = 500;
 // Mirror frogquiz/db/models.py. MAX_ANSWERS_PER_QUESTION is a hard ceiling (scoring
 // concatenates one-digit option indices) and MAX_QUESTION_SECONDS is the server's timer
 // bound; both must match the server or the editor lets through a quiz that 422s on save.
@@ -76,6 +79,37 @@ export const TextQuestionSchema = yup
 	.min(1, 'You need at least 1 answer')
 	.max(MAX_ANSWERS_PER_QUESTION, `You can't have more than ${MAX_ANSWERS_PER_QUESTION} answers`);
 
+// What the server accepts for a poll's options or an order's items, and a Type answer's
+// spellings: at most ten, each within the answer length. Blank is allowed while drafting.
+const OptionsSchema = yup
+	.array()
+	.of(
+		yup.object({
+			answer: yup
+				.string()
+				.max(
+					ANSWER_MAX_LENGTH,
+					`An answer has to be shorter than ${ANSWER_MAX_LENGTH} characters`
+				)
+		})
+	)
+	.max(MAX_ANSWERS_PER_QUESTION, `You can't have more than ${MAX_ANSWERS_PER_QUESTION} answers`);
+
+const SpellingsSchema = yup
+	.array()
+	.of(
+		yup.object({
+			case_sensitive: yup.boolean(),
+			answer: yup
+				.string()
+				.max(
+					ANSWER_MAX_LENGTH,
+					`An answer has to be shorter than ${ANSWER_MAX_LENGTH} characters`
+				)
+		})
+	)
+	.max(MAX_ANSWERS_PER_QUESTION, `You can't have more than ${MAX_ANSWERS_PER_QUESTION} answers`);
+
 export const dataSchema = yup.object({
 	public: yup.boolean().required(),
 	type: yup.string(),
@@ -110,12 +144,19 @@ export const dataSchema = yup.object({
 				// which is six non-blank characters to yup and blank on the projector.
 				question: yup
 					.string()
-					.required('A question-title is required')
-					.test(
-						'not-blank',
-						'A question-title is required',
-						(value) => htmlToPlainText(value ?? '').length > 0
-					)
+					.defined('A question-title is required')
+					.test('not-blank', 'A question-title is required', function (value) {
+						// An old drawn slide was made with an empty title; its text is in the
+						// drawing (question_complete.ts).
+						const q = this.parent;
+						if (
+							q?.type === QuizQuestionType.SLIDE &&
+							typeof q.answers === 'string' &&
+							q.answers
+						)
+							return true;
+						return htmlToPlainText(value ?? '').length > 0;
+					})
 					.test(
 						'max-length',
 						`The question-title has to be shorter than ${QUESTION_MAX_LENGTH} characters`,
@@ -130,21 +171,24 @@ export const dataSchema = yup.object({
 						`The time can be at most ${MAX_QUESTION_SECONDS} seconds`
 					),
 				image: yup.string().nullable().lowercase(),
-				answers: yup.lazy((v) => {
-					if (Array.isArray(v)) {
-						if (typeof v[0].right === 'boolean') {
+				// By the question's type, not by the answers' shape: the shape test read
+				// v[0] and threw on an empty list, which blocked Start with an empty
+				// message. What makes a question finished is isQuestionComplete
+				// (question_complete.ts); this keeps only the limits the server enforces on
+				// save, so the two cannot disagree about a draft.
+				answers: yup.lazy((_, { parent }) => {
+					switch (parent?.type) {
+						case QuizQuestionType.VOTING:
+						case QuizQuestionType.ORDER:
+							return OptionsSchema;
+						case QuizQuestionType.TEXT:
+							return SpellingsSchema;
+						case QuizQuestionType.RANGE:
+							return RangeQuestionSchema;
+						case QuizQuestionType.SLIDE:
+							return yup.string().defined();
+						default:
 							return ABCDQuestionSchema;
-						} else if (typeof v[0].case_sensitive === 'boolean') {
-							return TextQuestionSchema;
-						} else if (v[0].id !== undefined) {
-							return VotingQuestionSchema;
-						} else if (v[0].answer !== undefined) {
-							return VotingQuestionSchema;
-						}
-					} else if (typeof v === 'string' || v instanceof String) {
-						return yup.string().required("The slide mustn't be empty").nullable();
-					} else {
-						return RangeQuestionSchema;
 					}
 				})
 			})

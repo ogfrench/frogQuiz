@@ -4,39 +4,108 @@
 
 import { ABCDQuestionSchema, dataSchema, fieldIsValid } from '$lib/yupSchemas';
 import { QuizQuestionType } from '$lib/quiz_types';
+import { htmlToPlainText } from '$lib/sanitize';
 
-// The two types the MVP offers (D2), and old questions saved before `type` existed.
-const CHECKED_TYPES = [undefined, null, QuizQuestionType.ABCD, QuizQuestionType.CHECK];
+/** The most items a Put in order question takes: six fit a phone with a thumb each. */
+export const MAX_ORDER_ITEMS = 6;
+/** The most options a poll takes; the same ceiling as the server's answers per question. */
+export const MAX_POLL_OPTIONS = 10;
+/** The most accepted spellings a Type answer question takes. */
+export const MAX_TEXT_SPELLINGS = 10;
+/** The widest slider: pips stay readable on a phone, and a guess stays a guess. */
+export const MAX_SLIDER_SPAN = 10_000;
+
+const visible = (value: unknown): string =>
+	typeof value === 'string' ? htmlToPlainText(value) : '';
+
+// Two options that differ only in case or spacing are the same option to a player.
+const distinct = (texts: string[]): boolean =>
+	new Set(texts.map((t) => t.toLowerCase())).size === texts.length;
+
+const texts = (answers: unknown): string[] | null =>
+	Array.isArray(answers) ? answers.map((a) => visible(a?.answer)) : null;
+
+const isInt = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n);
 
 /**
- * Whether a question is actually runnable: it has a title, at least two answers, every
- * answer has text, and one of them is marked correct.
+ * Whether a question is actually runnable, by type. Every type needs a title; then:
+ * - Multiple choice and Check choice: 2 or more answers, all with text, one marked right.
+ * - Poll: 2 to 10 options, all with text, no two the same.
+ * - Type answer: 1 to 10 accepted spellings, all with text.
+ * - Slider: whole numbers, min below max, the right range inside them, a span of at most
+ *   10,000.
+ * - Put in order: 2 to 6 items, all with text, no two the same.
+ * - Info slide: the title is all it needs; an old drawn slide, its drawing.
  *
  * The rail's per-question dot and the header's "n questions need attention" count are both
- * this one function. They started as two hand-written copies of the same rule and already
- * disagreed -- one asked yup, the other trimmed the string -- so a title made only of
- * spaces counted as done in one place and unfinished in the other.
- *
- * It is also the draft rule (MVP.md D14): the server refuses to start a quiz with an
- * unfinished question, using `frogquiz/helpers/completeness.py`. That file and this one
- * must say the same thing.
+ * this one function. It is also the draft rule (MVP.md D14): the server refuses to start a
+ * quiz with an unfinished question, using `frogquiz/helpers/completeness.py`. The two must
+ * say the same thing, so both test suites read one list of cases,
+ * `completeness_cases.json`.
  */
 export const isQuestionComplete = (question): boolean => {
+	const answers = question?.answers;
+	const type = question?.type || QuizQuestionType.ABCD;
+	// An old drawn slide keeps its text in the drawing, and was made with an empty title.
+	if (type === QuizQuestionType.SLIDE && typeof answers === 'string' && answers !== '') {
+		return true;
+	}
 	if (!fieldIsValid(dataSchema, 'questions[].question', question?.question)) {
 		return false;
 	}
-	// The cut question types can no longer be created, but old quizzes still open, and
-	// their rules are not these ones -- a TEXT question has one answer and no `right`. This
-	// used to check only for a non-array, which caught RANGE and SLIDE and flagged every
-	// TEXT, VOTING and ORDER question as unfinished.
-	if (!CHECKED_TYPES.includes(question.type) || !Array.isArray(question.answers)) {
-		return true;
+	switch (type) {
+		case QuizQuestionType.ABCD:
+		case QuizQuestionType.CHECK:
+			return (
+				Array.isArray(answers) &&
+				answers.length >= 2 &&
+				answers.some((a) => a?.right) &&
+				answers.every(
+					(a) =>
+						visible(a?.answer) !== '' &&
+						fieldIsValid(ABCDQuestionSchema, 'answer', a?.answer)
+				)
+			);
+		case QuizQuestionType.VOTING: {
+			const t = texts(answers);
+			return (
+				t !== null &&
+				t.length >= 2 &&
+				t.length <= MAX_POLL_OPTIONS &&
+				t.every(Boolean) &&
+				distinct(t)
+			);
+		}
+		case QuizQuestionType.TEXT: {
+			const t = texts(answers);
+			return (
+				t !== null && t.length >= 1 && t.length <= MAX_TEXT_SPELLINGS && t.every(Boolean)
+			);
+		}
+		case QuizQuestionType.ORDER: {
+			const t = texts(answers);
+			return (
+				t !== null &&
+				t.length >= 2 &&
+				t.length <= MAX_ORDER_ITEMS &&
+				t.every(Boolean) &&
+				distinct(t)
+			);
+		}
+		case QuizQuestionType.RANGE: {
+			const { min, max, min_correct, max_correct } = answers ?? {};
+			return (
+				[min, max, min_correct, max_correct].every(isInt) &&
+				min < max &&
+				max - min <= MAX_SLIDER_SPAN &&
+				min <= min_correct &&
+				min_correct <= max_correct &&
+				max_correct <= max
+			);
+		}
+		case QuizQuestionType.SLIDE:
+			return true;
+		default:
+			return false;
 	}
-	if (question.answers.length < 2) {
-		return false;
-	}
-	if (!question.answers.some((a) => a.right)) {
-		return false;
-	}
-	return question.answers.every((a) => fieldIsValid(ABCDQuestionSchema, 'answer', a.answer));
 };

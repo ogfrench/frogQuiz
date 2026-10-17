@@ -14,6 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Check from '@lucide/svelte/icons/check';
 	import X from '@lucide/svelte/icons/x';
 	import Minus from '@lucide/svelte/icons/minus';
+	import Vote from '@lucide/svelte/icons/vote';
 
 	const { t } = getLocalization();
 
@@ -38,9 +39,17 @@ SPDX-License-Identifier: MPL-2.0
 		// Given only when the phones show the answers' text (game_mode 'normal'): with the
 		// answers on the projector alone, the text would be new on the phone.
 		correct_answers?: string[];
+		/** A poll: a vote is counted, never right or wrong (#93). */
+		poll?: boolean;
 	}
 
-	let { scores = $bindable(), question_results, username, correct_answers }: Props = $props();
+	let {
+		scores = $bindable(),
+		question_results,
+		username,
+		correct_answers,
+		poll = false
+	}: Props = $props();
 	let score_by_username = $state({});
 
 	if (JSON.stringify(scores) === '{}') {
@@ -68,8 +77,9 @@ SPDX-License-Identifier: MPL-2.0
 
 	// One sound for the result, as it appears: right, wrong, or nothing for a player who did
 	// not answer (they already know).
+	// A poll has no wrong answer, so no wrong sound: a vote used to be told "Not this time".
 	$effect(() => {
-		if (answered) sfx(right ? 'correct' : 'incorrect');
+		if (answered && !poll) sfx(right ? 'correct' : 'incorrect');
 	});
 	// Equal scores share a place, as on the host's scoreboard (1, 1, 3).
 	const place = $derived.by(() => {
@@ -103,12 +113,16 @@ SPDX-License-Identifier: MPL-2.0
 	<div
 		in:scale|global={{ duration: dur(DUR.surface), start: 0.6, easing: backOut }}
 		class="flex size-14 items-center justify-center rounded-full {answered
-			? right
-				? 'bg-emerald-100 text-emerald-700'
-				: 'bg-rose-100 text-rose-700'
+			? poll
+				? 'bg-neutral-100 text-neutral-700'
+				: right
+					? 'bg-emerald-100 text-emerald-700'
+					: 'bg-rose-100 text-rose-700'
 			: 'bg-neutral-100 text-neutral-500'}"
 	>
-		{#if !answered}
+		{#if poll && answered}
+			<Vote class="size-7" aria-hidden="true" />
+		{:else if !answered}
 			<Minus class="size-7" aria-hidden="true" />
 		{:else if right}
 			<Check class="size-7" aria-hidden="true" />
@@ -119,12 +133,16 @@ SPDX-License-Identifier: MPL-2.0
 
 	<p
 		class="text-2xl font-bold {answered
-			? right
-				? 'text-emerald-700'
-				: 'text-rose-700'
+			? poll
+				? 'text-neutral-900'
+				: right
+					? 'text-emerald-700'
+					: 'text-rose-700'
 			: 'text-neutral-500'}"
 	>
-		{#if !answered}
+		{#if poll}
+			{answered ? $t('play_page.vote_counted') : $t('play_page.no_vote')}
+		{:else if !answered}
 			{$t('play_page.answer_none')}
 		{:else if right}
 			{$t('play_page.answer_correct')}
@@ -156,12 +174,15 @@ SPDX-License-Identifier: MPL-2.0
 		</div>
 	{/if}
 
-	<p class="text-4xl font-bold tabular-nums">
-		+{score_by_username[username] ?? '0'}
-	</p>
+	<!-- A poll scores nothing for anyone, so "+0" would only read as a penalty. -->
+	{#if !poll}
+		<p class="text-4xl font-bold tabular-nums">
+			+{score_by_username[username] ?? '0'}
+		</p>
+	{/if}
 
 	<div class="flex flex-col gap-1">
-		{#if place > 0 && players > 1}
+		{#if place > 0 && players > 1 && !poll}
 			<p class="text-base font-semibold tabular-nums">
 				{$t('play_page.place_of', { place: ordinal(place), total: players })}
 			</p>

@@ -188,6 +188,9 @@ class QuizQuestion(BaseModel):
     answers: list[ABCDQuizAnswer] | RangeQuizAnswer | list[TextQuizAnswer] | list[VotingQuizAnswer] | str
     image: str | None = None
     hide_results: bool | None = False
+    # An Info slide's text, under its title (#93). Old drawn slides keep theirs in the
+    # drawing, in `answers`, and have none.
+    body: str | None = None
 
     @field_validator("answers")
     def answers_not_none_if_abcd_type(cls, v, info: ValidationInfo):
@@ -246,6 +249,13 @@ MAX_TITLE_LENGTH = 100
 MAX_DESCRIPTION_LENGTH = 500
 MAX_QUESTION_LENGTH = 250
 MAX_ANSWER_LENGTH = 100
+# An Info slide's text: a few sentences on a projector, not a page.
+MAX_SLIDE_BODY_LENGTH = 500
+# An old drawn slide's drawing, as JSON. Nothing bounded it; a big drawing is tens of KB.
+MAX_SLIDE_DRAWING_LENGTH = 200_000
+# A slider's numbers. Not the draft rule (a span of 10,000): a ceiling so a number with
+# thirty digits cannot be saved and then drawn on every phone.
+MAX_SLIDER_MAGNITUDE = 1_000_000_000
 
 
 def _visible_length(value: str) -> int:
@@ -287,6 +297,14 @@ class QuizInput(BaseModel):
                 raise ValueError(f"Question {i}: at most {MAX_ANSWERS_PER_QUESTION} answers")
             if _visible_length(q.question) > MAX_QUESTION_LENGTH:
                 raise ValueError(f"Question {i}: the question must be at most {MAX_QUESTION_LENGTH} characters")
+            if q.body is not None and _visible_length(q.body) > MAX_SLIDE_BODY_LENGTH:
+                raise ValueError(f"Question {i}: the slide text must be at most {MAX_SLIDE_BODY_LENGTH} characters")
+            if isinstance(q.answers, str) and len(q.answers) > MAX_SLIDE_DRAWING_LENGTH:
+                raise ValueError(f"Question {i}: the slide is too large")
+            if isinstance(q.answers, RangeQuizAnswer):
+                bounds = (q.answers.min, q.answers.max, q.answers.min_correct, q.answers.max_correct)
+                if any(abs(n) > MAX_SLIDER_MAGNITUDE for n in bounds):
+                    raise ValueError(f"Question {i}: the slider's numbers must be within {MAX_SLIDER_MAGNITUDE:,}")
             if isinstance(q.answers, list):
                 for a, answer in enumerate(q.answers, start=1):
                     text = getattr(answer, "answer", None)

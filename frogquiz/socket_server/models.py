@@ -4,7 +4,7 @@
 
 import re
 
-from pydantic import BaseModel, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from frogquiz.db.models import QuizQuestion, QuizQuestionType, VotingQuizAnswer
 
 # The join form caps the nickname at 17 characters, but the socket server is
@@ -95,14 +95,31 @@ class ReturnQuestion(QuizQuestion):
         return v
 
 
+# A ceiling on what one answer can carry, not the editor's answer length: a stored option
+# can be longer than its 100 visible characters once its formatting tags are counted, or
+# older than the cap, and the phone sends it back as stored. Nothing bounded it, so one
+# socket could send a megabyte to be stored per answer.
+MAX_SUBMITTED_ANSWER_LENGTH = 1000
+# Put in order takes at most six items (question_complete.ts); ten is the server's ceiling
+# for answers on any question.
+MAX_SUBMITTED_ITEMS = 10
+
+
 class SubmitAnswerDataOrderType(BaseModel):
-    answer: str
+    answer: str = Field(max_length=MAX_SUBMITTED_ANSWER_LENGTH)
 
 
 class SubmitAnswerData(BaseModel):
     question_index: int
     answer: str | int
-    complex_answer: list[SubmitAnswerDataOrderType] | None = None
+    complex_answer: list[SubmitAnswerDataOrderType] | None = Field(default=None, max_length=MAX_SUBMITTED_ITEMS)
+
+    @field_validator("answer")
+    @classmethod
+    def answer_is_bounded(cls, v):
+        if isinstance(v, str) and len(v) > MAX_SUBMITTED_ANSWER_LENGTH:
+            raise ValueError("The answer is too long")
+        return v
 
 
 class KickPlayerInput(BaseModel):
