@@ -630,6 +630,8 @@
         "vote_counted": "Vote counted",
         "type_your_answer": "Type your answer",
         "pick_a_number": "Pick a number",
+        "move_up": "Move up: {{item}}",
+        "move_down": "Move down: {{item}}",
         "look_at_screen": "Look at the screen",
         "look_at_screen_hint": "The next question starts soon.",
         "no_vote": "No vote",
