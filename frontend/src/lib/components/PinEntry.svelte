@@ -242,12 +242,7 @@ starts it over, and the error clears as soon as the PIN is edited.
 			{/if}
 		</div>
 		{#if layout === 'inline'}
-			<Button
-				type="submit"
-				size="lg"
-				disabled={!complete || invalid}
-				class="h-11 px-5 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
-			>
+			<Button type="submit" size="lg" disabled={!complete || invalid} class="h-11 px-5">
 				{$t('words.join')}
 			</Button>
 		{/if}
@@ -262,12 +257,7 @@ starts it over, and the error clears as soon as the PIN is edited.
 		{/if}
 	</div>
 	{#if layout === 'stacked'}
-		<Button
-			type="submit"
-			size="lg"
-			class="mt-4 h-12 w-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
-			disabled={!complete || invalid}
-		>
+		<Button type="submit" size="lg" class="mt-4 h-12 w-full" disabled={!complete || invalid}>
 			<!-- "Join", as on the landing page's PIN box, which does the same thing. -->
 			{$t('words.join')}
 		</Button>

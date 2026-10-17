@@ -218,7 +218,7 @@ SPDX-License-Identifier: MPL-2.0
      labeled sections -- one concern per card, its own description, its own action --
      which is what every tool that does this well looks like and what survives a narrow
      screen without any reflow guesswork. -->
-<div class="mx-auto w-full max-w-3xl px-4 py-8">
+<div class="mx-auto w-full max-w-3xl fq-gutter py-8">
 	<h1 class="mb-6 text-2xl font-bold tracking-tight">{$t('words.my_account')}</h1>
 
 	{#await getUser()}

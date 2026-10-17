@@ -40,10 +40,10 @@ describe('the podium', () => {
 
 	it('keeps second and third on theme surfaces, so they follow the theme', () => {
 		// They were gradients in silver and bronze, which put a third accent into an
-		// identity that is "zinc neutrals plus one loud element".
-		for (const rule of ['.podium-block.is-silver', '.podium-block.is-bronze']) {
-			expect(hexesIn(css, rule), `${rule} should use tokens, not literals`).toEqual([]);
-		}
+		// identity that is "zinc neutrals plus one loud element". Since 17 Oct both use the
+		// shared .podium-block rule, a token mix, and only gold has a rule of its own.
+		expect(hexesIn(css, '.podium-block {'), 'should use tokens, not literals').toEqual([]);
+		expect(css).not.toMatch(/\.podium-block\.is-(silver|bronze)\s*\{/);
 	});
 });
 

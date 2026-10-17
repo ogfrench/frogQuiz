@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Made the five V1 design calls (François, 17 Oct): one disabled look for filled buttons (the pale muted chip the PIN box already used, now in the shared Button); the host's timer bar and the phone's ring stay neutral until the last 5 seconds, then turn red as the music speeds up; the podium's 2nd and 3rd blocks are a visible neutral step with a clear edge and the same ink, and the winner's points pill is neutral; the selected answer tile has a 5px ring in the foreground ink (the sheen stays); and one page gutter, 16 / 24 / 32 px, on the navbar, footer and every visible page.
+
 - Brought Privacy and Terms up to date: Privacy now names the nightly encrypted backups on GitHub (30 days) and what an AI agent key stores, says an agent's provider sees the quizzes it handles, and no longer describes a captcha hosts cannot turn on (the start dialog always sends it off). Terms say an agent key acts as you.
 - Ran the load test on production (17 Oct): one game holds 200 players with every answer reaching the host within 729 ms; at 300 every answer still arrived, the slowest after 1.5 s. Recorded in DEPLOY.md and docs/edge-cases-v1.md.
 

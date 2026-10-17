@@ -92,7 +92,7 @@ SPDX-License-Identifier: MPL-2.0
      100dvh - 4rem pages assume. Named because the footer has a nav of its own. -->
 <nav
 	aria-label="Main"
-	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b px-5 backdrop-blur-xl [clip-path:inset(0)] lg:px-8"
+	class="border-border/60 bg-background/80 fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b fq-gutter backdrop-blur-xl [clip-path:inset(0)]"
 >
 	<div class="flex w-full items-center justify-between gap-4">
 		<div class="flex min-w-0 items-center gap-1">
@@ -180,7 +180,7 @@ SPDX-License-Identifier: MPL-2.0
 				     beneath the last row. -->
 				<Sheet.Content side="right" class="bg-background w-[85%] max-w-sm gap-0 p-0">
 					<Sheet.Header
-						class="border-border/60 flex h-16 flex-row items-center border-b px-5"
+						class="border-border/60 flex h-16 flex-row items-center border-b fq-gutter"
 					>
 						<Sheet.Title class="sr-only">{$t('navbar.menu')}</Sheet.Title>
 						<a

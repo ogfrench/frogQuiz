@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import { in_last_seconds } from '$lib/play/last_seconds';
 	import type { Question } from '$lib/quiz_types';
 	import { answerColor } from '$lib/play/answer_colors';
 	import { get_foreground_color } from '$lib/helpers';
@@ -55,7 +56,11 @@ SPDX-License-Identifier: MPL-2.0
 	<div
 		class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-background shadow-2xl z-40"
 	>
-		<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
+		<CircularTimer
+			text={timer_res}
+			progress={circular_progress}
+			color={in_last_seconds(timer_res) ? 'var(--destructive)' : 'var(--foreground)'}
+		/>
 	</div>
 
 	<!-- Row by row, as on the host: red top-left, blue top-right, green bottom-left,
@@ -107,7 +112,7 @@ SPDX-License-Identifier: MPL-2.0
 				{#if picked}
 					<span
 						aria-hidden="true"
-						class="absolute inset-0 ring-4 ring-inset ring-white rounded-2xl motion-safe:animate-in motion-safe:zoom-in-95"
+						class="absolute inset-0 ring-[5px] ring-inset ring-foreground rounded-2xl motion-safe:animate-in motion-safe:zoom-in-95"
 					></span>
 					<!-- The ring alone was faint on a pastel tile in light mode; a tick says
 					     "chosen" without relying on how bright the tile is. -->

@@ -11,7 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <article
-	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
+	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate fq-gutter dark:prose-invert"
 >
 	<h1>Terms</h1>
 	<p>

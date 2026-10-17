@@ -113,7 +113,7 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <div
-	class="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-(--fq-space-group) px-4 pt-6 pb-16"
+	class="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-(--fq-space-group) fq-gutter pt-6 pb-16"
 >
 	<!-- The way home, on every phase: practice is always something you can walk away from. -->
 	<a
