@@ -307,7 +307,7 @@ SPDX-License-Identifier: MPL-2.0
 										<AlertDialog.Cancel>{$t('words.cancel')}</AlertDialog.Cancel
 										>
 										<AlertDialog.Action
-											class={buttonVariants({ variant: 'destructive' })}
+											class={buttonVariants({ variant: 'danger' })}
 											onclick={() => revoke(key.id)}
 											>{$t('settings_page.agents_revoke')}</AlertDialog.Action
 										>

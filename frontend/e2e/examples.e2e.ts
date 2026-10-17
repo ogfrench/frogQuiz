@@ -259,7 +259,9 @@ test('a quiz in My Quizzes can be copied from its row', async ({ browser, reques
 	await owner.page.goto('/my-quizzes');
 	await owner.page.waitForLoadState('networkidle');
 	const row = owner.page.getByRole('listitem').filter({ hasText: title });
-	await row.getByRole('button', { name: COPY }).click();
+	// Copy sits behind the row's "More actions" menu since 17 Oct.
+	await row.getByRole('button', { name: /^More actions/ }).click();
+	await owner.page.getByRole('menuitem', { name: COPY }).click();
 
 	await expect(owner.page).toHaveURL(/\/edit\?quiz_id=/);
 	expect(new URL(owner.page.url()).searchParams.get('quiz_id')).not.toBe(id);

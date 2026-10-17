@@ -44,6 +44,17 @@ SPDX-License-Identifier: MPL-2.0
 	// The three switches live under "Game options", folded away: nearly every game starts
 	// with the defaults, so the one big button is all most hosts ever reach for.
 	let options_open = $state(false);
+	// What is on, in a word each, beside "Game options" while it is folded (V1 menus
+	// review, 17 Oct), so a host can see the state without opening it.
+	const options_on = $derived(
+		[
+			[custom_field_enabled, 'start_game.summary_join_question'],
+			[randomized_answers, 'start_game.summary_randomized'],
+			[show_on_devices, 'start_game.summary_on_devices']
+		]
+			.filter(([on]) => on)
+			.map(([, key]) => $t(key as string))
+	);
 	let error = $state<string | null>(null);
 	// Set when the failure looks like "you are not signed in" rather than a real
 	// error, so the message can offer a way back rather than just saying no.
@@ -243,6 +254,9 @@ SPDX-License-Identifier: MPL-2.0
 				class="focus-visible:ring-ring/50 flex min-h-11 w-full items-center justify-between gap-2 rounded-md text-left text-sm font-medium outline-none focus-visible:ring-3 dark:font-[380]"
 			>
 				{$t('start_game.game_options')}
+				<span class="text-muted-foreground ml-auto min-w-0 truncate font-normal">
+					{options_on.length ? options_on.join(' · ') : $t('start_game.summary_none')}
+				</span>
 				<ChevronDown
 					class="text-muted-foreground size-4 shrink-0 transition-transform duration-(--fq-dur-control) {options_open
 						? 'rotate-180'
@@ -263,7 +277,9 @@ SPDX-License-Identifier: MPL-2.0
 					>
 						<!-- Was "Custom field" with nothing to say what it does, and an English,
 						     Title Case "Phone Number or Email" placeholder outside the locale file. -->
-						<div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1">
+						<div
+							class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1"
+						>
 							<Label
 								for="custom-field-enabled"
 								class="col-start-1 row-start-1 leading-snug dark:font-[380]"
@@ -277,7 +293,10 @@ SPDX-License-Identifier: MPL-2.0
 								onCheckedChange={on_custom_field_toggle}
 								aria-describedby="custom-field-hint"
 							/>
-							<p id="custom-field-hint" class="text-muted-foreground col-start-1 row-start-2 text-sm">
+							<p
+								id="custom-field-hint"
+								class="text-muted-foreground col-start-1 row-start-2 text-sm"
+							>
 								{$t('start_game.custom_field_hint')}
 							</p>
 						</div>

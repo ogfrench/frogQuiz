@@ -4,6 +4,8 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Built the menus review's recommendations (François, 17 Oct): My Quizzes rows show Play and Edit, with Copy, Download and Delete under a labeled "More actions" menu; the Ctrl+K notice is off and palette results no longer show `/command` syntax; Create a quiz is a bottom sheet on phones, with matching icon boxes; Start game's folded "Game options" row says what is on; permanent deletes (quiz, question, AI agent key, account) confirm with a solid red button, while leaving or ending a game keeps the pale one; the editor adds a question type with one press at the end of the list (the dialog stays for adding between two questions); "Skip the results" is a switch on the open card instead of a gear and a dialog; on touch, the uploader's "Choose an image" is a real button in a shorter box; and menu rows are 44px tall on touch.
+
 ## v0.9, 17 Oct 2026
 
 V1 step 5: guest creation and Excel import (#67), the production recovery and security fixes (#71, #76, #77), nightly backups and the uptime check (#78), the Production ops workflow (#79 to #81, #85), the join flow (#84), AI agents over MCP (#83, #86, #87), and the V1 checklist records (#88), and the production load test, Privacy and Terms, the five design calls and the repo tidy-up (#90). v1.0 waits on the MCP work in #68.

@@ -271,19 +271,9 @@ This should be okay, right?
 						tabindex="-2"
 						role="button"
 					>
-						<div class="flex">
-							<h3 class="text-lg my-auto">{vi.title}</h3>
-							<p
-								class="bg-background/60 my-auto ml-auto h-fit rounded-md p-0.5 font-mono"
-							>
-								/{vi.command}
-								{#if vi.args}
-									{#each vi.args as arg}
-										&lbrace;<span class="text-muted-foreground">{arg}</span
-										>&rbrace;{/each}
-								{/if}
-							</p>
-						</div>
+						<!-- The /command syntax used to show here, in monospace, with nothing to
+						     say how to use it. Typing the words of a title finds it anyway. -->
+						<h3 class="text-lg">{vi.title}</h3>
 						<p class="text-sm">{vi.description}</p>
 					</div>
 				{/each}

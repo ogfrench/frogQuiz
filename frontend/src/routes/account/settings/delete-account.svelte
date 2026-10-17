@@ -150,7 +150,7 @@ SPDX-License-Identifier: MPL-2.0
 							click, which would hide the error from a failed delete.
 						-->
 					<Button
-						variant="destructive"
+						variant="danger"
 						disabled={isSubmitting || !matches}
 						onclick={deleteAccount}
 					>

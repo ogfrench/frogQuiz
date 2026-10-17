@@ -827,29 +827,31 @@ SPDX-License-Identifier: MPL-2.0
 									<!-- A new quiz: the first question is the next thing to do, so it is
 								     the one thing on offer, not a toolbar button above six optional
 								     fields. -->
-									<button
-										type="button"
-										class="border-border/70 hover:border-primary/50 hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-1 rounded-xl border border-dashed px-6 py-10 text-center transition focus-visible:ring-2 focus-visible:outline-none"
-										onclick={() => openAdd(null)}
+									<div
+										class="border-border/70 flex flex-col gap-3 rounded-xl border border-dashed p-5"
 									>
-										<span class="flex items-center gap-2 font-medium">
-											<Plus class="size-4" />
-											{$t('editor.first_question')}
-										</span>
-										<span class="text-muted-foreground text-sm">
-											{$t('editor.first_question_hint')}
-										</span>
-									</button>
+										<div>
+											<p class="font-medium">{$t('editor.first_question')}</p>
+											<p class="text-muted-foreground text-sm">
+												{$t('editor.first_question_hint')}
+											</p>
+										</div>
+										<AddNewQuestionPopup
+											bind:questions={data.questions}
+											bind:selected_question
+											open={false}
+											inline
+										/>
+									</div>
 								{:else}
-									<Button
-										type="button"
-										variant="outline"
-										class="border-border/70 text-muted-foreground hover:text-foreground mt-1 h-14 w-full border-dashed"
-										onclick={() => openAdd(null)}
-									>
-										<Plus />
-										{$t('editor.add_new_question')}
-									</Button>
+									<div class="mt-1">
+										<AddNewQuestionPopup
+											bind:questions={data.questions}
+											bind:selected_question
+											open={false}
+											inline
+										/>
+									</div>
 								{/if}
 							</div>
 						</div>

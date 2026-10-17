@@ -19,14 +19,12 @@ SPDX-License-Identifier: MPL-2.0
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
 	import { buttonVariants } from '$lib/components/ui/button';
 	import CircleDot from '@lucide/svelte/icons/circle-dot';
 	import Clock from '@lucide/svelte/icons/clock';
 	import ListChecks from '@lucide/svelte/icons/list-checks';
-	import Settings2 from '@lucide/svelte/icons/settings-2';
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Copy from '@lucide/svelte/icons/copy';
@@ -69,7 +67,6 @@ SPDX-License-Identifier: MPL-2.0
 		dragging
 	}: Props = $props();
 
-	let advanced_options_open = $state(false);
 	let confirm_delete = $state(false);
 	let uppyOpen = $state(false);
 
@@ -167,20 +164,6 @@ SPDX-License-Identifier: MPL-2.0
 					{#if incomplete}
 						<Badge variant="destructive">{$t('editor.question_incomplete')}</Badge>
 					{/if}
-					<!-- On a phone the timer and type pills fill a line by themselves, and this
-					     button used to wrap onto a third line alone. It shares the first one with
-					     the question number there, and goes back after the pills from `sm`. -->
-					<Button
-						variant="ghost"
-						size="icon"
-						type="button"
-						class="max-sm:ml-auto sm:order-last"
-						title={$t('editor.advanced_settings')}
-						aria-label={$t('editor.advanced_settings')}
-						onclick={() => (advanced_options_open = true)}
-					>
-						<Settings2 />
-					</Button>
 					<div class="ml-auto flex flex-wrap items-center gap-1.5">
 						<!-- The input inside drops its own outline, so the pill shows focus for it,
 						     the way the shadcn Input does. Without this the only sign of focus was
@@ -373,8 +356,31 @@ SPDX-License-Identifier: MPL-2.0
 	     buttons. -->
 	{#if focused}
 		<div
-			class="border-border any-pointer-coarse:gap-2 flex items-center justify-end gap-0.5 border-t px-2 py-1"
+			class="border-border any-pointer-coarse:gap-2 flex flex-wrap items-center justify-end gap-0.5 border-t px-2 py-1"
 		>
+			<!-- The question's one setting sits on the card, where you can see it is on (V1
+			     menus review, 17 Oct). It was a gear icon opening a dialog for this one
+			     switch. A function binding because older questions have no hide_results
+			     at all, and binding a Switch to undefined throws. -->
+			<div class="mr-auto flex min-h-11 items-center gap-2.5 pl-2">
+				<Switch
+					id="hide-results-{index}"
+					bind:checked={
+						() => data.questions[index].hide_results === true,
+						(v) => (data.questions[index].hide_results = v)
+					}
+					aria-describedby="hide-results-hint-{index}"
+				/>
+				<Label
+					for="hide-results-{index}"
+					class="text-sm font-normal"
+					title={$t('editor.hide_question_results_hint')}
+					>{$t('editor.hide_question_results')}</Label
+				>
+				<span id="hide-results-hint-{index}" class="sr-only"
+					>{$t('editor.hide_question_results_hint')}</span
+				>
+			</div>
 			<Button
 				type="button"
 				variant="ghost"
@@ -437,7 +443,7 @@ SPDX-License-Identifier: MPL-2.0
 						<AlertDialog.Cancel type="button">{$t('words.cancel')}</AlertDialog.Cancel>
 						<AlertDialog.Action
 							type="button"
-							variant="destructive"
+							variant="danger"
 							onclick={() => ondelete(index)}
 						>
 							{$t('words.delete')}
@@ -448,36 +454,3 @@ SPDX-License-Identifier: MPL-2.0
 		</div>
 	{/if}
 </article>
-
-<!-- The shadcn Dialog with a Switch, like the start-game dialog. It was a fixed div with
-     no dialog role, no Escape and no focus handling, around a bare checkbox. A function
-     binding because older questions have no hide_results at all, and binding a Switch
-     to undefined throws. -->
-<Dialog.Root bind:open={advanced_options_open}>
-	<Dialog.Content class="sm:max-w-sm">
-		<Dialog.Header>
-			<Dialog.Title>{$t('editor.advanced_settings')}</Dialog.Title>
-		</Dialog.Header>
-		<div class="grid gap-1.5">
-			<div class="flex items-center gap-3">
-				<Switch
-					id="hide-results-{index}"
-					bind:checked={
-						() => data.questions[index].hide_results === true,
-						(v) => (data.questions[index].hide_results = v)
-					}
-					aria-describedby="hide-results-hint-{index}"
-				/>
-				<Label for="hide-results-{index}">{$t('editor.hide_question_results')}</Label>
-			</div>
-			<p id="hide-results-hint-{index}" class="text-muted-foreground pl-14 text-sm">
-				{$t('editor.hide_question_results_hint')}
-			</p>
-		</div>
-		<Dialog.Footer>
-			<Dialog.Close class={buttonVariants({ class: 'w-full sm:w-auto' })}>
-				{$t('words.close')}
-			</Dialog.Close>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>

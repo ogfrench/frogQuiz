@@ -71,7 +71,6 @@ test('a question can be added between two others', async ({ page, request }) => 
 
 test('True / False arrives with its answers already written', async ({ page, request }) => {
 	await openQuiz(page, request);
-	await page.getByRole('button', { name: 'Add new question' }).click();
 	await page.getByRole('button', { name: /True \/ False/ }).click();
 	const answers = page.getByRole('textbox', { name: 'Enter an answer' });
 	await expect(answers).toHaveCount(2);
@@ -191,15 +190,17 @@ for (const viewport of [{ width: 1440, height: 900 }, PHONE]) {
 			.getByRole('button', { name: /Question 8/ })
 			.last()
 			.click();
-		const add = page.getByRole('button', { name: 'Add new question' });
+		const add = page.getByRole('button', { name: 'Multiple choice', exact: true });
 		await add.scrollIntoViewIfNeeded();
 		await expect(add).toBeInViewport();
-		const headerTop = await page.locator('header').evaluate((h) => h.getBoundingClientRect().top);
+		const headerTop = await page
+			.locator('header')
+			.evaluate((h) => h.getBoundingClientRect().top);
 		// Broken, it sat hundreds of pixels above the screen; allow sub-pixel rounding.
 		expect(Math.abs(headerTop), 'the editor header was pushed off the top').toBeLessThan(1);
 		await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeInViewport();
 		await add.click();
-		await expect(page.getByRole('dialog')).toBeVisible();
+		await expect(cards(page)).toHaveCount(9);
 		await ctx.close();
 	});
 }

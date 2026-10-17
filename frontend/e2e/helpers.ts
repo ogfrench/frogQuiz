@@ -272,11 +272,8 @@ export async function addQuestion(
 	title: string,
 	answers: [string, boolean][]
 ) {
-	await page
-		.getByRole('button', { name: /Add new question|Add your first question/ })
-		.first()
-		.click();
-	await page.getByRole('button', { name: kind }).click();
+	// The types are buttons at the end of the editor since 17 Oct, not a dialog.
+	await page.getByRole('button', { name: kind }).first().click();
 	// Only the open card holds a rich-text field; the others are collapsed to plain text.
 	await questionBox(page).fill(title);
 	for (let i = 0; i < answers.length; i++)

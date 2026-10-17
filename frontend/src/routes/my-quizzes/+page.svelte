@@ -27,12 +27,12 @@ SPDX-License-Identifier: MPL-2.0
 		loadAnonQuiz
 	} from '$lib/anon_quiz';
 	import { copyQuiz } from '$lib/copy_quiz';
-	import CommandpaletteNotice from '$lib/components/popover/commandpalettenotice.svelte';
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import ConfirmAction from '$lib/components/ConfirmAction.svelte';
 	import StartGamePopup from '$lib/dashboard/start_game.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { openCreateDialog } from '$lib/create_dialog.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
@@ -43,6 +43,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Clock from '@lucide/svelte/icons/clock';
 	import Copy from '@lucide/svelte/icons/copy';
 	import Download from '@lucide/svelte/icons/download';
+	import Ellipsis from '@lucide/svelte/icons/ellipsis';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Play from '@lucide/svelte/icons/play';
@@ -79,6 +80,14 @@ SPDX-License-Identifier: MPL-2.0
 
 	let start_game: string | null = $state(null);
 	let download_id: string | null = $state(null);
+	// One delete confirmation for the page, opened from a row's menu; focus goes back to
+	// that row's menu button when it closes.
+	let delete_id: string | null = $state(null);
+	let more_buttons: Record<string, HTMLElement | null> = $state({});
+	const delete_title = $derived(
+		[...account_quizzes, ...(browser_quizzes ?? [])].find((q) => q.id === delete_id)?.title ??
+			''
+	);
 
 	const question_count = (quiz: Row): number =>
 		Array.isArray(quiz.questions) ? quiz.questions.length : 0;
@@ -211,9 +220,9 @@ SPDX-License-Identifier: MPL-2.0
 	<title>frogQuiz - {$t('my_quizzes.title')}</title>
 </svelte:head>
 
-{#if signed_in}
-	<CommandpaletteNotice />
-{/if}
+<!-- The Ctrl+K notice is off (V1 menus review, 17 Oct): every palette command is one
+     click away in the navbar, so it advertised a shortcut nobody needs, and it popped up
+     over the palette itself. The component stays in lib/components/popover. -->
 
 {#snippet row(quiz: Row, source: 'account' | 'browser')}
 	{@const days = source === 'browser' ? anonDaysLeft(quiz.expire_at) : null}
@@ -299,52 +308,49 @@ SPDX-License-Identifier: MPL-2.0
 					{$t('my_quizzes.claim')}
 				</Button>
 			{/if}
-			<Button
-				href="/edit?quiz_id={quiz.id}"
-				variant="ghost"
-				size="icon"
-				title={$t('words.edit')}
-				aria-label={$t('words.edit')}
-			>
+			<!-- Edit stays a labeled button; the rest sit behind "More actions" (V1 menus
+			     review, 17 Oct). Four bare icons on a phone, with tooltips a phone never
+			     shows, left people guessing which one was Copy and which was Download, and
+			     put Delete one slip from Download. -->
+			<Button href="/edit?quiz_id={quiz.id}" variant="outline">
 				<Pencil />
+				{$t('words.edit')}
 			</Button>
-			{#if source === 'account'}
-				<Button
-					variant="ghost"
-					size="icon"
-					title={$t('copy.button')}
-					aria-label={$t('copy.button')}
-					disabled={copying !== null}
-					onclick={() => copy_quiz(quiz)}
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger
+					bind:ref={more_buttons[quiz.id]}
+					class={buttonVariants({ variant: 'ghost', size: 'icon' })}
+					aria-label={$t('my_quizzes.more_actions', { title: quiz.title })}
+					title={$t('my_quizzes.more_actions_short')}
 				>
 					{#if copying === quiz.id}
 						<LoaderCircle class="animate-spin" aria-hidden="true" />
 					{:else}
-						<Copy />
+						<Ellipsis aria-hidden="true" />
 					{/if}
-				</Button>
-			{/if}
-			<!-- Analytics hidden with Results for the MVP (D4). Browser rows download with their secret. -->
-			<Button
-				variant="ghost"
-				size="icon"
-				title={$t('words.download')}
-				aria-label={$t('words.download')}
-				onclick={() => (download_id = quiz.id)}
-			>
-				<Download />
-			</Button>
-			<ConfirmAction
-				title={$t('view_quiz_page.delete_confirm_title')}
-				body={$t('view_quiz_page.delete_confirm_named', { title: quiz.title })}
-				confirmLabel={$t('words.delete')}
-				cancelLabel={$t('words.cancel')}
-				onconfirm={() => delete_quiz(quiz.id)}
-				class="text-muted-foreground hover:text-destructive size-9 px-0"
-			>
-				<Trash2 aria-hidden="true" />
-				<span class="sr-only">{$t('words.delete')}</span>
-			</ConfirmAction>
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content align="end" class="min-w-48">
+					{#if source === 'account'}
+						<DropdownMenu.Item
+							disabled={copying !== null}
+							onSelect={() => copy_quiz(quiz)}
+						>
+							<Copy />
+							{$t('copy.button')}
+						</DropdownMenu.Item>
+					{/if}
+					<!-- Analytics hidden with Results for the MVP (D4). Browser rows download with their secret. -->
+					<DropdownMenu.Item onSelect={() => (download_id = quiz.id)}>
+						<Download />
+						{$t('words.download')}
+					</DropdownMenu.Item>
+					<DropdownMenu.Separator />
+					<DropdownMenu.Item variant="destructive" onSelect={() => (delete_id = quiz.id)}>
+						<Trash2 />
+						{$t('words.delete')}…
+					</DropdownMenu.Item>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
 		</div>
 	</li>
 {/snippet}
@@ -529,3 +535,18 @@ SPDX-License-Identifier: MPL-2.0
 <!-- No {#if} wrapper: the popup is a Dialog and owns its own visibility from `quiz_id`. -->
 <StartGamePopup bind:quiz_id={start_game} />
 <DownloadQuiz bind:quiz_id={download_id} />
+<ConfirmAction
+	bind:open={
+		() => delete_id !== null,
+		(o) => {
+			if (!o) delete_id = null;
+		}
+	}
+	permanent
+	returnFocus={delete_id ? more_buttons[delete_id] : null}
+	title={$t('view_quiz_page.delete_confirm_title')}
+	body={$t('view_quiz_page.delete_confirm_named', { title: delete_title })}
+	confirmLabel={$t('words.delete')}
+	cancelLabel={$t('words.cancel')}
+	onconfirm={() => delete_id && delete_quiz(delete_id)}
+/>

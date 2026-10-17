@@ -551,11 +551,7 @@ SPDX-License-Identifier: MPL-2.0
 									>{$t('words.cancel')}</AlertDialog.Cancel
 								>
 								<!-- A plain Button, not AlertDialog.Action, so a failure stays visible. -->
-								<Button
-									variant="destructive"
-									disabled={deleting}
-									onclick={delete_quiz}
-								>
+								<Button variant="danger" disabled={deleting} onclick={delete_quiz}>
 									{#if deleting}
 										<LoaderCircle class="animate-spin" aria-hidden="true" />
 									{/if}

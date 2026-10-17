@@ -129,12 +129,14 @@ SPDX-License-Identifier: MPL-2.0
 	// a Dashboard option and live on the Uppy instance above.
 	// Uppy's "Powered by Uppy" line was hidden with CSS here, which lost to Uppy's own
 	// `a.uppy-Dashboard-poweredBy` on specificity and so never hid it. This is its option.
-	// The height leaves room for the title and the size rule on a phone.
+	// The height leaves room for the title and the size rule on a phone. On touch there is
+	// nothing to drop, so the box only has to hold its one button (V1 menus review, 17 Oct):
+	// at 400 it was a tall empty frame with a link at the top.
 	const dashboard_options = {
 		plugins: ['ImageEditor'],
 		proudlyDisplayPoweredByUppy: false,
 		width: '100%',
-		height: 400
+		height: coarse_pointer ? 240 : 400
 	};
 	// Read eagerly rather than inside the `complete` callback: that fires from Uppy, not
 	// from the component, and `$t` is a store read that wants component context.
@@ -420,5 +422,20 @@ SPDX-License-Identifier: MPL-2.0
 	:global(.uppy-Dashboard-browse:focus-visible) {
 		outline: 2px solid var(--ring);
 		outline-offset: 2px;
+	}
+
+	/* On touch it is the only thing in the box that does anything, so it is a button, at
+	   the 44px press size, rather than an underlined word. */
+	@media (pointer: coarse) {
+		:global(.uppy-Dashboard-browse) {
+			display: inline-flex;
+			align-items: center;
+			min-height: 2.75rem;
+			padding: 0 1.25rem;
+			border-radius: calc(var(--radius) - 4px);
+			background-color: var(--primary);
+			color: var(--primary-foreground);
+			text-decoration: none;
+		}
 	}
 </style>

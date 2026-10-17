@@ -64,7 +64,8 @@ test('signed out: a browser quiz is listed with its expiry and can be deleted', 
 	await expect(row.getByText(/Expires in \d+ days?/)).toBeVisible();
 	await expectNoHorizontalOverflow(page);
 
-	await row.getByRole('button', { name: 'Delete' }).click();
+	await row.getByRole('button', { name: /^More actions/ }).click();
+	await page.getByRole('menuitem', { name: 'Delete…' }).click();
 	// In a list, the confirmation has to say which quiz: it used to ask "Delete this
 	// quiz?" and then "Delete this quiz permanently?".
 	await expect(page.getByRole('alertdialog')).toContainText(
@@ -120,4 +121,3 @@ test('counts and credits read as sentences, and the empty list promises nothing 
 	).toBeVisible();
 	await user.context.close();
 });
-
