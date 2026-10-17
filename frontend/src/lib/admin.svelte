@@ -224,18 +224,11 @@ SPDX-License-Identifier: MPL-2.0
 					<h1 class="text-3xl">{$t('admin_page.no_answers')}</h1>
 				</div>
 			{/if}
-		{:else if game_state.quiz_data.questions[game_state.selected_question].type === QuizQuestionType.VOTING}
-			{#await import('$lib/play/admin/voting_results.svelte')}
-				<Spinner />
-			{:then c}
-				<c.default
-					data={game_state.question_results}
-					question={game_state.quiz_data.questions[game_state.selected_question]}
-				/>
-			{/await}
 		{:else}
 			<!-- The answers, and the standings once they are due, in one card that stays
-			     mounted from the first to the last. -->
+			     mounted from the first to the last. A poll comes here too, with its title
+			     and its card (#93): it was drawn bare on the game's background, in ink
+			     meant for the white card. Its standings are skipped (next_step.ts). -->
 			<RoundResults
 				question={game_state.quiz_data.questions[game_state.selected_question]}
 				new_data={game_state.question_results}

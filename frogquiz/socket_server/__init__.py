@@ -230,6 +230,9 @@ async def rejoin_game(sid: str, data: dict):
 async def send_open_question(sid: str, game_data: PlayGame, username: str) -> None:
     """Send a player who arrives mid-question (a reload, or a late join) the question that is up."""
     index = game_data.current_question
+    if game_data.started and index >= 0 and game_data.questions[index].type == QuizQuestionType.SLIDE:
+        await sio.emit("slide", {"question_index": index}, room=sid)
+        return
     if (
         game_data.started
         and game_data.question_show
@@ -517,6 +520,9 @@ async def set_question_number(sid: str, data: str):
         return
     if game_data.questions[index].type == QuizQuestionType.SLIDE:
         await sio.emit("set_question_number", {"question_index": index}, room=sid)
+        # Phones got nothing at a slide and kept the last screen, a result card asking to be
+        # read while the room looked up (#93). They are told it is a slide, and no more.
+        await sio.emit("slide", {"question_index": index}, room=game_pin, skip_sid=sid)
         return
     await sio.emit(
         "set_question_number",

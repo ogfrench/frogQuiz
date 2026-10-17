@@ -76,7 +76,7 @@ SPDX-License-Identifier: MPL-2.0
 {#if inline}
 	<div class="flex flex-col gap-2">
 		<p class="text-muted-foreground text-sm font-medium">{$t('editor.add_a_question')}</p>
-		<div class="grid gap-2 sm:grid-cols-3">
+		<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 			{#each question_types as qt, i (qt.name)}
 				<Button
 					type="button"

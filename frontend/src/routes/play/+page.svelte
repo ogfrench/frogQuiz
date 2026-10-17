@@ -10,6 +10,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { socket } from '$lib/socket';
 	import JoinGame from '$lib/play/join.svelte';
 	import type { Question as QuestionType } from '$lib/quiz_types';
+	import { QuizQuestionType } from '$lib/quiz_types';
 	import ShowTitle from '$lib/play/title.svelte';
 	import Question from '$lib/play/question.svelte';
 	import ShowEndScreen from '$lib/play/admin/final_results.svelte';
@@ -418,6 +419,7 @@ SPDX-License-Identifier: MPL-2.0
 							question_results={answer_results}
 							bind:scores
 							correct_answers={game_mode === 'normal' ? correct_answers : undefined}
+							poll={question?.type === QuizQuestionType.VOTING}
 						/>
 					{/key}
 				</div>

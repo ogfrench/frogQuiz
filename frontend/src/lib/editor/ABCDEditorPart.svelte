@@ -24,24 +24,30 @@ SPDX-License-Identifier: MPL-2.0
 	interface Props {
 		selected_question: number;
 		check_choice?: boolean;
+		/** A poll: the same tiles, with nothing to mark right (#93). */
+		poll?: boolean;
 		data: EditorData;
 	}
 
-	let { selected_question, check_choice = false, data = $bindable() }: Props = $props();
+	let {
+		selected_question,
+		check_choice = false,
+		poll = false,
+		data = $bindable()
+	}: Props = $props();
 	const answers = $derived(data.questions[selected_question].answers as Answer[]);
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
 
-	const get_empty_answer = (): Answer => {
-		return {
-			answer: '',
-			right: false
-		};
-	};
+	// A poll's options have no `right`: the server picks the answer model by its shape.
+	const get_empty_answer = (): Answer =>
+		(poll ? { answer: '' } : { answer: '', right: false }) as Answer;
 
-	data.questions[selected_question].type =
-		check_choice === true ? QuizQuestionType.CHECK : QuizQuestionType.ABCD;
+	if (!poll) {
+		data.questions[selected_question].type =
+			check_choice === true ? QuizQuestionType.CHECK : QuizQuestionType.ABCD;
+	}
 
 	// Slot color comes from the palette, which was derived for color-vision separation
 	// against both surfaces. It belongs to the slot, not to the answer: there is no
@@ -90,8 +96,8 @@ SPDX-License-Identifier: MPL-2.0
 			<div
 				out:fade={{ duration: 150 }}
 				class="group has-[textarea:focus]:outline-foreground relative flex min-w-0 items-center gap-3 rounded-xl p-4 transition has-[textarea:focus]:outline-2 has-[textarea:focus]:outline-offset-4"
-				class:ring-3={answer.right}
-				class:ring-foreground={answer.right}
+				class:ring-3={!poll && answer.right}
+				class:ring-foreground={!poll && answer.right}
 				style="background-color: {color}; color: {ink}"
 			>
 				<AnswerShape {index} class="size-6 shrink-0" />
@@ -115,30 +121,33 @@ SPDX-License-Identifier: MPL-2.0
 					use:grow_on_mount
 				></textarea>
 
-				<button
-					type="button"
-					class="any-pointer-coarse:p-3 shrink-0 rounded-full border-2 p-1 transition focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
-					style="border-color: {ink}; {answer.right
-						? `background-color: ${ink}; color: ${color}`
-						: 'background-color: transparent'}"
-					aria-pressed={answer.right}
-					title={$t('editor.mark_correct')}
-					aria-label="{$t('editor.mark_correct')}: {answer.answer || $t('words.answer')}"
-					onclick={() => {
-						// ABCD (check_choice false) is meant to be single-correct-answer, but
-						// nothing enforced that -- marking a second answer correct left every
-						// previously-marked one correct too. CHECK (multi-select) keeps its
-						// independent toggle.
-						if (!check_choice && !answer.right) {
-							for (const other of answers) {
-								other.right = false;
+				{#if !poll}
+					<button
+						type="button"
+						class="any-pointer-coarse:p-3 shrink-0 rounded-full border-2 p-1 transition focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
+						style="border-color: {ink}; {answer.right
+							? `background-color: ${ink}; color: ${color}`
+							: 'background-color: transparent'}"
+						aria-pressed={answer.right}
+						title={$t('editor.mark_correct')}
+						aria-label="{$t('editor.mark_correct')}: {answer.answer ||
+							$t('words.answer')}"
+						onclick={() => {
+							// ABCD (check_choice false) is meant to be single-correct-answer, but
+							// nothing enforced that -- marking a second answer correct left every
+							// previously-marked one correct too. CHECK (multi-select) keeps its
+							// independent toggle.
+							if (!check_choice && !answer.right) {
+								for (const other of answers) {
+									other.right = false;
+								}
 							}
-						}
-						answer.right = !answer.right;
-					}}
-				>
-					<Check class="size-4" style={answer.right ? '' : 'opacity:0.35'} />
-				</button>
+							answer.right = !answer.right;
+						}}
+					>
+						<Check class="size-4" style={answer.right ? '' : 'opacity:0.35'} />
+					</button>
+				{/if}
 
 				<button
 					class="fq-touch-target any-pointer-coarse:opacity-100 absolute -top-2 -right-2 rounded-full border p-1 opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"

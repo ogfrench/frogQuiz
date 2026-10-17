@@ -16,6 +16,10 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import RangeEditor from '$lib/editor/RangeSelectorEditorPart.svelte';
+	import QuestionTypeMenu from '$lib/editor/QuestionTypeMenu.svelte';
+	import { convertQuestion, conversionLosesText } from '$lib/editor/convert_question';
+	import { QUESTION_TYPES } from '$lib/editor/question_types';
+	import { TYPE_OF } from '$lib/editor/new_question';
 	import { Button } from '$lib/components/ui/button';
 	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import { Badge } from '$lib/components/ui/badge';
@@ -69,6 +73,21 @@ SPDX-License-Identifier: MPL-2.0
 	}: Props = $props();
 
 	let confirm_delete = $state(false);
+	// The type a pending change would switch to, while its confirmation is open.
+	let pending_type: QuizQuestionType | null = $state(null);
+	const change_type = (to: QuizQuestionType) => {
+		if (conversionLosesText($state.snapshot(data.questions[index]), to)) pending_type = to;
+		else apply_type(to);
+	};
+	const apply_type = (to: QuizQuestionType) => {
+		data.questions[index] = convertQuestion($state.snapshot(data.questions[index]), to);
+		pending_type = null;
+	};
+	const type_label = (ty: QuizQuestionType | null) =>
+		$t(
+			QUESTION_TYPES.find((qt) => qt.kind !== 'check' && TYPE_OF[qt.kind] === ty)?.label ??
+				'words.multiple_choice'
+		).toLowerCase();
 	let uppyOpen = $state(false);
 
 	const question = $derived(data.questions[index]);
@@ -185,6 +204,7 @@ SPDX-License-Identifier: MPL-2.0
 							/>
 							<span>s</span>
 						</label>
+						<QuestionTypeMenu {type} onchange={change_type} />
 						{#if type === QuizQuestionType.ABCD || type === QuizQuestionType.CHECK}
 							<!-- A choice in view rather than a button labeled with its current state,
 							     which read as confirming it (V1 screens review, 17 Oct). -->
@@ -297,10 +317,14 @@ SPDX-License-Identifier: MPL-2.0
 						{:else if type === QuizQuestionType.RANGE}
 							<RangeEditor selected_question={index} bind:data />
 						{:else if type === QuizQuestionType.VOTING}
-							{#await import('$lib/editor/VotingEditorPart.svelte')}
+							<!-- The choice tiles without a right answer to mark (#93). The old
+							     VotingEditorPart threw the answers away on every open. -->
+							{#await import('$lib/editor/ABCDEditorPart.svelte')}
 								<Spinner my_20={false} />
 							{:then c}
-								<c.default bind:data selected_question={index} />
+								{#key index}
+									<c.default bind:data selected_question={index} poll />
+								{/key}
 							{/await}
 						{:else if type === QuizQuestionType.TEXT}
 							{#await import('$lib/editor/TextEditorPart.svelte')}
@@ -461,4 +485,35 @@ SPDX-License-Identifier: MPL-2.0
 			</AlertDialog.Root>
 		</div>
 	{/if}
+	<!-- Changing type keeps what carries over (convert_question.ts) and asks only when it
+	     would throw away something the author typed. Every button is type="button": the
+	     editor is one form. -->
+	<AlertDialog.Root
+		open={pending_type !== null}
+		onOpenChange={(open) => {
+			if (!open) pending_type = null;
+		}}
+	>
+		<AlertDialog.Content class="max-w-md">
+			<AlertDialog.Header>
+				<AlertDialog.Title
+					>{$t('editor.change_type_title', {
+						type: type_label(pending_type)
+					})}</AlertDialog.Title
+				>
+				<AlertDialog.Description>
+					{$t('editor.change_type_body', { type: type_label(pending_type) })}
+				</AlertDialog.Description>
+			</AlertDialog.Header>
+			<AlertDialog.Footer>
+				<AlertDialog.Cancel type="button">{$t('words.cancel')}</AlertDialog.Cancel>
+				<AlertDialog.Action
+					type="button"
+					onclick={() => pending_type && apply_type(pending_type)}
+				>
+					{$t('editor.change_type_confirm')}
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</AlertDialog.Content>
+	</AlertDialog.Root>
 </article>

@@ -37,7 +37,7 @@ export const QUESTION_TYPES: {
 		description: 'editor.true_false_description',
 		enabled: true
 	},
-	{ kind: 'poll', label: 'words.poll', description: 'editor.poll_description', enabled: false },
+	{ kind: 'poll', label: 'words.poll', description: 'editor.poll_description', enabled: true },
 	{
 		kind: 'text',
 		label: 'words.type_answer',
