@@ -19,6 +19,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { editorValidation } from '$lib/editor/validation.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { QuizQuestionType, type Question } from '$lib/quiz_types';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Save from '@lucide/svelte/icons/save';
 	import Play from '@lucide/svelte/icons/play';
@@ -49,10 +50,6 @@ SPDX-License-Identifier: MPL-2.0
 	// for editing rather than which one the canvas is showing -- the others stay on
 	// screen, collapsed. -1 means no question is open, not "show the settings instead".
 	let selected_question = $state(0);
-	let add_open = $state(false);
-	// Where a new question goes. The "+" rows between cards insert in place; the button
-	// at the end appends.
-	let add_at = $state<number | null>(null);
 	let dragging_from = $state<number | null>(null);
 	let drag_over = $state<number | null>(null);
 
@@ -153,9 +150,25 @@ SPDX-License-Identifier: MPL-2.0
 		selected_question = index + 1;
 		scrollToCard(index + 1);
 	};
-	const openAdd = (at: number | null) => {
-		add_at = at;
-		add_open = true;
+	// Adds a multiple-choice question right after the open card and opens it, the way
+	// Google Forms adds below the selected question (V1 menus review, 17 Oct). It used to
+	// be a "+" between cards that only appeared on hover, so a phone could only add at
+	// the end. The type is changed on the new card; True / False is at the end of the list.
+	const addBelow = (index: number) => {
+		const empty_question: Question = {
+			type: QuizQuestionType.ABCD,
+			time: '20',
+			question: '',
+			image: undefined,
+			answers: []
+		};
+		data.questions = [
+			...data.questions.slice(0, index + 1),
+			empty_question,
+			...data.questions.slice(index + 1)
+		];
+		selected_question = index + 1;
+		scrollToCard(index + 1);
 	};
 	let edit_id: string = $state();
 
@@ -485,24 +498,6 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-{#snippet insert_here(index: number)}
-	<!-- A hairline that becomes a button on hover or focus. Forms and Kahoot both let you
-	     add in the middle rather than adding at the end and then moving it up nine times. -->
-	<div class="group/insert relative -my-1 flex h-6 items-center justify-center">
-		<span
-			class="bg-border absolute inset-x-8 h-px opacity-0 transition group-hover/insert:opacity-100"
-		></span>
-		<button
-			type="button"
-			class="border-border bg-background text-muted-foreground hover:text-foreground focus-visible:ring-ring relative inline-flex size-6 items-center justify-center rounded-full border opacity-0 transition group-hover/insert:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
-			aria-label={$t('editor.add_question_here')}
-			title={$t('editor.add_question_here')}
-			onclick={() => openAdd(index)}
-		>
-			<Plus class="size-3.5" />
-		</button>
-	</div>
-{/snippet}
 
 <!-- ononline: a save that failed for want of a network stayed failed until the next
      keystroke, with the header red after the connection was back (E15). -->
@@ -791,9 +786,6 @@ SPDX-License-Identifier: MPL-2.0
 									>
 										{#each data.questions as question, i (keyOf(question))}
 											<div class="flex flex-col gap-3" role="listitem">
-												{#if i > 0}
-													{@render insert_here(i)}
-												{/if}
 												<QuestionCard
 													bind:data
 													bind:edit_id
@@ -818,6 +810,17 @@ SPDX-License-Identifier: MPL-2.0
 														drag_over = null;
 													}}
 												/>
+												{#if selected_question === i}
+													<Button
+														type="button"
+														variant="outline"
+														class="text-muted-foreground hover:text-foreground min-h-11 w-full border-dashed"
+														onclick={() => addBelow(i)}
+													>
+														<Plus />
+														{$t('editor.add_question_below')}
+													</Button>
+												{/if}
 											</div>
 										{/each}
 									</div>
@@ -880,12 +883,6 @@ SPDX-License-Identifier: MPL-2.0
 			</AlertDialog.Footer>
 		</AlertDialog.Content>
 	</AlertDialog.Root>
-	<AddNewQuestionPopup
-		bind:questions={data.questions}
-		bind:open={add_open}
-		bind:selected_question
-		at={add_at}
-	/>
 	<StartGame bind:quiz_id={play_id} newTab />
 {:catch error}
 	<div class="flex min-h-dvh items-center justify-center px-6">
