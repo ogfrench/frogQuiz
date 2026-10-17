@@ -19,12 +19,14 @@ SPDX-License-Identifier: MPL-2.0
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { editorValidation } from '$lib/editor/validation.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { newQuestion } from '$lib/editor/new_question';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
-	import Save from '@lucide/svelte/icons/save';
+	import Check from '@lucide/svelte/icons/check';
 	import Play from '@lucide/svelte/icons/play';
 	import Plus from '@lucide/svelte/icons/plus';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import CloudCheck from '@lucide/svelte/icons/cloud-check';
+	import CloudUpload from '@lucide/svelte/icons/cloud-upload';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import { getAnonSecret, setAnonSecret } from '$lib/anon_quiz';
 	import { htmlToPlainText, sanitizeTitleHtml } from '$lib/sanitize';
@@ -49,10 +51,6 @@ SPDX-License-Identifier: MPL-2.0
 	// for editing rather than which one the canvas is showing -- the others stay on
 	// screen, collapsed. -1 means no question is open, not "show the settings instead".
 	let selected_question = $state(0);
-	let add_open = $state(false);
-	// Where a new question goes. The "+" rows between cards insert in place; the button
-	// at the end appends.
-	let add_at = $state<number | null>(null);
 	let dragging_from = $state<number | null>(null);
 	let drag_over = $state<number | null>(null);
 
@@ -129,6 +127,18 @@ SPDX-License-Identifier: MPL-2.0
 				?.scrollIntoView({ behavior: 'smooth', block })
 		);
 	};
+	// The pressed "Add question below" (or Duplicate) goes away with the selection, which dropped keyboard
+	// focus on <body>. Put it in the new question's text instead, once CKEditor has taken the
+	// field over: focus set before that is lost when it starts.
+	const focusQuestionText = (index: number, tries = 120) => {
+		requestAnimationFrame(() => {
+			const field = document.querySelector<HTMLElement>(
+				`[data-question-index="${index}"] .ck-editor__editable`
+			);
+			if (field) field.focus();
+			else if (tries > 0) focusQuestionText(index, tries - 1);
+		});
+	};
 	const moveQuestion = (from: number, to: number) => {
 		if (to < 0 || to >= data.questions.length || from === to) return;
 		data.questions = moveItem(data.questions, from, to);
@@ -152,10 +162,22 @@ SPDX-License-Identifier: MPL-2.0
 		];
 		selected_question = index + 1;
 		scrollToCard(index + 1);
+		focusQuestionText(index + 1);
 	};
-	const openAdd = (at: number | null) => {
-		add_at = at;
-		add_open = true;
+	// Adds a multiple-choice question right after the open card and opens it, the way
+	// Google Forms adds below the selected question (V1 menus review, 17 Oct). It used to
+	// be a "+" between cards that only appeared on hover, so a phone could only add at
+	// the end. The type is changed on the new card; True / False is at the end of the list.
+	const addBelow = (index: number) => {
+		const empty_question = newQuestion('abcd');
+		data.questions = [
+			...data.questions.slice(0, index + 1),
+			empty_question,
+			...data.questions.slice(index + 1)
+		];
+		selected_question = index + 1;
+		scrollToCard(index + 1);
+		focusQuestionText(index + 1);
 	};
 	let edit_id: string = $state();
 
@@ -190,6 +212,7 @@ SPDX-License-Identifier: MPL-2.0
 	let conflict_open = $state(false);
 	// Why the last save failed, when it is something the author can act on.
 	let failure: 'signed_out' | 'deleted' | 'expired' | null = $state(null);
+	const quiz_gone = $derived(failure === 'deleted' || failure === 'expired');
 	// This tab's unsaved version from before a reload, offered back.
 	let restorable: string | null = $state(null);
 	// Bumped to remount the cards: each rich-text field reads its text only when it mounts,
@@ -485,25 +508,6 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-{#snippet insert_here(index: number)}
-	<!-- A hairline that becomes a button on hover or focus. Forms and Kahoot both let you
-	     add in the middle rather than adding at the end and then moving it up nine times. -->
-	<div class="group/insert relative -my-1 flex h-6 items-center justify-center">
-		<span
-			class="bg-border absolute inset-x-8 h-px opacity-0 transition group-hover/insert:opacity-100"
-		></span>
-		<button
-			type="button"
-			class="border-border bg-background text-muted-foreground hover:text-foreground focus-visible:ring-ring relative inline-flex size-6 items-center justify-center rounded-full border opacity-0 transition group-hover/insert:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
-			aria-label={$t('editor.add_question_here')}
-			title={$t('editor.add_question_here')}
-			onclick={() => openAdd(index)}
-		>
-			<Plus class="size-3.5" />
-		</button>
-	</div>
-{/snippet}
-
 <!-- ononline: a save that failed for want of a network stayed failed until the next
      keystroke, with the header red after the connection was back (E15). -->
 <svelte:window onbeforeunload={confirmUnload} ononline={() => flush()} />
@@ -610,7 +614,13 @@ SPDX-License-Identifier: MPL-2.0
 								class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm max-sm:flex-none"
 								role="status"
 							>
-								{#if saving}
+								<!-- Pending counts as saving, the way Docs and Forms say it: the autosave
+								     waits for a pause in typing, and in that gap the header used to say
+								     nothing, so an earlier "Saved" read as true. Opening a quiz shows it
+								     too, honestly: the rich-text fields rewrite what they load, and that
+								     is saved once. A quiz that cannot save (no title, gone, a conflict) says
+								     Unsaved changes instead. -->
+								{#if saving || (unsaved && savable && !failure && !conflict)}
 									<LoaderCircle class="size-4 shrink-0 animate-spin" />
 									<span class="truncate max-sm:sr-only"
 										>{$t('editor.saving')}</span
@@ -619,6 +629,11 @@ SPDX-License-Identifier: MPL-2.0
 									<CloudCheck class="size-4 shrink-0" />
 									<span class="truncate max-sm:sr-only">
 										{playable ? $t('editor.saved') : $t('editor.saved_draft')}
+									</span>
+								{:else}
+									<CloudUpload class="size-4 shrink-0" />
+									<span class="truncate max-sm:sr-only">
+										{$t('editor.unsaved_title')}
 									</span>
 								{/if}
 							</p>
@@ -640,21 +655,29 @@ SPDX-License-Identifier: MPL-2.0
 							<Button
 								type="button"
 								variant="outline"
-								disabled={!playable}
+								disabled={!playable || quiz_gone}
 								aria-describedby={playable ? undefined : 'play-hint'}
 								class="max-sm:size-9 max-sm:px-0"
 								onclick={play}
 							>
 								<Play />
-								<span class="max-sm:sr-only">{$t('words.play')}</span>
+								<span class="max-sm:sr-only">{$t('words.host_game')}</span>
 							</Button>
 							{#if !playable && !status_says_why}
 								<span id="play-hint" class="sr-only">{play_hint}</span>
 							{/if}
 						{/if}
-						<Button type="submit" disabled={saving} class="max-sm:size-9 max-sm:px-0">
-							<Save />
-							<span class="max-sm:sr-only">{$t('words.save')}</span>
+						<!-- Off while the quiz is gone: it can only fail again, and the banner's
+						     "Save as a new quiz" is the way on (V1 screens review, 17 Oct). -->
+						<Button
+							type="submit"
+							disabled={saving || quiz_gone}
+							class="max-sm:size-9 max-sm:px-0"
+						>
+							<!-- "Done", not "Save" (17 Oct): edits already save as you go, and this
+							     button saves the rest and leaves for the quiz page. -->
+							<Check />
+							<span class="max-sm:sr-only">{$t('words.done')}</span>
 						</Button>
 					</header>
 					<!-- #35: why a save failed, when it is something to act on. The text is never
@@ -747,6 +770,9 @@ SPDX-License-Identifier: MPL-2.0
 											i
 												? 'bg-muted font-medium'
 												: ''}"
+											aria-current={selected_question === i
+												? 'true'
+												: undefined}
 											onclick={() => {
 												focusCard(i);
 												scrollToCard(i, 'start');
@@ -763,7 +789,12 @@ SPDX-License-Identifier: MPL-2.0
 											{#if editorValidation.shown && !isQuestionComplete(question)}
 												<span
 													class="bg-destructive size-1.5 shrink-0 rounded-full"
+													title={$t('editor.question_incomplete')}
+													aria-hidden="true"
 												></span>
+												<span class="sr-only"
+													>{$t('editor.question_incomplete')}</span
+												>
 											{/if}
 										</button>
 									</li>
@@ -791,9 +822,6 @@ SPDX-License-Identifier: MPL-2.0
 									>
 										{#each data.questions as question, i (keyOf(question))}
 											<div class="flex flex-col gap-3" role="listitem">
-												{#if i > 0}
-													{@render insert_here(i)}
-												{/if}
 												<QuestionCard
 													bind:data
 													bind:edit_id
@@ -818,6 +846,17 @@ SPDX-License-Identifier: MPL-2.0
 														drag_over = null;
 													}}
 												/>
+												{#if selected_question === i}
+													<Button
+														type="button"
+														variant="outline"
+														class="text-muted-foreground hover:text-foreground min-h-11 w-full border-dashed"
+														onclick={() => addBelow(i)}
+													>
+														<Plus />
+														{$t('editor.add_question_below')}
+													</Button>
+												{/if}
 											</div>
 										{/each}
 									</div>
@@ -827,29 +866,31 @@ SPDX-License-Identifier: MPL-2.0
 									<!-- A new quiz: the first question is the next thing to do, so it is
 								     the one thing on offer, not a toolbar button above six optional
 								     fields. -->
-									<button
-										type="button"
-										class="border-border/70 hover:border-primary/50 hover:bg-muted/50 focus-visible:ring-ring flex flex-col items-center gap-1 rounded-xl border border-dashed px-6 py-10 text-center transition focus-visible:ring-2 focus-visible:outline-none"
-										onclick={() => openAdd(null)}
+									<div
+										class="border-border/70 flex flex-col gap-3 rounded-xl border border-dashed p-5"
 									>
-										<span class="flex items-center gap-2 font-medium">
-											<Plus class="size-4" />
-											{$t('editor.first_question')}
-										</span>
-										<span class="text-muted-foreground text-sm">
-											{$t('editor.first_question_hint')}
-										</span>
-									</button>
+										<div>
+											<p class="font-medium">{$t('editor.first_question')}</p>
+											<p class="text-muted-foreground text-sm">
+												{$t('editor.first_question_hint')}
+											</p>
+										</div>
+										<AddNewQuestionPopup
+											bind:questions={data.questions}
+											bind:selected_question
+											open={false}
+											inline
+										/>
+									</div>
 								{:else}
-									<Button
-										type="button"
-										variant="outline"
-										class="border-border/70 text-muted-foreground hover:text-foreground mt-1 h-14 w-full border-dashed"
-										onclick={() => openAdd(null)}
-									>
-										<Plus />
-										{$t('editor.add_new_question')}
-									</Button>
+									<div class="mt-1">
+										<AddNewQuestionPopup
+											bind:questions={data.questions}
+											bind:selected_question
+											open={false}
+											inline
+										/>
+									</div>
 								{/if}
 							</div>
 						</div>
@@ -878,12 +919,6 @@ SPDX-License-Identifier: MPL-2.0
 			</AlertDialog.Footer>
 		</AlertDialog.Content>
 	</AlertDialog.Root>
-	<AddNewQuestionPopup
-		bind:questions={data.questions}
-		bind:open={add_open}
-		bind:selected_question
-		at={add_at}
-	/>
 	<StartGame bind:quiz_id={play_id} newTab />
 {:catch error}
 	<div class="flex min-h-dvh items-center justify-center px-6">

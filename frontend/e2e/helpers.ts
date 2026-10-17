@@ -123,7 +123,7 @@ export async function hostFromViewPage(
 	await page.goto(`/view/${quizId}`);
 	// Clicked before hydration, Play does nothing; it showed for a host who does not own the quiz.
 	await page.waitForLoadState('networkidle');
-	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await page.getByRole('button', { name: 'Host game', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	await expect(dialog).toBeVisible();
 	if (opts.showOnDevices) {
@@ -263,7 +263,27 @@ export async function advanceToFinalResults(page: Page) {
 
 export const titleBox = (page: Page) => page.getByRole('textbox', { name: 'Quiz title' });
 export const questionBox = (page: Page) => page.getByRole('textbox', { name: 'Question text' });
-export const saveQuizButton = (page: Page) => page.getByRole('button', { name: 'Save' });
+/**
+ * Opens the quiz page's "More actions" menu (17 Oct). Retried: its button is server-
+ * rendered, so a click that lands before hydration opens nothing. Only an open menu
+ * counts: one still fading out after Escape or a pick is in the page for a moment with
+ * data-state="closed", and taking it for open is what lost the menu on a slow CI runner.
+ */
+export async function openViewMenu(page: Page) {
+	const more = page.getByRole('main').getByRole('button', { name: /^More actions/ });
+	const open = page.locator('[role="menu"][data-state="open"]');
+	await expect(async () => {
+		if ((await open.count()) === 0) {
+			await expect(page.getByRole('menu')).toHaveCount(0);
+			await more.click();
+		}
+		await expect(open).toBeVisible({ timeout: 1000 });
+	}).toPass();
+	return open;
+}
+
+export const saveQuizButton = (page: Page) =>
+	page.getByRole('button', { name: 'Done', exact: true });
 export const cards = (page: Page) => page.locator('[data-question-card]');
 
 export async function addQuestion(
@@ -272,16 +292,15 @@ export async function addQuestion(
 	title: string,
 	answers: [string, boolean][]
 ) {
-	await page
-		.getByRole('button', { name: /Add new question|Add your first question/ })
-		.first()
-		.click();
-	await page.getByRole('button', { name: kind }).click();
+	// The types are buttons at the end of the editor since 17 Oct, not a dialog.
+	await page.getByRole('button', { name: kind }).first().click();
 	// Only the open card holds a rich-text field; the others are collapsed to plain text.
 	await questionBox(page).fill(title);
-	for (let i = 0; i < answers.length; i++)
+	// A new question starts with two blank answers (#92): fill those, add the rest.
+	const inputs = page.getByRole('textbox', { name: /^Answer \d+$/ });
+	await expect(inputs).toHaveCount(2);
+	for (let i = 2; i < answers.length; i++)
 		await page.getByRole('button', { name: 'Add an answer' }).click();
-	const inputs = page.getByRole('textbox', { name: 'Enter an answer' });
 	for (const [i, [text, right]] of answers.entries()) {
 		await inputs.nth(i).fill(text);
 		if (right)

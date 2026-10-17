@@ -12,6 +12,7 @@ import os
 import random
 
 import socketio
+from redis.exceptions import WatchError
 from cryptography.fernet import Fernet
 
 from frogquiz.config import arq, redis, settings
@@ -279,6 +280,10 @@ async def join_game(sid: str, data: dict):
         if not captcha_res:
             return
     # --- END checking captcha ---
+    # Someone asking for the name of a player the host is removing ends the Undo now: the
+    # name used to stay taken for those five seconds.
+    if await redis.exists(_removing_key(data.game_pin, data.username)):
+        await _kick(data.game_pin, data.username)
     # Claimed with SET NX, in one step. It used to be a GET here and a SET further down,
     # and five players joining as the same name at the same moment all got in.
     claimed = await redis.set(
@@ -447,6 +452,28 @@ async def get_question_results(sid: str, data: dict):
     # scoreboard left those points out while the podium counted them.
     totals = await redis.hgetall(f"game_session:{game_pin}:player_scores")
     await sio.emit("scores", {name: int(points) for name, points in totals.items()}, room=f"admin:{game_pin}")
+    # The right answers' text, for a phone that got it wrong (François, 17 Oct). Sent only
+    # once the question is over, and ahead of the results so the card that opens on them
+    # has it. "solutions" only went out when the host stopped the clock by hand.
+    # Only for the question that was just played: the index is the host's to send, and a
+    # negative or future one would hand out answers to a question nobody has seen.
+    game = await PlayGame.get_from_redis(game_pin)
+    try:
+        index = int(data["question_number"])
+    except (ValueError, TypeError):
+        index = None
+    question = game.questions[index] if index is not None and index == game.current_question else None
+    scored = (QuizQuestionType.ABCD, QuizQuestionType.CHECK)
+    if question is not None and (question.type or QuizQuestionType.ABCD) in scored:
+        await sio.emit(
+            "correct_answers",
+            {
+                "question_index": index,
+                # A right answer left blank has nothing to show.
+                "answers": [a.answer for a in question.answers if a.right and a.answer.strip()],
+            },
+            room=game_pin,
+        )
     await sio.emit("question_results", answer_data_list.model_dump(), room=game_pin)
 
 
@@ -613,15 +640,19 @@ async def get_export_token(sid: str):
 
 @sio.event
 async def show_solutions(sid: str, _data: dict):
+    """The host's Stop time: no more answers, and every clock stops.
+
+    It sent the whole question, right answers included, to every phone while the question
+    was still open, so a modified phone could read the answer and submit it before the
+    results came up. Every screen only used the event to stop its clock.
+    """
     session: dict = await get_session(sid, sio)
-    game_data = await PlayGame.get_from_redis(session["game_pin"])
     if not session["admin"]:
         return
-    await sio.emit(
-        "solutions",
-        game_data.questions[game_data.current_question].model_dump(),
-        room=session["game_pin"],
-    )
+    game_pin = session["game_pin"]
+    game_data = await PlayGame.get_from_redis(game_pin)
+    await close_question(game_pin, game_data.current_question)
+    await sio.emit("solutions", {}, room=game_pin)
 
 
 @sio.event
@@ -638,30 +669,113 @@ async def echo_time_sync(sid: str, data: str):
     await save_session(sid, sio, session)
 
 
-@sio.event
-async def kick_player(sid: str, data: dict):
-    try:
-        data = KickPlayerInput(**data)
-    except (ValidationError, TypeError) as e:
-        await sio.emit("error", room=sid)
-        print(e)
-        return
+# The host's Undo on a removed player lasts five seconds (game_not_started.svelte); the
+# server waits one more, so an Undo pressed at the last moment still arrives in time.
+REMOVE_GRACE_SECONDS = 6
 
-    session: dict = await get_session(sid, sio)
-    if not session["admin"]:
-        return
 
-    player_key = f"game_session:{session['game_pin']}:players:{data.username}"
+def _removing_key(game_pin: str, username: str) -> str:
+    return f"game_session:{game_pin}:removing:{username}"
+
+
+async def _kick(game_pin: str, username: str) -> None:
+    """Take a player out of the game now, and tell the host it happened."""
+    await redis.delete(_removing_key(game_pin, username))
+    player_key = f"game_session:{game_pin}:players:{username}"
     player_sid = await redis.get(player_key)
+    # Already kicked, or left with leave_game. Emitting to room=None broadcasts to every
+    # socket on the server, so a kick for a name with no sid threw out every player of
+    # every game. The host still hears it, so a name it was holding for an Undo is let go
+    # before someone new joins under it.
+    if player_sid is None:
+        await sio.emit("player_removed", {"username": username}, room=f"admin:{game_pin}")
+        return
     await redis.srem(
-        f"game_session:{session['game_pin']}:players",
-        GamePlayer(username=data.username, sid=player_sid).model_dump_json(),
+        f"game_session:{game_pin}:players",
+        GamePlayer(username=username, sid=player_sid).model_dump_json(),
     )
     # rejoin_game accepts whoever holds the sid stored here, so leaving it in place let
     # a kicked player reload straight back into the game.
     await redis.delete(player_key)
-    await sio.leave_room(player_sid, session["game_pin"])
+    await sio.leave_room(player_sid, game_pin)
     await sio.emit("kick", room=player_sid)
+    await sio.emit("player_removed", {"username": username}, room=f"admin:{game_pin}")
+    # As for a leave: a game in progress may have been waiting only on this player.
+    await end_question_if_everyone_answered(game_pin)
+
+
+async def _admin_pin_and_player(sid: str, data: dict) -> tuple[str, str] | None:
+    try:
+        player = KickPlayerInput(**data)
+    except (ValidationError, TypeError) as e:
+        await sio.emit("error", room=sid)
+        print(e)
+        return None
+    session: dict = await get_session(sid, sio)
+    if not session["admin"]:
+        return None
+    return session["game_pin"], player.username
+
+
+@sio.event
+async def kick_player(sid: str, data: dict):
+    """Removes a player at once: the host's Start with an Undo still running, the remote."""
+    found = await _admin_pin_and_player(sid, data)
+    if found is not None:
+        await _kick(*found)
+
+
+@sio.event
+async def remove_player(sid: str, data: dict):
+    """Removes a player once the host's Undo has run out.
+
+    The wait is the server's, not the host tab's: a host who closed the tab inside the
+    window used to drop the removal, and the player came back when the host did.
+    """
+    found = await _admin_pin_and_player(sid, data)
+    if found is None:
+        return
+    game_pin, username = found
+    ticket = os.urandom(8).hex()
+    await redis.set(_removing_key(game_pin, username), ticket, ex=REMOVE_GRACE_SECONDS + 60)
+    sio.start_background_task(_remove_after_grace, game_pin, username, ticket)
+
+
+async def _remove_after_grace(game_pin: str, username: str, ticket: str) -> None:
+    await sio.sleep(REMOVE_GRACE_SECONDS)
+    if await _take_removal(game_pin, username, ticket):
+        await _kick(game_pin, username)
+
+
+async def _take_removal(game_pin: str, username: str, ticket: str) -> bool:
+    """Delete the removal only if it is still this ticket's, in one WATCH/MULTI step.
+
+    A check then a kick left a gap in which a join could end the removal, claim the name,
+    and be kicked as the old player. A take-then-put-back of a newer ticket had its own
+    gap, in which an Undo could be undone again.
+    """
+    key = _removing_key(game_pin, username)
+    async with redis.pipeline(transaction=True) as pipe:
+        while True:
+            try:
+                await pipe.watch(key)
+                if await pipe.get(key) != ticket:
+                    # Undone, ended by a join or a Start, or asked again with a newer ticket.
+                    await pipe.unwatch()
+                    return False
+                pipe.multi()
+                pipe.delete(key)
+                await pipe.execute()
+                return True
+            except WatchError:
+                continue
+
+
+@sio.event
+async def undo_remove_player(sid: str, data: dict):
+    found = await _admin_pin_and_player(sid, data)
+    if found is not None:
+        await redis.delete(_removing_key(*found))
 
 
 class _RegisterAsRemoteInput(BaseModel):

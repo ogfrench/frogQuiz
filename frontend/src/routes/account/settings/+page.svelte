@@ -11,6 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { DateTime } from 'luxon';
 	import { UAParser } from 'ua-parser-js';
 	import Spinner from '$lib/Spinner.svelte';
+	import RetryNotice from '$lib/components/RetryNotice.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -197,18 +198,31 @@ SPDX-License-Identifier: MPL-2.0
 		window.location.href = '/';
 	};
 
+	// Shown under the sessions list. It used to fail silently: a 4xx/5xx or a dropped
+	// connection left the row there with nothing to say why.
+	let sessionError = $state('');
+
 	const deleteSession = async (session_id: string) => {
-		const res = await fetch(`/api/v1/users/sessions/${session_id}`, {
-			method: 'DELETE'
-		});
-		if (res.status === 200) {
+		sessionError = '';
+		let res: Response;
+		try {
+			res = await fetch(`/api/v1/users/sessions/${session_id}`, {
+				method: 'DELETE'
+			});
+		} catch {
+			sessionError = $t('settings_page.sign_out_session_failed');
+			return;
+		}
+		if (res.ok) {
 			window.location.reload();
+		} else {
+			sessionError = $t('settings_page.sign_out_session_failed');
 		}
 	};
 </script>
 
 <svelte:head>
-	<title>frogQuiz - {$t('words.my_account')}</title>
+	<title>{$t('words.my_account')} — frogQuiz</title>
 </svelte:head>
 
 <!-- Was a grid-cols-6 with the avatar pinned to a one-sixth column and the rest in a
@@ -230,7 +244,12 @@ SPDX-License-Identifier: MPL-2.0
 			{/if}
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>{$t('settings_page.profile')}</Card.Title>
+					<h2
+						data-slot="card-title"
+						class="text-base leading-normal font-medium group-data-[size=sm]/card:text-sm"
+					>
+						{$t('settings_page.profile')}
+					</h2>
 				</Card.Header>
 				<Card.Content class="flex flex-wrap items-center gap-5">
 					<!-- The same initial circle as the navbar. It showed the random cartoon
@@ -269,7 +288,12 @@ SPDX-License-Identifier: MPL-2.0
 			{#if PASSWORDS}
 				<Card.Root>
 					<Card.Header>
-						<Card.Title>{$t('settings_page.password_section')}</Card.Title>
+						<h2
+							data-slot="card-title"
+							class="text-base leading-normal font-medium group-data-[size=sm]/card:text-sm"
+						>
+							{$t('settings_page.password_section')}
+						</h2>
 						<Card.Description
 							>{$t('settings_page.password_requirements')}</Card.Description
 						>
@@ -353,7 +377,12 @@ SPDX-License-Identifier: MPL-2.0
 
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>{$t('settings_page.sessions')}</Card.Title>
+					<h2
+						data-slot="card-title"
+						class="text-base leading-normal font-medium group-data-[size=sm]/card:text-sm"
+					>
+						{$t('settings_page.sessions')}
+					</h2>
 					<Card.Description>{$t('settings_page.sessions_description')}</Card.Description>
 				</Card.Header>
 				<Card.Content>
@@ -403,7 +432,7 @@ SPDX-License-Identifier: MPL-2.0
 												deleteSession(session.id);
 											}}
 										>
-											{$t('words.delete')}
+											{$t('settings_page.sign_out_session')}
 										</Button>
 									{/if}
 								</li>
@@ -422,9 +451,6 @@ SPDX-License-Identifier: MPL-2.0
 											>{$t('settings_page.last_seen')}</th
 										>
 										<th scope="col" class="px-4 py-3">{$t('words.browser')}</th>
-										<th scope="col" class="px-4 py-3"
-											>{$t('settings_page.this_session?')}</th
-										>
 										<th scope="col" class="px-4 py-3">
 											<span class="sr-only"
 												>{$t('settings_page.delete_this_session')}</span
@@ -433,7 +459,7 @@ SPDX-License-Identifier: MPL-2.0
 									</tr>
 								</thead>
 								<tbody class="divide-border divide-y">
-									{#each sessions as session}
+									{#each sessions as session (session.id)}
 										<tr>
 											<td
 												class="text-muted-foreground px-4 py-3 whitespace-nowrap"
@@ -445,20 +471,18 @@ SPDX-License-Identifier: MPL-2.0
 											>
 												{formatDate(session.last_seen)}
 											</td>
-											<td class="px-4 py-3"
-												>{getFormattedUserAgent(session.user_agent)}</td
-											>
-											<td class="px-4 py-3 whitespace-nowrap">
-												{#if session.id === this_session?.id}
-													<span
-														class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
-														>{$t('settings_page.this_session?')}</span
-													>
-												{:else}
-													<span class="text-muted-foreground"
-														>&mdash;</span
-													>
-												{/if}
+											<td class="px-4 py-3">
+												<span class="flex flex-wrap items-center gap-2">
+													{getFormattedUserAgent(session.user_agent)}
+													{#if session.id === this_session?.id}
+														<span
+															class="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+															>{$t(
+																'settings_page.this_session?'
+															)}</span
+														>
+													{/if}
+												</span>
 											</td>
 											<td class="px-4 py-3 text-right whitespace-nowrap">
 												{#if session.id !== this_session?.id}
@@ -478,7 +502,7 @@ SPDX-License-Identifier: MPL-2.0
 															deleteSession(session.id);
 														}}
 													>
-														{$t('words.delete')}
+														{$t('settings_page.sign_out_session')}
 													</Button>
 												{/if}
 											</td>
@@ -487,6 +511,11 @@ SPDX-License-Identifier: MPL-2.0
 								</tbody>
 							</table>
 						</div>
+						{#if sessionError !== ''}
+							<p class="text-destructive mt-3 text-sm" role="alert">{sessionError}</p>
+						{/if}
+					{:catch}
+						<RetryNotice message={$t('settings_page.sessions_load_failed')} />
 					{/await}
 				</Card.Content>
 			</Card.Root>
@@ -496,5 +525,7 @@ SPDX-License-Identifier: MPL-2.0
 
 			<DeleteAccount email={user.email} />
 		</div>
+	{:catch}
+		<RetryNotice message={$t('settings_page.load_failed')} />
 	{/await}
 </div>

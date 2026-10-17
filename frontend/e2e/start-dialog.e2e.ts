@@ -37,7 +37,7 @@ async function openStartDialog(page: Page, request: Parameters<typeof saveQuiz>[
 	await rememberAnonQuiz(page, saved.body.id, saved.secret!);
 	await page.goto(`/view/${saved.body.id}`);
 	await page.waitForLoadState('networkidle');
-	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await page.getByRole('button', { name: 'Host game', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Start game' });
 	await expect(dialog).toBeVisible();
 	return dialog;
@@ -55,7 +55,9 @@ for (const size of SIZES) {
 			const start = dialog.getByRole('button', { name: 'Start game' });
 			const trigger = dialog.getByRole('button', { name: 'Game options' });
 
-			await expect(dialog.getByText('Players join with a PIN on their phones.')).toBeVisible();
+			await expect(
+				dialog.getByText('Players join with a PIN on their phones.')
+			).toBeVisible();
 			await expect(start).toBeVisible();
 			await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 			// Folded means gone, not clipped: nothing in the fold can be tabbed into.
@@ -140,9 +142,10 @@ for (const size of SIZES) {
 				expect(lineHeight, `${row.name}: tight line height`).toBeGreaterThan(1.15);
 				if (row.hint) {
 					const hintBox = (await dialog.locator(row.hint).boundingBox())!;
-					expect(hintBox.y, `${row.name}: hint overlaps its label`).toBeGreaterThanOrEqual(
-						labelBox.y + labelBox.height
-					);
+					expect(
+						hintBox.y,
+						`${row.name}: hint overlaps its label`
+					).toBeGreaterThanOrEqual(labelBox.y + labelBox.height);
 					expect(Math.abs(hintBox.x - labelBox.x)).toBeLessThanOrEqual(1);
 				}
 			}
@@ -159,20 +162,19 @@ for (const size of SIZES) {
 			await page.keyboard.press('Escape');
 			await expect(dialog).toBeHidden();
 
-			await page.getByRole('button', { name: 'Play', exact: true }).click();
+			await page.getByRole('button', { name: 'Host game', exact: true }).click();
 			await expect(dialog.getByRole('button', { name: 'Game options' })).toHaveAttribute(
 				'aria-expanded',
 				'false'
 			);
 			await expect(dialog.getByRole('switch')).toHaveCount(0);
 			await openGameOptions(dialog);
-			await expect(dialog.getByRole('switch', { name: 'Add a join question' })).toHaveAttribute(
-				'aria-checked',
-				'false'
-			);
-			await expect(dialog.getByRole('textbox', { name: 'The question players answer' })).toHaveCount(
-				0
-			);
+			await expect(
+				dialog.getByRole('switch', { name: 'Add a join question' })
+			).toHaveAttribute('aria-checked', 'false');
+			await expect(
+				dialog.getByRole('textbox', { name: 'The question players answer' })
+			).toHaveCount(0);
 		});
 	});
 }

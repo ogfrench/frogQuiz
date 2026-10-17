@@ -217,7 +217,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - {$t('sign_in.title')}</title>
+	<title>{$t('sign_in.title')} — frogQuiz</title>
 </svelte:head>
 <div class="flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center px-4">
 	{#if data.notice}
@@ -248,6 +248,8 @@ SPDX-License-Identifier: MPL-2.0
 						{$t('sign_in.sent_to', { email: email.trim() })}
 					{:else if stage === 'email'}
 						{$t('sign_in.blurb')}
+						<!-- There is no Register: the first sign-in makes the account, so say so. -->
+						<span class="mt-1 block">{$t('sign_in.new_here')}</span>
 					{/if}
 				</Card.Description>
 			</Card.Header>
@@ -299,7 +301,9 @@ SPDX-License-Identifier: MPL-2.0
 						</div>
 						{@render problem()}
 						{#if holds_quizzes}
-							<p class="text-muted-foreground text-sm">{$t('sign_in.code_here_to_keep')}</p>
+							<p class="text-muted-foreground text-sm">
+								{$t('sign_in.code_here_to_keep')}
+							</p>
 						{/if}
 						<Button type="submit" disabled={busy || code.length !== 6}>
 							{#if busy}<LoaderCircle

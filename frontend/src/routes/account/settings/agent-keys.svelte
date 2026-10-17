@@ -148,7 +148,12 @@ SPDX-License-Identifier: MPL-2.0
 {#if enabled}
 	<Card.Root data-testid="agent-keys">
 		<Card.Header>
-			<Card.Title>{$t('settings_page.agents_title')}</Card.Title>
+			<h2
+				data-slot="card-title"
+				class="text-base leading-normal font-medium group-data-[size=sm]/card:text-sm"
+			>
+				{$t('settings_page.agents_title')}
+			</h2>
 			<Card.Description>{$t('settings_page.agents_description')}</Card.Description>
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-6">
@@ -307,7 +312,7 @@ SPDX-License-Identifier: MPL-2.0
 										<AlertDialog.Cancel>{$t('words.cancel')}</AlertDialog.Cancel
 										>
 										<AlertDialog.Action
-											class={buttonVariants({ variant: 'destructive' })}
+											class={buttonVariants({ variant: 'danger' })}
 											onclick={() => revoke(key.id)}
 											>{$t('settings_page.agents_revoke')}</AlertDialog.Action
 										>

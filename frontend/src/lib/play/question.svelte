@@ -53,6 +53,10 @@ SPDX-License-Identifier: MPL-2.0
 
 	let timer_res = $state(question.time);
 	let selected_answer: string = $state();
+	// Sent to the server, which is not the same as `selected_answer`: on a Check choice
+	// question ticking a tile sets that before Submit, so a player who ticked and never
+	// submitted was told "Answer locked in" when time ran out, with nothing sent.
+	let submitted = $state(false);
 
 	// Stop the timer if the question is answered
 	const timer = (time: string) => {
@@ -69,9 +73,9 @@ SPDX-License-Identifier: MPL-2.0
 		}, 1000);
 	};
 	// The server can refuse an answer, and used to do it in silence: `question_not_active`
-	// and `already_replied` had no listener anywhere in the frontend. The screen sets
-	// `selected_answer` the moment a tile is tapped, so a refused answer still read
-	// "Answer locked in" and the player only found out from a +0 on the results screen.
+	// and `already_replied` had no listener anywhere in the frontend. The screen says
+	// "Answer locked in" once an answer is sent, so a refused answer still read that and
+	// the player only found out from a +0 on the results screen.
 	//
 	// `refused` is the honest version of that: the answer did not count and the question
 	// is over. It is deliberately not a retry prompt -- by the time this arrives the
@@ -86,7 +90,7 @@ SPDX-License-Identifier: MPL-2.0
 	const on_question_not_active = () => {
 		// Only if this screen was claiming otherwise. A refusal for a question the player
 		// never answered needs no correction -- they are already seeing "time is up".
-		if (selected_answer !== undefined) {
+		if (submitted) {
 			refused = true;
 		}
 		timer_res = '0';
@@ -112,6 +116,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const selectAnswer = (answer: string) => {
 		selected_answer = answer;
+		submitted = true;
 		sfx('locked');
 		socket.emit('submit_answer', {
 			question_index: question_index,
@@ -121,6 +126,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	const select_complex_answer = (data) => {
 		selected_answer = 'a';
+		submitted = true;
 		sfx('locked');
 		const new_array = [];
 		for (let i = 0; i < data.length; i++) {
@@ -305,6 +311,18 @@ SPDX-License-Identifier: MPL-2.0
 					{/each}
 				</div>
 			</div>
+			<!-- Said the moment the answer is sent, not only when time runs out: a ring on
+			     the tile was the only sign it counted (V1 game-screen review, 17 Oct). The
+			     region is always there, so a screen reader hears the line when it lands. -->
+			<p
+				role="status"
+				class="flex h-10 shrink-0 items-center justify-center gap-2 text-base font-medium"
+			>
+				{#if submitted}
+					<Check class="size-5" aria-hidden="true" />
+					{$t('words.answer_locked_in')}
+				{/if}
+			</p>
 		{:else if question.type === QuizQuestionType.RANGE}
 			<span
 				class="fixed top-0 bg-red-500 h-8 transition-all"
@@ -453,26 +471,37 @@ SPDX-License-Identifier: MPL-2.0
 				<c.default
 					{question}
 					bind:selected_answer
+					locked={submitted}
 					{game_mode}
 					{timer_res}
 					{circular_progress}
 				/>
 				<!-- The one action on this screen, so it is sized for a thumb: it was a
 				     half-width default button in a strip 5% of the screen tall. -->
+				<!-- After Submit the tiles lock and the button gives way to the confirmation:
+				     both stayed live, and the server keeps only the first answer, so later
+				     ticks looked as if they counted. -->
 				<div class="flex h-18 shrink-0 items-start justify-center px-4">
-					<Button
-						type="button"
-						size="lg"
-						class="h-12 w-full max-w-md text-base"
-						disabled={selected_answer === undefined}
-						onclick={() => selectAnswer(selected_answer)}
-						>{$t('words.submit')}
-					</Button>
+					{#if submitted}
+						<p role="status" class="flex h-12 items-center gap-2 text-base font-medium">
+							<Check class="size-5" aria-hidden="true" />
+							{$t('words.answer_locked_in')}
+						</p>
+					{:else}
+						<Button
+							type="button"
+							size="lg"
+							class="h-12 w-full max-w-md text-base"
+							disabled={selected_answer === undefined}
+							onclick={() => selectAnswer(selected_answer)}
+							>{$t('words.submit')}
+						</Button>
+					{/if}
 				</div>
 			{/await}
 		{/if}
 	{:else}
-		{@const answered = selected_answer !== undefined}
+		{@const answered = submitted}
 		<!-- Time is up (or everyone has answered) but the results have not arrived yet.
 		     Without this the player's screen went completely blank, giving no confirmation
 		     that their answer was registered. The `answered` split matters: gating the whole

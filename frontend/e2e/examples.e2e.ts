@@ -17,7 +17,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { apiLogin, registerUser, signedInContext } from './accounts';
-import { expectNoHorizontalOverflow, mc, PHONE, saveQuiz, titleBox } from './helpers';
+import { expectNoHorizontalOverflow, mc, openViewMenu, PHONE, saveQuiz, titleBox } from './helpers';
 
 const ROOT = path.join(import.meta.dirname, '..', '..');
 const FOLDER = path.join(ROOT, 'frogquiz', 'examples');
@@ -29,8 +29,11 @@ const EXAMPLES: string[] = readdirSync(FOLDER)
 	.map((name) => JSON.parse(readFileSync(path.join(FOLDER, name), 'utf8')).title as string);
 
 const COPY = 'Copy to my quizzes';
-// The view page's button says "Copying..." while it works, and a locator by name has to follow.
-const COPY_OR_COPYING = /^(Copy to my quizzes|Copying)/;
+// Your own quiz says "Make a copy" (17 Oct): "to my quizzes" read as doing nothing there.
+const MAKE_COPY = 'Make a copy';
+
+// Copy is in the view page's "More actions" menu since 17 Oct.
+const viewMenu = openViewMenu;
 
 test.beforeAll(() => {
 	test.skip(!process.env.E2E_PY, 'needs e2e/run.sh, which sets E2E_PY');
@@ -143,11 +146,11 @@ test('a signed-out visitor can use an example as an anonymous quiz', async ({ br
 	await examples.getByRole('link', { name: title }).click();
 	await expect(page).toHaveURL(/\/view\//);
 	await page.waitForLoadState('networkidle');
-	// D43: hosting needs no account, so Play is offered rather than "Sign in to host".
-	await expect(page.getByRole('button', { name: 'Play' })).toBeEnabled();
+	// D43: hosting needs no account, so Host game is offered rather than "Sign in to host".
+	await expect(page.getByRole('button', { name: 'Host game' })).toBeEnabled();
 	await expect(page.getByRole('link', { name: 'Sign in to host' })).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Use this template' }).click();
+	await (await viewMenu(page)).getByRole('menuitem', { name: 'Use this template' }).click();
 	await expect(page).toHaveURL(/\/edit\?quiz_id=[0-9a-f-]{32,36}$/);
 	await expect(titleBox(page)).toContainText(`${title} (copy)`);
 	const quizId = new URL(page.url()).searchParams.get('quiz_id')!;
@@ -176,7 +179,7 @@ test('an example is copied into your quizzes and opens in the editor', async ({
 	await expect(page).toHaveURL(/\/view\//);
 	await page.waitForLoadState('networkidle');
 
-	await page.getByRole('button', { name: COPY }).click();
+	await (await viewMenu(page)).getByRole('menuitem', { name: COPY }).click();
 	await expect(page).toHaveURL(/\/edit\?quiz_id=[0-9a-f-]{32,36}$/);
 	await expect(titleBox(page)).toContainText(`${title} (copy)`);
 	const copyId = new URL(page.url()).searchParams.get('quiz_id')!;
@@ -193,33 +196,33 @@ test('an example is copied into your quizzes and opens in the editor', async ({
 	await context.close();
 });
 
-test('the button waits while the copy is made and says what went wrong', async ({
-	browser,
-	request
-}) => {
+test('Copy waits while the copy is made and says what went wrong', async ({ browser, request }) => {
 	const { page, context } = await signedInContext(browser, request);
 	await openView(page, (await findExampleId(page, EXAMPLES[0]))!);
-	const button = page.getByRole('button', { name: COPY_OR_COPYING });
+	const item = () => page.getByRole('menuitem', { name: COPY });
 
-	// A slow answer: the button is off, so a second press cannot make a second copy.
+	// A slow answer: the item is off, so a second press cannot make a second copy.
 	let release: () => void = () => undefined;
 	const held = new Promise<void>((resolve) => (release = resolve));
 	await page.route('**/api/v1/quiz/copy/*', async (route) => {
 		await held;
 		await route.fulfill({ status: 409, json: { detail: 'Storage limit reached' } });
 	});
-	await button.click();
-	await expect(button).toBeDisabled();
+	await (await viewMenu(page)).getByRole('menuitem', { name: COPY }).click();
+	await viewMenu(page);
+	await expect(item()).toHaveAttribute('data-disabled', '');
+	await page.keyboard.press('Escape');
 	release();
 	await expect(page.getByRole('alert')).toContainText('storage');
-	await expect(button).toBeEnabled();
+	await viewMenu(page);
+	await expect(item()).not.toHaveAttribute('data-disabled');
 
 	// Anything else gets the short message, and the next try is not blocked by the last.
 	await page.unroute('**/api/v1/quiz/copy/*');
 	await page.route('**/api/v1/quiz/copy/*', (route) =>
 		route.fulfill({ status: 500, json: { detail: 'boom' } })
 	);
-	await button.click();
+	await (await viewMenu(page)).getByRole('menuitem', { name: COPY }).click();
 	await expect(page.getByRole('alert')).toContainText(/Couldn't copy/);
 	await expect(page).toHaveURL(/\/view\//);
 	await context.close();
@@ -232,13 +235,17 @@ test('a stranger cannot copy an unlisted quiz, and the owner can', async ({ brow
 	const id = saved.body.id as string;
 
 	await openView(owner.page, id);
-	// Without this the check below could pass on a page that never grew the button.
-	await expect(owner.page.getByRole('button', { name: COPY })).toBeVisible();
+	// Without this the check below could pass on a page that never grew the item.
+	await expect(
+		(await viewMenu(owner.page)).getByRole('menuitem', { name: MAKE_COPY })
+	).toBeVisible();
 
 	const stranger = await signedInContext(browser, request);
 	await openView(stranger.page, id);
 	await expect(stranger.page.getByRole('link', { name: 'Practice' })).toBeVisible();
-	await expect(stranger.page.getByRole('button', { name: COPY })).toHaveCount(0);
+	const menu = await viewMenu(stranger.page);
+	await expect(menu.getByRole('menuitem', { name: 'Copy link' })).toBeVisible();
+	await expect(menu.getByRole('menuitem', { name: /copy/i })).toHaveCount(1);
 
 	// Hiding the button is for show; the API is the rule, and it answers as for a quiz
 	// that is not there.
@@ -259,7 +266,9 @@ test('a quiz in My Quizzes can be copied from its row', async ({ browser, reques
 	await owner.page.goto('/my-quizzes');
 	await owner.page.waitForLoadState('networkidle');
 	const row = owner.page.getByRole('listitem').filter({ hasText: title });
-	await row.getByRole('button', { name: COPY }).click();
+	// Copy sits behind the row's "More actions" menu since 17 Oct.
+	await row.getByRole('button', { name: /^More actions/ }).click();
+	await owner.page.getByRole('menuitem', { name: MAKE_COPY }).click();
 
 	await expect(owner.page).toHaveURL(/\/edit\?quiz_id=/);
 	expect(new URL(owner.page.url()).searchParams.get('quiz_id')).not.toBe(id);
@@ -289,7 +298,7 @@ test('on a phone, Discover, an example and My Quizzes do not scroll sideways', a
 
 	const id = (await findExampleId(page, EXAMPLES[0]))!;
 	await openView(page, id);
-	const copy = page.getByRole('button', { name: COPY });
+	const copy = page.getByRole('main').getByRole('button', { name: /^More actions/ });
 	await expect(copy).toBeVisible();
 	await expectNoHorizontalOverflow(page);
 	// Inside the screen, not just inside a document that is allowed to scroll.

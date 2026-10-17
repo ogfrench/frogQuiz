@@ -5,7 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <svelte:head>
-	<title>frogQuiz - Controller</title>
+	<title>Controller — frogQuiz</title>
 </svelte:head>
 
 <div>

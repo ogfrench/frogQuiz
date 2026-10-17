@@ -48,7 +48,9 @@ const PAIRS: [string, string][] = [
 	['muted-foreground', 'background'],
 	['muted-foreground', 'card'],
 	['accent-foreground', 'accent'],
-	['destructive-foreground', 'destructive']
+	['destructive-foreground', 'destructive'],
+	// The solid confirm button for permanent deletes (button variant `danger`).
+	['background', 'destructive']
 ];
 
 describe.each([

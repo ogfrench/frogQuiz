@@ -109,7 +109,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - {$t('practice_page.title')}</title>
+	<title>{$t('practice_page.title')} — frogQuiz</title>
 </svelte:head>
 
 <div

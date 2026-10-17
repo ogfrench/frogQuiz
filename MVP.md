@@ -93,7 +93,7 @@ Every route in `frontend/src/routes`, with what it does today and a proposal.
 | `/account/settings`                                  | Profile, password, sessions, delete account        | **K** = My Account | Remove its two buttons to the avatar editor and the public profile (both deferred)  |
 | `/account/settings/avatar`                           | Custom avatar editor                               | **H**              | Custom avatars were deferred in mvp-scope.md                                        |
 | `/account/settings/security`                         | TOTP and backup codes                              | already hidden     |                                                                                     |
-| `/account/oauth-error`                               | Error page for OAuth sign-in                       | **K** (inert)      | The future Azure SSO lands here                                                     |
+| `/account/oauth-error`                               | Error page for OAuth sign-in                       | **H** (17 Oct)     | Only GitHub's failed callback lands here, and GitHub is off. Remove it from `DISABLED_ROUTES` when an SSO provider is turned on |
 | `/user/[user_id]`                                    | Public profile and that user's quizzes             | **H**              | Deferred. Linked from settings (the view page's author link was removed 2026-09-28) |
 
 ### Secondary features

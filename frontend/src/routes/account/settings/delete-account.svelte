@@ -99,7 +99,12 @@ SPDX-License-Identifier: MPL-2.0
 
 <Card.Root class="border-destructive/40">
 	<Card.Header>
-		<Card.Title>{$t('settings_page.danger_section')}</Card.Title>
+		<h2
+			data-slot="card-title"
+			class="text-base leading-normal font-medium group-data-[size=sm]/card:text-sm"
+		>
+			{$t('settings_page.danger_section')}
+		</h2>
 		<Card.Description>{$t('settings_page.danger_description')}</Card.Description>
 	</Card.Header>
 	<Card.Content>
@@ -150,7 +155,7 @@ SPDX-License-Identifier: MPL-2.0
 							click, which would hide the error from a failed delete.
 						-->
 					<Button
-						variant="destructive"
+						variant="danger"
 						disabled={isSubmitting || !matches}
 						onclick={deleteAccount}
 					>

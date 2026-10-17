@@ -37,7 +37,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - {data.user.username ? `@${data.user.username}` : 'User not found'}</title>
+	<title>{data.user.username ? `@${data.user.username}` : 'User not found'} — frogQuiz</title>
 </svelte:head>
 
 <div class="h-full">

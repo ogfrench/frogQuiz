@@ -13,7 +13,14 @@
 
 import { expect, test } from '@playwright/test';
 import { signedInContext } from './accounts';
-import { advanceToFinalResults, joinAsPlayer, mc, saveQuiz, showResults } from './helpers';
+import {
+	advanceToFinalResults,
+	joinAsPlayer,
+	mc,
+	openViewMenu,
+	saveQuiz,
+	showResults
+} from './helpers';
 
 test('a teammate finds a colleague’s quiz, runs it, and never sees the answers', async ({
 	browser,
@@ -60,7 +67,10 @@ test('a teammate finds a colleague’s quiz, runs it, and never sees the answers
 		// the thing a visitor must never get.
 		await expect(mate.page.getByText('Correct', { exact: true })).toHaveCount(0);
 		// D18: nor as a spreadsheet. Both halves, because hiding a button is not a guard.
-		await expect(mate.page.getByRole('button', { name: 'Download' })).toHaveCount(0);
+		const menu = await openViewMenu(mate.page);
+		await expect(menu.getByRole('menuitem', { name: 'Copy link' })).toBeVisible();
+		await expect(mate.page.getByRole('menuitem', { name: 'Download' })).toHaveCount(0);
+		await mate.page.keyboard.press('Escape');
 		const id = new URL(viewUrl).pathname.split('/view/')[1];
 		const res = await mate.context.request.get(`/api/v1/eximport/excel/${id}`);
 		expect(res.status(), 'a teammate downloaded the answer key').toBe(404);
@@ -76,7 +86,7 @@ test('a teammate finds a colleague’s quiz, runs it, and never sees the answers
 	});
 
 	await test.step('but they can run it, which is the point of sharing', async () => {
-		await mate.page.getByRole('button', { name: 'Play', exact: true }).click();
+		await mate.page.getByRole('button', { name: 'Host game', exact: true }).click();
 		const dialog = mate.page.getByRole('dialog', { name: 'Start game' });
 		await expect(dialog).toBeVisible();
 		await dialog.getByRole('button', { name: 'Start game' }).click();

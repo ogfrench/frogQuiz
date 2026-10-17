@@ -237,6 +237,25 @@ test.describe('answering', () => {
 		expect(await refused).not.toBeNull();
 	});
 
+	// Stop time sent every phone the whole question, right answers included, and kept taking
+	// answers until the results came up two seconds later.
+	test('Stop time sends phones no answers, and takes no more', async ({ request }) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const [, b] = await joinAll(pin, ['early', 'peeker']);
+		await startGame(host);
+		await showQuestion(host, 0);
+		const stopped = next(b, 'solutions');
+		host.emit('show_solutions', {});
+		const payload = JSON.stringify(await stopped);
+		expect(payload, 'the stop reached the phone').not.toBe('null');
+		expect(payload).not.toContain('Lisbon');
+		expect(payload).not.toContain('right');
+		const refused = next(b, 'question_not_active');
+		b.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
+		expect(await refused, 'an answer after Stop time was taken').not.toBeNull();
+		expect((await finalResults(host))['0'] ?? []).toHaveLength(0);
+	});
+
 	test.describe('after the question closes', () => {
 		test('an answer after the timer ran out scores nothing, and never negative', async ({
 			request
@@ -309,6 +328,23 @@ test.describe('host control', () => {
 		const rejoined = next(back, 'rejoined_game', 1500);
 		back.emit('rejoin_game', { old_sid: oldSid, game_pin: pin, username: 'troll' });
 		expect(await rejoined, 'kicked player rejoined').toBeNull();
+	});
+
+	// A kick for a name with no sid (kicked already, or gone with leave_game) emitted
+	// "kick" to room None, which python-socketio sends to every connected socket: one
+	// stale kick threw every player out of every game on the server.
+	test('kicking a name that is not there throws out nobody, in this game or another', async ({
+		request
+	}) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const [p] = await joinAll(pin, ['stays']);
+		const other = await hostGame(request, QUIZ);
+		const [q] = await joinAll(other.pin, ['elsewhere']);
+		const here = next(p, 'kick', 1500);
+		const there = next(q, 'kick', 1500);
+		host.emit('kick_player', { username: 'nobody' });
+		expect(await here, 'a player in this game was kicked').toBeNull();
+		expect(await there, 'a player in another game was kicked').toBeNull();
 	});
 
 	test('a player cannot get the host credential, nor take the seat without it', async ({

@@ -48,13 +48,24 @@ SPDX-License-Identifier: MPL-2.0
 	);
 	// Where each player stood before this question's points landed. Movement is the thing a
 	// scoreboard is for: a number that only goes up says nothing about the race.
-	const order = (score: (name: string) => number) =>
-		Object.keys(totals ?? {})
-			.sort((a, b) => score(b) - score(a))
-			.map((name, i) => ({ name, score: Number(totals[name]) || 0, place: i + 1 }));
+	// Equal scores share a place (1, 1, 3), as on any leaderboard: two players on 0 were
+	// "2nd" and "3rd" by join order.
+	const order = (score: (name: string) => number) => {
+		const ranked = Object.keys(totals ?? {})
+			.map((name) => ({ name, value: score(name) }))
+			.sort((a, b) => b.value - a.value);
+		return ranked.map((p) => ({
+			name: p.name,
+			score: Number(totals[p.name]) || 0,
+			place: ranked.findIndex((q) => q.value === p.value) + 1
+		}));
+	};
 	const before = $derived(order((n) => (Number(totals[n]) || 0) - (gained[n] ?? 0)));
 	const after = $derived(order((n) => Number(totals[n]) || 0));
 	const place_before = $derived(Object.fromEntries(before.map((p) => [p.name, p.place])));
+	// Before the first points everyone is level, so there is no order to move from: the
+	// arrows were invented ("up" at 899 against 0) from join order.
+	const no_order_before = $derived(before.every((p) => p.place === 1));
 
 	// The standings appear in last question's order and then move: the rows slide to their
 	// new places a beat later, which is the part worth watching. With reduced motion they
@@ -71,9 +82,7 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	// Kahoot shows five. More than that stops being readable across a room, and the rest of
 	// the field is on the spreadsheet and on each player's own screen.
-	const top = $derived(
-		(settled ? after : before).slice(0, 5).map((p, i) => ({ ...p, place: settled ? p.place : i + 1 }))
-	);
+	const top = $derived((settled ? after : before).slice(0, 5));
 	const rest = $derived(after.length - top.length);
 
 	onMount(() => {
@@ -128,7 +137,9 @@ SPDX-License-Identifier: MPL-2.0
 				</h2>
 				<ul class="divide-y divide-neutral-200">
 					{#each top as player (player.name)}
-						{@const moved = (place_before[player.name] ?? player.place) - player.place}
+						{@const moved = no_order_before
+							? 0
+							: (place_before[player.name] ?? player.place) - player.place}
 						<li
 							class="flex items-center gap-4 px-6 py-3 lg:gap-6 lg:py-4"
 							animate:flip={{ duration: dur(DUR.stage) }}
@@ -147,7 +158,9 @@ SPDX-License-Identifier: MPL-2.0
 							</span>
 							<!-- Up, down or held. Shape as well as direction, so it does not rest on a
 							     colour nobody can see from four metres away. -->
-							<span class="flex w-10 shrink-0 items-center justify-center text-neutral-500">
+							<span
+								class="flex w-10 shrink-0 items-center justify-center text-neutral-500"
+							>
 								{#if settled && moved > 0}
 									<ChevronUp class="size-5 lg:size-7" aria-hidden="true" />
 								{:else if settled && moved < 0}
@@ -183,7 +196,9 @@ SPDX-License-Identifier: MPL-2.0
 					{/each}
 				</ul>
 				{#if rest > 0}
-					<p class="border-t border-neutral-200 px-6 py-2.5 text-center text-sm text-neutral-500">
+					<p
+						class="border-t border-neutral-200 px-6 py-2.5 text-center text-sm text-neutral-500"
+					>
 						{$t('admin_page.and_more_players', { count: rest })}
 					</p>
 				{/if}

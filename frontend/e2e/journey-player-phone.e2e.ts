@@ -84,10 +84,10 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 		expect(first).toBeGreaterThan(180);
 		await expect.poll(arcLeft, { timeout: 5_000 }).toBeLessThan(first);
 		await lisbon.click();
-		// The tiles stay up with their pick held until the timer ends -- "Answer locked
-		// in" is the screen *after* that, not the acknowledgement of the tap. Kahoot does
-		// the same. Asserting the copy here failed against correct behavior; the page
-		// snapshot showed the timer still at 10 with the tile [disabled] [pressed].
+		// The tiles stay up with their pick held until the timer ends, as on Kahoot, and a
+		// line under them says the answer is in (V1 game-screen review, 17 Oct): the ring
+		// on the tile used to be the only sign.
+		await expect(phone.getByText('Answer locked in')).toBeVisible();
 		await expect(lisbon).toBeDisabled();
 		await expect(lisbon).toHaveAttribute('aria-pressed', 'true');
 		await expect(phone.getByRole('button', { name: 'Porto' })).toBeDisabled();
@@ -97,7 +97,7 @@ test('a player goes from the join screen to the podium and out, all on a phone',
 		await showResults(page);
 		await expect(phone.getByText('Correct!')).toBeVisible({ timeout: 15_000 });
 		// Points and standing, not just a tick -- the thing players actually look for.
-		await expect(phone.getByText(/1 of 2/)).toBeVisible();
+		await expect(phone.getByText('1st of 2 players')).toBeVisible();
 		await expectNoHorizontalOverflow(phone);
 	});
 

@@ -290,12 +290,11 @@ test('on a phone, the header says what is missing, in full', async ({ browser })
 	const ctx = await browser.newContext({ viewport: PHONE });
 	const page = await ctx.newPage();
 	await startNewQuiz(page, `October team trivia ${Date.now()}`);
-	await page
-		.getByRole('button', { name: /Add your first question/ })
-		.first()
-		.click();
 	await page.getByRole('button', { name: /^Multiple choice/ }).click();
 	await questionBox(page).fill('No answers yet');
+	// A new question starts with two blank answers (#92); with both gone it has none.
+	await page.getByRole('button', { name: 'Delete answer' }).first().click();
+	await page.getByRole('button', { name: 'Delete answer' }).first().click();
 	await saveQuizButton(page).click();
 	// The status shared one row with the title, the theme switch and Save, and got 33px:
 	// this sentence read as a single letter. It also asked for a title and a question,
@@ -346,9 +345,10 @@ test.describe('regressions', () => {
 		expect(stored.description).toBe('Typed immediately');
 	});
 
-	// Advanced settings was a bare checkbox in a hand-rolled overlay. It is a Switch now,
-	// and a Switch bound straight to `hide_results` throws on every question saved
-	// before that field existed, where it is undefined -- which is all of them here.
+	// Advanced settings was a bare checkbox in a hand-rolled overlay, then a Switch in a
+	// dialog, and since 17 Oct a Switch on the open card. A Switch bound straight to
+	// `hide_results` throws on every question saved before that field existed, where it
+	// is undefined -- which is all of them here.
 	test('"Skip the results" is saved, on a question that never had the flag', async ({
 		page,
 		request
@@ -364,14 +364,12 @@ test.describe('regressions', () => {
 
 		await page.goto(`/edit?quiz_id=${id}`);
 		await expect(titleBox(page)).toContainText('Skip', { timeout: 20_000 });
-		await page.getByRole('button', { name: 'Advanced settings' }).first().click();
-		const dialog = page.getByRole('dialog', { name: 'Advanced settings' });
-		const skip = dialog.getByRole('switch', { name: 'Skip the results' });
+		// The first card is the open one when the editor loads.
+		const skip = page.getByRole('switch', { name: 'Skip the results' });
+		await expect(skip).toHaveCount(1);
 		await expect(skip).toHaveAttribute('aria-checked', 'false');
 		await skip.click();
 		await expect(skip).toHaveAttribute('aria-checked', 'true');
-		await page.keyboard.press('Escape');
-		await expect(dialog).toBeHidden();
 		await saveQuizButton(page).click();
 		await page.waitForURL(/\/view\//);
 		const stored = await (await request.get(`/api/v1/quiz/get/public/${id}`)).json();

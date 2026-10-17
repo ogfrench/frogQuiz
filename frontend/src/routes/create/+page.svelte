@@ -44,7 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Create</title>
+	<title>Create — frogQuiz</title>
 </svelte:head>
 
 {#if data !== undefined}

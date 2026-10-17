@@ -6,26 +6,30 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Answer, Question } from '$lib/quiz_types';
-	import { QuizQuestionType } from '$lib/quiz_types';
+	import type { Question } from '$lib/quiz_types';
+	import { newQuestion, type NewQuestionKind } from './new_question';
 	import { getLocalization } from '$lib/i18n';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import X from '@lucide/svelte/icons/x';
+	import Plus from '@lucide/svelte/icons/plus';
 
 	interface Props {
 		questions: Question[];
 		open: boolean;
 		selected_question: number;
-		/** Insert before this index. null appends, which is what the end button does. */
+		/** Insert before this index. null appends, which is what the end buttons do. */
 		at?: number | null;
+		/** Render the types as buttons in the page instead of a dialog. */
+		inline?: boolean;
 	}
 
 	let {
 		questions = $bindable(),
 		open = $bindable(),
 		selected_question = $bindable(),
-		at = null
+		at = null,
+		inline = false
 	}: Props = $props();
 
 	const { t } = getLocalization();
@@ -35,51 +39,33 @@ SPDX-License-Identifier: MPL-2.0
 	// what people run a live quiz for. True/false needs no type of its own -- it is an ABCD
 	// question with two answers. Existing quizzes that already use a cut type still open and
 	// still play; this list only governs what can be created from here.
-	const question_types: {
-		name: string;
-		description: string;
-		answers: Answer[];
-		type: QuizQuestionType;
-	}[] = [
+	// Each type's starting answers live in new_question.ts, shared with "Add question
+	// below" (#92). True/False is not a type of its own anywhere: it is an ABCD question
+	// that arrives with its two answers written, neither marked (a pre-marked True shipped
+	// false statements with True as their answer).
+	const question_types: { name: string; description: string; kind: NewQuestionKind }[] = [
 		{
 			name: $t('words.multiple_choice'),
 			description: $t('editor.abcd_description'),
-			answers: [],
-			type: QuizQuestionType.ABCD
+			kind: 'abcd'
 		},
 		{
 			name: $t('words.check_choice'),
 			description: $t('editor.check_choice_description'),
-			answers: [],
-			type: QuizQuestionType.CHECK
+			kind: 'check'
 		},
-		// True/False is not a type of its own anywhere: it is an ABCD question that
-		// arrives with its two answers already written. Kahoot offers the same preset,
-		// and it needs no play, scoring or export path that ABCD does not already have.
-		// Neither starts marked correct. True used to, so a false statement left alone
-		// shipped with True as its answer and nothing flagged it, and an author who
-		// clicked True to mark it un-marked it instead. Unmarked, the question stays
-		// unfinished until the author picks one.
 		{
 			name: $t('words.true_false'),
 			description: $t('editor.true_false_description'),
-			answers: [
-				{ answer: $t('words.true'), right: false },
-				{ answer: $t('words.false'), right: false }
-			],
-			type: QuizQuestionType.ABCD
+			kind: 'true_false'
 		}
 	];
 
 	const add_question = (index: number) => {
-		const empty_question: Question = {
-			type: question_types[index].type,
-			time: '20',
-			question: '',
-			image: undefined,
-			// A fresh copy: the preset's answers are a template, not shared state.
-			answers: question_types[index].answers.map((a) => ({ ...a }))
-		};
+		const empty_question = newQuestion(question_types[index].kind, {
+			true: $t('words.true'),
+			false: $t('words.false')
+		});
 		const position =
 			at === null ? questions.length : Math.max(0, Math.min(at, questions.length));
 		questions = [
@@ -98,39 +84,64 @@ SPDX-License-Identifier: MPL-2.0
      Escape handling, the backdrop, the focus trap and the return of focus to whatever
      opened it -- none of which the hand-rolled version did. Its own close button is
      turned off because its label is hardcoded English; ours is translated. -->
-<Dialog.Root bind:open>
-	<Dialog.Content showCloseButton={false} class="gap-5">
-		<div class="flex items-start justify-between gap-4">
-			<Dialog.Title class="text-lg font-semibold">
-				{$t('editor.add_new_question')}
-			</Dialog.Title>
-			<Dialog.Close>
-				{#snippet child({ props })}
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label={$t('words.close')}
-						{...props}
-					>
-						<X />
-					</Button>
-				{/snippet}
-			</Dialog.Close>
-		</div>
-
-		<div class="flex flex-col gap-2">
+<!-- Inline at the end of the editor (V1 menus review, 17 Oct): one press adds the type
+     you want, where the dialog took two for every question. Adding in the middle is the
+     open card's "Add question below" now; the dialog branch has no caller left. -->
+{#if inline}
+	<div class="flex flex-col gap-2">
+		<p class="text-muted-foreground text-sm font-medium">{$t('editor.add_a_question')}</p>
+		<div class="grid gap-2 sm:grid-cols-3">
 			{#each question_types as qt, i (qt.name)}
-				<button
+				<Button
 					type="button"
-					class="border-border hover:border-primary/50 hover:bg-muted focus-visible:ring-ring rounded-lg border p-4 text-left transition focus-visible:ring-2 focus-visible:outline-none"
-					onclick={() => {
-						add_question(i);
-					}}
+					variant="outline"
+					class="h-auto min-h-11 justify-start border-dashed py-2.5 whitespace-normal"
+					title={qt.description}
+					onclick={() => add_question(i)}
 				>
-					<span class="font-medium">{qt.name}</span>
-					<span class="text-muted-foreground mt-1 block text-sm">{qt.description}</span>
-				</button>
+					<Plus />
+					{qt.name}
+				</Button>
 			{/each}
 		</div>
-	</Dialog.Content>
-</Dialog.Root>
+	</div>
+{:else}
+	<Dialog.Root bind:open>
+		<Dialog.Content showCloseButton={false} class="gap-5">
+			<div class="flex items-start justify-between gap-4">
+				<Dialog.Title class="text-lg font-semibold">
+					{$t('editor.add_new_question')}
+				</Dialog.Title>
+				<Dialog.Close>
+					{#snippet child({ props })}
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label={$t('words.close')}
+							{...props}
+						>
+							<X />
+						</Button>
+					{/snippet}
+				</Dialog.Close>
+			</div>
+
+			<div class="flex flex-col gap-2">
+				{#each question_types as qt, i (qt.name)}
+					<button
+						type="button"
+						class="border-border hover:border-primary/50 hover:bg-muted focus-visible:ring-ring rounded-lg border p-4 text-left transition focus-visible:ring-2 focus-visible:outline-none"
+						onclick={() => {
+							add_question(i);
+						}}
+					>
+						<span class="font-medium">{qt.name}</span>
+						<span class="text-muted-foreground mt-1 block text-sm"
+							>{qt.description}</span
+						>
+					</button>
+				{/each}
+			</div>
+		</Dialog.Content>
+	</Dialog.Root>
+{/if}

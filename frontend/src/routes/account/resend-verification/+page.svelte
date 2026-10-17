@@ -71,7 +71,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - Resend confirmation email</title>
+	<title>Resend confirmation email — frogQuiz</title>
 </svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">

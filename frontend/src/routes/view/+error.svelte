@@ -15,7 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>{$t('words.error')} - {status}</title>
+	<title>{$t('words.error')} {status} — frogQuiz</title>
 </svelte:head>
 
 <ErrorPage

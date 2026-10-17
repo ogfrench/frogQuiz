@@ -71,10 +71,7 @@ test('the theme toggle switches the class and the background', async ({ page }) 
 	// the handler is attached rather than guessing a delay.
 	await expect(async () => {
 		if ((await dark()) === before.dark) {
-			await page
-				.getByRole('button', { name: /Switch to (dark|light) mode/ })
-				.first()
-				.click();
+			await page.getByRole('button', { name: 'Dark mode', exact: true }).first().click();
 		}
 		expect(await dark()).toBe(!before.dark);
 	}).toPass({ timeout: 15_000 });
@@ -98,7 +95,7 @@ test('the footer sits on the page ground, one line wide, with a text heart', asy
 		await page.goto('/');
 		const footer = page.getByRole('contentinfo');
 		await expect(footer).toContainText('Designed with ♥');
-		await expect(footer.getByRole('link', { name: 'Terms of Service' })).toBeVisible();
+		await expect(footer.getByRole('link', { name: 'Terms', exact: true })).toBeVisible();
 		// It was a bg-muted band, the one grey block on pages otherwise on the ground.
 		expect(await footer.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
 			'rgba(0, 0, 0, 0)'

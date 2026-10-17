@@ -36,6 +36,8 @@ SPDX-License-Identifier: MPL-2.0
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { copyQuizLink } from '$lib/share_link.svelte';
 	import Check from '@lucide/svelte/icons/check';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import CircleDot from '@lucide/svelte/icons/circle-dot';
@@ -44,6 +46,8 @@ SPDX-License-Identifier: MPL-2.0
 	import ListChecks from '@lucide/svelte/icons/list-checks';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import Download from '@lucide/svelte/icons/download';
+	import Ellipsis from '@lucide/svelte/icons/ellipsis';
+	import Link from '@lucide/svelte/icons/link';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import Pencil from '@lucide/svelte/icons/pencil';
@@ -79,6 +83,9 @@ SPDX-License-Identifier: MPL-2.0
 	// #43 cases 2 and 3: signed in, looking at a quiz made without an account, in a browser
 	// without its secret. No Claim can work here, so say where it can.
 	let secret_checked = $state(false);
+	// Both ownership checks have answered. Until then an owner's unlisted quiz would offer
+	// Practice first and then swap to Host game under the pointer.
+	let owner_checked = $state(false);
 	const made_in_other_browser = $derived(
 		secret_checked && logged_in && quiz.user_id === null && !owns_anonymously
 	);
@@ -97,6 +104,7 @@ SPDX-License-Identifier: MPL-2.0
 				// Edit and Delete just stay hidden; nothing else on the page needs this.
 			}
 		}
+		owner_checked = true;
 	});
 
 	// Only the owner sees the answer key. Anyone else viewing a public quiz may well
@@ -134,6 +142,13 @@ SPDX-License-Identifier: MPL-2.0
 		quiz.questions.length === 0 || quiz.questions.some((q) => !isQuestionComplete(q))
 	);
 
+	// Unable to host somebody else's unlisted quiz: Practice is the one thing this visitor
+	// can do, so it is the strong button rather than a disabled one.
+	// Signed out on an unlisted quiz is the same: signing in only helps the person who made it.
+	const practice_first = $derived(
+		owner_checked && !can_start && !is_draft && (logged_in || !quiz.public)
+	);
+
 	// An anonymous quiz is swept 30 days after creation. The holder of the secret
 	// is the only person who can act on that, so they are the one who has to be
 	// told -- signing in is what makes it permanent.
@@ -141,6 +156,7 @@ SPDX-License-Identifier: MPL-2.0
 	const days_until_expiry = $derived(anonDaysLeft(quiz.expire_at));
 
 	let delete_open = $state(false);
+	let more_button: HTMLElement | null = $state(null);
 	let deleting = $state(false);
 	let delete_error = $state(false);
 
@@ -261,7 +277,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>frogQuiz - View {htmlToPlainText(quiz.title)}</title>
+	<title>{htmlToPlainText(quiz.title)} — frogQuiz</title>
 	<!-- What a pasted link to this quiz shows. Rendered on the server, which is the only
 	     place a link preview ever reads it. -->
 	<meta name="description" content={share.description} />
@@ -423,24 +439,30 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			</Card.Header>
 
-			<Card.Footer
-				class="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center"
-			>
-				<!-- Start is the one primary action; everything else is outline or ghost. -->
+			<Card.Footer class="flex flex-wrap items-center gap-3">
+				<!-- Host game is the one primary action; Edit and Practice stay labeled, and the
+				     rest sit behind "More actions", the same pattern as a My Quizzes row (V1
+				     menus review, 17 Oct). Seven buttons wrapped to four rows on a phone. -->
 				{#if !logged_in && !can_start && !is_draft}
-					<!-- Signed out, Play was drawn disabled with the reason in small print
-					     below. Logging in is the way through, so the button is that, and it
+					<!-- Signed out, Host game was drawn disabled with the reason in small print
+					     below. Signing in is the way through, so the button is that, and it
 					     comes back here afterwards. -->
 					<Button
 						size="lg"
+						variant={practice_first ? 'outline' : 'default'}
+						class={practice_first ? undefined : 'max-sm:w-full'}
 						href="/account/login?returnTo={encodeURIComponent(page.url.pathname)}"
 					>
 						<LogIn />
-						{$t('view_quiz_page.log_in_to_host')}
+						{practice_first
+							? $t('view_quiz_page.owner_sign_in')
+							: $t('view_quiz_page.log_in_to_host')}
 					</Button>
 				{:else}
 					<Button
 						size="lg"
+						variant={practice_first ? 'outline' : 'default'}
+						class={practice_first ? undefined : 'max-sm:w-full'}
 						disabled={!can_start || is_draft}
 						onclick={() => (start_game = quiz.id)}
 						aria-describedby={is_draft
@@ -450,7 +472,7 @@ SPDX-License-Identifier: MPL-2.0
 								: 'signed-out-hint'}
 					>
 						<Play />
-						{$t('words.play')}
+						{$t('words.host_game')}
 					</Button>
 				{/if}
 				{#if is_owner}
@@ -459,86 +481,113 @@ SPDX-License-Identifier: MPL-2.0
 						{$t('words.edit')}
 					</Button>
 				{/if}
-				<Button href="/practice?quiz_id={quiz.id}" variant="outline" size="lg">
+				<Button
+					href="/practice?quiz_id={quiz.id}"
+					variant={practice_first ? 'default' : 'outline'}
+					size="lg"
+					class={practice_first ? 'order-first max-sm:w-full' : undefined}
+				>
 					<Repeat />
 					{$t('words.practice')}
 				</Button>
-				{#if can_use_template}
-					<Button
-						variant="outline"
-						size="lg"
-						disabled={copying}
-						onclick={copy_to_my_quizzes}
-					>
-						{#if copying}
-							<LoaderCircle class="animate-spin" aria-hidden="true" />
-						{:else}
-							<Copy />
-						{/if}
-						{copying ? $t('copy.copying') : $t('copy.use_template')}
-					</Button>
-				{/if}
-				{#if can_copy}
-					<Button
-						variant="outline"
-						size="lg"
-						disabled={copying}
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger
+						bind:ref={more_button}
+						class={buttonVariants({ variant: 'ghost', size: 'icon-lg' })}
+						aria-label={$t('my_quizzes.more_actions', {
+							title: htmlToPlainText(quiz.title)
+						})}
+						title={$t('my_quizzes.more_actions_short')}
 						aria-describedby={copy_error ? 'copy-error' : undefined}
-						onclick={copy_to_my_quizzes}
 					>
 						{#if copying}
 							<LoaderCircle class="animate-spin" aria-hidden="true" />
 						{:else}
-							<Copy />
+							<Ellipsis aria-hidden="true" />
 						{/if}
-						{copying ? $t('copy.copying') : $t('copy.button')}
-					</Button>
-				{/if}
-				<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`
-				     above already hides it from a non-owner on screen. The owner may be this
-				     browser, by its secret (D43). -->
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content align="end" class="min-w-48">
+						<DropdownMenu.Item
+							onSelect={() =>
+								copyQuizLink(quiz.id, {
+									copied: $t('share.copied'),
+									failed: (url) => $t('share.copy_failed', { url })
+								})}
+						>
+							<Link />
+							{$t('share.copy_link')}
+						</DropdownMenu.Item>
+						{#if can_use_template || can_copy}
+							<DropdownMenu.Item disabled={copying} onSelect={copy_to_my_quizzes}>
+								<Copy />
+								{can_use_template
+									? $t('copy.use_template')
+									: owns_on_account
+										? $t('copy.make_copy')
+										: $t('copy.button')}
+							</DropdownMenu.Item>
+						{/if}
+						<!-- Owner only: the spreadsheet carries the answer key, and `show_answers`
+						     above already hides it from a non-owner on screen. The owner may be
+						     this browser, by its secret (D43). -->
+						{#if is_owner}
+							<DropdownMenu.Item onSelect={() => (download_id = quiz.id)}>
+								<Download />
+								{$t('words.download')}
+							</DropdownMenu.Item>
+						{/if}
+						{#if quiz.imported_from_kahoot && quiz.kahoot_id}
+							<DropdownMenu.Item>
+								{#snippet child({ props })}
+									<a
+										{...props}
+										href="https://create.kahoot.it/details/{quiz.kahoot_id}"
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										<ExternalLink />
+										{$t('view_quiz_page.view_on_kahoot')}
+									</a>
+								{/snippet}
+							</DropdownMenu.Item>
+						{/if}
+						{#if is_owner}
+							<DropdownMenu.Separator />
+							<DropdownMenu.Item
+								variant="destructive"
+								onSelect={() => (delete_open = true)}
+							>
+								<Trash2 />
+								{$t('words.delete')}…
+							</DropdownMenu.Item>
+						{/if}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
 				{#if is_owner}
-					<Button variant="outline" size="lg" onclick={() => (download_id = quiz.id)}>
-						<Download />
-						{$t('words.download')}
-					</Button>
-				{/if}
-				{#if quiz.imported_from_kahoot && quiz.kahoot_id}
-					<Button
-						href="https://create.kahoot.it/details/{quiz.kahoot_id}"
-						target="_blank"
-						rel="noopener noreferrer"
-						variant="ghost"
-						size="lg"
-					>
-						<ExternalLink />
-						{$t('view_quiz_page.view_on_kahoot')}
-					</Button>
-				{/if}
-				{#if is_owner}
+					<!-- Opened from the menu, so it has no trigger of its own; focus goes back to
+					     the menu's button. A plain Button confirms, not AlertDialog.Action, so a
+					     failure stays visible. -->
 					<AlertDialog.Root
 						bind:open={delete_open}
 						onOpenChange={(o) => {
 							if (!o) delete_error = false;
 						}}
 					>
-						<AlertDialog.Trigger
-							class={buttonVariants({
-								variant: 'ghost',
-								size: 'lg',
-								class: 'text-muted-foreground hover:text-destructive sm:ml-auto'
-							})}
+						<AlertDialog.Content
+							class="max-w-md"
+							onCloseAutoFocus={(e) => {
+								e.preventDefault();
+								more_button?.focus();
+							}}
 						>
-							<Trash2 />
-							{$t('words.delete')}
-						</AlertDialog.Trigger>
-						<AlertDialog.Content class="max-w-md">
 							<AlertDialog.Header>
 								<AlertDialog.Title
 									>{$t('view_quiz_page.delete_confirm_title')}</AlertDialog.Title
 								>
 								<AlertDialog.Description>
-									{$t('view_quiz_page.delete_confirm')}
+									{$t('view_quiz_page.delete_confirm_named', {
+										title: htmlToPlainText(quiz.title)
+									})}
 								</AlertDialog.Description>
 							</AlertDialog.Header>
 							{#if delete_error}
@@ -550,12 +599,7 @@ SPDX-License-Identifier: MPL-2.0
 								<AlertDialog.Cancel disabled={deleting}
 									>{$t('words.cancel')}</AlertDialog.Cancel
 								>
-								<!-- A plain Button, not AlertDialog.Action, so a failure stays visible. -->
-								<Button
-									variant="destructive"
-									disabled={deleting}
-									onclick={delete_quiz}
-								>
+								<Button variant="danger" disabled={deleting} onclick={delete_quiz}>
 									{#if deleting}
 										<LoaderCircle class="animate-spin" aria-hidden="true" />
 									{/if}

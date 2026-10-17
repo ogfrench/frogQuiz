@@ -219,9 +219,9 @@ async def _persist(
             for i2, answer in enumerate(question.answers):
                 if answer.color is not None:
                     quiz_input.questions[i].answers[i2].color = bleach.clean(answer.color, tags=[], strip=True)
-                if answer.answer == "":
-                    quiz_input.questions[i].answers[i2].answer = None
-                if answer.answer is not None:
+                # A blank answer stays "" (#92). It used to be stored as None, which the
+                # answer models refuse on read, so the quiz page answered 500.
+                if answer.answer:
                     quiz_input.questions[i].answers[i2].answer = html.unescape(
                         bleach.clean(answer.answer, tags=ALLOWED_TAGS_FOR_QUIZ, strip=True)
                     )

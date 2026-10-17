@@ -55,9 +55,13 @@ SPDX-License-Identifier: MPL-2.0
 					questions: game_state.quiz_data.questions
 				})
 					? $t('admin_page.get_final_results')
-					: $t('admin_page.next_question', { question: game_state.selected_question + 2 });
+					: $t('admin_page.next_question', {
+							question: game_state.selected_question + 2
+						});
 			case 'next_question':
-				return $t('admin_page.next_question', { question: game_state.selected_question + 2 });
+				return $t('admin_page.next_question', {
+					question: game_state.selected_question + 2
+				});
 			default:
 				return '';
 		}
@@ -131,10 +135,18 @@ SPDX-License-Identifier: MPL-2.0
 		{#if step !== 'none'}
 			<!-- "Stop time and show solutions" is the longest label. On a phone it takes two
 			     short lines inside the bar; it used to wrap to three and hang below it. -->
+			<!-- The one thing the host presses all game: 44px and 16px from a tablet up, with
+			     the shortcut shown where there is a keyboard (V1 game-screen review, François,
+			     17 Oct). It was 36px and 14px, and Space was a secret. -->
 			<button
 				onclick={() => performStep(step, socket_game_controls, game_state, game_token)}
-				class="admin-button text-balance max-sm:max-w-36 max-sm:px-3 max-sm:text-xs max-sm:leading-tight"
-				>{label}</button
+				aria-keyshortcuts="Space Enter"
+				class="admin-button gap-2 text-balance max-sm:max-w-36 max-sm:px-3 max-sm:text-xs max-sm:leading-tight sm:h-11 sm:px-5 sm:text-base"
+				>{label}<kbd
+					aria-hidden="true"
+					class="border-primary-foreground/30 hidden rounded-sm border px-1.5 py-0.5 font-sans text-xs font-medium md:inline pointer-coarse:hidden"
+					>Space</kbd
+				></button
 			>
 		{/if}
 		<!-- The podium's actions take the step button's place, so the last thing the host

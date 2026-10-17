@@ -11,7 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <article
-	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate fq-gutter dark:prose-invert"
+	class="prose prose-zinc dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h1:tracking-tight fq-gutter mx-auto mt-10"
 >
 	<h1>Terms</h1>
 	<p>
@@ -41,8 +41,8 @@ SPDX-License-Identifier: MPL-2.0
 		or account at any time.
 	</p>
 	<p>
-		See the <a href="/docs/privacy-policy">privacy policy</a> for how data is stored and used.
-		For help or a deletion request, email
+		See <a href="/docs/privacy-policy">Privacy</a> for how data is stored and used. For help or
+		a deletion request, email
 		<a href="mailto:francois.prevot@frog.co">francois.prevot@frog.co</a>.
 	</p>
 

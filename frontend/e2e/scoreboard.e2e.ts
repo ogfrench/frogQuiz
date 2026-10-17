@@ -237,6 +237,14 @@ test('a multiple-answer question gets a results screen', async ({ page, browser,
 	] as const) {
 		for (const a of picks) await p.getByRole('button', { name: a, exact: true }).click();
 		await p.getByRole('button', { name: 'Submit' }).click();
+		// Submitted is final (the server keeps the first answer), so the tiles lock and the
+		// button gives way to the confirmation: both stayed live and later ticks looked
+		// counted. Checked on Ana, while Ben has not answered and the question is still open.
+		if (p === ana.page) {
+			await expect(p.getByText('Answer locked in')).toBeVisible();
+			await expect(p.getByRole('button', { name: 'Submit' })).toHaveCount(0);
+			await expect(p.getByRole('button', { name: picks[0], exact: true })).toBeDisabled();
+		}
 	}
 	await showResults(page);
 

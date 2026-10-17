@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, File, Header, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from frogquiz.auth import get_current_user, get_current_user_optional
 from frogquiz.config import storage, settings, arq
+from frogquiz.helpers import _write_text
 from frogquiz.db.models import Quiz, User, StorageItem, QuizQuestionType, QuizQuestion
 import gzip
 import urllib.parse
@@ -189,6 +190,32 @@ async def import_quiz(file: UploadFile = File(), user: User = Depends(get_curren
     return quiz
 
 
+def quiz_workbook(title: str, description: str | None, questions: list[QuizQuestion]) -> io.BytesIO:
+    """The quiz as the Excel template's layout, every piece of text written as text.
+
+    write() and write_row() turn a string starting with "=" into a live formula, so a quiz
+    titled "=HYPERLINK(...)" ran in whoever opened the download. The results spreadsheet
+    already wrote text with write_string (helpers._write_text); this did not.
+    """
+    storage = io.BytesIO()
+    workbook = xlsxwriter.Workbook(storage, {"in_memory": True})
+    ws = workbook.add_worksheet()
+    ws.name = "Main"
+    _write_text(ws, 4, 1, "Title")
+    _write_text(ws, 4, 2, _plain_text(title))
+    _write_text(ws, 5, 1, "Description")
+    _write_text(ws, 5, 2, _plain_text(description))
+    header, rows = excel_rows(questions)
+    for c, value in enumerate(header):
+        _write_text(ws, 12, 1 + c, value)
+    for r, row in enumerate(rows):
+        for c, value in enumerate(row):
+            _write_text(ws, 13 + r, c, value)
+    workbook.close()
+    storage.seek(0)
+    return storage
+
+
 @router.get("/excel/{quiz_id}")
 async def export_quiz_as_excel(
     quiz_id: uuid.UUID,
@@ -218,20 +245,7 @@ async def export_quiz_as_excel(
     quiz: Quiz | None = await _find_own_quiz(quiz_id, user, x_anon_secret)
     if quiz is None:
         raise HTTPException(status_code=404, detail="Quiz not found")
-    storage = io.BytesIO()
-    workbook = xlsxwriter.Workbook(storage, {"in_memory": True})
-    ws = workbook.add_worksheet()
-    ws.name = "Main"
-    ws.write(4, 1, "Title")
-    ws.write(4, 2, _plain_text(quiz.title))
-    ws.write(5, 1, "Description")
-    ws.write(5, 2, _plain_text(quiz.description))
-    header, rows = excel_rows([QuizQuestion.model_validate(q) for q in quiz.questions])
-    ws.write_row(12, 1, header)
-    for r, row in enumerate(rows):
-        ws.write_row(13 + r, 0, row)
-    workbook.close()
-    storage.seek(0)
+    storage = quiz_workbook(quiz.title, quiz.description, [QuizQuestion.model_validate(q) for q in quiz.questions])
 
     def iter_file():
         yield from storage

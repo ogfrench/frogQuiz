@@ -66,6 +66,8 @@ SPDX-License-Identifier: MPL-2.0
 		background_color?: string;
 	}>();
 	let solution: QuestionType = $state();
+	// The right answers' text, sent with the results (ABCD and CHECK only).
+	let correct_answers: string[] | undefined = $state();
 	let username = $state('');
 	let scores = $state({});
 	let gameMeta: GameMeta = $state({
@@ -240,6 +242,7 @@ SPDX-License-Identifier: MPL-2.0
 
 	socket.on('set_question_number', (data) => {
 		solution = undefined;
+		correct_answers = undefined;
 		restart();
 		question = data.question;
 		question_index = data.question_index;
@@ -285,6 +288,10 @@ SPDX-License-Identifier: MPL-2.0
 	socket.on('solutions', (data) => {
 		solution = data;
 	});
+	socket.on('correct_answers', (data) => {
+		// For the question on screen only; a stray one for another index is not this answer.
+		if (String(data.question_index) === String(question_index)) correct_answers = data.answers;
+	});
 	// Everybody's frog, not only this player's: the podium names the whole top eight.
 	socket.on('avatars', setSeats);
 	socket.on('avatar', addSeat);
@@ -304,7 +311,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:window onbeforeunload={confirmUnload} onpagehide={() => alive_timer && stopAlive()} />
 <svelte:head>
-	<title>frogQuiz - Play</title>
+	<title>Join a game — frogQuiz</title>
 </svelte:head>
 <div
 	class="min-h-dvh w-full"
@@ -397,14 +404,21 @@ SPDX-License-Identifier: MPL-2.0
 			     vertical rhythm and centering as every other game surface. Its
 			     section gap replaces the heading's own mb-8. -->
 			{#if answer_results === null}
-				<div class="fq-stage">
+				<div class="fq-stage [--fq-stage-top:4rem]">
 					<h1 class="text-center text-3xl text-balance">{$t('admin_page.no_answers')}</h1>
 				</div>
 			{:else}
-				<div class="fq-stage">
-					<h1 class="text-center text-3xl">{$t('words.result', { count: 2 })}</h1>
+				<div class="fq-stage [--fq-stage-top:4rem]">
+					<h1 class="text-center text-3xl font-semibold tracking-tight">
+						{$t('words.result', { count: 2 })}
+					</h1>
 					{#key unique}
-						<KahootResults {username} question_results={answer_results} bind:scores />
+						<KahootResults
+							{username}
+							question_results={answer_results}
+							bind:scores
+							correct_answers={game_mode === 'normal' ? correct_answers : undefined}
+						/>
 					{/key}
 				</div>
 			{/if}

@@ -7,7 +7,7 @@
 
 import { expect, test } from '@playwright/test';
 import { signedInContext } from './accounts';
-import { expectNoHorizontalOverflow, mc, PHONE, saveQuiz } from './helpers';
+import { expectNoHorizontalOverflow, mc, openViewMenu, PHONE, saveQuiz } from './helpers';
 
 const quiz = (title: string) => ({
 	title,
@@ -103,15 +103,10 @@ test('Download offers the Excel file and fetches a real spreadsheet', async ({
 	const saved = await saveQuiz(context.request, quiz(title));
 	await page.goto(`/view/${saved.body.id}`);
 
-	// Download is server-rendered enabled for a signed-in visitor, so a click that lands
-	// before hydration is lost. Retry until the dialog opens.
+	// Download is in "More actions"; openViewMenu waits out hydration.
 	const dialog = page.getByRole('dialog');
-	await expect(async () => {
-		await page.getByRole('button', { name: 'Download' }).click();
-		await expect(dialog.getByRole('heading', { name: 'Download this quiz' })).toBeVisible({
-			timeout: 1000
-		});
-	}).toPass();
+	await (await openViewMenu(page)).getByRole('menuitem', { name: 'Download' }).click();
+	await expect(dialog.getByRole('heading', { name: 'Download this quiz' })).toBeVisible();
 
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
@@ -141,9 +136,12 @@ test("Download is not offered on, or reachable for, somebody else's quiz", async
 
 	const other = await signedInContext(browser, request);
 	await other.page.goto(`/view/${saved.body.id}`);
-	// Public, so the page itself opens and offers Play. Download is simply absent.
-	await expect(other.page.getByRole('button', { name: 'Play' })).toBeVisible();
-	await expect(other.page.getByRole('button', { name: 'Download' })).toHaveCount(0);
+	// Public, so the page itself opens and offers Host game. Download is simply absent.
+	await expect(other.page.getByRole('button', { name: 'Host game' })).toBeVisible();
+	await expect(
+		(await openViewMenu(other.page)).getByRole('menuitem', { name: 'Copy link' })
+	).toBeVisible();
+	await expect(other.page.getByRole('menuitem', { name: 'Download' })).toHaveCount(0);
 
 	// And the endpoint behind it refuses, so hiding the button is not the only guard.
 	const res = await other.context.request.get(`/api/v1/eximport/excel/${saved.body.id}`);

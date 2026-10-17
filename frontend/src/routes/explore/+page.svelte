@@ -32,6 +32,7 @@ SPDX-License-Identifier: MPL-2.0
 	// resets it to whatever the URL says.
 	let term = $derived(data.q);
 
+	const query = $derived(data.q.trim());
 	const has_examples = $derived(data.examples.quizzes.length > 0);
 	const sign_in_href = $derived(
 		`/account/login?returnTo=${encodeURIComponent(
@@ -60,7 +61,7 @@ SPDX-License-Identifier: MPL-2.0
 {/snippet}
 
 <svelte:head>
-	<title>frogQuiz - {$t('words.discover')}</title>
+	<title>{$t('words.discover')} — frogQuiz</title>
 </svelte:head>
 
 <!-- fq-section, not fq-stage: fq-stage is min-height:100dvh plus justify-center, which
@@ -77,14 +78,18 @@ SPDX-License-Identifier: MPL-2.0
 					type="search"
 					class="min-w-0 flex-1"
 					bind:value={term}
-					placeholder={$t('search_page.at_least_3_characters')}
+					placeholder={$t('explore_page.search_placeholder')}
 					aria-label={$t('words.search')}
+					aria-describedby="search-hint"
 				/>
 				<Button type="submit" class="shrink-0">
 					<Search />
 					<span class="sr-only sm:not-sr-only">{$t('words.search')}</span>
 				</Button>
 			</form>
+			<p id="search-hint" class="text-muted-foreground mt-2 text-sm">
+				{$t('search_page.at_least_3_characters')}
+			</p>
 		{:else}
 			<div class="mt-4 flex flex-wrap items-center gap-3">
 				<p class="text-muted-foreground text-sm">{$t('explore_page.sign_in_to_search')}</p>
@@ -122,35 +127,42 @@ SPDX-License-Identifier: MPL-2.0
 
 		{#if data.logged_in && data.failed}
 			<RetryNotice message="We couldn’t load quizzes. Please try again." />
-		{:else if data.logged_in && data.mode === 'too_short'}
-			<p class="text-muted-foreground mt-10 text-center text-sm">
-				{$t('search_page.at_least_3_characters')}
-			</p>
-		{:else if data.logged_in && data.hits.length === 0}
-			<!-- With examples above, a list that is empty because they were taken out of it is
-			     not an empty page. -->
-			{#if !has_examples && !data.examplesFailed}
-				<div class="mt-10 text-center">
-					<p class="text-lg font-medium">{$t('search_page.nothing_here')}</p>
-					<!-- The old empty state was hardcoded English pointing at /import. The line
-					     names no account rule: that depends on a setting (#55). -->
-					<p class="text-muted-foreground mt-2 text-sm">
-						{$t('explore_page.nothing_here_detail')}
+		{/if}
+
+		<!-- Always in the DOM, so a submit that keeps focus in the field (keepFocus) still
+		     announces what came back: a live region only speaks for changes made inside an
+		     element that was already there. Browse says "Newest"; a search says what was asked
+		     and how many, or that nothing matched. The too-short rule lives under the field. -->
+		<div aria-live="polite">
+			{#if data.logged_in && !data.failed && data.mode !== 'too_short'}
+				{#if data.hits.length > 0}
+					<h2 id="results-heading" class="mt-10 text-lg font-semibold tracking-tight">
+						{#if data.mode === 'search'}
+							{$t('explore_page.results_for', { q: query, count: data.hits.length })}
+						{:else}
+							{$t('explore_page.newest')}
+						{/if}
+					</h2>
+				{:else if data.mode === 'search'}
+					<p class="text-muted-foreground mt-10 text-center text-sm">
+						{$t('explore_page.no_match', { q: query })}
 					</p>
-					<Button href="/create" class="mt-4" onclick={openCreateDialog}
-						>{$t('explore_page.create_one')}</Button
-					>
-				</div>
+				{:else if !has_examples && !data.examplesFailed}
+					<!-- With examples above, a list that is empty because they were taken out of
+					     it is not an empty page. -->
+					<div class="mt-10 text-center">
+						<p class="text-lg font-medium">{$t('explore_page.nothing_yet')}</p>
+						<Button href="/create" class="mt-4" onclick={openCreateDialog}
+							>{$t('explore_page.create_one')}</Button
+						>
+					</div>
+				{/if}
 			{/if}
-		{:else if data.logged_in && has_examples}
-			<section class="mt-10" aria-labelledby="newest-heading">
-				<h2 id="newest-heading" class="text-lg font-semibold tracking-tight">
-					{$t('explore_page.newest')}
-				</h2>
+		</div>
+		{#if data.logged_in && !data.failed && data.hits.length > 0 && data.mode !== 'too_short'}
+			<section aria-labelledby="results-heading">
 				{@render hitGrid('mt-4')}
 			</section>
-		{:else if data.logged_in}
-			{@render hitGrid('mt-8')}
 		{/if}
 	</div>
 </div>

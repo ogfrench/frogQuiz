@@ -115,7 +115,7 @@ test('the switch is off when the modal opens, and off again the next time', asyn
 		name: "Show questions and answers on players' devices"
 	});
 
-	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await page.getByRole('button', { name: 'Host game', exact: true }).click();
 	await openGameOptions(dialog);
 	await expect(toggle).toHaveAttribute('aria-checked', 'false');
 	await toggle.click();
@@ -125,7 +125,7 @@ test('the switch is off when the modal opens, and off again the next time', asyn
 	await expect(dialog).toBeHidden();
 
 	// The fold is closed again too, so the switch is not even in the page until it is opened.
-	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await page.getByRole('button', { name: 'Host game', exact: true }).click();
 	await expect(toggle).toHaveCount(0);
 	await openGameOptions(dialog);
 	await expect(toggle).toHaveAttribute('aria-checked', 'false');

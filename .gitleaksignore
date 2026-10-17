@@ -28,3 +28,7 @@ a22912a88aebed565a0836621e750f19ee64f5b4:frogquiz/tests/test_storage.py:generic-
 # Same documented MinIO public playground fixture as the entries above, in an
 # older version of the test. Exact value equality checked without logging it.
 a0b02ec9c320b6edf18d11b3e056cc4985363f40:classquiz/tests/test_storage.py:generic-api-key:64
+
+# Not a secret: a random per-removal ticket (os.urandom) passed to redis.set in the lobby's
+# remove_player. Renamed from `token` in the next commit so the rule no longer matches.
+9c5f55611dc50e06f0bb9dc2c2541257b9cb6906:frogquiz/socket_server/__init__.py:generic-api-key:727

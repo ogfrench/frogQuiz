@@ -301,15 +301,27 @@ test.describe('create a quiz dialog', () => {
 	});
 });
 
+// The row and view-page "More actions" menus, opened from the keyboard: the overlay
+// contract checks focus, and a click would hide where it went.
+const fromRowMenu = (page: Page, row: Locator, item: string) => async () => {
+	const more = row.getByRole('button', { name: /^More actions/ });
+	await more.focus();
+	await page.keyboard.press('Enter');
+	const menuitem = page.getByRole('menuitem', { name: item });
+	await expect(menuitem).toBeVisible();
+	await menuitem.focus();
+	await page.keyboard.press('Enter');
+};
+
 // ---- View page -------------------------------------------------------------------
 
 test.describe('view page', () => {
-	test('Play opens Start game', async ({ browser, request }) => {
+	test('Host game opens Start game', async ({ browser, request }) => {
 		const { context, page, id } = await ownerWithQuiz(browser, request, 'Overlay play');
 		await page.goto(`/view/${id}`);
 		await hydrated(page);
 		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Play', exact: true }),
+			trigger: page.getByRole('button', { name: 'Host game', exact: true }),
 			dialog: page.getByRole('dialog', { name: 'Start game', exact: true })
 		});
 		await context.close();
@@ -319,9 +331,11 @@ test.describe('view page', () => {
 		const { context, page, id } = await ownerWithQuiz(browser, request, 'Overlay download');
 		await page.goto(`/view/${id}`);
 		await hydrated(page);
+		const main = page.getByRole('main');
 		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Download', exact: true }),
-			dialog: page.getByRole('dialog', { name: 'Download this quiz' })
+			open: fromRowMenu(page, main, 'Download'),
+			dialog: page.getByRole('dialog', { name: 'Download this quiz' }),
+			returnTo: main.getByRole('button', { name: /^More actions/ })
 		});
 		await context.close();
 	});
@@ -334,10 +348,12 @@ test.describe('view page', () => {
 		await page.goto(`/view/${id}`);
 		await hydrated(page);
 		const dialog = page.getByRole('alertdialog', { name: 'Delete this quiz?' });
+		const main = page.getByRole('main');
 		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Delete', exact: true }),
+			open: fromRowMenu(page, main, 'Delete…'),
 			dialog,
-			confirm: dialog.getByRole('button', { name: 'Delete', exact: true })
+			confirm: dialog.getByRole('button', { name: 'Delete', exact: true }),
+			returnTo: main.getByRole('button', { name: /^More actions/ })
 		});
 		// Nothing was deleted by looking at it.
 		expect((await context.request.get(`/api/v1/quiz/get/${id}`)).status()).toBe(200);
@@ -348,19 +364,23 @@ test.describe('view page', () => {
 // ---- My Quizzes ------------------------------------------------------------------
 
 test.describe('my quizzes', () => {
-	test('a row’s Download icon opens the download dialog', async ({ browser, request }) => {
+	// Download, Copy and Delete sit behind a row's "More actions" menu since 17 Oct. The
+	// menu opens from the keyboard, the item is chosen with Enter, and Escape on the
+	// dialog has to land back on the menu's button, since the item is gone.
+	test('a row’s Download opens the download dialog', async ({ browser, request }) => {
 		const { context, page, title } = await ownerWithQuiz(browser, request, 'Overlay row dl');
 		await page.goto('/my-quizzes');
 		await hydrated(page);
 		const row = page.getByRole('listitem').filter({ hasText: title });
 		await expectOverlayContract(page, {
-			trigger: row.getByRole('button', { name: 'Download', exact: true }),
-			dialog: page.getByRole('dialog', { name: 'Download this quiz' })
+			open: fromRowMenu(page, row, 'Download'),
+			dialog: page.getByRole('dialog', { name: 'Download this quiz' }),
+			returnTo: row.getByRole('button', { name: /^More actions/ })
 		});
 		await context.close();
 	});
 
-	test('a row’s Delete icon asks first (ConfirmAction), and the safe button has the focus', async ({
+	test('a row’s Delete asks first (ConfirmAction), and the safe button has the focus', async ({
 		browser,
 		request
 	}) => {
@@ -374,9 +394,10 @@ test.describe('my quizzes', () => {
 		const row = page.getByRole('listitem').filter({ hasText: title });
 		const dialog = page.getByRole('alertdialog', { name: 'Delete this quiz?' });
 		await expectOverlayContract(page, {
-			trigger: row.getByRole('button', { name: 'Delete', exact: true }),
+			open: fromRowMenu(page, row, 'Delete…'),
 			dialog,
-			confirm: dialog.getByRole('button', { name: 'Delete', exact: true })
+			confirm: dialog.getByRole('button', { name: 'Delete', exact: true }),
+			returnTo: row.getByRole('button', { name: /^More actions/ })
 		});
 		expect((await context.request.get(`/api/v1/quiz/get/${id}`)).status()).toBe(200);
 		await context.close();
@@ -496,14 +517,10 @@ test.describe('editor', () => {
 		return owner;
 	}
 
-	test('Add new question', async ({ browser, request }) => {
-		const { context, page } = await openEditor(browser, request);
-		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Add new question', exact: true }).first(),
-			dialog: page.getByRole('dialog', { name: 'Add new question', exact: true })
-		});
-		await context.close();
-	});
+	// The end of the editor adds a type with one press since 17 Oct; the dialog is left
+	// for adding between two questions.
+	// "Add new question" is no longer a dialog: the open card's "Add question below" adds
+	// one directly, and the end of the list has the type buttons in the page (17 Oct).
 
 	test('Delete question asks first, and Cancel has the focus', async ({ browser, request }) => {
 		const { context, page } = await openEditor(browser, request);
@@ -517,14 +534,8 @@ test.describe('editor', () => {
 		await context.close();
 	});
 
-	test('Advanced settings', async ({ browser, request }) => {
-		const { context, page } = await openEditor(browser, request);
-		await expectOverlayContract(page, {
-			trigger: page.getByRole('button', { name: 'Advanced settings' }).first(),
-			dialog: page.getByRole('dialog', { name: 'Advanced settings', exact: true })
-		});
-		await context.close();
-	});
+	// Advanced settings was a dialog holding one switch; since 17 Oct the switch is on the
+	// open card (editor.e2e.ts, "Skip the results"), so there is no overlay to check.
 
 	test('Add an image opens the uploader', async ({ browser, request }) => {
 		const { context, page } = await openEditor(browser, request);
@@ -693,9 +704,9 @@ test.describe('live game', () => {
 
 test.describe('touch targets inside the overlays, at 390 with a touch screen', () => {
 	const CONTROLS =
-		'a[href], button, [role=button], [role=switch], [role=checkbox], [role=tab], input:not([type=hidden]), select, textarea, summary';
+		'a[href], button, [role=button], [role=menuitem], [role=switch], [role=checkbox], [role=tab], input:not([type=hidden]), select, textarea, summary';
 
-	/** Controls in the open dialog whose press area is under 44x44. */
+	/** Controls in the open dialog (or menu) whose press area is under 44x44. */
 	const smallControls = (page: Page) =>
 		page.evaluate(async (sel) => {
 			// Mid-entrance a dialog is scaled to 95%, which would shrink every target.
@@ -703,7 +714,7 @@ test.describe('touch targets inside the overlays, at 390 with a touch screen', (
 				.getAnimations()
 				.filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime as number));
 			await Promise.all(settled.map((a) => a.finished.catch(() => undefined)));
-			const root = document.querySelector('[role=dialog], [role=alertdialog]');
+			const root = document.querySelector('[role=dialog], [role=alertdialog], [role=menu]');
 			if (!root) return ['no dialog is open'];
 			const out: string[] = [];
 			for (const el of root.querySelectorAll(sel)) {
@@ -802,23 +813,27 @@ test.describe('touch targets inside the overlays, at 390 with a touch screen', (
 			page,
 			found,
 			'view: Start game',
-			page.getByRole('button', { name: 'Play', exact: true }),
+			page.getByRole('button', { name: 'Host game', exact: true }),
 			page.getByRole('dialog', { name: 'Start game' }),
 			// With the fold open, so the three switches are measured too.
 			() => openGameOptions(page.getByRole('dialog', { name: 'Start game' }))
 		);
+		const view_more = page.getByRole('main').getByRole('button', { name: /^More actions/ });
+		await measure(page, found, 'view: More actions', view_more, page.getByRole('menu'));
+		await view_more.tap();
 		await measure(
 			page,
 			found,
 			'view: Download',
-			page.getByRole('button', { name: 'Download', exact: true }),
+			page.getByRole('menuitem', { name: 'Download' }),
 			page.getByRole('dialog', { name: 'Download this quiz' })
 		);
+		await view_more.tap();
 		await measure(
 			page,
 			found,
 			'view: Delete',
-			page.getByRole('button', { name: 'Delete', exact: true }),
+			page.getByRole('menuitem', { name: 'Delete…' }),
 			page.getByRole('alertdialog', { name: 'Delete this quiz?' })
 		);
 		await page.goto('/my-quizzes');
@@ -827,15 +842,24 @@ test.describe('touch targets inside the overlays, at 390 with a touch screen', (
 		await measure(
 			page,
 			found,
+			'my quizzes: More actions',
+			row.getByRole('button', { name: /^More actions/ }),
+			page.getByRole('menu')
+		);
+		await row.getByRole('button', { name: /^More actions/ }).tap();
+		await measure(
+			page,
+			found,
 			'my quizzes: Download',
-			row.getByRole('button', { name: 'Download', exact: true }),
+			page.getByRole('menuitem', { name: 'Download' }),
 			page.getByRole('dialog', { name: 'Download this quiz' })
 		);
+		await row.getByRole('button', { name: /^More actions/ }).tap();
 		await measure(
 			page,
 			found,
 			'my quizzes: Delete',
-			row.getByRole('button', { name: 'Delete', exact: true }),
+			page.getByRole('menuitem', { name: 'Delete…' }),
 			page.getByRole('alertdialog', { name: 'Delete this quiz?' })
 		);
 		expect(found).toEqual(expected(found));
@@ -849,20 +873,8 @@ test.describe('touch targets inside the overlays, at 390 with a touch screen', (
 		await expect(cards(page)).toHaveCount(2);
 		await expect(page.getByRole('textbox', { name: 'Question text' })).toBeVisible();
 		await hydrated(page);
-		await measure(
-			page,
-			found,
-			'editor: Add new question',
-			page.getByRole('button', { name: 'Add new question', exact: true }).first(),
-			page.getByRole('dialog', { name: 'Add new question', exact: true })
-		);
-		await measure(
-			page,
-			found,
-			'editor: Advanced settings',
-			page.getByRole('button', { name: 'Advanced settings' }).first(),
-			page.getByRole('dialog', { name: 'Advanced settings', exact: true })
-		);
+		// Add new question is buttons in the page on a phone now, and Advanced settings a
+		// switch on the card; touch-targets.e2e.ts measures both there.
 		await measure(
 			page,
 			found,

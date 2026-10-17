@@ -48,16 +48,17 @@ export class SocketGameControls {
 		this.socket.emit('end_game', {});
 	}
 
-	kick_player(username: string, players: any[]) {
-		this.socket.emit('kick_player', { username: username });
+	// The lobby hides the chip itself and offers an Undo (game_not_started.svelte). The
+	// server waits out the Undo and then removes the player, or at once with kick_player.
+	remove_player(username: string) {
+		this.socket.emit('remove_player', { username });
+	}
 
-		for (let i = 0; i < players.length; i++) {
-			console.log(players[i].username, username);
-			if (players[i].username === username) {
-				players.splice(i, 1);
-				break;
-			}
-		}
-		return players;
+	undo_remove_player(username: string) {
+		this.socket.emit('undo_remove_player', { username });
+	}
+
+	kick_player(username: string) {
+		this.socket.emit('kick_player', { username: username });
 	}
 }
