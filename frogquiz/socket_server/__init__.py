@@ -12,6 +12,7 @@ import os
 import random
 
 import socketio
+from redis.exceptions import WatchError
 from cryptography.fernet import Fernet
 
 from frogquiz.config import arq, redis, settings
@@ -684,8 +685,10 @@ async def _kick(game_pin: str, username: str) -> None:
     player_sid = await redis.get(player_key)
     # Already kicked, or left with leave_game. Emitting to room=None broadcasts to every
     # socket on the server, so a kick for a name with no sid threw out every player of
-    # every game.
+    # every game. The host still hears it, so a name it was holding for an Undo is let go
+    # before someone new joins under it.
     if player_sid is None:
+        await sio.emit("player_removed", {"username": username}, room=f"admin:{game_pin}")
         return
     await redis.srem(
         f"game_session:{game_pin}:players",
@@ -740,15 +743,32 @@ async def remove_player(sid: str, data: dict):
 
 async def _remove_after_grace(game_pin: str, username: str, ticket: str) -> None:
     await sio.sleep(REMOVE_GRACE_SECONDS)
-    # Taken and deleted in one step: a check then a kick left a gap in which a join could
-    # end this removal, claim the name, and be kicked by it as the old player.
-    key = _removing_key(game_pin, username)
-    found = await redis.getdel(key)
-    if found == ticket:
+    if await _take_removal(game_pin, username, ticket):
         await _kick(game_pin, username)
-    elif found is not None:
-        # A newer removal of the same name: put its wait back.
-        await redis.set(key, found, ex=REMOVE_GRACE_SECONDS + 60)
+
+
+async def _take_removal(game_pin: str, username: str, ticket: str) -> bool:
+    """Delete the removal only if it is still this ticket's, in one WATCH/MULTI step.
+
+    A check then a kick left a gap in which a join could end the removal, claim the name,
+    and be kicked as the old player. A take-then-put-back of a newer ticket had its own
+    gap, in which an Undo could be undone again.
+    """
+    key = _removing_key(game_pin, username)
+    async with redis.pipeline(transaction=True) as pipe:
+        while True:
+            try:
+                await pipe.watch(key)
+                if await pipe.get(key) != ticket:
+                    # Undone, ended by a join or a Start, or asked again with a newer ticket.
+                    await pipe.unwatch()
+                    return False
+                pipe.multi()
+                pipe.delete(key)
+                await pipe.execute()
+                return True
+            except WatchError:
+                continue
 
 
 @sio.event

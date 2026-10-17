@@ -204,3 +204,28 @@ test('quick removals without Undo remove every one of them', async ({ browser, r
 	await hostCtx.close();
 	for (const p of [keep, gone, third]) await p.context.close();
 });
+
+// Each click restarts every wait in the burst: the server's first wait is six seconds from
+// the first click, so without the restart the first player would go at second six while the
+// host still offered to undo them.
+test('a later removal restarts the earlier ones, so one Undo still saves both', async ({
+	browser,
+	request
+}) => {
+	const { hostCtx, host, keep, gone } = await lobby(browser, request);
+	await host.getByRole('button', { name: 'Kick: gone', exact: true }).click();
+	await host.waitForTimeout(3000);
+	await host.getByRole('button', { name: 'Kick: keep', exact: true }).click();
+	// Past the first click's six seconds.
+	await host.waitForTimeout(4000);
+	await expect(gone.page.getByText('The host removed you from this game.')).toHaveCount(0);
+	await expect(host.getByText('Removed 2 players')).toBeVisible();
+	await host.getByRole('button', { name: 'Undo', exact: true }).click();
+	await expect(host.getByText('2 players are waiting')).toBeVisible();
+	await host.waitForTimeout(7500);
+	for (const p of [keep, gone])
+		await expect(p.page.getByText('The host removed you from this game.')).toHaveCount(0);
+	await hostCtx.close();
+	await keep.context.close();
+	await gone.context.close();
+});

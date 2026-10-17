@@ -264,7 +264,12 @@ test('My quizzes from the keyboard: Delete names the quiz, removes it, and keeps
 	await page.keyboard.press('Enter');
 	const dialog = page.getByRole('alertdialog', { name: 'Delete this quiz?' });
 	await expect(dialog).toContainText(`"${title}" will be deleted for good.`);
-	await dialog.getByRole('button', { name: 'Delete', exact: true }).focus();
+	// The dialog takes the focus itself as it opens. Focusing Delete before that landed
+	// lost to it on a slow runner, and Enter then pressed nothing (CI run 39039302679).
+	await expect(dialog).toBeFocused();
+	const confirm = dialog.getByRole('button', { name: 'Delete', exact: true });
+	await confirm.focus();
+	await expect(confirm).toBeFocused();
 	await page.keyboard.press('Enter');
 	await expect(row).toHaveCount(0);
 	await expect(dialog).toHaveCount(0);
