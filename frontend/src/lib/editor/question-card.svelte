@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import type { Answer, EditorData } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
-	import { dataSchema, fieldIsValid } from '$lib/yupSchemas';
+	import { dataSchema, fieldIsValid, SLIDE_BODY_MAX_LENGTH } from '$lib/yupSchemas';
 	import { editorValidation } from '$lib/editor/validation.svelte';
 	import { isQuestionComplete } from '$lib/editor/question_complete';
 	import { htmlToPlainText } from '$lib/sanitize';
@@ -92,6 +92,14 @@ SPDX-License-Identifier: MPL-2.0
 
 	const question = $derived(data.questions[index]);
 	const type = $derived(question.type);
+	// An old drawn slide keeps its drawing in `answers`; a plain slide (#93) has none, and
+	// edits like a question: title, text, image. It has no timer, answers or results.
+	const drawn_slide = $derived(
+		type === QuizQuestionType.SLIDE &&
+			typeof question.answers === 'string' &&
+			question.answers !== ''
+	);
+	const plain_slide = $derived(type === QuizQuestionType.SLIDE && !drawn_slide);
 
 	// The timer is a free-text number field, so it can hold anything the keyboard
 	// produces. Clamp what the author can store rather than what the game has to cope with.
@@ -190,20 +198,22 @@ SPDX-License-Identifier: MPL-2.0
 						     the selected value, gone as soon as you typed. On touch the pill, not the
 						     input, is the 44px press area: tapping a label focuses its input, and a
 						     44px-tall input made the pill taller than the button beside it. -->
-						<label
-							class="fq-touch-target relative border-input bg-background text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 flex min-h-9 items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-[color,box-shadow] focus-within:ring-3"
-						>
-							<Clock class="size-4" />
-							<span class="sr-only">{$t('editor.time_in_seconds')}</span>
-							<input
-								type="number"
-								max="999"
-								min="1"
-								class="text-foreground any-pointer-coarse:min-h-0 any-pointer-coarse:text-base w-10 bg-transparent text-right tabular-nums outline-none"
-								bind:value={getTime, setTime}
-							/>
-							<span>s</span>
-						</label>
+						{#if !plain_slide}
+							<label
+								class="fq-touch-target relative border-input bg-background text-muted-foreground focus-within:border-ring focus-within:ring-ring/50 flex min-h-9 items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-[color,box-shadow] focus-within:ring-3"
+							>
+								<Clock class="size-4" />
+								<span class="sr-only">{$t('editor.time_in_seconds')}</span>
+								<input
+									type="number"
+									max="999"
+									min="1"
+									class="text-foreground any-pointer-coarse:min-h-0 any-pointer-coarse:text-base w-10 bg-transparent text-right tabular-nums outline-none"
+									bind:value={getTime, setTime}
+								/>
+								<span>s</span>
+							</label>
+						{/if}
 						<QuestionTypeMenu {type} onchange={change_type} />
 						{#if type === QuizQuestionType.ABCD || type === QuizQuestionType.CHECK}
 							<!-- A choice in view rather than a button labeled with its current state,
@@ -250,7 +260,7 @@ SPDX-License-Identifier: MPL-2.0
 				<!-- The body renders the question the way the room will see it, so there is no
 				     gap between what the author builds and what gets projected. -->
 				<div class="flex flex-col gap-5 pb-1">
-					{#if type === QuizQuestionType.SLIDE}
+					{#if drawn_slide}
 						{#await import('./slide.svelte')}
 							<Spinner my_20={false} />
 						{:then c}
@@ -272,6 +282,21 @@ SPDX-License-Identifier: MPL-2.0
 							</div>
 						{/await}
 
+						{#if plain_slide}
+							<!-- Plain text under the title on the projector; formatting comes from the
+							     title, not from here. Capped where the server caps it. -->
+							<textarea
+								bind:value={
+									() => data.questions[index].body ?? '',
+									(v) => (data.questions[index].body = v)
+								}
+								rows="3"
+								maxlength={SLIDE_BODY_MAX_LENGTH}
+								aria-label={$t('editor.slide_text')}
+								placeholder={$t('editor.slide_text_placeholder')}
+								class="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 w-full resize-y rounded-md border px-3 py-2 text-base outline-none focus-visible:ring-3"
+							></textarea>
+						{/if}
 						{#if question.image}
 							<div class="relative mx-auto w-fit">
 								<button
@@ -394,25 +419,27 @@ SPDX-License-Identifier: MPL-2.0
 			     menus review, 17 Oct). It was a gear icon opening a dialog for this one
 			     switch. A function binding because older questions have no hide_results
 			     at all, and binding a Switch to undefined throws. -->
-			<div class="mr-auto flex min-h-11 items-center gap-2.5 pl-2">
-				<Switch
-					id="hide-results-{index}"
-					bind:checked={
-						() => data.questions[index].hide_results === true,
-						(v) => (data.questions[index].hide_results = v)
-					}
-					aria-describedby="hide-results-hint-{index}"
-				/>
-				<Label
-					for="hide-results-{index}"
-					class="text-sm font-normal"
-					title={$t('editor.hide_question_results_hint')}
-					>{$t('editor.hide_question_results')}</Label
-				>
-				<span id="hide-results-hint-{index}" class="sr-only"
-					>{$t('editor.hide_question_results_hint')}</span
-				>
-			</div>
+			{#if type !== QuizQuestionType.SLIDE}
+				<div class="mr-auto flex min-h-11 items-center gap-2.5 pl-2">
+					<Switch
+						id="hide-results-{index}"
+						bind:checked={
+							() => data.questions[index].hide_results === true,
+							(v) => (data.questions[index].hide_results = v)
+						}
+						aria-describedby="hide-results-hint-{index}"
+					/>
+					<Label
+						for="hide-results-{index}"
+						class="text-sm font-normal"
+						title={$t('editor.hide_question_results_hint')}
+						>{$t('editor.hide_question_results')}</Label
+					>
+					<span id="hide-results-hint-{index}" class="sr-only"
+						>{$t('editor.hide_question_results_hint')}</span
+					>
+				</div>
+			{/if}
 			<Button
 				type="button"
 				variant="ghost"

@@ -4,6 +4,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Poll is back in the editor (#93): the same tiles as Multiple choice with nothing to mark right. Phones say "Vote counted" instead of "Not this time" and "+0", and the projector shows the votes in its round card under the question, where it used to draw them bare on the background in ink meant for the white card. New spec `type-poll.e2e.ts`.
+- A question card has a type menu: changing type keeps what carries over, and asks before throwing away typed text.
+- Info slide is back as a plain slide (#93): a title, some text and an image, edited like a question, with no timer. Phones show "Look at the screen" with their frog, including a phone that joins during the slide; they used to keep the last result card up. Old drawn slides still show. Practice and the quiz page show plain slides too. New spec `type-slide.e2e.ts`.
 - Server groundwork for the returning question types (#93):
   - An answer a question could not have been given is refused before it is recorded: an option that does not exist (it broke the host's poll counts), a number off the slider, an order that is not the question's items reordered, and anything during a slide.
   - A slider answer of "nan", "inf" or "abc" no longer crashes the game (a half value an untouched slider sits on still counts); an answer is at most 1,000 characters, and an order at most 10 items.

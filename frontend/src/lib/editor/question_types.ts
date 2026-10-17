@@ -60,7 +60,7 @@ export const QUESTION_TYPES: {
 		kind: 'slide',
 		label: 'words.info_slide',
 		description: 'editor.info_slide_description',
-		enabled: false
+		enabled: true
 	}
 ];
 

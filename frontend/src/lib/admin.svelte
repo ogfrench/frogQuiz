@@ -176,7 +176,8 @@ SPDX-License-Identifier: MPL-2.0
 	<Controls {bg_color} {socket_game_controls} {game_token} {finish} bind:game_state />
 {/if}
 <!-- Slides only: a question shows its time as the bar above its answers (question.svelte). -->
-{#if game_state.timer_res !== '0' && game_state.selected_question >= 0 && game_state.quiz_data.questions[game_state.selected_question]?.type === QuizQuestionType.SLIDE}
+<!-- A drawn slide only: a plain slide has no countdown, the host moves on with Next (#93). -->
+{#if game_state.timer_res !== '0' && game_state.selected_question >= 0 && game_state.quiz_data.questions[game_state.selected_question]?.type === QuizQuestionType.SLIDE && game_state.quiz_data.questions[game_state.selected_question].answers !== ''}
 	<!-- Just under the controls bar: top-3 plus its h-12, and a hair of air. It was mt-12
 	     when the bar sat flush at the top. -->
 	<span

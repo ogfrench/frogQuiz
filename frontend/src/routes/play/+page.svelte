@@ -15,6 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Question from '$lib/play/question.svelte';
 	import ShowEndScreen from '$lib/play/admin/final_results.svelte';
 	import KahootResults from '$lib/play/results_kahoot.svelte';
+	import LookUp from '$lib/play/look_up.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import Cookies from 'js-cookie';
 	import { Button } from '$lib/components/ui/button';
@@ -250,6 +251,16 @@ SPDX-License-Identifier: MPL-2.0
 		answer_results = undefined;
 	});
 
+	// An Info slide is up on the projector (#93): nothing to answer here.
+	socket.on('slide', (data) => {
+		solution = undefined;
+		correct_answers = undefined;
+		restart();
+		question = { type: QuizQuestionType.SLIDE } as QuestionType;
+		question_index = data.question_index;
+		answer_results = undefined;
+	});
+
 	socket.on('start_game', () => {
 		gameMeta.started = true;
 	});
@@ -387,6 +398,8 @@ SPDX-License-Identifier: MPL-2.0
 				cover_image={gameData.cover_image}
 				{username}
 			/>
+		{:else if gameMeta.started && question?.type === QuizQuestionType.SLIDE && answer_results === undefined}
+			<LookUp {username} />
 		{:else if gameMeta.started && gameData !== undefined && question_index !== '' && answer_results === undefined}
 			{#key unique}
 				<!-- This wrapper forced black text on the whole question screen, which made the

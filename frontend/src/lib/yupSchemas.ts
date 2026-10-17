@@ -22,6 +22,8 @@ export const DESCRIPTION_MAX_LENGTH = 500;
 // and MAX_ANSWER_LENGTH in frogquiz/db/models.py -- keep the four numbers in step.
 export const QUESTION_MAX_LENGTH = 250;
 export const ANSWER_MAX_LENGTH = 100;
+// An Info slide's text, as the server caps it (MAX_SLIDE_BODY_LENGTH, models.py).
+export const SLIDE_BODY_MAX_LENGTH = 500;
 // Mirror frogquiz/db/models.py. MAX_ANSWERS_PER_QUESTION is a hard ceiling (scoring
 // concatenates one-digit option indices) and MAX_QUESTION_SECONDS is the server's timer
 // bound; both must match the server or the editor lets through a quiz that 422s on save.

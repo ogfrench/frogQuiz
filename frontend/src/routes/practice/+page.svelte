@@ -192,7 +192,16 @@ SPDX-License-Identifier: MPL-2.0
 					</div>
 				{/if}
 
-				{#if !isPracticable(question)}
+				{#if question.type === QuizQuestionType.SLIDE && question.answers === ''}
+					<!-- A plain slide (#93): its title and image are above; its text, then Next. -->
+					{#if question.body}
+						<p
+							class="text-muted-foreground text-center whitespace-pre-line wrap-anywhere"
+						>
+							{question.body}
+						</p>
+					{/if}
+				{:else if !isPracticable(question)}
 					<p class="text-muted-foreground text-center">
 						{$t('practice_page.unsupported')}
 					</p>
