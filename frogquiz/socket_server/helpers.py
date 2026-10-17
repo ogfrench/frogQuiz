@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import logging
+import math
 import random
 from typing import Callable
 
@@ -12,6 +13,7 @@ from redis.exceptions import WatchError
 from frogquiz.config import settings, redis
 from frogquiz.db.models import (
     PlayGame,
+    QuizQuestion,
     QuizQuestionType,
     TextQuizAnswer,
     ABCDQuizAnswer,
@@ -116,9 +118,67 @@ def check_abcd_question(answer: str, answers: ABCDQuizAnswer) -> bool:
     return False
 
 
+def _slider_value(answer: str) -> float | None:
+    """A slider answer as a number, or None. Not only whole numbers: an untouched slider
+    can sit half way along an odd span (0 to 5 starts at 2.5)."""
+    try:
+        value = float(answer)
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) else None
+
+
 def check_range_question(answer: str, answers: RangeQuizAnswer) -> bool:
-    if answers.min_correct <= int(float(answer)) <= answers.max_correct:
-        return answers.min_correct <= int(float(answer)) <= answers.max_correct
+    # It returned None outside the range and raised on "nan" or "abc", which crashed
+    # submit_answer with nothing sent back to the phone (#93).
+    value = _slider_value(answer)
+    return value is not None and answers.min_correct <= value <= answers.max_correct
+
+
+def correct_answer_texts(question: QuizQuestion) -> list[str] | None:
+    """What a wrong phone is shown as the right answer, or None where there is none.
+
+    Multiple choice and Check choice show the right options; Type answer its accepted
+    spellings; a slider its right value or range; Put in order the items in order. A poll
+    and a slide have no right answer.
+    """
+    t = question.type or QuizQuestionType.ABCD
+    answers = question.answers
+    if t in (QuizQuestionType.ABCD, QuizQuestionType.CHECK):
+        # A right answer left blank has nothing to show.
+        return [a.answer for a in answers if a.right and a.answer.strip()]
+    if t == QuizQuestionType.TEXT:
+        return [a.answer for a in answers if a.answer.strip()]
+    if t == QuizQuestionType.RANGE:
+        lo, hi = answers.min_correct, answers.max_correct
+        return [str(lo) if lo == hi else f"{lo}\u2013{hi}"]
+    if t == QuizQuestionType.ORDER:
+        return [a.answer for a in answers]
+    return None
+
+
+def answer_is_valid(question: QuizQuestion, data: SubmitAnswerData) -> bool:
+    """Whether a submitted answer is something this question could have been answered with.
+
+    The phone only offers real answers, so this refuses what a crafted client sends: an
+    option that does not exist (it broke the host's poll counts), a number off the slider,
+    an order that is not the question's items reordered, or anything during a slide. A
+    refused answer is not recorded, as if it was never sent.
+    """
+    t = question.type
+    answers = question.answers
+    if t == QuizQuestionType.SLIDE:
+        return False
+    if t in (QuizQuestionType.ABCD, QuizQuestionType.VOTING, None):
+        return isinstance(answers, list) and data.answer in {a.answer for a in answers}
+    if t == QuizQuestionType.RANGE:
+        value = _slider_value(data.answer)
+        return value is not None and answers.min <= value <= answers.max
+    if t == QuizQuestionType.ORDER:
+        if data.complex_answer is None:
+            return False
+        return sorted(a.answer for a in data.complex_answer) == sorted(a.answer for a in answers)
+    return True
 
 
 def check_order_question(
