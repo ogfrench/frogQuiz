@@ -143,7 +143,7 @@ test('signed out on an unlisted quiz: Practice leads, and sign-in is offered to 
 	await visitor.close();
 });
 
-test('the owner adds a question below the first, writes it, and Done keeps it as a draft', async ({
+test('the owner adds a question below the first, finishes it, and Done takes them to the quiz', async ({
 	browser,
 	request
 }) => {
@@ -167,16 +167,32 @@ test('the owner adds a question below the first, writes it, and Done keeps it as
 		)
 		.toBe('1');
 	await page.keyboard.type('Capital of Italy?');
-	// Between the edit and the autosave the header says so, rather than a stale "Saved".
-	await expect(page.getByText('Unsaved changes', { exact: true })).toBeVisible();
+	// A question with no answers cannot be saved yet (the server refuses it), and the
+	// header says so rather than a stale "Saved".
+	await expect(page.getByText('Unsaved changes', { exact: true }).first()).toBeVisible();
+	await page.getByRole('button', { name: 'Add an answer' }).click();
+	await page.getByRole('textbox', { name: 'Answer 1' }).fill('Rome');
+	await page.getByRole('button', { name: 'Add an answer' }).click();
+	await page.getByRole('textbox', { name: 'Answer 2' }).fill('Milan');
+	// Then it saves on its own: Saving…, then a draft, since no answer is marked correct.
+	await expect(page.getByText('Saving…', { exact: true })).toBeVisible();
 	await expect(page.getByText('Saved as a draft', { exact: true })).toBeVisible({
 		timeout: 15_000
 	});
-	await page.getByRole('button', { name: 'Done', exact: true }).click();
+	// Done on an unfinished quiz stays and says what is left (MVP.md D14).
+	const done = page.getByRole('button', { name: 'Done', exact: true });
+	await done.click();
+	await expect(page.getByText(/1 question needs finishing/).first()).toBeVisible();
+	await expect(page).toHaveURL(/\/edit\?/);
+	// Mark Rome correct, which finishes it; then Done goes to the quiz, which can be hosted.
+	// The outline names the unfinished question once, not twice.
+	await expect(
+		page.getByRole('button', { name: /Capital of Italy\? Incomplete$/ })
+	).toBeVisible();
+	await page.getByRole('button', { name: 'Mark as correct: Rome', exact: true }).click();
+	await done.click();
 	await page.waitForURL(new RegExp(`/view/${id}`));
-	// It has no answers yet, so the quiz is a draft and cannot be hosted.
-	await expect(main(page).getByText('Draft', { exact: true })).toBeVisible();
-	await expect(hostGame(page)).toBeDisabled();
+	await expect(hostGame(page)).toBeEnabled();
 	const stored = await (await owner.context.request.get(`/api/v1/quiz/get/${id}`)).json();
 	expect(stored.questions.map((q: { question: string }) => q.question)).toEqual([
 		'Capital of Portugal?',
@@ -224,6 +240,9 @@ test('a quiz deleted in another tab: the text stays, and Done and Host game are 
 	await expect(page.getByRole('button', { name: 'Save as a new quiz' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Done', exact: true })).toBeDisabled();
 	await expect(page.getByRole('button', { name: 'Host game', exact: true })).toBeDisabled();
+	// Nothing spins forever: the header says the text is not saved.
+	await expect(page.getByText('Unsaved changes', { exact: true }).first()).toBeVisible();
+	await expect(page.getByText('Saving…', { exact: true })).toHaveCount(0);
 	await expect(questionBox(page)).toContainText('Typed after it was deleted');
 	await owner.context.close();
 });
@@ -292,8 +311,11 @@ test('on a phone, the quiz page menu fits, is touch-sized, and the notice is on 
 	await expectNoHorizontalOverflow(page);
 	const menu = await openViewMenu(page);
 	for (const item of await menu.getByRole('menuitem').all()) {
+		// Layout height: the menu zooms in, so a box measured mid-animation is scaled down.
+		expect(
+			await item.evaluate((el) => (el as HTMLElement).offsetHeight)
+		).toBeGreaterThanOrEqual(44);
 		const box = (await item.boundingBox())!;
-		expect(box.height).toBeGreaterThanOrEqual(44);
 		expect(box.x + box.width).toBeLessThanOrEqual(PHONE.width);
 	}
 	await menu.getByRole('menuitem', { name: 'Copy link' }).tap();

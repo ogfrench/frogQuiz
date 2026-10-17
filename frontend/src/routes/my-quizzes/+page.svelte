@@ -14,7 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 	// browser's localStorage. Without a list, the only record of one is the tab it was
 	// created in: close it and the quiz is unreachable until the 30-day sweep removes it.
 	// Signed in, those same quizzes are listed under the account's, with Claim.
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getLocalization } from '$lib/i18n';
 	import {
@@ -146,7 +146,14 @@ SPDX-License-Identifier: MPL-2.0
 			return;
 		}
 		clearAnonSecret(id);
+		const had_focus = more_buttons[id]?.contains(document.activeElement) ?? false;
 		remove(id);
+		// The dialog gave focus back to this row's menu button, and the row just went with
+		// it, which leaves the keyboard on <body>. The page takes it instead.
+		if (had_focus) {
+			await tick();
+			document.getElementById('main-content')?.focus();
+		}
 	};
 
 	// #39: the copy is a new unlisted quiz in this account, and the editor is where a copy

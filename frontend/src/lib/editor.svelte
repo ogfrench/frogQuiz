@@ -127,12 +127,13 @@ SPDX-License-Identifier: MPL-2.0
 				?.scrollIntoView({ behavior: 'smooth', block })
 		);
 	};
-	// The pressed "Add question below" goes away with the selection, which dropped keyboard
-	// focus on <body>. Put it in the new question's text instead, once its editor has loaded.
-	const focusQuestionText = (index: number, tries = 30) => {
+	// The pressed "Add question below" (or Duplicate) goes away with the selection, which dropped keyboard
+	// focus on <body>. Put it in the new question's text instead, once CKEditor has taken the
+	// field over: focus set before that is lost when it starts.
+	const focusQuestionText = (index: number, tries = 120) => {
 		requestAnimationFrame(() => {
 			const field = document.querySelector<HTMLElement>(
-				`[data-question-index="${index}"] [contenteditable="true"]`
+				`[data-question-index="${index}"] .ck-editor__editable`
 			);
 			if (field) field.focus();
 			else if (tries > 0) focusQuestionText(index, tries - 1);
@@ -182,6 +183,7 @@ SPDX-License-Identifier: MPL-2.0
 		];
 		selected_question = index + 1;
 		scrollToCard(index + 1);
+		focusQuestionText(index + 1);
 	};
 	let edit_id: string = $state();
 
@@ -618,7 +620,13 @@ SPDX-License-Identifier: MPL-2.0
 								class="text-muted-foreground ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 text-sm max-sm:flex-none"
 								role="status"
 							>
-								{#if saving}
+								<!-- Pending counts as saving, the way Docs and Forms say it: the autosave
+								     waits for a pause in typing, and in that gap the header used to say
+								     nothing, so an earlier "Saved" read as true. Opening a quiz shows it
+								     too, honestly: the rich-text fields rewrite what they load, and that
+								     is saved once. A quiz that cannot save (no title, gone, a conflict) says
+								     Unsaved changes instead. -->
+								{#if saving || (unsaved && savable && !failure && !conflict)}
 									<LoaderCircle class="size-4 shrink-0 animate-spin" />
 									<span class="truncate max-sm:sr-only"
 										>{$t('editor.saving')}</span
@@ -629,8 +637,6 @@ SPDX-License-Identifier: MPL-2.0
 										{playable ? $t('editor.saved') : $t('editor.saved_draft')}
 									</span>
 								{:else}
-									<!-- The autosave waits for a pause in typing, and in that gap the
-									     header said nothing, so "Saved" from before still read as true. -->
 									<CloudUpload class="size-4 shrink-0" />
 									<span class="truncate max-sm:sr-only">
 										{$t('editor.unsaved_title')}
@@ -790,6 +796,7 @@ SPDX-License-Identifier: MPL-2.0
 												<span
 													class="bg-destructive size-1.5 shrink-0 rounded-full"
 													title={$t('editor.question_incomplete')}
+													aria-hidden="true"
 												></span>
 												<span class="sr-only"
 													>{$t('editor.question_incomplete')}</span
