@@ -148,7 +148,8 @@ meets all three. It has not happened since September, which is evidence, not a p
 If it happens, the uptime check fails within 30 minutes; start the instance again from the
 console (Compute > Instances > Start). The data is on Neon and in the nightly backup.
 Upgrading to Pay As You Go, with a $1 budget alert, is the usual way people avoid
-reclamation; Oracle's page does not say whether the rule applies to paid accounts.
+reclamation; Oracle's page does not say whether the rule applies to paid accounts. The options, and a staging
+stack that would also take PR previews off production data, are in #89.
 
 The app does not need more: the API runs one process (`MAX_WORKERS: "1"` in
 `docker-compose.yml`, which socket.io needs), so it uses one core whatever the shape.
