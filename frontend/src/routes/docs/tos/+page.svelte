@@ -11,7 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 </svelte:head>
 
 <article
-	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate px-4 dark:prose-invert"
+	class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto mt-10 prose-slate fq-gutter dark:prose-invert"
 >
 	<h1>Terms</h1>
 	<p>
@@ -24,6 +24,10 @@ SPDX-License-Identifier: MPL-2.0
 		Only share material you have permission to use. Do not upload illegal or inappropriate
 		material, confidential information, or other people's personal details without permission.
 		Consider who can see a quiz before sharing it or hosting a game.
+	</p>
+	<p>
+		An AI agent key acts as you. Keep it secret, and revoke it on My Account if it leaks. You
+		are responsible for what an agent saves with your key.
 	</p>
 	<p>
 		We may remove inappropriate content or restrict access if the service is misused. We may

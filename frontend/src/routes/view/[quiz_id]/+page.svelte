@@ -281,7 +281,7 @@ SPDX-License-Identifier: MPL-2.0
 	<meta name="twitter:image" content={share.image} />
 </svelte:head>
 
-<div class="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
+<div class="mx-auto w-full max-w-2xl fq-gutter py-8 sm:py-12">
 	<!-- fq-section's rhythm, but stretched: fq-section centers its children, which
 	     would shrink every card to its content width. -->
 	<div class="flex flex-col gap-(--fq-space-group)">
@@ -368,7 +368,9 @@ SPDX-License-Identifier: MPL-2.0
 							{/if}
 						{:else}
 							<Button
-								href="/account/login?returnTo={encodeURIComponent(`/view/${quiz.id}`)}"
+								href="/account/login?returnTo={encodeURIComponent(
+									`/view/${quiz.id}`
+								)}"
 								class="w-full sm:w-fit"
 							>
 								{$t('view_quiz_page.anon_sign_up')}
@@ -462,7 +464,12 @@ SPDX-License-Identifier: MPL-2.0
 					{$t('words.practice')}
 				</Button>
 				{#if can_use_template}
-					<Button variant="outline" size="lg" disabled={copying} onclick={copy_to_my_quizzes}>
+					<Button
+						variant="outline"
+						size="lg"
+						disabled={copying}
+						onclick={copy_to_my_quizzes}
+					>
 						{#if copying}
 							<LoaderCircle class="animate-spin" aria-hidden="true" />
 						{:else}

@@ -240,7 +240,7 @@ Re-planned 12 Oct after D39. #34, #33, #38 and #41 left the step.
 ### Step 6: robustness and release
 
 - **#61 backups:** a nightly `pg_dump` of Neon and a tar of the uploads, sent off the VM to an OCI Object Storage bucket François creates (14-day lifecycle, a pre-authenticated write URL). A restore runbook in `DEPLOY.md`, and one real restore into a Neon branch, timed.
-- **#45, trimmed (12 Oct):** game flow, the parts of the stack going down, a new frontend on an old backend, the room-size number (`simulate_players.py`), and one real game on an iPhone and an Android phone with François. The rest is written down as deferred, with the reason. It closes after the deploy, not at the merge.
+- **#45, trimmed (12 Oct):** game flow, the parts of the stack going down, a new frontend on an old backend, the room-size number (`deploy/load-test.py`, run on production 17 Oct), and one real game on an iPhone and an Android phone with François. The rest is written down as deferred, with the reason. It closes after the deploy, not at the merge.
 - **Final full review**, then the V1-level re-plan.
 - **Checkpoint:** François approves the merge.
 - **Deploy, in this order:**

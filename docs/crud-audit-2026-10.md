@@ -31,7 +31,7 @@ Audit run, before the fixes: full e2e with the worker, Windows/Edge, 163 of 166 
 every expected failure among them. The three that failed had nothing to do with the audit: `journey-recovery`
 was a Windows bug in the e2e mail sink (fixed on this branch, passes now), and
 `editor-column` › moved and deleted and `practice` › end to end each failed once and
-passed straight after in isolation (logged in `TODO.md`). Each expected failure was also
+passed straight after in isolation (logged in `archive/TODO-2026-10.md`). Each expected failure was also
 run with its marker switched off, to check it fails on the assertion it names and not on
 setup.
 

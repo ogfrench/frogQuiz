@@ -114,7 +114,10 @@ SPDX-License-Identifier: MPL-2.0
 			...(reduced()
 				? []
 				: ([3, 2, 1] as const).map((place) =>
-						setTimeout(() => sfx(`place${place}`), FIRST_REVEAL_MS + (3 - place) * REVEAL_GAP_MS)
+						setTimeout(
+							() => sfx(`place${place}`),
+							FIRST_REVEAL_MS + (3 - place) * REVEAL_GAP_MS
+						)
 					)),
 			setTimeout(() => (winner_shown = true), reduced() ? 0 : winner_lands)
 		];
@@ -170,7 +173,11 @@ SPDX-License-Identifier: MPL-2.0
 						{#if p.place === 1}
 							<span class="grid size-8 place-items-center sm:size-10">
 								{#if winner_shown}
-									<span class="crown" style="color: #e0a92a" in:fade|global={{ duration: dur(DUR.surface) }}>
+									<span
+										class="crown"
+										style="color: #e0a92a"
+										in:fade|global={{ duration: dur(DUR.surface) }}
+									>
 										<Crown class="size-8 sm:size-10" aria-hidden="true" />
 									</span>
 								{/if}
@@ -179,12 +186,14 @@ SPDX-License-Identifier: MPL-2.0
 						<!-- The winner's frog is the largest, as their name is. -->
 						<FrogAvatar
 							name={p.name}
-							class="mb-1 {p.place === 1 ? 'size-20 sm:size-28' : 'size-14 sm:size-20'}"
+							class="mb-1 {p.place === 1
+								? 'size-20 sm:size-28'
+								: 'size-14 sm:size-20'}"
 						/>
 						<!-- Kahoot's podium is the recognizable shape, and the winner is the
 						     point of it: their name is the largest thing on the screen and their
-						     score sits in the gold, rather than all three being labeled the same
-						     way and the gold doing all the work. -->
+						     score sits in a pill, rather than all three being labeled the same
+						     way. The pill is neutral: gold is spent on the block and the crown. -->
 						<p
 							class="w-full truncate font-semibold tracking-tight {p.place === 1
 								? 'text-3xl sm:text-5xl'
@@ -195,8 +204,7 @@ SPDX-License-Identifier: MPL-2.0
 						</p>
 						{#if p.place === 1}
 							<span
-								class="mt-1 rounded-full px-3 py-1 text-sm font-semibold tabular-nums sm:text-base"
-								style="background: #f5c33c; color: #1b1b1f"
+								class="bg-muted text-foreground mt-1 rounded-full px-3 py-1 text-sm font-semibold tabular-nums sm:text-base"
 							>
 								{p.score}
 								{$t('words.point', { count: p.score })}
@@ -214,7 +222,9 @@ SPDX-License-Identifier: MPL-2.0
 					     bars (CLAUDE.md), but a podium is not branding: medal colors are what
 					     a podium means, and the winner's block was otherwise a black slab. -->
 					<div
-						class="podium-block {medal(p.place)} flex w-full {p.height} flex-col items-center
+						class="podium-block {medal(
+							p.place
+						)} flex w-full {p.height} flex-col items-center
 							justify-start gap-1 rounded-t-2xl border border-b-0 border-border pt-3 -mb-[2px]"
 						class:is-winner={p.place === 1}
 						in:grow|global={{ duration: dur(DUR.reveal), delay: p.delay }}
@@ -271,7 +281,9 @@ SPDX-License-Identifier: MPL-2.0
 						{/if}
 					</div>
 					{#if the_rest.length}
-						<Collapsible.Trigger class={buttonVariants({ variant: 'outline', size: 'sm' })}>
+						<Collapsible.Trigger
+							class={buttonVariants({ variant: 'outline', size: 'sm' })}
+						>
 							{show_all
 								? $t('admin_page.show_fewer_players')
 								: $t('admin_page.show_all_players', { count: ranked.length })}
@@ -356,19 +368,13 @@ SPDX-License-Identifier: MPL-2.0
 	   One loud block instead: the winner is flat gold, second and third are the page's own
 	   surfaces, and the rank is carried by height, numeral and label rather than by three
 	   competing hues. */
+	/* Second and third are one neutral step off the ground, with an edge you can see: on
+	   the bare muted token they were near-white blocks on a white page (V1 design call 3,
+	   17 Oct). Both take the foreground ink; height, numeral and label carry the rank. */
 	.podium-block {
-		background: var(--muted);
+		background: color-mix(in oklch, var(--muted), var(--foreground) 6%);
+		border-color: color-mix(in oklch, var(--border), var(--foreground) 15%);
 		color: var(--foreground);
-	}
-
-	.podium-block.is-silver {
-		background: var(--muted);
-	}
-
-	/* Third sits back a step: same surface, quieter ink. */
-	.podium-block.is-bronze {
-		background: var(--muted);
-		color: var(--muted-foreground);
 	}
 
 	/* The one loud thing on the screen. Flat, not a gradient: a gradient on a block this

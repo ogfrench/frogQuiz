@@ -100,10 +100,10 @@ the code or a live page before acting on it.
 | My Quizzes | all | both | The Ctrl+K notice covers the footer, and shows on a phone | Not on a phone: the notice skips `pointer: coarse`; the capture runs a desktop pointer at 390. On a laptop it is a one-time, dismissible toast |
 | Editor | 390 | both | Play and Save about 34px | The capture's desktop pointer; `touch-targets.e2e.ts` passes with touch emulation |
 | Editor, question card | 390 | both | About 40px of the card goes to the drag-handle column, so content gets about 300px | Open, low. Same as the 11 Oct row above |
-| Login, settings | all | both | Two disabled styles: a mid-grey block (sign-in, Create key) and a pale chip (Join) | Open, low: one disabled style is a design call |
-| Host question | 1440, 1920 | both | The timer bar is red from the start | Open, low: a design call |
-| Podium | all | light | 2nd and 3rd blocks are near-white on white; gold appears in several places | Open, low: a design call |
-| Player answer tiles | 390 | both | A vertical gradient on the phone where host and view pages are flat; the selected ring is faint in light | Open, low: a design call |
-| Discover, settings, view page | various | both | Gutters vary from 16 to 48px between pages | Open, low |
+| Login, settings | all | both | Two disabled styles: a mid-grey block (sign-in, Create key) and a pale chip (Join) | Fixed 17 Oct (François: the pale chip): the filled `Button` variants take the muted chip when disabled |
+| Host question | 1440, 1920 | both | The timer bar is red from the start | Fixed 17 Oct (François): the host bar and the phone ring are neutral until the last 5 seconds, then red, when the music speeds up (`lib/play/last_seconds.ts`) |
+| Podium | all | light | 2nd and 3rd blocks are near-white on white; gold appears in several places | Fixed 17 Oct (François): 2nd and 3rd are a neutral step off the ground with a visible edge and the same ink; the points pill is neutral, gold stays on the block and the crown |
+| Player answer tiles | 390 | both | A vertical gradient on the phone where host and view pages are flat; the selected ring is faint in light | Sheen kept (François, 17 Oct: it looks more integrated). The selected ring is the foreground ink, 5px |
+| Discover, settings, view page | various | both | Gutters vary from 16 to 48px between pages | Fixed 17 Oct (François): one `fq-gutter` utility, 16 / 24 / 32px, on the navbar, footer and every visible page |
 
-The "Open, low" rows are polish, not V1 blockers. The design calls are François's.
+The "Open, low" rows are polish, not V1 blockers. François made the five design calls on 17 Oct.

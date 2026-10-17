@@ -350,7 +350,7 @@ SPDX-License-Identifier: MPL-2.0
 {/snippet}
 
 <div class="flex flex-col">
-	<div class="mx-auto w-full max-w-5xl grow px-5 pt-8 pb-20">
+	<div class="mx-auto w-full max-w-5xl grow fq-gutter pt-8 pb-20">
 		<header class="flex flex-wrap items-end justify-between gap-4">
 			<div class="min-w-0">
 				<h1 class="text-3xl font-semibold tracking-tight">{$t('my_quizzes.title')}</h1>

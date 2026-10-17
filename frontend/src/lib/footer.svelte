@@ -6,7 +6,7 @@
      with a hairline above it that mirrors the navbar's below, at the navbar's side
      padding, the way frogConvert's footer reads. The heart is the text glyph, as there,
      in the text color: the red emoji was the only color in the footer. -->
-<footer class="border-border/60 text-muted-foreground border-t px-5 py-5 text-sm lg:px-8">
+<footer class="border-border/60 text-muted-foreground border-t fq-gutter py-5 text-sm">
 	<div
 		class="flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between sm:text-left"
 	>

@@ -64,7 +64,7 @@ actually free anything:
   `collect_quiz_image_keys` is deleted rather than left as a function that silently
   matches nothing.
 - The orphan path runs in the worker, so it needs the `worker` container (already an open
-  item in [`../TODO.md`](../TODO.md)). The explicit delete runs in the request path and does
+  item in [`archive/TODO-2026-10.md`](archive/TODO-2026-10.md)). The explicit delete runs in the request path and does
   not.
 - **Two of the bullets above did not hold until the CRUD audit of 2026-10-04**
   ([`crud-audit-2026-10.md`](crud-audit-2026-10.md)). The `quiz_update` unlink raised

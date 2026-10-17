@@ -14,6 +14,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { LAST_SECONDS } from '$lib/play/last_seconds';
 	import { getLocalization } from '$lib/i18n';
 	import { Button } from '$lib/components/ui/button';
 	import Volume2 from '@lucide/svelte/icons/volume-2';
@@ -71,7 +72,6 @@ SPDX-License-Identifier: MPL-2.0
 	// The last seconds play the same loop rendered at 1.5x the tempo (kit C, 180 BPM). Played
 	// faster, the loop itself would also go up a fifth in pitch, which music cannot take the
 	// way the old tick could.
-	const LAST_SECONDS = 5;
 	const frame = () => {
 		if (!source || !ctx) return;
 		const since = (performance.now() - last_stamp) / 1000;

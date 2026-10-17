@@ -205,7 +205,7 @@ Worth being exact, because the phrase gets stretched:
   signed-out create-then-claim journey, the legal pages and the 404. Driven through the
   UI only, at 390 (touch emulated) and 1440, light and dark, with axe, console errors and
   overflow checked at each step. It found a Save-breaking timer bug, a phone-only tap bug
-  in the editor and a dead end after changing a password; TODO.md lists all of them.
+  in the editor and a dead end after changing a password; `archive/TODO-2026-10.md` lists all of them.
   Touch emulation matters: the editor tap bug does not reproduce with a mouse, and no spec
   had run with a touch screen until then.
 - **Verified under touch emulation, 4 Oct: press areas (issue #24).** At 390x844 with

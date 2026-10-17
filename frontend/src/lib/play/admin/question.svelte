@@ -6,6 +6,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
+	import { in_last_seconds } from '$lib/play/last_seconds';
 	import { QuizQuestionType } from '$lib/quiz_types';
 	import type { QuizData } from '$lib/quiz_types';
 	import { get_foreground_color } from '$lib/helpers.js';
@@ -100,7 +101,11 @@ SPDX-License-Identifier: MPL-2.0
 			<!-- scaleX, not width: a transform is composited, while width lays the page out
 			     again on every frame (lib/a11y/motion.test.ts). -->
 			<div
-				class="bg-destructive h-full w-full origin-left rounded-full motion-safe:transition-transform motion-safe:duration-1000 motion-safe:ease-linear"
+				class="h-full w-full origin-left rounded-full motion-safe:transition-transform motion-safe:duration-1000 motion-safe:ease-linear {in_last_seconds(
+					timer_res
+				)
+					? 'bg-destructive'
+					: 'bg-foreground'}"
 				style:transform="scaleX({question_seconds > 0
 					? Math.max(0, Math.min(1, parseInt(timer_res) / question_seconds))
 					: 0})"

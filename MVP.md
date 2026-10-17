@@ -11,9 +11,9 @@ decision lines. Audited against `master` at `9cd23820` on 2026-09-28.
 
 **How this relates to the other docs.** [`docs/mvp-scope.md`](docs/mvp-scope.md) records
 what has already been cut and why. [`docs/redesign-status.md`](docs/redesign-status.md)
-records which screens are redesigned. [`BACKLOG.md`](BACKLOG.md) holds MVP2 ideas. This
+records which screens are redesigned. [`docs/backlog.md`](docs/backlog.md) holds MVP2 ideas. This
 file is the plan for getting from here to something we can share, and it supersedes the
-"MVP1 working set" section of `BACKLOG.md` where the two disagree.
+"MVP1 working set" section of `docs/backlog.md` where the two disagree.
 
 **Rules this checklist follows.**
 
@@ -302,7 +302,7 @@ because they may reorder everything else.
 
 ### 4.3 Close the gaps in the core flow
 
-**Landed 2026-10-01**, from the full visual audit (`docs/audit-2026-10-01.md`):
+**Landed 2026-10-01**, from the full visual audit (`docs/archive/audit-2026-10-01.md`):
 
 - [x] After each question a player is told **Correct!** or **Not this time**, with an icon as well as the color, then the points, their total and their place. It was a bare "+760", so scoring 0 read as a broken game. Nothing new crosses the socket
 - [x] The **podium builds up** — third, second, first, 1.4s apart — in gold, silver and bronze with a crown and confetti, and does none of that under `prefers-reduced-motion`
@@ -324,7 +324,7 @@ because they may reorder everything else.
 
 ### 4.4 View page redesign (#17)
 
-The plan is already written up in `BACKLOG.md` → "Design the view page". Code landed
+The plan is already written up in `docs/backlog.md` → "Design the view page". Code landed
 2026-09-28; the browser check at 390/834/1440 in both themes is the last box.
 
 - [x] `fq-section` spacing, `max-w-2xl` column, header as a `Card`
@@ -364,7 +364,7 @@ Drafts first — they are small and help whichever editor we end up with.
 - [x] Hidden routes 404 through the app's own error page (2026-10-01). They were guarded in `handle`, which runs before the router, so SvelteKit answered with its built-in fallback: bare "404 | Not found", no navbar, no way home, on exactly the sixteen URLs we hide. `lib/hidden_routes.ts` holds the list and `hooks.ts` reroutes them
 - [x] The editor no longer drops an edit typed in the first half-second after it opens (2026-10-01). The "nothing has changed yet" baseline was taken 500ms late and swallowed the change, so Save sent nothing and still went to the quiz page saying "Saved"
 - [x] Run the backend suite on clean infrastructure — 2026-10-01: **134 passed, 1 skipped**
-- [x] Make `e2e/run.sh` run on Linux and macOS (done 2026-10-01, `TODO.md` row 11). It looks for `pg_ctl.exe`, `meilisearch-windows-amd64.exe`, `%APPDATA%\npm\pnpm` and pipenv, so the stack can only be stood up on the machine it was written for
+- [x] Make `e2e/run.sh` run on Linux and macOS (done 2026-10-01, `docs/archive/TODO-2026-10.md` row 11). It looks for `pg_ctl.exe`, `meilisearch-windows-amd64.exe`, `%APPDATA%\npm\pnpm` and pipenv, so the stack can only be stood up on the machine it was written for
 
 ### 4.7 Sign-off play test (the gate before sharing)
 
@@ -396,7 +396,7 @@ Round 2 of local play testing (Gonçalo, 2026-10-07). Eleven findings, fixed in 
 
 - [ ] Azure single sign-on (build on `frogquiz/oauth/`, which is config-gated and deliberately kept)
 - [ ] Internal wiki page: tools, alternatives, pros/cons
-- [ ] MVP2 features (avatars, rank position, word cloud, etc.) — issue #4 and `BACKLOG.md`. Avatars landed early (2026-10-08): a frog per player, assigned by the server and unique within a game, on the lobby, scoreboard, podium and the player's phone. Rank position and word cloud are still open
+- [ ] MVP2 features (avatars, rank position, word cloud, etc.) — issue #4 and `docs/backlog.md`. Avatars landed early (2026-10-08): a frog per player, assigned by the server and unique within a game, on the lobby, scoreboard, podium and the player's phone. Rank position and word cloud are still open
 - [ ] More languages (D10). The 33 upstream locale files were removed, but i18next, `getLocalization` and every `$t(...)` call are still in place, so adding a language is a translated `locales/<lang>.json` plus a picker
 - [ ] Submit frogQuiz to the internal Use Case Hub
 - [ ] AI agents over MCP: list, read and make unlisted quizzes from Claude, Cursor or any MCP client with a personal key from My Account (`docs/mcp.md`). Built and tested on `feature/mcp-server` (15 Oct). It brings an API-key schema change, and it closes security-audit finding 5. **Off by default.** Turning it on in production is François's and Gonçalo's joint call (DEPLOY.md, AI agents)

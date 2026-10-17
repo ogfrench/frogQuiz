@@ -54,7 +54,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <!-- The layout owns <main> and the footer now; this fills the screen under the navbar. -->
 <div class="flex min-h-[calc(100dvh-4rem)] flex-col">
-	<div class="flex flex-1 items-center justify-center px-6 py-24">
+	<div class="flex flex-1 items-center justify-center fq-gutter py-24">
 		<div class="w-full max-w-md">
 			<div class="flex flex-col items-center text-center">
 				<Wordmark size={56} showText={false} />

@@ -347,6 +347,19 @@ SPDX-License-Identifier: MPL-2.0
 	line-height: 1;
 }
 
+/* One side margin for every page, the navbar and the footer: 16px on a phone, 24px on a
+   tablet, 32px on a laptop (V1 design call 5, 17 Oct). Pages used 16 to 48px, so content
+   jumped sideways between Discover, My Quizzes, My Account and a quiz's page. */
+@utility fq-gutter {
+	padding-inline: 1rem;
+	@media (width >= 40rem) {
+		padding-inline: 1.5rem;
+	}
+	@media (width >= 64rem) {
+		padding-inline: 2rem;
+	}
+}
+
 @utility fq-section {
 	display: flex;
 	flex-direction: column;

@@ -150,7 +150,7 @@ older copy) and going back inside the app (E2, E8, E14, E15; `e2e/edge-cases.e2e
 There is no lobby-music or theme choice per quiz. The theme is the app's own, with the
 cover and background as the only per-quiz look. There is no preview other than Practice (step
 9). Import is hidden (D6, step 2). There is no question bank and no question-level copy
-between quizzes. No AI generation; `BACKLOG.md` lists it as out of scope for an internal tool.
+between quizzes. No AI generation; `docs/backlog.md` lists it as out of scope for an internal tool.
 
 ### Gap
 
@@ -449,7 +449,7 @@ re-seated from the cookie, and a back swipe now disconnects and reconnects clean
 player can leave on purpose outside a live question. Accessibility: every game state, host and
 phone, passes axe in both themes; answers carry shapes as well as color; focus rings are
 visible; touch targets are audited at 390 px (`e2e/touch-targets.e2e.ts`,
-`docs/audit-2026-10-01.md`). The answer palette's contrast and its documented limitation for
+`docs/archive/audit-2026-10-01.md`). The answer palette's contrast and its documented limitation for
 some color-vision types are unit tested (`answer_colors.test.ts`).
 
 ### Gap
@@ -480,7 +480,7 @@ public or unlisted quiz with no timer, the game's own tiles and scoring, a final
 Back to quiz link (D3; `e2e/practice.e2e.ts`). It runs entirely in the browser: no result is
 stored, there is no leaderboard, no deadline and nothing the owner can see. It runs ABCD,
 CHECK and VOTING, and shows a notice and a Next for the other types. No team mode, no ghost
-mode. `BACKLOG.md` lists team and ghost as "lower priority".
+mode. `docs/backlog.md` lists team and ghost as "lower priority".
 
 ### Gap
 
@@ -565,7 +565,7 @@ Impact is for an internal team; effort is S under a day, M up to a week, L longe
 | Team mode, ghost mode | Absent | Low | L each | No |
 | Sound | No in-game effects or question music | Low | S to M. Assets must not come from Kahoot | No |
 | Nickname tools | No generator or filter | Low | S | No |
-| AI generation | Absent | Low | M plus an API key and a policy | `BACKLOG.md` marks it out of scope |
+| AI generation | Absent | Low | M plus an API key and a policy | `docs/backlog.md` marks it out of scope |
 | Languages | English only | Low | S per language | D10 (English for MVP) |
 | Native app | Web only | Low | L | No |
 | Scale evidence | Nothing above 50 players tested; one worker | Medium | S to run a 200-player socket test | No |

@@ -65,7 +65,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <!-- fq-section, not fq-stage: fq-stage is min-height:100dvh plus justify-center, which
      is the projector composition. This is a list that can be any length. -->
-<div class="fq-section px-4 py-10 sm:px-6">
+<div class="fq-section fq-gutter py-10">
 	<div class="w-full max-w-5xl">
 		<!-- The navbar calls this Discover; the page called itself Explore. The URL stays
 		     /explore (MVP.md section 2) -- it is the label that had drifted. -->
@@ -106,7 +106,11 @@ SPDX-License-Identifier: MPL-2.0
 					{$t('explore_page.examples')}
 				</h2>
 				<p class="text-muted-foreground mt-1 text-sm">
-					{$t(data.logged_in ? 'explore_page.examples_hint' : 'explore_page.examples_hint_signed_out')}
+					{$t(
+						data.logged_in
+							? 'explore_page.examples_hint'
+							: 'explore_page.examples_hint_signed_out'
+					)}
 				</p>
 				<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{#each data.examples.quizzes as quiz (quiz.id)}
@@ -133,7 +137,9 @@ SPDX-License-Identifier: MPL-2.0
 					<p class="text-muted-foreground mt-2 text-sm">
 						{$t('explore_page.nothing_here_detail')}
 					</p>
-					<Button href="/create" class="mt-4" onclick={openCreateDialog}>{$t('explore_page.create_one')}</Button>
+					<Button href="/create" class="mt-4" onclick={openCreateDialog}
+						>{$t('explore_page.create_one')}</Button
+					>
 				</div>
 			{/if}
 		{:else if data.logged_in && has_examples}
