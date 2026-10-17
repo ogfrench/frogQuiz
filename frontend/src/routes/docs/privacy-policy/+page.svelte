@@ -28,6 +28,10 @@ SPDX-License-Identifier: MPL-2.0
 		<li>Quizzes, uploaded images and game results saved by a host.</li>
 		<li>Temporary game data, including players' nicknames, answers and scores.</li>
 		<li>Session and rate-limit records, which can include your IP address.</li>
+		<li>
+			AI agent keys you create on My Account: a name, the first characters, a fingerprint of
+			the key (never the key itself), and when it was made and last used.
+		</li>
 	</ul>
 	<p>
 		Sign-in uses an emailed link or code. Cookies and browser storage remember your session,
@@ -48,11 +52,15 @@ SPDX-License-Identifier: MPL-2.0
 		</li>
 		<li>Neon stores account details, quizzes and saved game results.</li>
 		<li>Resend delivers sign-in emails and processes the recipient's address and message.</li>
+		<li>
+			GitHub keeps encrypted nightly backups of the database and uploaded images for 30 days.
+		</li>
 	</ul>
+	<p>Hosting providers may keep operational logs, including IP addresses.</p>
 	<p>
-		Hosting providers may keep operational logs, including IP addresses. If a host enables
-		hCaptcha or Google reCAPTCHA for joining a game, that provider also processes the
-		verification request.
+		If you connect an AI agent with a key, the agent and the company that runs it receive
+		whatever quizzes it reads or creates for you, under your own agreement with them. Revoke a
+		key on My Account and it stops working on its next request.
 	</p>
 
 	<h2>Retention and deletion</h2>
@@ -63,8 +71,9 @@ SPDX-License-Identifier: MPL-2.0
 	</p>
 	<p>
 		You can delete individual quizzes or delete your account in account settings. Account
-		deletion removes the account and its quizzes, uploads and saved results. Deletion from
-		provider backups follows their retention policies.
+		deletion removes the account and its quizzes, uploads, saved results and AI agent keys. Our
+		backups keep a copy for up to 30 days; providers' own backups follow their retention
+		policies.
 	</p>
 	<p>
 		For privacy questions or a deletion request, email

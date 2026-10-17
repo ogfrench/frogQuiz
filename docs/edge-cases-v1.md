@@ -15,8 +15,8 @@ and each with its test) and on [`e2e-findings.md`](e2e-findings.md).
 it, and that test passed in CI on 16 Oct: e2e run 38956318179 (301 passed, 1 skipped, the
 code that is now master plus #83) and PyTest on `125c5ad`. No `test.fail` marker is left
 in the e2e suite, so no known bug is parked there. All of it runs in Chromium. Nothing
-here establishes iOS Safari, a screen reader, a real phone network or production load;
-those are the rows marked **not yet**.
+here establishes iOS Safari, a screen reader or a real phone network; those are the rows
+marked **not yet**. Production load was measured separately, on 17 Oct.
 
 ## Joining and playing
 
@@ -44,7 +44,7 @@ those are the rows marked **not yet**.
 | 120 players in the lobby, at four screen sizes | `lobby-many` | passes |
 | Names change width under the lobby board (late font) | `lobby-many`, added 16 Oct with the fix | passes locally 3 of 3; CI on #88 |
 | A whole game on phones only, host remote | `journey-remote-call`, `journey-player-phone` | passes |
-| How many players one game holds on the production VM | | **not yet**: a measured load test, step 6 of the #73 plan, on production off-hours at a time François picks |
+| How many players one game holds on the production VM | `deploy/load-test.py` on production, 17 Oct, every player answering at once (`DEPLOY.md`, "Staying inside Always Free") | passes for 200: all joined and answered, slowest answer 729 ms. 300 also all answered, but the slowest took 1.5 s, which costs the last players up to about 1.3 s of their score |
 | iOS Safari and Android Chrome on real phones | | **not yet**: François, step 6 |
 
 ## Editing

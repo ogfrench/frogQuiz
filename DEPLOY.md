@@ -153,7 +153,25 @@ stack that would also take PR previews off production data, are in #89.
 
 The app does not need more: the API runs one process (`MAX_WORKERS: "1"` in
 `docker-compose.yml`, which socket.io needs), so it uses one core whatever the shape.
-`deploy/load-test.py` measures how many players one game holds on it.
+`deploy/load-test.py` measures how many players one game holds on it. Run on production on
+Saturday 17 Oct, 10:22 CEST, from one cloud machine, with every player answering at the same
+instant (the worst case):
+
+| Players | Join (s) | Question reaches the last phone (ms) | Slowest answer reaches the host (ms) |
+|---:|---:|---:|---:|
+| 25 | 1.1 | 120 | 224 |
+| 50 | 1.3 | 112 | 274 |
+| 100 | 2.7 | 129 | 385 |
+| 200 | 10.2 | 190 | 729 |
+| 300 | 14.1 | 202 | 1,511 |
+
+Every player joined and every answer arrived at each size. **200 players stay under the
+script's 1-second line; 300 work, but are over it.** The delay matters for scoring: the
+server scores an answer by when it is handled, minus a round trip measured at join, so time
+spent queued counts against the player. At 300 the last answers lose up to about 1.3 s.
+The 25-player figure is mostly the network between that machine and the VM. Answer delay
+grows about linearly with the room, as it did locally.
+
 
 ### Deploying to any Linux VM
 

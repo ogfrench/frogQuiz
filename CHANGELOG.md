@@ -4,6 +4,9 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Brought Privacy and Terms up to date: Privacy now names the nightly encrypted backups on GitHub (30 days) and what an AI agent key stores, says an agent's provider sees the quizzes it handles, and no longer describes a captcha hosts cannot turn on (the start dialog always sends it off). Terms say an agent key acts as you.
+- Ran the load test on production (17 Oct): one game holds 200 players with every answer reaching the host within 729 ms; at 300 every answer still arrived, the slowest after 1.5 s. Recorded in DEPLOY.md and docs/edge-cases-v1.md.
+
 ## v0.9, 17 Oct 2026
 
 V1 step 5: guest creation and Excel import (#67), the production recovery and security fixes (#71, #76, #77), nightly backups and the uptime check (#78), the Production ops workflow (#79 to #81, #85), the join flow (#84), AI agents over MCP (#83, #86, #87), and the V1 checklist records (#88). v1.0 waits on the MCP work in #68.

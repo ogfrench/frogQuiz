@@ -26,6 +26,10 @@ SPDX-License-Identifier: MPL-2.0
 		Consider who can see a quiz before sharing it or hosting a game.
 	</p>
 	<p>
+		An AI agent key acts as you. Keep it secret, and revoke it on My Account if it leaks. You
+		are responsible for what an agent saves with your key.
+	</p>
+	<p>
 		We may remove inappropriate content or restrict access if the service is misused. We may
 		access stored data to maintain the service, investigate a problem or respond to a report.
 	</p>
