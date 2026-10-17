@@ -66,7 +66,9 @@ SPDX-License-Identifier: MPL-2.0
 				class:opacity-70={!correct && !is_voting}
 			>
 				<span class="flex w-40 shrink-0 items-center gap-2 sm:w-56 lg:w-72">
-					<AnswerShape index={i} class="size-4 shrink-0 text-neutral-500 lg:size-6" />
+					<!-- Neutral-700: wrong rows fade to 70%, and the shape that ties a row to its tile
+					     fell to about 2.7:1 at neutral-500 (WCAG 1.4.11). -->
+					<AnswerShape index={i} class="size-4 shrink-0 text-neutral-700 lg:size-6" />
 					<span class="truncate text-base font-medium lg:text-2xl" title={answer.answer}>
 						{answer.answer}
 					</span>
@@ -87,11 +89,16 @@ SPDX-License-Identifier: MPL-2.0
 				>
 					<span
 						class="absolute inset-y-0 left-0 w-full origin-left rounded-r-md transition-transform ease-out"
-						style="transform: scaleX({count / max}); transition-duration: var(--fq-dur-reveal); background-color: {answerColor(i)}"
+						style="transform: scaleX({count /
+							max}); transition-duration: var(--fq-dur-reveal); background-color: {answerColor(
+							i
+						)}"
 					></span>
 				</span>
 
-				<span class="w-14 shrink-0 text-right text-base font-semibold tabular-nums lg:text-2xl">
+				<span
+					class="w-14 shrink-0 text-right text-base font-semibold tabular-nums lg:text-2xl"
+				>
 					{count}
 					<span class="sr-only">
 						{$t('admin_page.chose_this', { count })}

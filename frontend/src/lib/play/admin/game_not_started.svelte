@@ -137,7 +137,9 @@ SPDX-License-Identifier: MPL-2.0
 	     unaligned columns. -->
 	<div class="flex flex-col items-center gap-8 md:flex-row md:items-center md:gap-12">
 		<div class="flex flex-col items-center gap-3 md:items-start">
-			<p class="text-lg text-muted-foreground md:text-xl">
+			<!-- The one line a latecomer needs, read from the back of the room: it was the
+			     smallest, greyest text on the screen (V1 game-screen review). -->
+			<p class="fq-meta text-foreground">
 				{$t('play_page.join_description', {
 					url:
 						window.location.host === 'frogquiz.xyz'

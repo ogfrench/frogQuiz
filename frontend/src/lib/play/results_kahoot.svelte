@@ -66,7 +66,16 @@ SPDX-License-Identifier: MPL-2.0
 	$effect(() => {
 		if (answered) sfx(right ? 'correct' : 'incorrect');
 	});
-	const place = $derived(Object.keys(sorted_scores).indexOf(username) + 1);
+	// Equal scores share a place, as on the host's scoreboard (1, 1, 3).
+	const place = $derived.by(() => {
+		const values = Object.values(sorted_scores).map((s) => Number(s) || 0);
+		const mine = Number(sorted_scores[username]) || 0;
+		return username in sorted_scores ? values.findIndex((v) => v === mine) + 1 : 0;
+	});
+	// "1st", not "1": the rank is the one thing a player glances down for.
+	const ORDINAL: Record<string, string> = { one: 'st', two: 'nd', few: 'rd', other: 'th' };
+	const ordinal_rules = new Intl.PluralRules('en', { type: 'ordinal' });
+	const ordinal = (n: number) => `${n}${ORDINAL[ordinal_rules.select(n)]}`;
 	const players = $derived(Object.keys(sorted_scores).length);
 </script>
 
@@ -78,7 +87,10 @@ SPDX-License-Identifier: MPL-2.0
      Fixed light "paper" rather than the bg-card token, for the same reason the host
      results card is: it sits on the quiz author's own background color, not the
      app theme, so in dark mode bg-card made it near-black on near-black. -->
+<!-- A status, so the result is announced when it lands: the card replaces the question
+     with no focus move, and a screen reader said nothing (V1 game-screen review). -->
 <div
+	role="status"
 	class="mx-auto flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-8 py-7 text-center text-neutral-900 shadow-sm"
 >
 	<!-- Shape as well as color: about one man in twelve cannot tell the green from the
@@ -120,12 +132,14 @@ SPDX-License-Identifier: MPL-2.0
 		+{score_by_username[username] ?? '0'}
 	</p>
 
-	<div class="text-sm text-neutral-500">
-		<p class="tabular-nums">{$t('play_page.total_score', { score: sorted_scores[username] ?? 0 })}</p>
+	<div class="flex flex-col gap-1">
 		{#if place > 0 && players > 1}
-			<p class="tabular-nums">
-				{$t('play_page.place_of', { place, total: players })}
+			<p class="text-base font-semibold tabular-nums">
+				{$t('play_page.place_of', { place: ordinal(place), total: players })}
 			</p>
 		{/if}
+		<p class="text-sm text-neutral-500 tabular-nums">
+			{$t('play_page.total_score', { score: sorted_scores[username] ?? 0 })}
+		</p>
 	</div>
 </div>

@@ -17,6 +17,8 @@ SPDX-License-Identifier: MPL-2.0
 	interface Props {
 		question: Question;
 		selected_answer?: string;
+		/** Submitted: the server keeps only the first answer, so the tiles stop. */
+		locked?: boolean;
 		game_mode: any;
 		timer_res: any;
 		circular_progress: any;
@@ -25,6 +27,7 @@ SPDX-License-Identifier: MPL-2.0
 	let {
 		question,
 		selected_answer = $bindable(),
+		locked = false,
 		game_mode,
 		timer_res,
 		circular_progress
@@ -81,13 +84,14 @@ SPDX-License-Identifier: MPL-2.0
 					transition-[transform,opacity,filter] duration-200 ease-out
 					motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95
 					focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-foreground
-					active:scale-[0.96] hover:scale-[1.02]"
+					not-disabled:active:scale-[0.96] not-disabled:hover:scale-[1.02]"
 				class:is-picked={picked}
 				style="background-color: {answerColor(i)}; color: {get_foreground_color(
 					answerColor(i)
 				)}; animation-delay: {i * 70}ms"
 				aria-label={answer.answer}
 				aria-pressed={picked}
+				disabled={locked}
 				onclick={() => selectAnswer(i)}
 			>
 				<!-- Gloss and floor shading, matching the single-answer tiles. Decorative. -->

@@ -204,13 +204,14 @@ SPDX-License-Identifier: MPL-2.0
 						</p>
 						{#if p.place === 1}
 							<span
-								class="bg-muted text-foreground mt-1 rounded-full px-3 py-1 text-sm font-semibold tabular-nums sm:text-base"
+								class="bg-muted text-foreground fq-meta mt-1 rounded-full px-3 py-1 font-semibold whitespace-nowrap tabular-nums"
 							>
 								{p.score}
 								{$t('words.point', { count: p.score })}
 							</span>
 						{:else}
-							<p class="text-muted-foreground text-sm tabular-nums">
+							<!-- The score is the payoff, read from the back of the room: it was 14px. -->
+							<p class="text-muted-foreground fq-meta tabular-nums">
 								{p.score}
 								{$t('words.point', { count: p.score })}
 							</p>
@@ -236,7 +237,7 @@ SPDX-License-Identifier: MPL-2.0
 						     max-sm:sr-only keeps it announced on a phone, where the blocks are
 						     too narrow to print it. -->
 						<span
-							class="max-sm:sr-only px-1 text-center text-[0.7rem] font-medium tracking-wider uppercase"
+							class="max-sm:sr-only fq-meta px-1 text-center font-medium tracking-wider uppercase"
 						>
 							{place_label(p.place)}
 						</span>

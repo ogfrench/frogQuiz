@@ -67,8 +67,8 @@ test('a player is told whether they were right, and where they stand', async ({
 	await host.waitForTimeout(1500);
 	await expect(good.p.getByText('Correct!')).toBeVisible();
 	await expect(bad.p.getByText('Not this time')).toBeVisible();
-	await expect(good.p.getByText(/1 of 2/)).toBeVisible();
-	await expect(bad.p.getByText(/2 of 2/)).toBeVisible();
+	await expect(good.p.getByText('1st of 2 players')).toBeVisible();
+	await expect(bad.p.getByText('2nd of 2 players')).toBeVisible();
 	await expect(bad.p.getByText('+0')).toBeVisible();
 	await hostCtx.close();
 	await good.ctx.close();
