@@ -265,15 +265,21 @@ export const titleBox = (page: Page) => page.getByRole('textbox', { name: 'Quiz 
 export const questionBox = (page: Page) => page.getByRole('textbox', { name: 'Question text' });
 /**
  * Opens the quiz page's "More actions" menu (17 Oct). Retried: its button is server-
- * rendered, so a click that lands before hydration opens nothing.
+ * rendered, so a click that lands before hydration opens nothing. Only an open menu
+ * counts: one still fading out after Escape or a pick is in the page for a moment with
+ * data-state="closed", and taking it for open is what lost the menu on a slow CI runner.
  */
 export async function openViewMenu(page: Page) {
 	const more = page.getByRole('main').getByRole('button', { name: /^More actions/ });
+	const open = page.locator('[role="menu"][data-state="open"]');
 	await expect(async () => {
-		if ((await page.getByRole('menu').count()) === 0) await more.click();
-		await expect(page.getByRole('menu')).toBeVisible({ timeout: 1000 });
+		if ((await open.count()) === 0) {
+			await expect(page.getByRole('menu')).toHaveCount(0);
+			await more.click();
+		}
+		await expect(open).toBeVisible({ timeout: 1000 });
 	}).toPass();
-	return page.getByRole('menu');
+	return open;
 }
 
 export const saveQuizButton = (page: Page) =>

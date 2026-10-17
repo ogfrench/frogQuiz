@@ -222,7 +222,7 @@ test('Copy waits while the copy is made and says what went wrong', async ({ brow
 	await page.route('**/api/v1/quiz/copy/*', (route) =>
 		route.fulfill({ status: 500, json: { detail: 'boom' } })
 	);
-	await item().click();
+	await (await viewMenu(page)).getByRole('menuitem', { name: COPY }).click();
 	await expect(page.getByRole('alert')).toContainText(/Couldn't copy/);
 	await expect(page).toHaveURL(/\/view\//);
 	await context.close();
