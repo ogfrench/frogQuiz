@@ -54,3 +54,22 @@ def test_a_fifth_answer_widens_the_sheet_instead_of_overwriting_the_time():
 def test_a_question_with_no_type_is_an_old_abcd_question():
     _, rows = excel_rows([q("Q", [("a", True), ("b", False)], None)])
     assert len(rows) == 1
+
+
+def test_text_that_looks_like_a_formula_is_exported_as_text():
+    # write() turned a string starting with "=" into a live formula in whoever opened the
+    # download; the results spreadsheet already guarded against it, the quiz export did not.
+    import openpyxl
+
+    from frogquiz.routers.eximport import quiz_workbook
+
+    sheet = openpyxl.load_workbook(
+        quiz_workbook(
+            '=HYPERLINK("http://example.invalid","x")',
+            "=1+1",
+            [q("=2+2", [("=3+3", True), ("b", False)])],
+        )
+    )["Main"]
+    cells = [sheet.cell(5, 3), sheet.cell(6, 3), sheet.cell(14, 2), sheet.cell(14, 3)]
+    assert [c.value for c in cells] == ['=HYPERLINK("http://example.invalid","x")', "=1+1", "=2+2", "=3+3"]
+    assert all(c.data_type == "s" for c in cells)

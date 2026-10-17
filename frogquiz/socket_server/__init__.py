@@ -639,15 +639,19 @@ async def get_export_token(sid: str):
 
 @sio.event
 async def show_solutions(sid: str, _data: dict):
+    """The host's Stop time: no more answers, and every clock stops.
+
+    It sent the whole question, right answers included, to every phone while the question
+    was still open, so a modified phone could read the answer and submit it before the
+    results came up. Every screen only used the event to stop its clock.
+    """
     session: dict = await get_session(sid, sio)
-    game_data = await PlayGame.get_from_redis(session["game_pin"])
     if not session["admin"]:
         return
-    await sio.emit(
-        "solutions",
-        game_data.questions[game_data.current_question].model_dump(),
-        room=session["game_pin"],
-    )
+    game_pin = session["game_pin"]
+    game_data = await PlayGame.get_from_redis(game_pin)
+    await close_question(game_pin, game_data.current_question)
+    await sio.emit("solutions", {}, room=game_pin)
 
 
 @sio.event

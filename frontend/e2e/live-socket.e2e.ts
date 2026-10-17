@@ -237,6 +237,25 @@ test.describe('answering', () => {
 		expect(await refused).not.toBeNull();
 	});
 
+	// Stop time sent every phone the whole question, right answers included, and kept taking
+	// answers until the results came up two seconds later.
+	test('Stop time sends phones no answers, and takes no more', async ({ request }) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const [, b] = await joinAll(pin, ['early', 'peeker']);
+		await startGame(host);
+		await showQuestion(host, 0);
+		const stopped = next(b, 'solutions');
+		host.emit('show_solutions', {});
+		const payload = JSON.stringify(await stopped);
+		expect(payload, 'the stop reached the phone').not.toBe('null');
+		expect(payload).not.toContain('Lisbon');
+		expect(payload).not.toContain('right');
+		const refused = next(b, 'question_not_active');
+		b.emit('submit_answer', { question_index: 0, answer: 'Lisbon' });
+		expect(await refused, 'an answer after Stop time was taken').not.toBeNull();
+		expect((await finalResults(host))['0'] ?? []).toHaveLength(0);
+	});
+
 	test.describe('after the question closes', () => {
 		test('an answer after the timer ran out scores nothing, and never negative', async ({
 			request
