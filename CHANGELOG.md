@@ -4,6 +4,10 @@ All notable changes made during Claude-assisted work on frogQuiz are logged here
 
 ## Unreleased
 
+- Redesigned the host lobby (François's pick, 17 Oct): one card across the top holds the QR code, the address and the PIN in two groups of three; the players fill the space under it, with an empty state in the same place; Cancel game, Lock and Start game sit in the same top bar as during the game, with Start where Next will be. 28 of 30 names now fit at 1440x900. Checked at 1440, 1280, 834 and 390.
+- Space and Enter start the game from the lobby, as they take the next step during it. New spec `lobby-keys.e2e.ts`.
+- Fixed Space and Enter going through an open confirm dialog: pressing Space in "End game?" took the next step behind it, because the dialog focuses itself rather than a button. The host's key guard is now one shared helper (`play/admin/shortcut.ts`) that knows confirm dialogs, and a held Space no longer repeats into the next step (it could skip the title card right after Start).
+
 - The host's main game button (Stop time, Next question) is 44px with 16px text from a tablet up and shows a "Space" hint where there is a keyboard (François, 17 Oct).
 - Removing a player from the lobby can be undone for five seconds ("Removed Sam · Undo"); the removal is sent when the Undo runs out, or at once if the game starts first (François, 17 Oct). New spec `lobby-kick.e2e.ts`.
 - The lobby Undo hides the removed player instead of taking them out of the list, so a reload, a leave or a host reconnect inside the five seconds no longer shows them twice (which broke the board) or brings back someone who already left. Two specs cover it.

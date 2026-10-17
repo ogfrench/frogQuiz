@@ -27,6 +27,7 @@ SPDX-License-Identifier: MPL-2.0
 	import type { QuizData } from '$lib/quiz_types';
 	import type { Player, PlayerAnswer } from '$lib/admin';
 	import { tinykeys } from '$lib/tinykeys';
+	import { ownsKey } from '$lib/play/admin/shortcut';
 	import { nextStep, performStep, stepState } from '$lib/play/admin/next_step';
 	import { addSeat, setSeats } from '$lib/play/avatars.svelte';
 	import { resumeFrom } from '$lib/play/admin/resume';
@@ -299,15 +300,10 @@ SPDX-License-Identifier: MPL-2.0
 	// never closed it. A focused control handles its own key -- the bar's button, a
 	// dialog, a switch -- or the press would act twice.
 	const next_action = (e: KeyboardEvent) => {
+		// The lobby has its own: Start game (game_not_started.svelte).
 		if (!game_state.game_started) return;
-		const target = e.target as HTMLElement | null;
-		if (
-			target?.closest(
-				'button, a, input, textarea, select, [role="button"], [role="switch"], [role="dialog"]'
-			)
-		) {
-			return;
-		}
+		// A held key repeats: Space held a moment too long after Start skipped the title card.
+		if (e.repeat || ownsKey(e.target)) return;
 		e.preventDefault();
 		performStep(nextStep(stepState(game_state)), socket_game_controls, game_state, game_token);
 	};
