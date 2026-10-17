@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { in_last_seconds } from '$lib/play/last_seconds';
 	import { QuizQuestionType } from '$lib/quiz_types';
-	import type { QuizData } from '$lib/quiz_types';
+	import type { QuizData, RangeQuizAnswer } from '$lib/quiz_types';
 	import { get_foreground_color } from '$lib/helpers.js';
 	import AnswerShape from '$lib/play/kahoot_mode_assets/AnswerShape.svelte';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
@@ -147,6 +147,19 @@ SPDX-License-Identifier: MPL-2.0
 		     the moment time ran out, before the results (#93). -->
 		<p class="fq-answer text-muted-foreground text-center">
 			{$t('admin_page.players_type_answer')}
+		</p>
+	{:else if quiz_data.questions[selected_question].type === QuizQuestionType.RANGE}
+		<!-- The scale only, never the right range (#93): there was no branch, so a slider
+		     question showed the title over nothing. -->
+		<p class="fq-answer text-muted-foreground text-center tabular-nums">
+			{$t('admin_page.players_pick_number', {
+				min: (
+					quiz_data.questions[selected_question].answers as RangeQuizAnswer
+				).min.toLocaleString(),
+				max: (
+					quiz_data.questions[selected_question].answers as RangeQuizAnswer
+				).max.toLocaleString()
+			})}
 		</p>
 	{/if}
 </div>

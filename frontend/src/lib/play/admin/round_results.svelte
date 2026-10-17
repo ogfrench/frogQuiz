@@ -11,6 +11,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { DUR, dur, reduced, stagger } from '$lib/motion';
 	import { sfx, stopSfx } from '$lib/play/sfx';
 	import TextResults from '$lib/play/admin/text_results.svelte';
+	import RangeResults from '$lib/play/admin/range_results.svelte';
 	import VotingResults from './voting_results.svelte';
 	import type { Question } from '$lib/quiz_types';
 	import { QuizQuestionType } from '$lib/quiz_types';
@@ -97,7 +98,8 @@ SPDX-License-Identifier: MPL-2.0
 			QuizQuestionType.ABCD,
 			QuizQuestionType.CHECK,
 			QuizQuestionType.VOTING,
-			QuizQuestionType.TEXT
+			QuizQuestionType.TEXT,
+			QuizQuestionType.RANGE
 		].includes(question.type)
 	);
 </script>
@@ -128,6 +130,8 @@ SPDX-License-Identifier: MPL-2.0
 				</h1>
 				{#if question.type === QuizQuestionType.TEXT}
 					<TextResults data={new_data} {question} />
+				{:else if question.type === QuizQuestionType.RANGE}
+					<RangeResults data={new_data} {question} />
 				{:else}
 					<VotingResults data={new_data} {question} />
 				{/if}

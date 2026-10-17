@@ -15,7 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Spinner from '../Spinner.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
-	import RangeEditor from '$lib/editor/RangeSelectorEditorPart.svelte';
+	import SliderEditor from '$lib/editor/SliderEditor.svelte';
 	import QuestionTypeMenu from '$lib/editor/QuestionTypeMenu.svelte';
 	import { convertQuestion, conversionLosesText } from '$lib/editor/convert_question';
 	import { QUESTION_TYPES } from '$lib/editor/question_types';
@@ -342,7 +342,7 @@ SPDX-License-Identifier: MPL-2.0
 								/>
 							{/await}
 						{:else if type === QuizQuestionType.RANGE}
-							<RangeEditor selected_question={index} bind:data />
+							<SliderEditor selected_question={index} bind:data />
 						{:else if type === QuizQuestionType.VOTING}
 							<!-- The choice tiles without a right answer to mark (#93). The old
 							     VotingEditorPart threw the answers away on every open. -->

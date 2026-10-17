@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { QuizQuestionType, type Question } from '$lib/quiz_types';
-import { isCorrect, isPracticable, isScored, isTextCorrect } from './score';
+import { isCorrect, isPracticable, isRangeCorrect, isScored, isTextCorrect } from './score';
 
 const q = (type: QuizQuestionType | undefined, rights: boolean[]): Question =>
 	({
@@ -37,10 +37,10 @@ describe('practice scoring matches the live game', () => {
 		);
 	});
 
-	it('VOTING runs but is not scored; Slider and Order are not practicable yet', () => {
+	it('VOTING runs but is not scored; Order is not practicable yet', () => {
 		expect(isPracticable(q(QuizQuestionType.VOTING, [false, false]))).toBe(true);
 		expect(isScored(q(QuizQuestionType.VOTING, [false, false]))).toBe(false);
-		for (const t of [QuizQuestionType.RANGE, QuizQuestionType.ORDER]) {
+		for (const t of [QuizQuestionType.ORDER]) {
 			expect(isPracticable(q(t, []))).toBe(false);
 		}
 	});
@@ -59,6 +59,24 @@ describe('practice scoring matches the live game', () => {
 		expect(isScored({ ...text, answers: [{ answer: ' ', case_sensitive: false }] })).toBe(
 			false
 		);
+	});
+
+	it('Slider is right inside the range, both ends included (#93)', () => {
+		const slider = {
+			type: QuizQuestionType.RANGE,
+			time: '20',
+			question: 'Legs?',
+			answers: { min: 0, max: 10, min_correct: 4, max_correct: 6 }
+		};
+		expect(isPracticable(slider)).toBe(true);
+		expect(isScored(slider)).toBe(true);
+		expect([3, 4, 5, 6, 7].map((v) => isRangeCorrect(slider, v))).toEqual([
+			false,
+			true,
+			true,
+			true,
+			false
+		]);
 	});
 
 	it('a draft question with no answer marked right is not scored', () => {

@@ -48,7 +48,7 @@ export const QUESTION_TYPES: {
 		kind: 'slider',
 		label: 'words.slider',
 		description: 'editor.slider_description',
-		enabled: false
+		enabled: true
 	},
 	{
 		kind: 'order',
