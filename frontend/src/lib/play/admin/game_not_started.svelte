@@ -47,48 +47,56 @@ SPDX-License-Identifier: MPL-2.0
 	// Until then the player is hidden, not taken out of the list: the list is the server's,
 	// and a rejoin, a leave or a host reconnect inside the window changes it, which a
 	// local splice and re-insert duplicated or brought back as a ghost.
+	//
+	// Quick removals stack (François, 17 Oct): a removed chip lets the next one slide under
+	// the pointer, so a double click removed two people and Undo brought back only the
+	// second. Every removal in a burst waits on the last click, and Undo restores them all.
 	const UNDO_MS = 5000;
-	let pending: string | null = $state(null);
+	let pending: string[] = $state([]);
 	let pending_timer: ReturnType<typeof setTimeout> | undefined;
 	const still_here = (username: string) =>
 		game_state.players.some((p) => p.username === username);
-	const waiting = $derived(game_state.players.filter((p) => p.username !== pending));
-	const drop = (name: string) => {
-		game_state.players = game_state.players.filter((p) => p.username !== name);
+	const waiting = $derived(game_state.players.filter((p) => !pending.includes(p.username)));
+	// The ones the toast speaks for: a player who left meanwhile has nothing to undo.
+	const removed = $derived(pending.filter(still_here));
+	const drop = (names: string[]) => {
+		game_state.players = game_state.players.filter((p) => !names.includes(p.username));
 	};
-	// The Undo ran out. The server's wait ends a second later and says so with
+	// The Undo ran out. The server's waits end a second later and say so with
 	// player_removed, which the admin page applies as well.
 	const expire = () => {
-		const name = pending;
-		pending = null;
-		if (name) drop(name);
+		const names = pending;
+		pending = [];
+		drop(names);
 	};
-	// Now rather than when the wait ends: Start, a second removal, leaving the lobby.
+	// Now rather than when the waits end: Start, or leaving the lobby.
 	const send_pending = () => {
 		clearTimeout(pending_timer);
-		const name = pending;
-		pending = null;
-		if (!name) return;
-		socket_game_controls.kick_player(name);
-		drop(name);
+		const names = pending;
+		pending = [];
+		for (const name of names) socket_game_controls.kick_player(name);
+		drop(names);
 	};
 	const remove = (username: string) => {
-		send_pending();
-		socket_game_controls.remove_player(username);
-		pending = username;
+		if (pending.includes(username)) return;
+		pending = [...pending, username];
+		// Asked again for the earlier ones too, so the server's waits restart from this click
+		// as the toast's does; a newer request replaces an older one (remove_player).
+		for (const name of pending) socket_game_controls.remove_player(name);
+		clearTimeout(pending_timer);
 		pending_timer = setTimeout(expire, UNDO_MS);
 	};
 	const undo = () => {
 		clearTimeout(pending_timer);
-		if (pending) socket_game_controls.undo_remove_player(pending);
-		pending = null;
+		for (const name of pending) socket_game_controls.undo_remove_player(name);
+		pending = [];
 	};
-	// The server ended the wait early because someone else asked for this name. Cleared in
+	// The server ended one wait early because someone else asked for that name. Cleared in
 	// the same event, before that person's join arrives and is hidden as the old player.
 	const on_removed = (data: { username: string }) => {
-		if (data.username !== pending) return;
-		clearTimeout(pending_timer);
-		pending = null;
+		if (!pending.includes(data.username)) return;
+		pending = pending.filter((name) => name !== data.username);
+		if (pending.length === 0) clearTimeout(pending_timer);
 	};
 	onMount(() => {
 		socket_game_controls.socket.on('player_removed', on_removed);
@@ -306,13 +314,15 @@ SPDX-License-Identifier: MPL-2.0
 	role="status"
 	class="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-4"
 >
-	{#if pending && still_here(pending)}
+	{#if removed.length > 0}
 		<!-- The chips' own card and border, not an inverted black pill: it sits under the
 		     names on a light projector and shouted over them (François, 17 Oct). -->
 		<p
 			class="border-border bg-card text-foreground pointer-events-auto flex items-center gap-2 rounded-full border py-1.5 pr-1.5 pl-5 text-base shadow-md"
 		>
-			{$t('admin_page.removed_player', { name: pending })}
+			{removed.length === 1
+				? $t('admin_page.removed_player', { name: removed[0] })
+				: $t('admin_page.removed_players', { count: removed.length })}
 			<Button size="sm" variant="ghost" class="rounded-full font-semibold" onclick={undo}>
 				{$t('words.undo')}
 			</Button>

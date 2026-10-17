@@ -160,3 +160,47 @@ test('a host who closes the tab inside the window still removes the player', asy
 });
 
 const pinOf = async (host: Page) => new URL(host.url()).searchParams.get('pin');
+
+// A removed chip lets the next one slide under the pointer, so a double click removed two
+// people, and Undo used to bring back only the second: the first was sent at once.
+test('quick removals stack, and one Undo brings them all back', async ({ browser, request }) => {
+	const { hostCtx, host, keep, gone } = await lobby(browser, request);
+	const third = await joinAsPlayer(browser, (await pinOf(host))!, 'third');
+	await expect(host.getByText('3 players are waiting')).toBeVisible();
+	for (const name of ['keep', 'gone', 'third'])
+		await host.getByRole('button', { name: `Kick: ${name}`, exact: true }).click();
+	await expect(host.getByText('Removed 3 players')).toBeVisible();
+	if (process.env.SHOTS) {
+		await host.mouse.move(5, 5);
+		await host.screenshot({ path: `${process.env.SHOTS}/toast-stacked.png` });
+	}
+	await host.getByRole('button', { name: 'Undo', exact: true }).click();
+	await expect(host.getByText('3 players are waiting')).toBeVisible();
+	for (const name of ['keep', 'gone', 'third'])
+		await expect(
+			host.getByRole('button', { name: `Kick: ${name}`, exact: true })
+		).toBeVisible();
+	// Past the server's own wait, nobody was removed.
+	await host.waitForTimeout(7500);
+	for (const p of [keep, gone, third])
+		await expect(p.page.getByText('The host removed you from this game.')).toHaveCount(0);
+	await hostCtx.close();
+	for (const p of [keep, gone, third]) await p.context.close();
+});
+
+test('quick removals without Undo remove every one of them', async ({ browser, request }) => {
+	const { hostCtx, host, keep, gone } = await lobby(browser, request);
+	const third = await joinAsPlayer(browser, (await pinOf(host))!, 'third');
+	await expect(host.getByText('3 players are waiting')).toBeVisible();
+	await host.getByRole('button', { name: 'Kick: gone', exact: true }).click();
+	await host.getByRole('button', { name: 'Kick: third', exact: true }).click();
+	await expect(host.getByText('Removed 2 players')).toBeVisible();
+	for (const p of [gone, third])
+		await expect(p.page.getByText('The host removed you from this game.')).toBeVisible({
+			timeout: 15_000
+		});
+	await expect(keep.page.getByText('The host removed you from this game.')).toHaveCount(0);
+	await expect(host.getByText('1 player is waiting')).toBeVisible();
+	await hostCtx.close();
+	for (const p of [keep, gone, third]) await p.context.close();
+});
