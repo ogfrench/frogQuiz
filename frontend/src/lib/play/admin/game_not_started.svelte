@@ -55,8 +55,9 @@ SPDX-License-Identifier: MPL-2.0
 		clearTimeout(pending_timer);
 		const name = pending;
 		pending = null;
-		// One who left meanwhile is gone already; kicking them only errors on the server.
-		if (!name || !still_here(name)) return;
+		if (!name) return;
+		// Sent even when they have left meanwhile: a dropped phone keeps its rejoin key, and
+		// only the kick deletes it, so without it they could walk back into the lobby.
 		socket_game_controls.kick_player(name);
 		// The server tells the host nothing back for a kick, so the list drops them here.
 		game_state.players = game_state.players.filter((p) => p.username !== name);

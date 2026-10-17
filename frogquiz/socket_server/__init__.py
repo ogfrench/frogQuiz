@@ -653,6 +653,11 @@ async def kick_player(sid: str, data: dict):
 
     player_key = f"game_session:{session['game_pin']}:players:{data.username}"
     player_sid = await redis.get(player_key)
+    # Already kicked, or left with leave_game. Emitting to room=None broadcasts to every
+    # socket on the server, so a kick for a name with no sid threw out every player of
+    # every game.
+    if player_sid is None:
+        return
     await redis.srem(
         f"game_session:{session['game_pin']}:players",
         GamePlayer(username=data.username, sid=player_sid).model_dump_json(),

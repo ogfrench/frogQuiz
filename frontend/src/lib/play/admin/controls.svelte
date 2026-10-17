@@ -144,7 +144,7 @@ SPDX-License-Identifier: MPL-2.0
 				class="admin-button gap-2 text-balance max-sm:max-w-36 max-sm:px-3 max-sm:text-xs max-sm:leading-tight sm:h-11 sm:px-5 sm:text-base"
 				>{label}<kbd
 					aria-hidden="true"
-					class="border-primary-foreground/30 hidden rounded border px-1.5 py-0.5 font-sans text-xs font-medium md:inline pointer-coarse:hidden"
+					class="border-primary-foreground/30 hidden rounded-sm border px-1.5 py-0.5 font-sans text-xs font-medium md:inline pointer-coarse:hidden"
 					>Space</kbd
 				></button
 			>

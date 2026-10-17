@@ -311,6 +311,23 @@ test.describe('host control', () => {
 		expect(await rejoined, 'kicked player rejoined').toBeNull();
 	});
 
+	// A kick for a name with no sid (kicked already, or gone with leave_game) emitted
+	// "kick" to room None, which python-socketio sends to every connected socket: one
+	// stale kick threw every player out of every game on the server.
+	test('kicking a name that is not there throws out nobody, in this game or another', async ({
+		request
+	}) => {
+		const { host, pin } = await hostGame(request, QUIZ);
+		const [p] = await joinAll(pin, ['stays']);
+		const other = await hostGame(request, QUIZ);
+		const [q] = await joinAll(other.pin, ['elsewhere']);
+		const here = next(p, 'kick', 1500);
+		const there = next(q, 'kick', 1500);
+		host.emit('kick_player', { username: 'nobody' });
+		expect(await here, 'a player in this game was kicked').toBeNull();
+		expect(await there, 'a player in another game was kicked').toBeNull();
+	});
+
 	test('a player cannot get the host credential, nor take the seat without it', async ({
 		request
 	}) => {
