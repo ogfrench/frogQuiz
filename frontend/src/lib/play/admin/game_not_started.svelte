@@ -307,11 +307,13 @@ SPDX-License-Identifier: MPL-2.0
 	class="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-4"
 >
 	{#if pending && still_here(pending)}
+		<!-- The chips' own card and border, not an inverted black pill: it sits under the
+		     names on a light projector and shouted over them (François, 17 Oct). -->
 		<p
-			class="bg-foreground text-background pointer-events-auto flex items-center gap-3 rounded-full py-2 pr-2 pl-5 text-base shadow-lg"
+			class="border-border bg-card text-foreground pointer-events-auto flex items-center gap-2 rounded-full border py-1.5 pr-1.5 pl-5 text-base shadow-md"
 		>
 			{$t('admin_page.removed_player', { name: pending })}
-			<Button size="sm" variant="secondary" class="rounded-full" onclick={undo}>
+			<Button size="sm" variant="ghost" class="rounded-full font-semibold" onclick={undo}>
 				{$t('words.undo')}
 			</Button>
 		</p>
