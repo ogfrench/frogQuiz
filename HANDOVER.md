@@ -71,8 +71,9 @@ every 30 minutes. It is a stopgap until #72's monitor exists.
    (François, in the console). The facts run after the reboot shows 2.0 / 12, every
    container healthy and `/api/v1/health` ok. What stays a risk, idle reclamation, is in
    `DEPLOY.md`, "Staying inside Always Free".
-4. The v0.9 cut. `frontend/package.json` is still `0.8.0`, and `## Unreleased` is long.
-   The plan for the rest of V1 is on #73.
+4. ~~The v0.9 cut~~: #88 merged on 17 Oct; `frontend/package.json` is `0.9.0` and
+   `CHANGELOG.md` has its `## v0.9` section. The `v0.9` tag goes on the release PR's merge
+   commit, from the laptop. The plan for the rest of V1 is on #73.
 5. ~~The #83 migration deploy~~: done on 16 Oct with Production ops **migrate**. Backend
    deploys without a migration go through **deploy** again.
 
