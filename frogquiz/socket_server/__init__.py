@@ -729,18 +729,18 @@ async def remove_player(sid: str, data: dict):
     if found is None:
         return
     game_pin, username = found
-    token = os.urandom(8).hex()
-    await redis.set(_removing_key(game_pin, username), token, ex=REMOVE_GRACE_SECONDS + 60)
-    sio.start_background_task(_remove_after_grace, game_pin, username, token)
+    ticket = os.urandom(8).hex()
+    await redis.set(_removing_key(game_pin, username), ticket, ex=REMOVE_GRACE_SECONDS + 60)
+    sio.start_background_task(_remove_after_grace, game_pin, username, ticket)
 
 
-async def _remove_after_grace(game_pin: str, username: str, token: str) -> None:
+async def _remove_after_grace(game_pin: str, username: str, ticket: str) -> None:
     await sio.sleep(REMOVE_GRACE_SECONDS)
     # Taken and deleted in one step: a check then a kick left a gap in which a join could
     # end this removal, claim the name, and be kicked by it as the old player.
     key = _removing_key(game_pin, username)
     found = await redis.getdel(key)
-    if found == token:
+    if found == ticket:
         await _kick(game_pin, username)
     elif found is not None:
         # A newer removal of the same name: put its wait back.
